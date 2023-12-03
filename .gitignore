@@ -1,0 +1,9 @@
+.nextflow*
+.vscode
+work/
+data/
+results/
+.DS_Store
+testing/
+testing*
+*.pyc

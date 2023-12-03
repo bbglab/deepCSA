@@ -1,0 +1,3 @@
+sample,batch,vcf,bam
+K_5_1_A_1,PROM_05,/home/fcalvet/Documents/dev/analysis_pipeline/bbg-deepcsa/data/K_5_1_A_1.vcf,/home/fcalvet/Documents/dev/analysis_pipeline/bbg-deepcsa/data/K_5_1_A_1.bam
+K_6_1_A_1,PROM_05,/home/fcalvet/Documents/dev/analysis_pipeline/bbg-deepcsa/data/K_6_1_A_1.vcf,/home/fcalvet/Documents/dev/analysis_pipeline/bbg-deepcsa/data/K_6_1_A_1.bam

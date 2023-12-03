@@ -45,6 +45,26 @@
                 }
             }
         },
+        "bed_files_options": {
+            "title": "BED file options",
+            "type": "object",
+            "description": "BED files used for filtering mutations or genomic regions.",
+            "default": "",
+            "properties": {
+                "low_mappability_file": {
+                    "type": "string",
+                    "description": "BED file with the low mappability regions.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                },
+                "low_complex_file": {
+                    "type": "string",
+                    "description": "BED file with the low complex regions.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                }
+            }
+        },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
@@ -60,6 +80,56 @@
                     "description": "Path to FASTA genome file.",
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
                     "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "ensembl_vep_options": {
+            "title": "Ensembl VEP options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "VEP related files required for the annotation.",
+            "properties": {
+                "vep_genome": {
+                    "type": "string",
+                    "description": "Genome assembly for Ensembl VEP.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "For the latest human genome assembly this should be: GRCh38."
+                },
+                "vep_species": {
+                    "type": "string",
+                    "description": "Species to use for Ensembl VEP.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Use `homo_sapiens` when working with human data."
+                },
+                "vep_cache_version": {
+                    "type": "string",
+                    "description": "Ensembl VEP cache version.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Make sure to also update the container to use. Otherwise leave 108."
+                },
+                "vep_out_format": {
+                    "type": "string",
+                    "description": "Ensembl VEP output format.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "tab or vcf"
+                },
+                "vep_params": {
+                    "type": "string",
+                    "description": "Additional parameters for running Ensembl VEP.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "download_cache": {
+                    "type": "boolean",
+                    "description": "Do you want to download the cache? Activate it only if necessary.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to download the cache? Activate it only if necessary."
+                },
+                "vep_cache": {
+                    "type": "string",
+                    "description": "Location of Ensembl VEP cache.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Define a place to store the Ensembl VEP cache."
                 }
             }
         },

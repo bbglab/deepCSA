@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 """Provide a command line tool to validate and transform tabular samplesheets."""
@@ -24,20 +24,24 @@ class RowChecker:
 
     """
 
-    VALID_FORMATS = (
-        ".fq.gz",
-        ".fastq.gz",
+    VALID_FORMATS_BAM = (
+        ".bam",
+    )
+    VALID_FORMATS_VCF = (
+        ".vcf",
+        ".vcf.gz",
     )
 
     def __init__(
         self,
         sample_col="sample",
-        first_col="fastq_1",
-        second_col="fastq_2",
-        single_col="single_end",
+        batch_col="batch",
+        vcf_col="vcf",
+        bam_col="bam",
         **kwargs,
     ):
         """
+        # TODO: update this docstring
         Initialize the row checker with the expected column names.
 
         Args:
@@ -54,9 +58,9 @@ class RowChecker:
         """
         super().__init__(**kwargs)
         self._sample_col = sample_col
-        self._first_col = first_col
-        self._second_col = second_col
-        self._single_col = single_col
+        self._batch_col = batch_col
+        self._vcf_col = vcf_col
+        self._bam_col = bam_col        
         self._seen = set()
         self.modified = []
 
@@ -70,10 +74,9 @@ class RowChecker:
 
         """
         self._validate_sample(row)
-        self._validate_first(row)
-        self._validate_second(row)
-        self._validate_pair(row)
-        self._seen.add((row[self._sample_col], row[self._first_col]))
+        self._validate_vcf(row)
+        self._validate_bam(row)
+        self._seen.add((row[self._sample_col], row[self._vcf_col]))
         self.modified.append(row)
 
     def _validate_sample(self, row):
@@ -83,46 +86,54 @@ class RowChecker:
         # Sanitize samples slightly.
         row[self._sample_col] = row[self._sample_col].replace(" ", "_")
 
-    def _validate_first(self, row):
+    def _validate_vcf(self, row):
         """Assert that the first FASTQ entry is non-empty and has the right format."""
-        if len(row[self._first_col]) <= 0:
+        if len(row[self._vcf_col]) <= 0:
             raise AssertionError("At least the first FASTQ file is required.")
-        self._validate_fastq_format(row[self._first_col])
+        self._validate_vcf_format(row[self._vcf_col])
 
-    def _validate_second(self, row):
+    def _validate_bam(self, row):
         """Assert that the second FASTQ entry has the right format if it exists."""
-        if len(row[self._second_col]) > 0:
-            self._validate_fastq_format(row[self._second_col])
+        if len(row[self._bam_col]) > 0:
+            self._validate_bam_format(row[self._bam_col])
 
-    def _validate_pair(self, row):
-        """Assert that read pairs have the same file extension. Report pair status."""
-        if row[self._first_col] and row[self._second_col]:
-            row[self._single_col] = False
-            first_col_suffix = Path(row[self._first_col]).suffixes[-2:]
-            second_col_suffix = Path(row[self._second_col]).suffixes[-2:]
-            if first_col_suffix != second_col_suffix:
-                raise AssertionError("FASTQ pairs must have the same file extensions.")
-        else:
-            row[self._single_col] = True
+    # def _validate_pair(self, row):
+    #     """Assert that read pairs have the same file extension. Report pair status."""
+    #     if row[self._vcf_col] and row[self._bam_col]:
+    #         first_col_suffix = Path(row[self._vcf_col]).suffixes[-2:]
+    #         second_col_suffix = Path(row[self._bam_col]).suffixes[-2:]
+    #         if first_col_suffix != second_col_suffix:
+    #             raise AssertionError("FASTQ pairs must have the same file extensions.")
+    #     else:
+    #         row[self._single_col] = True
 
-    def _validate_fastq_format(self, filename):
-        """Assert that a given filename has one of the expected FASTQ extensions."""
-        if not any(filename.endswith(extension) for extension in self.VALID_FORMATS):
+    def _validate_vcf_format(self, filename):
+        """Assert that a given filename has one of the expected VCF extensions."""
+        if not any(filename.endswith(extension) for extension in self.VALID_FORMATS_VCF):
             raise AssertionError(
-                f"The FASTQ file has an unrecognized extension: {filename}\n"
-                f"It should be one of: {', '.join(self.VALID_FORMATS)}"
+                f"The VCF file has an unrecognized extension: {filename}\n"
+                f"It should be one of: {', '.join(self.VALID_FORMATS_VCF)}"
             )
+
+    def _validate_bam_format(self, filename):
+        """Assert that a given filename has one of the expected BAM extensions."""
+        if not any(filename.endswith(extension) for extension in self.VALID_FORMATS_BAM):
+            raise AssertionError(
+                f"The BAM file has an unrecognized extension: {filename}\n"
+                f"It should be one of: {', '.join(self.VALID_FORMATS_BAM)}"
+            )
+
 
     def validate_unique_samples(self):
         """
-        Assert that the combination of sample name and FASTQ filename is unique.
+        Assert that the combination of sample name and VCF filename is unique.
 
         In addition to the validation, also rename all samples to have a suffix of _T{n}, where n is the
-        number of times the same sample exist, but with different FASTQ files, e.g., multiple runs per experiment.
+        number of times the same sample exist, but with different VCF files, e.g., multiple runs per experiment.
 
         """
         if len(self._seen) != len(self.modified):
-            raise AssertionError("The pair of sample name and FASTQ must be unique.")
+            raise AssertionError("The pair of sample name and VCF must be unique.")
         seen = Counter()
         for row in self.modified:
             sample = row[self._sample_col]
@@ -188,7 +199,7 @@ def check_samplesheet(file_in, file_out):
         https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
 
     """
-    required_columns = {"sample", "fastq_1", "fastq_2"}
+    required_columns = {"sample", "vcf", "bam"}
     # See https://docs.python.org/3.9/library/csv.html#id3 to read up on `newline=""`.
     with file_in.open(newline="") as in_handle:
         reader = csv.DictReader(in_handle, dialect=sniff_format(in_handle))
@@ -207,7 +218,6 @@ def check_samplesheet(file_in, file_out):
                 sys.exit(1)
         checker.validate_unique_samples()
     header = list(reader.fieldnames)
-    header.insert(1, "single_end")
     # See https://docs.python.org/3.9/library/csv.html#id3 to read up on `newline=""`.
     with file_out.open(mode="w", newline="") as out_handle:
         writer = csv.DictWriter(out_handle, header, delimiter=",")
