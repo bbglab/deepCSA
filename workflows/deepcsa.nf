@@ -34,7 +34,8 @@ Consisting of a mix of local and nf-core/modules.
 */
 
 // SUBWORKFLOW
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { INPUT_CHECK                           } from '../subworkflows/local/input_check'
+include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
 
 
 /*
@@ -72,6 +73,11 @@ workflow DEEPCSA {
     // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
     // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
     // ! There is currently no tooling to help you write a sample sheet schema
+
+    // // Run depth analysis subworkflow
+    // DEPTHANALYSIS(INPUT_CHECK.mutations)
+
+
 
 //     //
 //     // MODULE: Run FastQC
@@ -159,43 +165,43 @@ workflow DEEPCSA {
 
 
 
-//     // SUBWORKFLOW: mutation preprocessing
-//     // Read input VCFs
-//     // Use configuration file to define which is the format corresponding to total depth, allelle depth, [Ns]
+    // // SUBWORKFLOW: mutation preprocessing
+    // // Read input VCFs
+    // // Use configuration file to define which is the format corresponding to total depth, allelle depth, [Ns]
 
-//     // optionally, annotate the VCFs
+    // // optionally, annotate the VCFs
 
-//     // combine the annotations of all VCFs, either the new annotations or the old ones
+    // // combine the annotations of all VCFs, either the new annotations or the old ones
     
-//     //     Define mutations set to work with
-//     //         Input:
-//     //             VCFs
-//     //             Extended regions BED file
+    // //     Define mutations set to work with
+    // //         Input:
+    // //             VCFs
+    // //             Extended regions BED file
 
-//     //         Output: (only report filter annotated MAFs)
-//                     MAF all mutations in all samples
-//                     Somatic MAF all somatic mutations in all samples
-//                     Germline MAF all somatic mutations in all samples
-//                     Minimal Somatic MAF all somatic mutations in all samples, only the minimal informative columns.
-//                     ?Decide if we want to rewrite the VCFs with the batch filters applied
+    // //         Output: (only report filter annotated MAFs)
+    //                 MAF all mutations in all samples
+    //                 Somatic MAF all somatic mutations in all samples
+    //                 Germline MAF all somatic mutations in all samples
+    //                 Minimal Somatic MAF all somatic mutations in all samples, only the minimal informative columns.
+    //                 ?Decide if we want to rewrite the VCFs with the batch filters applied
 
-//                     Summary stats of the filters
-//                         Plots in a PDF
-//                         TSV file so that further analysis can be performed outside
+    //                 Summary stats of the filters
+    //                     Plots in a PDF
+    //                     TSV file so that further analysis can be performed outside
 
-//     Modules:
-//         Annotate VCFs (not a priority, we can start by providing an annotation file as the one I manually
-//                         generate after the deepUMIcaller pipeline finishes)
-//         Read VCFs and load into a MAF
-//         Apply chosen cohort level filters to the MAF.
-//             other_sample_germline? -> compare somatic with other sample's germline'
-//             is_SNP? -> GNOMAD, could be contamination with other sample that has not been sequenced.
-//             cohort_n_rich? -> does it make sense to check whether a particular mutation has been seen
-//                                     in other samples in an n_rich position, and maybe not in the current one?
-//             repetitive_variant -> variant seen in more than N % of the samples, potential hotspot or artifact
+    // Modules:
+    //     Annotate VCFs (not a priority, we can start by providing an annotation file as the one I manually
+    //                     generate after the deepUMIcaller pipeline finishes)
+    //     Read VCFs and load into a MAF
+    //     Apply chosen cohort level filters to the MAF.
+    //         other_sample_germline? -> compare somatic with other sample's germline'
+    //         is_SNP? -> GNOMAD, could be contamination with other sample that has not been sequenced.
+    //         cohort_n_rich? -> does it make sense to check whether a particular mutation has been seen
+    //                                 in other samples in an n_rich position, and maybe not in the current one?
+    //         repetitive_variant -> variant seen in more than N % of the samples, potential hotspot or artifact
         
-//         Report variant filter stats
-//             Plots from Raquel's filters notebook'
+    //     Report variant filter stats
+    //         Plots from Raquel's filters notebook'
         
 
 
