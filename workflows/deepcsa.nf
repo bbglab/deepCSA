@@ -50,6 +50,9 @@ Installed directly from nf-core/modules.
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
+// Annotation
+include { VCF_ANNOTATE_ALL                  as VCFANNOTATE          } from '../subworkflows/local/vcf_annotate_all/main'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,10 +78,35 @@ workflow DEEPCSA {
     // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
     // ! There is currently no tooling to help you write a sample sheet schema
 
+    INPUT_CHECK.out.mutations.
+    map{ it -> [it[0], it[1]]}.
+    set{ meta_vcfs_alone }
 
-    ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
+    // Download Ensembl VEP cache if needed
+    // Assuming that if the cache is provided, the user has already downloaded it
+    ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
+    if (params.download_cache) {
+        PREPARE_CACHE(ensemblvep_info)
+        vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ meta, cache -> [ cache ] }
+        ch_versions = ch_versions.mix(PREPARE_CACHE.out.versions)
+    } else {
+        vep_cache = params.vep_cache
+    }
+    vep_extra_files = []
 
-    ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
+    VCFANNOTATE(meta_vcfs_alone,
+                    params.fasta,
+                    params.vep_genome,
+                    params.vep_species,
+                    params.vep_cache_version,
+                    vep_cache,
+                    vep_extra_files)
+    ch_versions = ch_versions.mix(VCFANNOTATE.out.versions.first())
+
+
+    // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
+
+    // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
 
 //     //
 //     // MODULE: Run FastQC
