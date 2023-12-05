@@ -34,7 +34,8 @@ Consisting of a mix of local and nf-core/modules.
 */
 
 // SUBWORKFLOW
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { INPUT_CHECK                           } from '../subworkflows/local/input_check'
+include { ONCODRIVEFML_ANALYSIS as ONCODRIVEFML } from '../subworkflows/local/oncodrivefml/main'
 
 
 /*
@@ -73,6 +74,9 @@ workflow DEEPCSA {
     // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
     // ! There is currently no tooling to help you write a sample sheet schema
 
+
+    ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
+
 //     //
 //     // MODULE: Run FastQC
 //     //
@@ -83,7 +87,7 @@ workflow DEEPCSA {
 
 
 // SUBWORKFLOWS
-//     depths analysis 
+//     depths analysis
 //     mutation preprocessing
 //     mutational profile
 //     Module to subsets a MAF
@@ -92,12 +96,12 @@ workflow DEEPCSA {
 //     omega
 //     oncodrive3d
 //     oncodriveclustl
-    
+
 //     mutation rate
 
 //     signature extraction?
 //     signature decomposition of our profiles
-    
+
 
 
 
@@ -110,33 +114,33 @@ workflow DEEPCSA {
 //     - SigProfilerMatrixGenerator        avail
 //     - sigprofilerextractor
 //     - oncodrivefml                      ?local
-//     - omega                             
+//     - omega
 //     - oncodriveclustl                   ?local
 //     - oncodrive3d                       local
-//     - SigLasso                          
+//     - SigLasso
 
 
 
-    
-    
-//     // SUBWORKFLOW: depths analysis     
+
+
+//     // SUBWORKFLOW: depths analysis
 //     //     Define the regions to analyse (extended regions)
 //     //         Input:
 //     //             Target BED file?
 //     //             Depths files, load all the depths files per sample.
-    
+
 //     //     Read the input depth files -> Build depths matrix, index with tabix maybe?
 
 //     //         Output:
 
 //     //         BED file
 
-//     //         Report information of the regions in terms of: 
+//     //         Report information of the regions in terms of:
 //     //             % exons
 //     //             % introns
 //     //             % intergenic / off target (if any)
 //     //                 any specific region with high coverage
-                
+
 //     //             Undercovered exons
 
 //     //             Overall depth tendency per region
@@ -150,7 +154,7 @@ workflow DEEPCSA {
 //         - ?Find depth correlated samples
 //         - ?Find well covered off target regions
 
-        
+
 
 
 
@@ -166,7 +170,7 @@ workflow DEEPCSA {
 //     // optionally, annotate the VCFs
 
 //     // combine the annotations of all VCFs, either the new annotations or the old ones
-    
+
 //     //     Define mutations set to work with
 //     //         Input:
 //     //             VCFs
@@ -193,10 +197,10 @@ workflow DEEPCSA {
 //             cohort_n_rich? -> does it make sense to check whether a particular mutation has been seen
 //                                     in other samples in an n_rich position, and maybe not in the current one?
 //             repetitive_variant -> variant seen in more than N % of the samples, potential hotspot or artifact
-        
+
 //         Report variant filter stats
 //             Plots from Raquel's filters notebook'
-        
+
 
 
 // Module that subsets a MAF to the format of interest in terms of:
@@ -301,7 +305,7 @@ workflow DEEPCSA {
 //                 Clustermap of all individual samples
 //                 Sanger-like, with number of mutations per type with all samples, and then positive selection for each of the impacts
 //                 Positive selection per each of the genes.
-                
+
 
 // Subworkflow signature assignment (or extraction)
 
@@ -320,8 +324,8 @@ workflow DEEPCSA {
 
 
 
-    
-    
+
+
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
