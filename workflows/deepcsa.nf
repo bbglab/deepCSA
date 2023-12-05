@@ -36,6 +36,7 @@ Consisting of a mix of local and nf-core/modules.
 // SUBWORKFLOW
 include { INPUT_CHECK                           } from '../subworkflows/local/input_check'
 include { ONCODRIVEFML_ANALYSIS as ONCODRIVEFML } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVE3D_ANALYSIS  as ONCODRIVE3D  } from '../subworkflows/local/oncodrive3d/main'
 
 
 /*
@@ -76,6 +77,8 @@ workflow DEEPCSA {
 
 
     ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
+
+    ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
 
 //     //
 //     // MODULE: Run FastQC
