@@ -5,6 +5,7 @@
 include { ENSEMBLVEP_VEP } from '../../../modules/nf-core/ensemblvep/vep/main'
 // include { TABIX_TABIX    } from '../../../modules/nf-core/tabix/tabix/main'
 
+// TODO update this so that it only receives the vcf as input
 workflow VCF_ANNOTATE_ENSEMBLVEP {
     take:
     vcf               // channel: [ val(meta), vcf ]

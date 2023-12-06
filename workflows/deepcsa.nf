@@ -38,6 +38,8 @@ include { INPUT_CHECK                           } from '../subworkflows/local/in
 include { ONCODRIVEFML_ANALYSIS as ONCODRIVEFML } from '../subworkflows/local/oncodrivefml/main'
 include { ONCODRIVE3D_ANALYSIS  as ONCODRIVE3D  } from '../subworkflows/local/oncodrive3d/main'
 
+include { SUMMARIZE_ANNOTATION  as SUMANNOTATION  } from '../modules/local/summarize_annotation/main'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -51,7 +53,7 @@ include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 // Annotation
-include { VCF_ANNOTATE_ALL                  as VCFANNOTATE          } from '../subworkflows/local/vcf_annotate_all/main'
+include { VCF_ANNOTATE_ENSEMBLVEP      as VCFANNOTATE          } from '../subworkflows/nf-core/vcf_annotate_ensemblvep/main'
 
 
 /*
@@ -82,6 +84,13 @@ workflow DEEPCSA {
     map{ it -> [it[0], it[1]]}.
     set{ meta_vcfs_alone }
 
+    INPUT_CHECK.out.mutations.
+    map{ it -> [it[0], it[2]]}.
+    set{ meta_bams_alone }
+
+
+    // TODO move this into a subworkflow for the annotation of all the files.
+
     // Download Ensembl VEP cache if needed
     // Assuming that if the cache is provided, the user has already downloaded it
     ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
@@ -103,6 +112,11 @@ workflow DEEPCSA {
                     vep_extra_files)
     ch_versions = ch_versions.mix(VCFANNOTATE.out.versions.first())
 
+    VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().set{ annotated_samples }
+
+    SUMANNOTATION(annotated_samples)
+
+    // SUMANNOTATION.out.tab // this is needed for the mutation preprocessing module
 
     // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
 
