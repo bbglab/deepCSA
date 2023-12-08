@@ -238,11 +238,6 @@ CONSEQUENCES_LIST_WITHIN = [
 consequence_rank_dict = {consequence : rank for rank, consequence in enumerate(CONSEQUENCES_LIST)}
 rank_consequence_dict = {rank : consequence for rank, consequence in enumerate(CONSEQUENCES_LIST)}
 
-def most_deleterious(impact_vep_string):
-    all_consequences = impact_vep_string.split(",")
-    all_consequences_ranks = map(lambda x: consequence_rank_dict[x], all_consequences)
-    return rank_consequence_dict[min(all_consequences_ranks)]
-
 
 
 consequence_rank_dict_within = {consequence : rank for rank, consequence in enumerate(CONSEQUENCES_LIST_WITHIN)}
@@ -363,9 +358,12 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_ = False):
+    """
+    # TODO
+    explain what this function does
+    """
 
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0)
-    initial_columns = list(all_possible_sites.columns)
 
     if all_ :
         all_possible_sites[["CHROM", "POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
