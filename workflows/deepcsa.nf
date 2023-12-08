@@ -112,8 +112,8 @@ workflow DEEPCSA {
                     vep_extra_files)
     ch_versions = ch_versions.mix(VCFANNOTATE.out.versions.first())
 
-    VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().set{ annotated_samples }
-
+    // Join all annotated samples and put them in a channel to be summarized together
+    VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
     SUMANNOTATION(annotated_samples)
 
     // SUMANNOTATION.out.tab // this is needed for the mutation preprocessing module
