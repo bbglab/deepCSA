@@ -39,6 +39,7 @@ include { ONCODRIVEFML_ANALYSIS as ONCODRIVEFML } from '../subworkflows/local/on
 include { ONCODRIVE3D_ANALYSIS  as ONCODRIVE3D  } from '../subworkflows/local/oncodrive3d/main'
 
 include { SUMMARIZE_ANNOTATION  as SUMANNOTATION  } from '../modules/local/summarize_annotation/main'
+include { VCF2MAF               as VCF2MAF        } from '../modules/local/vcf2maf/main'
 
 
 /*
@@ -115,6 +116,7 @@ workflow DEEPCSA {
     // Join all annotated samples and put them in a channel to be summarized together
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
     SUMANNOTATION(annotated_samples)
+    VCF2MAF(meta_vcfs_alone, SUMANNOTATION.out.tab)
 
     // SUMANNOTATION.out.tab // this is needed for the mutation preprocessing module
 

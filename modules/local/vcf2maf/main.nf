@@ -1,4 +1,4 @@
-process SUMMARIZE_ANNOTATION {
+process VCF2MAF {
     tag "$meta.id"
     label 'process_high'
 
@@ -9,11 +9,12 @@ process SUMMARIZE_ANNOTATION {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(tab_files)
+    tuple val(meta) , path(vcf)
+    tuple val(meta2), path(annotation)
 
     output:
-    tuple val(meta), path("*.summary.tab.gz")  , emit: tab
-    path "versions.yml"                        , emit: versions
+    path("*.tsv.gz")       , emit: tsv
+    path "versions.yml"    , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,21 +22,12 @@ process SUMMARIZE_ANNOTATION {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def batch = task.ext.batch ?: "${meta.batch}"
+    def level = task.ext.level ?: "high"// "${meta.level}"
     // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    zcat <\$(ls *.tab.gz | head -1) | grep '#' | grep -v '##' > header.tsv;
-    for file in *.tab.gz; do
-            zgrep -v '#' \$file >> ${prefix}.vep.tab.tmp;
-            echo \$file;
-    done;
-    cat header.tsv <(sort -u ${prefix}.vep.tab.tmp | grep -v '#') > ${prefix}.vep.tab ;
-    rm ${prefix}.vep.tab.tmp;
-
-    postprocessing_annotation.py ${prefix}.vep.tab ${prefix}.vep.summary.tab False;
-    gzip ${prefix}.vep.summary.tab;
-
-    rm ${prefix}.vep.tab;
+    vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
