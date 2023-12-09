@@ -1,4 +1,10 @@
-process VCF2MAF {
+process FILTERBED {
+    // TODO
+    // reimplement it in a way that uses a BED file to know which mutations are inside
+    // the regions and which ones are outside this way we avoid having to load too many
+    // things in python that might slow things down
+    // Look at the low mappability or low complexity filtering of the deepUMIcaller pipeline
+
     tag "$meta.id"
     label 'process_high'
 
@@ -9,12 +15,12 @@ process VCF2MAF {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta) , path(vcf)
-    tuple val(meta2), path(annotation)
+    tuple val(meta), path(maf)
+    path(bedfile)
 
     output:
-    tuple val(meta), path("*.tsv.gz")  , emit: maf
-    path "versions.yml"                , emit: versions
+    path("*.tsv.gz")       , emit: maf
+    path "versions.yml"    , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,12 +28,10 @@ process VCF2MAF {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def batch = task.ext.batch ?: "${meta.batch}"
-    def level = task.ext.level ?: "high"// "${meta.level}"
     // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation};
+    filterbed.py ${maf} ${bedfile} not_in_panel;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

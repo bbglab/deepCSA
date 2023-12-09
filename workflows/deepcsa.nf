@@ -40,6 +40,7 @@ include { ONCODRIVE3D_ANALYSIS  as ONCODRIVE3D  } from '../subworkflows/local/on
 
 include { SUMMARIZE_ANNOTATION  as SUMANNOTATION  } from '../modules/local/summarize_annotation/main'
 include { VCF2MAF               as VCF2MAF        } from '../modules/local/vcf2maf/main'
+include { FILTERBED             as FILTERPANEL    } from '../modules/local/filterbed/main'
 
 
 /*
@@ -116,9 +117,17 @@ workflow DEEPCSA {
     // Join all annotated samples and put them in a channel to be summarized together
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
     SUMANNOTATION(annotated_samples)
-    VCF2MAF(meta_vcfs_alone, SUMANNOTATION.out.tab)
+    ch_versions = ch_versions.mix(SUMANNOTATION.out.versions)
 
-    // SUMANNOTATION.out.tab // this is needed for the mutation preprocessing module
+    VCF2MAF(meta_vcfs_alone, SUMANNOTATION.out.tab)
+    ch_versions = ch_versions.mix(VCF2MAF.out.versions.first())
+
+    FILTERPANEL(VCF2MAF.out.maf, params.bedf)
+    ch_versions = ch_versions.mix(FILTERPANEL.out.versions.first())
+    // FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
+    // FILTERPANEL.out.maf.collectFile(name: "all_samples_maf.tsv", storeDir:"${params.outdir}/batchmaf", skip: 1, keepHeader: true)
+
+    // FILTERBATCH(samples_maf)
 
     // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
 

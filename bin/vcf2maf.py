@@ -342,18 +342,3 @@ samp_annotated_ensembl_allelles.to_csv(f"{sampleid}.{level}.maf.annot.tsv.gz",
                                         header = True,
                                         index = False)
 print("File written:", f"{sampleid}.{level}.maf.annot.tsv.gz")
-
-
-# # filter based on the panel BED file
-# maf_df_filt = filter_panel_regions(maf_df, panel_bed)
-
-# maf_df_filt.to_csv(f"{datasets_home_directory}/data/kidney/mutations/{todays_date}.kidney.{level}.maf.full_genes.annot.tsv.gz",
-#                     sep = "\t",
-#                     header = True,
-#                     index = False)
-
-# print("File written:",
-#         f"{datasets_home_directory}/data/kidney/mutations/{todays_date}.kidney.{level}.maf.full_genes.annot.tsv.gz")
-# # break
-
-
