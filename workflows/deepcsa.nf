@@ -41,6 +41,7 @@ include { ONCODRIVE3D_ANALYSIS  as ONCODRIVE3D  } from '../subworkflows/local/on
 include { SUMMARIZE_ANNOTATION  as SUMANNOTATION  } from '../modules/local/summarize_annotation/main'
 include { VCF2MAF               as VCF2MAF        } from '../modules/local/vcf2maf/main'
 include { FILTERBED             as FILTERPANEL    } from '../modules/local/filterbed/main'
+include { MERGE_BATCH           as MERGEBATCH     } from '../modules/local/mergemafs/main'
 
 
 /*
@@ -124,11 +125,12 @@ workflow DEEPCSA {
 
     FILTERPANEL(VCF2MAF.out.maf, params.bedf)
     ch_versions = ch_versions.mix(FILTERPANEL.out.versions.first())
-    // FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
+    FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
     // FILTERPANEL.out.maf.collectFile(name: "all_samples_maf.tsv", storeDir:"${params.outdir}/batchmaf", skip: 1, keepHeader: true)
 
-    // FILTERBATCH(samples_maf)
+    MERGEBATCH(samples_maf)
 
+    // MERGEBATCH.out.cohort_maf
     // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
 
     // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
