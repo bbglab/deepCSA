@@ -42,6 +42,7 @@ include { SUMMARIZE_ANNOTATION  as SUMANNOTATION  } from '../modules/local/summa
 include { VCF2MAF               as VCF2MAF        } from '../modules/local/vcf2maf/main'
 include { FILTERBED             as FILTERPANEL    } from '../modules/local/filterbed/main'
 include { MERGE_BATCH           as MERGEBATCH     } from '../modules/local/mergemafs/main'
+include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
 
 
 /*
@@ -83,6 +84,7 @@ workflow DEEPCSA {
     // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
     // ! There is currently no tooling to help you write a sample sheet schema
 
+
     INPUT_CHECK.out.mutations.
     map{ it -> [it[0], it[1]]}.
     set{ meta_vcfs_alone }
@@ -91,7 +93,10 @@ workflow DEEPCSA {
     map{ it -> [it[0], it[2]]}.
     set{ meta_bams_alone }
 
-
+    // // Run depth analysis subworkflow
+    // DEPTHANALYSIS(INPUT_CHECK.mutations)
+    
+    
     // TODO move this into a subworkflow for the annotation of all the files.
 
     // Download Ensembl VEP cache if needed
@@ -134,6 +139,7 @@ workflow DEEPCSA {
     // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
 
     // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
+
 
 //     //
 //     // MODULE: Run FastQC
@@ -221,11 +227,11 @@ workflow DEEPCSA {
 
 
 
-//     // SUBWORKFLOW: mutation preprocessing
-//     // Read input VCFs
-//     // Use configuration file to define which is the format corresponding to total depth, allelle depth, [Ns]
+    // // SUBWORKFLOW: mutation preprocessing
+    // // Read input VCFs
+    // // Use configuration file to define which is the format corresponding to total depth, allelle depth, [Ns]
 
-//     // optionally, annotate the VCFs
+    // // optionally, annotate the VCFs
 
 //     // combine the annotations of all VCFs, either the new annotations or the old ones
 
