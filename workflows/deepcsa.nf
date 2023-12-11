@@ -34,18 +34,15 @@ Consisting of a mix of local and nf-core/modules.
 */
 
 // SUBWORKFLOW
-include { INPUT_CHECK                           } from '../subworkflows/local/input_check'
-include { ONCODRIVEFML_ANALYSIS as ONCODRIVEFML } from '../subworkflows/local/oncodrivefml/main'
-include { ONCODRIVE3D_ANALYSIS  as ONCODRIVE3D  } from '../subworkflows/local/oncodrive3d/main'
+include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
+include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
+include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
 
-include { SUMMARIZE_ANNOTATION  as SUMANNOTATION  } from '../modules/local/summarize_annotation/main'
-include { VCF2MAF               as VCF2MAF        } from '../modules/local/vcf2maf/main'
-include { FILTERBED             as FILTERPANEL    } from '../modules/local/filterbed/main'
-include { MERGE_BATCH           as MERGEBATCH     } from '../modules/local/mergemafs/main'
-include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
-include { FILTER_BATCH          as FILTERBATCH    } from '../modules/local/filtermaf/main'
+// include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
 
-
+// Download annotation cache if needed
+include { PREPARE_CACHE                               } from '../subworkflows/local/prepare_cache/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,9 +54,6 @@ Installed directly from nf-core/modules.
 // MODULE
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-
-// Annotation
-include { VCF_ANNOTATE_ENSEMBLVEP      as VCFANNOTATE          } from '../subworkflows/nf-core/vcf_annotate_ensemblvep/main'
 
 
 /*
@@ -99,8 +93,7 @@ workflow DEEPCSA {
     // DEPTHANALYSIS(INPUT_CHECK.mutations)
 
 
-    // TODO move this into a subworkflow for the annotation of all the files.
-
+    // TODO: test if downloading VEP cache works
     // Download Ensembl VEP cache if needed
     // Assuming that if the cache is provided, the user has already downloaded it
     ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
@@ -113,43 +106,14 @@ workflow DEEPCSA {
     }
     vep_extra_files = []
 
-    VCFANNOTATE(meta_vcfs_alone,
-                    params.fasta,
-                    params.vep_genome,
-                    params.vep_species,
-                    params.vep_cache_version,
-                    vep_cache,
-                    vep_extra_files)
-    ch_versions = ch_versions.mix(VCFANNOTATE.out.versions.first())
 
-    // Join all annotated samples and put them in a channel to be summarized together
-    VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
-    SUMANNOTATION(annotated_samples)
-    ch_versions = ch_versions.mix(SUMANNOTATION.out.versions)
+    bedfile = params.bedf
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
-    VCF2MAF(meta_vcfs_alone, SUMANNOTATION.out.tab)
-    ch_versions = ch_versions.mix(VCF2MAF.out.versions.first())
-
-    FILTERPANEL(VCF2MAF.out.maf, params.bedf)
-    ch_versions = ch_versions.mix(FILTERPANEL.out.versions.first())
-    FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
-    // FILTERPANEL.out.maf.collectFile(name: "all_samples_maf.tsv", storeDir:"${params.outdir}/batchmaf", skip: 1, keepHeader: true)
-
-    MERGEBATCH(samples_maf)
-
-    FILTERBATCH(MERGEBATCH.out.cohort_maf)
     // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
 
     // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
-
-
-//     //
-//     // MODULE: Run FastQC
-//     //
-//     FASTQC (
-//         INPUT_CHECK.out.reads
-//     )
-//     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
 
 // SUBWORKFLOWS
@@ -179,7 +143,6 @@ workflow DEEPCSA {
 //     - bgreference                                   ¡¡highest priority!!
 //     - SigProfilerMatrixGenerator        avail
 //     - sigprofilerextractor
-//     - oncodrivefml                      ?local
 //     - omega
 //     - oncodriveclustl                   ?local
 //     - oncodrive3d                       local
@@ -222,50 +185,6 @@ workflow DEEPCSA {
 
 
 
-
-
-
-
-
-
-
-    // // SUBWORKFLOW: mutation preprocessing
-    // // Read input VCFs
-    // // Use configuration file to define which is the format corresponding to total depth, allelle depth, [Ns]
-
-    // // optionally, annotate the VCFs
-
-//     // combine the annotations of all VCFs, either the new annotations or the old ones
-
-//     //     Define mutations set to work with
-//     //         Input:
-//     //             VCFs
-//     //             Extended regions BED file
-
-//     //         Output: (only report filter annotated MAFs)
-//                     MAF all mutations in all samples
-//                     Somatic MAF all somatic mutations in all samples
-//                     Germline MAF all somatic mutations in all samples
-//                     Minimal Somatic MAF all somatic mutations in all samples, only the minimal informative columns.
-//                     ?Decide if we want to rewrite the VCFs with the batch filters applied
-
-//                     Summary stats of the filters
-//                         Plots in a PDF
-//                         TSV file so that further analysis can be performed outside
-
-//     Modules:
-//         Annotate VCFs (not a priority, we can start by providing an annotation file as the one I manually
-//                         generate after the deepUMIcaller pipeline finishes)
-//         Read VCFs and load into a MAF
-//         Apply chosen cohort level filters to the MAF.
-//             other_sample_germline? -> compare somatic with other sample's germline'
-//             is_SNP? -> GNOMAD, could be contamination with other sample that has not been sequenced.
-//             cohort_n_rich? -> does it make sense to check whether a particular mutation has been seen
-//                                     in other samples in an n_rich position, and maybe not in the current one?
-//             repetitive_variant -> variant seen in more than N % of the samples, potential hotspot or artifact
-
-//         Report variant filter stats
-//             Plots from Raquel's filters notebook'
 
 
 
