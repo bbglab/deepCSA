@@ -43,6 +43,8 @@ include { VCF2MAF               as VCF2MAF        } from '../modules/local/vcf2m
 include { FILTERBED             as FILTERPANEL    } from '../modules/local/filterbed/main'
 include { MERGE_BATCH           as MERGEBATCH     } from '../modules/local/mergemafs/main'
 include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
+include { FILTER_BATCH          as FILTERBATCH    } from '../modules/local/filtermaf/main'
+
 
 
 /*
@@ -95,8 +97,8 @@ workflow DEEPCSA {
 
     // // Run depth analysis subworkflow
     // DEPTHANALYSIS(INPUT_CHECK.mutations)
-    
-    
+
+
     // TODO move this into a subworkflow for the annotation of all the files.
 
     // Download Ensembl VEP cache if needed
@@ -135,7 +137,7 @@ workflow DEEPCSA {
 
     MERGEBATCH(samples_maf)
 
-    // MERGEBATCH.out.cohort_maf
+    FILTERBATCH(MERGEBATCH.out.cohort_maf)
     // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
 
     // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
