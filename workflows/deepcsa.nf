@@ -98,9 +98,11 @@ workflow DEEPCSA {
     map{ it -> [it[0], it[2]]}.
     set{ meta_bams_alone }
 
+
     // Run depth analysis subworkflow
-    // DEPTHANALYSIS(INPUT_CHECK.mutations)
+    // DEPTHANALYSIS(meta_bams_alone)
     // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+
 
     // TODO: test if downloading VEP cache works
     // Download Ensembl VEP cache if needed

@@ -8,8 +8,13 @@ workflow DEPTH_ANALYSIS{
 
     main:
     // actual code
+
     ch_versions = Channel.empty()
-    COMPUTEDEPTHS(bam_list)
+    
+    // Join all annotated samples and put them in a channel to be summarized together
+    bam_list.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ combined_bams }
+
+    COMPUTEDEPTHS(combined_bams)
 
     // PROCESSDEPTHSTABLE()
 
