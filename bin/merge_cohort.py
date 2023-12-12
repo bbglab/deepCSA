@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
+import os, sys
 import pandas as pd
-import os
 
 
-samp_name = 'all_samples'
+samp_name = sys.argv[1]
 
 # Directory containing the .tsv.gz files
 directory = '.'
