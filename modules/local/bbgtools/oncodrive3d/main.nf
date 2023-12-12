@@ -8,7 +8,6 @@ process ONCODRIVE3D {
     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
     //     'biocontainers/YOUR-TOOL-HERE' }"
 
-    // container = "${baseDir}/build/containers/oncodrive3d.sif"
     container "oncodrive3d_231205.sif"
 
     input:
@@ -68,26 +67,3 @@ process ONCODRIVE3D {
     """
 }
 
-
-// process CLUSTERING {
-//     debug true
-
-//     //errorStrategy 'ignore'
-//     container params.container
-//     cpus params.cores
-//     memory params.memory
-//     maxForks params.max_running
-//     publishDir params.outdir, mode:'copy'
-//     tag "Clustering on $cohort"
-
-//     input:
-//     tuple val(cohort), path(inputs)
-
-//     output:
-//     path("${cohort}")
-//                                                                  /// REMEMBER TO CHANGE OPTION WITH NEW IMG        S -> s      u -> c
-//     script:
-//     """
-//     oncodrive3D run -i ${inputs[0]} -p ${inputs[1]} -d ${params.datasets} -C ${cohort} -o ${cohort} -s ${params.seed} -c ${params.cores}
-//     """
-// }

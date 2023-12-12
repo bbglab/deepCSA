@@ -40,6 +40,12 @@ include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/lo
 include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
 
 // include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
+// include { DEPTH_ANALYSIS as MUTPROFILE       } from '../subworkflows/local/depthanalysis/main'
+// include { DEPTH_ANALYSIS as OMEGA       } from '../subworkflows/local/depthanalysis/main'
+// include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
+// include { DEPTH_ANALYSIS as SIGNATURES       } from '../subworkflows/local/depthanalysis/main'
+// include { DEPTH_ANALYSIS as MUTRATE       } from '../subworkflows/local/depthanalysis/main'
+
 
 // Download annotation cache if needed
 include { PREPARE_CACHE                               } from '../subworkflows/local/prepare_cache/main'
@@ -81,6 +87,9 @@ workflow DEEPCSA {
     // ! There is currently no tooling to help you write a sample sheet schema
 
 
+    //
+    // Separate input BAMs and VCFs
+    //
     INPUT_CHECK.out.mutations.
     map{ it -> [it[0], it[1]]}.
     set{ meta_vcfs_alone }
@@ -89,9 +98,9 @@ workflow DEEPCSA {
     map{ it -> [it[0], it[2]]}.
     set{ meta_bams_alone }
 
-    // // Run depth analysis subworkflow
+    // Run depth analysis subworkflow
     // DEPTHANALYSIS(INPUT_CHECK.mutations)
-
+    // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
     // TODO: test if downloading VEP cache works
     // Download Ensembl VEP cache if needed
@@ -107,209 +116,36 @@ workflow DEEPCSA {
     vep_extra_files = []
 
 
+    // Mutation preprocessing
     bedfile = params.bedf
     MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
+    // Mutational profile
+    // MUTPROFILE(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+
+
+    //
+    // Positive selection
+    //
+
+    // OncodriveFML
     // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
 
+    // Oncodrive3D
     // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
 
+    // Omega
+    // OMEGA()
 
-// SUBWORKFLOWS
-//     depths analysis
-//     mutation preprocessing
-//     mutational profile
-//     Module to subsets a MAF
+    // OncodriveClustl
+    // ONCODRIVECLUSTL()
 
-//     oncodrivefml
-//     omega
-//     oncodrive3d
-//     oncodriveclustl
+    // Signature Analysis
+    // SIGNATURES()
 
-//     mutation rate
-
-//     signature extraction?
-//     signature decomposition of our profiles
-
-
-
-
-
-
-// Main containers:
-//     - pybedtools                        avail
-//     - pandas and basic plotting         avail
-//     - bgreference                                   ¡¡highest priority!!
-//     - SigProfilerMatrixGenerator        avail
-//     - sigprofilerextractor
-//     - omega
-//     - oncodriveclustl                   ?local
-//     - oncodrive3d                       local
-//     - SigLasso
-
-
-
-
-
-//     // SUBWORKFLOW: depths analysis
-//     //     Define the regions to analyse (extended regions)
-//     //         Input:
-//     //             Target BED file?
-//     //             Depths files, load all the depths files per sample.
-
-//     //     Read the input depth files -> Build depths matrix, index with tabix maybe?
-
-//     //         Output:
-
-//     //         BED file
-
-//     //         Report information of the regions in terms of:
-//     //             % exons
-//     //             % introns
-//     //             % intergenic / off target (if any)
-//     //                 any specific region with high coverage
-
-//     //             Undercovered exons
-
-//     //             Overall depth tendency per region
-
-//     //             Heterogeneity between samples per region
-
-//     // Modules list:
-//         - Build depth matrix
-//         - Estimate extended regions
-//         - Define poorly covered regions -> provide a BED file of potential blacklists.
-//         - ?Find depth correlated samples
-//         - ?Find well covered off target regions
-
-
-
-
-
-
-// Module that subsets a MAF to the format of interest in terms of:
-//     - VAF
-//     - Mutations passing certain filters
-//     - Columns
-//     - File format for: OncodriveFML, omega, oncodrive3d ...
-
-// This can be used at the level of workflow or inside a subworkflow
-
-
-
-// SUBWORKFLOW: mutational profile
-// Description:
-//     - Compute mutational profile in the regions of interest.
-// Input:
-//     - Depths
-//     - Mutations
-//     - Regions where mutations "can occur" (we could potentially run this in three different ways:
-//                                                 with all sites
-//                                                     protein-affecting sites,
-//                                                     non-protein affecting
-//                                             )
-// Output:
-//     - Tables with samples as columns and rows as contexts
-//         96 mutational profile       ***
-//         384 mutational profile
-//         1536 mutational profile
-//     - SigProfilerMatrixGenerator output?
-//         - The advantage is that they compute the potential transcription strand bias. (384)
-//     - Plots
-
-// Modules:
-//     - Intersect regions bedfile with depths
-//     - Intersect the intersection of the previous two files with the mutations
-//     - Compute mutational profiles per sample
-//     - Compute matrix of mutations per context
-//     - Extrapolate mutational profiles in the regions under analysis to whole genome trinucleotide or pentanucelotide contexts.
-
-
-
-
-
-
-
-// SUBWORKFLOW: oncodrivefml
-// Description:
-//     - Compute positive selection based on functional impact bias.
-// Input:
-//     - Depths
-//     - Mutations
-//     - Mutation profile
-//     - Regions to focus the analysis (we could potentially run this in different ways:
-//                                         with all genes independently
-//                                         grouping certain genes (this is not a priority at all!!!)
-//                                         )
-// Output:
-//     - OncodriveFML results
-//     - Plots ?
-
-// Modules:
-//     - Intersect regions bedfile with depths
-//     - Intersect the intersection of the previous two files with the mutations
-//     - Preprocessing module to compute mutabilities from mutational profile and depths.
-//     - ?Preprocessing module to compute mutabilities from mutational profile and depths, and observed mutations per gene. (this is not a priority at all!!!)
-//     - Run OncodriveFML for each sample individually.
-//                                 (we could potentially run this for:
-//                                         all samples
-//                                         specific groups of samples (see provided to omega)
-//                                         )
-//     - Plot results:
-//             Ideas:
-//                 Clustermap of all individual samples
-
-
-
-
-// SUBWORKFLOW: omega
-// Description:
-//     - Compute positive selection based on mutation recurrence.
-// Input:
-//     - Depths
-//     - Mutations
-//     - Mutation profile
-//     - Regions to focus the analysis annotated (pending to update omega version with this working)
-//     - Sample gene and consequence groups. (set defaults: all samples independent, all samples together
-//                                                             all genes independent, all genes together,
-//                                                                         all genes in the analysis that are known cancer genes,
-//                                                             set default consequence types
-//                                                             )
-// Output:
-//     - omega results
-//     - Plots ?
-
-// Modules:
-//     - Intersect regions bedfile with depths
-//     - Intersect the intersection of the previous two files with the mutations
-//     - Omega preprocessing module
-//     - Omega estimator module
-//     - Plot results:
-//             Ideas:
-//                 Clustermap of all individual samples
-//                 Sanger-like, with number of mutations per type with all samples, and then positive selection for each of the impacts
-//                 Positive selection per each of the genes.
-
-
-// Subworkflow signature assignment (or extraction)
-
-//     - SigProfilerAssingment
-//     - SigLasso
-//     - MSA ( https://gitlab.com/s.senkin/MSA/-/tree/master )
-
-
-//     - SigProfilerExtractor
-
-
-
-
-
-
-
-
-
-
+    // Mutation Rate
+    // MUTRATE()
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
