@@ -1,4 +1,4 @@
-process FILTERBED {
+process FILTER_BATCH {
     // TODO
     // reimplement it in a way that uses a BED file to know which mutations are inside
     // the regions and which ones are outside this way we avoid having to load too many
@@ -16,11 +16,10 @@ process FILTERBED {
 
     input:
     tuple val(meta), path(maf)
-    path(bedfile)
 
     output:
-    tuple val(meta), path("*.tsv.gz")  , emit: maf
-    path "versions.yml"                , emit: versions
+    tuple val(meta), path("*.cohort.filtered.tsv.gz") , emit: cohort_maf
+    path "versions.yml"                               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,10 +27,10 @@ process FILTERBED {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
+    def filters = task.ext.filters ?: "other_sample_germline,is_SNP,repetitive_variant"
+    def repetitive_variant = task.ext.repetitive_variant ?: "5"
     """
-    filterbed.py ${maf} ${bedfile} not_in_panel;
+    filter_cohort.py ${maf} ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -43,7 +42,7 @@ process FILTERBED {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.vep.summary.tab.gz
+    touch all_samples.cohort.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
