@@ -35,12 +35,14 @@ Consisting of a mix of local and nf-core/modules.
 
 // SUBWORKFLOW
 include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
-include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
-include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
-include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
 
 // include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
-// include { DEPTH_ANALYSIS as MUTPROFILE       } from '../subworkflows/local/depthanalysis/main'
+include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
+
+include { MUTATIONAL_PROFILE     as MUTPROFILE        } from '../subworkflows/local/mutationprofile/main'
+
+include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
 // include { DEPTH_ANALYSIS as OMEGA       } from '../subworkflows/local/depthanalysis/main'
 // include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
 // include { DEPTH_ANALYSIS as SIGNATURES       } from '../subworkflows/local/depthanalysis/main'
@@ -124,7 +126,9 @@ workflow DEEPCSA {
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
     // Mutational profile
-    // MUTPROFILE(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
+    meta_vcfs_alone.map{ it -> [[ id : it[0]], params.depth_f ] }.set{ depths }
+    MUTPROFILE(MUT_PREPROCESSING.out.cohort_maf, depths, bedfiles_var)
 
 
     //

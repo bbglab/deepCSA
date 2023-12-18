@@ -58,6 +58,19 @@ workflow MUTATION_PREPROCESSING {
     ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
 
 
+    // Compile a BED file with all the mutations that are discarded due to:
+    // Other sample SNP
+    //     All sites with this filter should be remove from the background.
+    // Repetitive variant
+    //     Mutation seen in more than X samples.
+    //     All sites with this filter should be remove from the background.
+    // N rich
+    //     - only sites with mutations discarded by N-rich criteria
+    //     ?- also non mutated sites that do have lots of Ns
+
+    // bedfiles.sample_discarded
+
+
     emit:
     cohort_maf = FILTERBATCH.out.cohort_maf
     versions = ch_versions
