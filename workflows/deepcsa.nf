@@ -128,7 +128,7 @@ workflow DEEPCSA {
     // Mutational profile
     meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
     meta_vcfs_alone.map{ it -> [[ id : it[0]], params.depth_f ] }.set{ depths }
-    MUTPROFILE(MUT_PREPROCESSING.out.cohort_maf, depths, bedfiles_var)
+    MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
 
 
     //
