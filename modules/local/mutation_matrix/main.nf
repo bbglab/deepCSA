@@ -34,6 +34,7 @@ process COMPUTE_MATRIX {
     EOF
 
     mut_profile.py matrix \\
+                    --sample_name ${prefix} \\
                     --mut_file ${mut_files} \\
                     --out_matrix ${prefix}.matrix.tsv \\
                     --json_filters mutations_subset.conf \\

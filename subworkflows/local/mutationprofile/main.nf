@@ -4,6 +4,8 @@
 // include { INTERSECT_BED     as BED_INTERSECTNONPA    } from '../../modules/local/bedtools/intersect/main'
 
 include { COMPUTE_MATRIX     as COMPUTEMATRIX    } from '../../../modules/local/mutation_matrix/main'
+include { COMPUTE_PROFILE    as COMPUTEPROFILE   } from '../../../modules/local/compute_profile/main'
+
 
 workflow MUTATIONAL_PROFILE {
 
@@ -35,8 +37,17 @@ workflow MUTATIONAL_PROFILE {
 
     COMPUTEMATRIX(mutations)
 
+    COMPUTEMATRIX.out.matrix.map{ it -> [ it[0], params.wgs_trinucleotide_counts]}.set{counts_per_trinucleotide}
+    // counts_per_trinucleotide = params.wgs_trinucleotide_counts
+    
+    COMPUTEMATRIX.out.matrix
+    .join(counts_per_trinucleotide) 
+    .set{ matrix_n_trinucleotide }
+
+    COMPUTEPROFILE(matrix_n_trinucleotide)
+
 
     emit:
-    matrix   = COMPUTEMATRIX.out.matrix   // channel: [ val(meta), file(depths) ]
+    profile  = COMPUTEPROFILE.out.profile   // channel: [ val(meta), file(depths) ]
     versions = ch_versions                // channel: [ versions.yml ]
 }
