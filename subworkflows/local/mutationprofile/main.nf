@@ -3,8 +3,9 @@
 // include { INTERSECT_BED     as BED_INTERSECTPA       } from '../../modules/local/bedtools/intersect/main'
 // include { INTERSECT_BED     as BED_INTERSECTNONPA    } from '../../modules/local/bedtools/intersect/main'
 
-include { COMPUTE_MATRIX     as COMPUTEMATRIX    } from '../../../modules/local/mutation_matrix/main'
-include { COMPUTE_PROFILE    as COMPUTEPROFILE   } from '../../../modules/local/compute_profile/main'
+include { COMPUTE_MATRIX          as COMPUTEMATRIX    } from '../../../modules/local/mutation_matrix/main'
+include { COMPUTE_PROFILE         as COMPUTEPROFILE   } from '../../../modules/local/compute_profile/main'
+include { COMPUTE_TRINUCLEOTIDE   as COMPUTETRINUC    } from '../../../modules/local/compute_trinucleotide/main'
 
 
 workflow MUTATIONAL_PROFILE {
@@ -37,11 +38,13 @@ workflow MUTATIONAL_PROFILE {
 
     COMPUTEMATRIX(mutations)
 
-    COMPUTEMATRIX.out.matrix.map{ it -> [ it[0], params.wgs_trinucleotide_counts]}.set{counts_per_trinucleotide}
-    // counts_per_trinucleotide = params.wgs_trinucleotide_counts
-    
+
+    COMPUTETRINUC(depth)
+    COMPUTETRINUC.out.trinucleotides.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_trinucleotides }
+
+
     COMPUTEMATRIX.out.matrix
-    .join(counts_per_trinucleotide) 
+    .join(named_trinucleotides)
     .set{ matrix_n_trinucleotide }
 
     COMPUTEPROFILE(matrix_n_trinucleotide)

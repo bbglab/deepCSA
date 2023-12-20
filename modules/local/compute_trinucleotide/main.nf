@@ -1,4 +1,4 @@
-process COMPUTE_PROFILE {
+process COMPUTE_TRINUCLEOTIDE {
 
     tag "$meta.id"
     label 'process_low'
@@ -10,12 +10,11 @@ process COMPUTE_PROFILE {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(matrix), path(trinucleotide)
+    tuple val(meta), path(depths)
 
     output:
-    tuple val(meta), path("*.profile.tsv") , emit: profile
-    tuple val(meta), path("*.pdf")         , emit: plots, optional:true
-    path "versions.yml"                    , emit: versions
+    path("*.trinucleotides.tsv.gz"), emit: trinucleotides
+    path "versions.yml"                             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -26,11 +25,8 @@ process COMPUTE_PROFILE {
     def filters = task.ext.filters ?: ""
 
     """
-    mut_profile.py profile \\
-                    --sample_name ${prefix} \\
-                    --mutation_matrix ${matrix} \\
-                    --trinucleotide_counts ${trinucleotide} \\
-                    --out_profile ${prefix}.profile.tsv \\
+    mutprof_2compute_trinucleotide.py \\
+                    --depths_file ${depths} \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

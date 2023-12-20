@@ -24,8 +24,6 @@ process COMPUTE_MATRIX {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def filters = task.ext.filters ?: ""
 
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
     cat > mutations_subset.conf << EOF
     {
@@ -57,18 +55,3 @@ process COMPUTE_MATRIX {
     END_VERSIONS
     """
 }
-
-// mutations_subset.conf \\
-
-//     maf_df = maf_df.loc[
-//     (maf_df["TYPE"] == "SNV")
-//     & (maf_df["VAF"] <= 0.35)
-//     & (maf_df["DEPTH"] >= 1000)
-//     & (~maf_df["FILTER"].str.contains("not_in_panel"))            # only extended regions
-//     & (~maf_df["FILTER"].str.contains("no_pileup_support"))
-//     & (~maf_df["FILTER"].str.contains("low_complex_repetitive"))  # discard also these regions
-//     & (~maf_df["FILTER"].str.contains("low_mappability"))         # discard also these regions
-//     & (~maf_df["FILTER"].str.contains("n_rich"))
-//     & (~maf_df["FILTER"].str.contains("repetitive_variant"))
-//     & (~maf_df["FILTER"].str.contains("other_sample_SNP"))
-// ]

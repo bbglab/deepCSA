@@ -43,24 +43,6 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, json_f
     # create the matrix in the desired order
     empty_matrix = pd.DataFrame(index = contexts_formatted)
 
-    # if method == 'unique':
-    #     # make sure to count each mutation only once (avoid annotation issues)
-    #     annotated_minimal_maf = annotated_maf[["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID"]].drop_duplicates().reset_index(drop = True)
-    #     annotated_minimal_maf.columns = ["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID"]
-
-    #     # count the mutations per sample and per context
-    #     counts_x_sample_context_long = annotated_minimal_maf.groupby(by = ["SAMPLE_ID", "CONTEXT_MUT"])["MUT_ID"].count().reset_index()
-    #     counts_x_sample_matrix = counts_x_sample_context_long.pivot(index = "CONTEXT_MUT", columns = "SAMPLE_ID", values = "MUT_ID")
-
-
-    # elif method == 'multiple':
-    #     # make sure to count each mutation only once (avoid annotation issues)
-    #     annotated_minimal_maf = annotated_maf[["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID", "ALT_DEPTH"]].drop_duplicates().reset_index(drop = True)
-    #     annotated_minimal_maf.columns = ["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID", "ALT_DEPTH"]
-
-    #     # count the mutations per sample and per context
-    #     counts_x_sample_context_long = annotated_minimal_maf.groupby(by = ["SAMPLE_ID", "CONTEXT_MUT"])["ALT_DEPTH"].sum().reset_index()
-    #     counts_x_sample_matrix = counts_x_sample_context_long.pivot(index = "CONTEXT_MUT", columns = "SAMPLE_ID", values = "ALT_DEPTH")
     if method == 'unique':
         # make sure to count each mutation only once (avoid annotation issues)
         annotated_minimal_maf = annotated_maf[["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID"]].drop_duplicates().reset_index(drop = True)
@@ -109,10 +91,9 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     # Load your mutation matrix
     mutation_matrix = pd.read_csv(mutation_matrix_file, sep = "\t", header = 0)
     mutation_matrix = mutation_matrix.set_index("CONTEXT_MUT")
-    # sample_name = mutation_matrix.columns[0]
 
-    trinucleotide_counts = pd.read_csv(trinucleotide_counts_file, sep = "\t", header = None)
-    trinucleotide_counts.columns = ["CONTEXT", sample_name]
+    # Load the trinucleotide counts
+    trinucleotide_counts = pd.read_csv(trinucleotide_counts_file, sep = "\t", header = 0)
     trinucleotide_counts = trinucleotide_counts.set_index("CONTEXT")
 
     trinuc_per_contextmuts = []
@@ -181,7 +162,8 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 
 def main(mode, sample_name, mut_file, out_matrix, json_filters, method, pseud, mutation_matrix, trinucleotide_counts, out_profile, plot):
-
+    # TODO
+    # add additional mode to normalize mutation counts for the genomic trinucleotide level
     if mode == 'matrix':
         click.echo(f"Running in matrix mode...")
         click.echo(f"Using the method: {method}")
