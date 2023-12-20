@@ -35,6 +35,7 @@ Consisting of a mix of local and nf-core/modules.
 
 // SUBWORKFLOW
 include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
+include { DEPTH_ANALYSIS as DEPTHANALYSIS              } from '../subworkflows/local/depthanalysis/main'
 include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
 include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
 include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
@@ -100,28 +101,28 @@ workflow DEEPCSA {
 
 
     // Run depth analysis subworkflow
-    // DEPTHANALYSIS(meta_bams_alone)
-    // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+    DEPTHANALYSIS(meta_bams_alone)
+    ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
 
     // TODO: test if downloading VEP cache works
     // Download Ensembl VEP cache if needed
     // Assuming that if the cache is provided, the user has already downloaded it
-    ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
-    if (params.download_cache) {
-        PREPARE_CACHE(ensemblvep_info)
-        vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ meta, cache -> [ cache ] }
-        ch_versions = ch_versions.mix(PREPARE_CACHE.out.versions)
-    } else {
-        vep_cache = params.vep_cache
-    }
-    vep_extra_files = []
+    // ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
+    // if (params.download_cache) {
+    //     PREPARE_CACHE(ensemblvep_info)
+    //     vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ meta, cache -> [ cache ] }
+    //     ch_versions = ch_versions.mix(PREPARE_CACHE.out.versions)
+    // } else {
+    //     vep_cache = params.vep_cache
+    // }
+    // vep_extra_files = []
 
 
     // Mutation preprocessing
-    bedfile = params.bedf
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
-    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
+    // bedfile = params.bedf
+    // MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    // ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
     // Mutational profile
     // MUTPROFILE(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
@@ -149,32 +150,32 @@ workflow DEEPCSA {
     // Mutation Rate
     // MUTRATE()
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+//     CUSTOM_DUMPSOFTWAREVERSIONS (
+//         ch_versions.unique().collectFile(name: 'collated_versions.yml')
+//     )
 
-    //
-    // MODULE: MultiQC
-    //
-    workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+//     //
+//     // MODULE: MultiQC
+//     //
+//     workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
+//     ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = WorkflowDeepcsa.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
+//     methods_description    = WorkflowDeepcsa.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+//     ch_methods_description = Channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+//     ch_multiqc_files = Channel.empty()
+//     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+//     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+//     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+//     // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
-    )
-    multiqc_report = MULTIQC.out.report.toList()
+//     MULTIQC (
+//         ch_multiqc_files.collect(),
+//         ch_multiqc_config.toList(),
+//         ch_multiqc_custom_config.toList(),
+//         ch_multiqc_logo.toList()
+//     )
+//     multiqc_report = MULTIQC.out.report.toList()
 }
 
 
