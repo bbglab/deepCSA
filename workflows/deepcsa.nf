@@ -35,10 +35,11 @@ Consisting of a mix of local and nf-core/modules.
 
 // SUBWORKFLOW
 include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
-include { DEPTH_ANALYSIS as DEPTHANALYSIS              } from '../subworkflows/local/depthanalysis/main'
-include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
-include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
-include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
+include { DEPTH_ANALYSIS as DEPTHANALYSIS             } from '../subworkflows/local/depthanalysis/main'
+include { CREATE_PANELS as CREATEPANELS               } from '../subworkflows/local/createpanels/main'
+// include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
+// include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
+// include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
 
 // include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
 // include { DEPTH_ANALYSIS as MUTPROFILE       } from '../subworkflows/local/depthanalysis/main'
@@ -100,9 +101,13 @@ workflow DEEPCSA {
     set{ meta_bams_alone }
 
 
-    // Run depth analysis subworkflow
+    // Depth analysis: compute and plots
     DEPTHANALYSIS(meta_bams_alone)
     ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+
+    // Panels generation: all modalities
+    CREATEPANELS(DEPTHANALYSIS.out.depths)
+    ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
 
     // TODO: test if downloading VEP cache works

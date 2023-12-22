@@ -1,5 +1,3 @@
-
-
 process COMPUTEDEPTHS {
     tag "$meta.id"
     label 'process_single'
