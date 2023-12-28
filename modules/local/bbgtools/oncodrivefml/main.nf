@@ -1,6 +1,5 @@
 process ONCODRIVEFML {
-    // tag "$meta.id"
-    tag "test"
+    tag "$meta.id"
     label 'process_high'
 
     // // conda "YOUR-TOOL-HERE"
@@ -10,19 +9,13 @@ process ONCODRIVEFML {
     container 'docker.io/ferriolcalvet/oncodrivefml:mutabilities'
 
     input:
-    // tuple val(meta), path(mutations), path(mutabilities), path(bed_file)
-    path(mutations)
-    path(mutabilities)
-    path(mutabilities_ind)
-    path(bed_file)
-
+    tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
+    path (bed_file)
 
     output:
-    path("**.tsv.gz")  , emit: tsv
-    path("**.png")     , emit: png
-    path("**.html")    , emit: html
-    // tuple val(meta), path("test/*") , emit: tsv
-    // tuple val(meta), path("${prefix}/*.png")    , emit: plots
+    tuple val(meta), path("**.tsv.gz")  , emit: tsv
+    tuple val(meta), path("**.png")     , emit: png
+    tuple val(meta), path("**.html")    , emit: html
     path "versions.yml"                , emit: versions
 
     when:
@@ -30,10 +23,9 @@ process ONCODRIVEFML {
 
     script:
     def args = task.ext.args ?: "" // "-s ${params.seed}"
-    def prefix = task.ext.prefix ?: "test" // "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def cadd_scores = task.ext.cadd_scores ?: '/workspace/datasets/CADD/v1.6/hg38/whole_genome_SNVs.tsv.gz'
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
+    // TODO: See if we can provide the entire json as an input parameter
     """
     cat > oncodrivefml_v2.mutability.conf << EOF
     [genome]
@@ -48,7 +40,7 @@ process ONCODRIVEFML {
     file = '$mutabilities'
     format = 'tabix'
     chr = 0
-    chr_prefix = ""
+    chr_prefix = "chr"
     pos = 1
     ref = 2
     alt = 3
@@ -98,7 +90,7 @@ process ONCODRIVEFML {
 
     stub:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "test" // "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.tsv
 

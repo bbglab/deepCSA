@@ -3,6 +3,8 @@
 // include { INTERSECT_BED     as BED_INTERSECTPA       } from '../../modules/local/bedtools/intersect/main'
 // include { INTERSECT_BED     as BED_INTERSECTNONPA    } from '../../modules/local/bedtools/intersect/main'
 
+include { SUBSET_MAF    as SUBSET_MUTPROFILE } from '../../../modules/local/subsetmaf/main'
+
 include { COMPUTE_MATRIX          as COMPUTEMATRIX      } from '../../../modules/local/mutation_matrix/main'
 include { COMPUTE_PROFILE         as COMPUTEPROFILE     } from '../../../modules/local/compute_profile/main'
 include { COMPUTE_TRINUCLEOTIDE   as COMPUTETRINUC      } from '../../../modules/local/compute_trinucleotide/main'
@@ -40,7 +42,9 @@ workflow MUTATIONAL_PROFILE {
     // .join( bedfiles.nonpa_sites )
     // .set { all_beds }
 
-    COMPUTEMATRIX(mutations)
+    SUBSET_MUTPROFILE(mutations)
+
+    COMPUTEMATRIX(SUBSET_MUTPROFILE.out.mutations)
 
 
     COMPUTETRINUC(depth)
@@ -57,14 +61,13 @@ workflow MUTATIONAL_PROFILE {
     .join(COMPUTEPROFILE.out.profile)
     .set{ matrix_n_profile }
 
-    COMPUTEMUTABILITY(matrix_n_profile, depth.first() )
+    COMPUTEMUTABILITY( matrix_n_profile, depth.first() )
 
-    MUTABILITY_BGZIPTABIX( COMPUTEMUTABILITY.out.mutability)
-
+    MUTABILITY_BGZIPTABIX( COMPUTEMUTABILITY.out.mutability )
 
 
     emit:
-    profile     = COMPUTEPROFILE.out.profile   // channel: [ val(meta), file(depths) ]
-    mutability  = MUTABILITY_BGZIPTABIX.out.gz_tbi   // channel: [ val(meta), file(depths) ]
-    versions    = ch_versions                  // channel: [ versions.yml ]
+    profile     = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
+    mutability  = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
+    versions    = ch_versions                           // channel: [ versions.yml ]
 }

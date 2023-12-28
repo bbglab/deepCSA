@@ -1,4 +1,4 @@
-process COMPUTE_MATRIX {
+process SUBSET_MAF {
 
     tag "$meta.id"
     label 'process_low'
@@ -13,8 +13,8 @@ process COMPUTE_MATRIX {
     tuple val(meta), path(mut_files)
 
     output:
-    tuple val(meta), path("*.matrix.tsv")  , emit: matrix
-    path "versions.yml"                    , emit: versions
+    tuple val(meta), path("*.mutations.tsv")  , emit: mutations
+    path "versions.yml"                       , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,11 +22,27 @@ process COMPUTE_MATRIX {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def filters = task.ext.filters ?: ""
+    def output_format = task.ext.output_fmt ?: ""
     """
-    mut_profile.py matrix \\
+    cat > mutations_subset.conf << EOF
+    {
+        ${filters}
+    }
+    EOF
+
+    cat > output_formats.conf << EOF
+    {
+        ${output_format}
+    }
+    EOF
+
+    subset_maf.py \\
                     --sample_name ${prefix} \\
                     --mut_file ${mut_files} \\
-                    --out_matrix ${prefix}.matrix.tsv \\
+                    --out_maf ${prefix}.mutations.tsv \\
+                    --json_filters mutations_subset.conf \\
+                    --req_fields output_formats.conf \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -38,7 +54,7 @@ process COMPUTE_MATRIX {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.matrix.tsv
+    touch ${prefix}.mutations.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

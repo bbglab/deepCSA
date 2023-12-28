@@ -127,19 +127,26 @@ workflow DEEPCSA {
 
     // Mutational profile
     meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
-    depths = Channel.of([ [ id:"all_samples" ], params.annotated_depth ])
+    depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
     MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
+    ch_versions = ch_versions.mix(MUTPROFILE.out.versions)
 
 
     //
     // Positive selection
     //
 
+    MUT_PREPROCESSING.out.mafs
+    .join(MUTPROFILE.out.mutability)
+    .set{mutations_n_mutabilities}
+
     // OncodriveFML
-    // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
+    ONCODRIVEFML(mutations_n_mutabilities, params.bedf)
+    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     // Oncodrive3D
-    // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
+    ONCODRIVE3D(mutations_n_mutabilities)
+    ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     // Omega
     // OMEGA()
@@ -170,7 +177,6 @@ workflow DEEPCSA {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),

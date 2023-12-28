@@ -10,7 +10,7 @@ from utils import contexts_formatted
 from utils import filter_maf
 
 
-def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, json_filters, method = 'unique', pseudocount = 0):
+def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method = 'unique', pseudocount = 0):
     """
     Compute mutational profile from the input data
           ***Remember to add some pseudocounts to the computation***
@@ -26,19 +26,7 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, json_f
         exit(1)
 
     # Load your MAF DataFrame (raw_annotated_maf)
-    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
-
-    # Load the filter criteria from the JSON file
-    with open(json_filters, 'r') as file:
-        filter_criteria = json.load(file)
-
-    if len(filter_criteria) > 0:
-        # Filter the annotated maf using the described filters
-        annotated_maf = filter_maf(raw_annotated_maf, filter_criteria)
-    else:
-        annotated_maf = raw_annotated_maf
-
-
+    annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
 
     # create the matrix in the desired order
     empty_matrix = pd.DataFrame(index = contexts_formatted)
@@ -152,7 +140,6 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 @click.option('--sample_name', type=str, help='Name of the sample being processed.')
 @click.option('--mut_file', type=click.Path(exists=True), help='Input mutation file')
 @click.option('--out_matrix', type=click.Path(), help='Output mutation matrix file')
-@click.option('--json_filters', type=click.Path(exists=True), help='Input mutation filtering criteria file')
 @click.option('--method', type=click.Choice(['unique', 'multiple']), default='unique')
 @click.option('--pseud', type=float, default=0.5)
 
@@ -161,14 +148,14 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 @click.option('--out_profile', type=click.Path(), help='JSON output file (for profile mode)')
 @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 
-def main(mode, sample_name, mut_file, out_matrix, json_filters, method, pseud, mutation_matrix, trinucleotide_counts, out_profile, plot):
+def main(mode, sample_name, mut_file, out_matrix, method, pseud, mutation_matrix, trinucleotide_counts, out_profile, plot):
     # TODO
     # add additional mode to normalize mutation counts for the genomic trinucleotide level
     if mode == 'matrix':
         click.echo(f"Running in matrix mode...")
         click.echo(f"Using the method: {method}")
         click.echo(f"Using the pseudocount: {pseud}")
-        compute_mutation_matrix(sample_name, mut_file, out_matrix, json_filters, method, pseud)
+        compute_mutation_matrix(sample_name, mut_file, out_matrix, method, pseud)
 
     elif mode == 'profile':
         click.echo(f"Running in profile mode...")

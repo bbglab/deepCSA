@@ -1,6 +1,5 @@
 process ONCODRIVE3D {
-    // tag "$meta.id"
-    tag "test_3d"
+    tag "$meta.id"
     label 'process_high'
 
     // // conda "YOUR-TOOL-HERE"
@@ -11,25 +10,22 @@ process ONCODRIVE3D {
     container "oncodrive3d_231205.sif"
 
     input:
-    // tuple val(meta), path(mutations), path(mutabilities)
-    path(mutations)
-    path(mutabilities)
-    path(mutabilities_ind)
+    tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
+
 
     output:
-    path("**genes.csv")  , emit: csv_genes
-    path("**pos.csv")    , emit: csv_pos
-    path("**.log")       , emit: log
-    // tuple val(meta), path("*.tsv")  , emit: tsv
-    // tuple val(meta), path("*.plots"), emit: plots
+    tuple val(meta), path("**genes.csv")  , emit: csv_genes
+    tuple val(meta), path("**pos.csv")    , emit: csv_pos
+    tuple val(meta), path("**.log")       , emit: log
+
     path "versions.yml"             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: "-s 128"//"-s ${params.seed}"
-    def prefix = task.ext.prefix ?: "test3d" //"${meta.id}"
+    def args = task.ext.args ?: ""
+    def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
@@ -38,7 +34,7 @@ process ONCODRIVE3D {
         "file" : "${mutabilities}",
         "format" : "tabix",
         "chr" : 0,
-        "chr_prefix" : "",
+        "chr_prefix" : "chr",
         "pos" : 1,
         "ref" : 2,
         "alt" : 3,
