@@ -55,6 +55,11 @@ def generate_all_sites_with_context(input_bedfile):
     positions_df = positions_df[["CHROM", "POS"]]
 
     positions_df["CONTEXT"] = positions_df.apply(get_trinucl_in_row, axis = 1)
+
+    # TODO revise if this is a big problem, how is it possible that positions have Ns?
+    positions_df["CONTEXT"] = positions_df["CONTEXT"].apply(lambda x : '-' if 'N' in x else x)
+    positions_df = positions_df[positions_df["CONTEXT"] != '-'].reset_index(drop = True)
+
     positions_df["REF"] = positions_df["CONTEXT"].apply( lambda x : x[1])
     positions_df["ALT"] = positions_df["REF"].apply(get_non_ref)
 

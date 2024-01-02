@@ -36,7 +36,9 @@ def negative_filter_panel_regions(mutations_df, bedfile, filtername):
 
     panel_reg["POS"] = [ list(range(x, y+1)) for x, y in panel_reg[["START", "END"]].values ]
     positions_df = panel_reg.explode("POS").reset_index(drop = True)
-    positions_df = positions_df[["CHROM", "POS"]]
+    positions_df = positions_df[["CHROM", "POS"]].drop_duplicates()
+    positions_df = positions_df.reset_index(drop = True)
+
 
     positions_df["not_in_panel"] = False
 
@@ -85,7 +87,8 @@ def filter_panel_regions(mutations_df, bedfile, filtername):
 
     panel_reg["POS"] = [ list(range(x, y+1)) for x, y in panel_reg[["START", "END"]].values ]
     positions_df = panel_reg.explode("POS").reset_index(drop = True)
-    positions_df = positions_df[["CHROM", "POS"]]
+    positions_df = positions_df[["CHROM", "POS"]].drop_duplicates()
+    positions_df = positions_df.reset_index(drop = True)
 
     positions_df["in_panel"] = True
 

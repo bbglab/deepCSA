@@ -1,7 +1,8 @@
 process COMPUTE_MUTABILITY {
 
     tag "$meta.id"
-    label 'process_low'
+    label 'process_single'
+    label 'process_high_memory'
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -23,7 +24,6 @@ process COMPUTE_MUTABILITY {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def filters = task.ext.filters ?: ""
 
     """
     mutprof_3compute_mutability.py \\
