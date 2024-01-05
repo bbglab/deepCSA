@@ -43,7 +43,8 @@ include { MUTATIONAL_PROFILE     as MUTPROFILE        } from '../subworkflows/lo
 
 include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
 include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
-// include { DEPTH_ANALYSIS as OMEGA       } from '../subworkflows/local/depthanalysis/main'
+// include { OMEGA_ANALYSIS as OMEGA       } from '../subworkflows/local/omega/main'
+
 // include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
 // include { DEPTH_ANALYSIS as SIGNATURES       } from '../subworkflows/local/depthanalysis/main'
 // include { DEPTH_ANALYSIS as MUTRATE       } from '../subworkflows/local/depthanalysis/main'
@@ -104,6 +105,8 @@ workflow DEEPCSA {
     // Run depth analysis subworkflow
     // DEPTHANALYSIS(meta_bams_alone)
     // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+    // Create a version of the panel annotated with this columns: ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
+    // This will be used for OMEGA: annotated_panel
 
 
     // TODO: test if downloading VEP cache works
@@ -149,7 +152,18 @@ workflow DEEPCSA {
     ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     // Omega
-    // OMEGA()
+    // MUT_PREPROCESSING.out.mafs
+    // .join(MUTPROFILE.out.profile)
+    // .set{mutations_n_profile}
+
+    // mutations_n_profile
+    // .join(depths)
+    // .set{mutations_n_profile_n_depths}
+
+    // annotated_panel should come from depth analysis
+    // OMEGA(mutations_n_profile_n_depths, annotated_panel)
+
+
 
     // OncodriveClustl
     // ONCODRIVECLUSTL()
