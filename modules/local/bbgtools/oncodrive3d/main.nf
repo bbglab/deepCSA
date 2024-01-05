@@ -7,7 +7,8 @@ process ONCODRIVE3D {
     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
     //     'biocontainers/YOUR-TOOL-HERE' }"
 
-    container "oncodrive3d_231205.sif"
+    // TODO pending to push the container somewhere and be able to retrieve it
+    container "oncodrive3d_231221.sif"
 
     input:
     tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
