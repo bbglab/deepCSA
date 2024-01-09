@@ -35,13 +35,16 @@ Consisting of a mix of local and nf-core/modules.
 
 // SUBWORKFLOW
 include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
-include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
-include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
-include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
 
 // include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
-// include { DEPTH_ANALYSIS as MUTPROFILE       } from '../subworkflows/local/depthanalysis/main'
-// include { DEPTH_ANALYSIS as OMEGA       } from '../subworkflows/local/depthanalysis/main'
+include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
+
+include { MUTATIONAL_PROFILE     as MUTPROFILE        } from '../subworkflows/local/mutationprofile/main'
+
+include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
+// include { OMEGA_ANALYSIS as OMEGA       } from '../subworkflows/local/omega/main'
+
 // include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
 // include { DEPTH_ANALYSIS as SIGNATURES       } from '../subworkflows/local/depthanalysis/main'
 // include { DEPTH_ANALYSIS as MUTRATE       } from '../subworkflows/local/depthanalysis/main'
@@ -102,6 +105,8 @@ workflow DEEPCSA {
     // Run depth analysis subworkflow
     // DEPTHANALYSIS(meta_bams_alone)
     // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+    // Create a version of the panel annotated with this columns: ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
+    // This will be used for OMEGA: annotated_panel
 
 
     // TODO: test if downloading VEP cache works
@@ -124,21 +129,41 @@ workflow DEEPCSA {
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
     // Mutational profile
-    // MUTPROFILE(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
+    depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
+    MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
+    ch_versions = ch_versions.mix(MUTPROFILE.out.versions)
 
 
     //
     // Positive selection
     //
 
+    MUT_PREPROCESSING.out.mafs
+    .join(MUTPROFILE.out.mutability)
+    .set{mutations_n_mutabilities}
+
     // OncodriveFML
-    // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
+    ONCODRIVEFML(mutations_n_mutabilities, params.bedf)
+    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     // Oncodrive3D
-    // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
+    ONCODRIVE3D(mutations_n_mutabilities)
+    ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     // Omega
-    // OMEGA()
+    // MUT_PREPROCESSING.out.mafs
+    // .join(MUTPROFILE.out.profile)
+    // .set{mutations_n_profile}
+
+    // mutations_n_profile
+    // .join(depths)
+    // .set{mutations_n_profile_n_depths}
+
+    // annotated_panel should come from depth analysis
+    // OMEGA(mutations_n_profile_n_depths, annotated_panel)
+
+
 
     // OncodriveClustl
     // ONCODRIVECLUSTL()
@@ -166,7 +191,6 @@ workflow DEEPCSA {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),

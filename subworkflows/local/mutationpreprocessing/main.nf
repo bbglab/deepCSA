@@ -7,6 +7,7 @@ include { VCF2MAF                   as VCF2MAF        } from '../../../modules/l
 include { FILTERBED                 as FILTERPANEL    } from '../../../modules/local/filterbed/main'
 include { MERGE_BATCH               as MERGEBATCH     } from '../../../modules/local/mergemafs/main'
 include { FILTER_BATCH              as FILTERBATCH    } from '../../../modules/local/filtermaf/main'
+include { WRITE_MAFS                as WRITEMAF       } from '../../../modules/local/writemaf/main'
 
 
 
@@ -58,8 +59,30 @@ workflow MUTATION_PREPROCESSING {
     ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
 
 
+    WRITEMAF(FILTERBATCH.out.cohort_maf)
+    ch_versions = ch_versions.mix(WRITEMAF.out.versions)
+
+    // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
+    WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
+
+
+    // Compile a BED file with all the mutations that are discarded due to:
+    // Other sample SNP
+    //     All sites with this filter should be remove from the background.
+    // Repetitive variant
+    //     Mutation seen in more than X samples.
+    //     All sites with this filter should be remove from the background.
+    // N rich
+    //     - only sites with mutations discarded by N-rich criteria
+    //     ?- also non mutated sites that do have lots of Ns
+
+    // bedfiles.sample_discarded
+
+
     emit:
-    cohort_maf = FILTERBATCH.out.cohort_maf
-    versions = ch_versions
+    // cohort_maf  = FILTERBATCH.out.cohort_maf
+    // mafs        = WRITEMAF.out.mafs
+    mafs        = named_mafs
+    versions    = ch_versions
 
 }

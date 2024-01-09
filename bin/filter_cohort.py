@@ -126,13 +126,8 @@ else:
 
         df_dict[n] = intogen_muts_df_sset_gby
 
-    df_dict
-    # potential_artifact_df = pd.concat(df_dict.values()).sort_values(by = ["SYMBOL", "n_samples_bladder"], ascending = False)
     potential_artifact_df_snv = pd.concat(df_dict.values()).sort_values(by = ["n_samples_sequenced"], ascending = False)
-    # calculate percentage of samples in intogen to also have this value (not only absolute)
-    potential_artifact_df_snv["percent_samples_intogen"] = potential_artifact_df_snv.apply(
-        lambda row: row["n_samples_intogen"] / intogen_muts_samples_panel_df.loc[intogen_muts_samples_panel_df["SYMBOL"] == row["SYMBOL"], "n_samples_intogen"].values[0] * 100,
-        axis = 1)
+
 
 
 
@@ -173,15 +168,9 @@ else:
 
         df_dict[n] = intogen_muts_df_sset_gby
 
-    # potential_artifact_df = pd.concat(df_dict.values()).sort_values(by = ["SYMBOL", "n_samples_sequenced"], ascending = False)
     potential_artifact_df_indel = pd.concat(df_dict.values()).sort_values(by = ["n_samples_sequenced"], ascending = False)
-    potential_artifact_df_indel["percent_samples_intogen"] = potential_artifact_df_indel.apply(
-        lambda row: row["n_samples_intogen"] / intogen_muts_samples_panel_df.loc[intogen_muts_samples_panel_df["SYMBOL"] == row["SYMBOL"], "n_samples_intogen"].values[0] * 100,
-        axis = 1)
-
 
     potential_artifact_muts = pd.concat([potential_artifact_df_snv, potential_artifact_df_indel]).drop_duplicates()["MUTATION_MAFformat"].values
-
 
     maf_df["repetitive_variant"] = maf_df["MUT_ID_IntoGen_format"].isin(potential_artifact_muts)
 

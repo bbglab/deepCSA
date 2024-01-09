@@ -1,4 +1,4 @@
-process ONCODRIVE3D {
+process OMEGA_ESTIMATOR {
     tag "$meta.id"
     label 'process_high'
 
@@ -7,59 +7,54 @@ process ONCODRIVE3D {
     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
     //     'biocontainers/YOUR-TOOL-HERE' }"
 
-    // TODO pending to push the container somewhere and be able to retrieve it
-    container "oncodrive3d_231221.sif"
+    // TODO create a container for omega, for both the preprocessing and the estimation
+    container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
-
+    tuple val(meta), path(mutations_table), path(mutabilities_table), path(depths)
+    path (annotated_panel)
 
     output:
-    tuple val(meta), path("**genes.csv")  , emit: csv_genes
-    tuple val(meta), path("**pos.csv")    , emit: csv_pos
-    tuple val(meta), path("**.log")       , emit: log
-
-    path "versions.yml"             , emit: versions
+    tuple val(meta), path("output_*.tsv"), emit: result
+    path "versions.yml"                  , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""
+    def option = task.ext.option ?: "bayes"
     def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    cat > oncodrive3d.mutability.conf << EOF
+    cat > input_estimator.json << EOF
     {
-        "file" : "${mutabilities}",
-        "format" : "tabix",
-        "chr" : 0,
-        "chr_prefix" : "chr",
-        "pos" : 1,
-        "ref" : 2,
-        "alt" : 3,
-        "mutab" : 4
+    "observed_mutations_file": "${mutations_table}",
+    "mutability_file":         "${mutabilities_table}",
+    "depths_file"       :      "${depths}",
+    "vep_annotation_file":     "${annotated_panel}",
+    "grouping_folder":         "groups_dir/"
     }
     EOF
-
-    oncodrive3D run -i ${mutations} -m oncodrive3d.mutability.conf -d ${params.datasets3d} -C ${prefix} -o ${prefix} $args -c $task.cpus
+    python ../src/estimator/main.py --option ${option} --cores ${task.cpus} input_estimator.json output_${option}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 1.0
+        omega: 1.0
     END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
+    def option = task.ext.option ?: "bayes"
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.tsv
+    touch output_${option}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 1.0
+        omega: 1.0
     END_VERSIONS
     """
 }

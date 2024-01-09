@@ -248,9 +248,14 @@ def most_deleterious_within_variant(impact_vep_string):
     to be used when summarizing the different consquences assigned to a same variable in the same transcript
     here we change for example the relevance of NMD_transcript_variant, since we do not want it to make it very damaging
     """
-    all_consequences = impact_vep_string.split(",")
-    all_consequences_ranks = map(lambda x: consequence_rank_dict_within[x], all_consequences)
-    return rank_consequence_dict_within[min(all_consequences_ranks)]
+    # TODO: revise if we need to have a try and except or it is better to make sure that the consequence
+    # dictionary and ranks correspond to the correct ensembl version?
+    try :
+        all_consequences = impact_vep_string.split(",")
+        all_consequences_ranks = map(lambda x: consequence_rank_dict_within[x], all_consequences)
+        return rank_consequence_dict_within[min(all_consequences_ranks)]
+    except:
+        return '-'
 
 
 
@@ -437,7 +442,6 @@ if __name__ == '__main__':
     # Output
     #all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     all_possible_sites_annotated_file = sys.argv[2]
-
 
 
     vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep)
