@@ -1,21 +1,22 @@
-include { COMPUTEDEPTHS } from '../../modules/local/computedepths/main'
+include { SIGPROFILERASSIGNMENT } from '../../../modules/local/signatures/sigprofiler/assignment/main'
 
 
-workflow DEPTH_ANALYSIS{
+workflow SIGNATURES {
     take:
     // inputs
-    bam_list
+    matrix
+    reference_signatures
 
     main:
     // actual code
     ch_versions = Channel.empty()
-    COMPUTEDEPTHS(bam_list)
+    SIGPROFILERASSIGNMENT(matrix, reference_signatures)
 
     // PROCESSDEPTHSTABLE()
 
     // PLOTDEPTHS()
 
     emit:
-    depths   = COMPUTEDEPTHS.out.depths   // channel: [ val(meta), file(depths) ]
-    versions = ch_versions                // channel: [ versions.yml ]
+    depths   = SIGPROFILERASSIGNMENT.out.plots  // channel: [ val(meta), file(depths) ]
+    versions = ch_versions                      // channel: [ versions.yml ]
 }

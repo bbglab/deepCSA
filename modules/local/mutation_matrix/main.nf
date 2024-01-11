@@ -13,8 +13,11 @@ process COMPUTE_MATRIX {
     tuple val(meta), path(mut_files)
 
     output:
-    tuple val(meta), path("*.matrix.tsv")  , emit: matrix
-    path "versions.yml"                    , emit: versions
+    tuple val(meta), path("*.matrix.tsv")                             , emit: matrix
+    tuple val(meta), path("*.single.sigprofiler")      , optional:true, emit: single_sigprof
+    tuple val(meta), path("*.per_sample")              , optional:true, emit: per_sample
+    tuple val(meta), path("*.per_sample.sigprofiler")  , optional:true, emit: per_sample_sigprof
+    path "versions.yml"                                               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

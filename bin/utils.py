@@ -92,6 +92,15 @@ contexts_formatted = ['ACA>A', 'ACC>A', 'ACG>A', 'ACT>A', 'CCA>A', 'CCC>A', 'CCG
 contexts_no_change = ['ACA', 'ACC', 'ACG', 'ACT', 'CCA', 'CCC', 'CCG', 'CCT', 'GCA', 'GCC', 'GCG', 'GCT', 'TCA', 'TCC', 'TCG', 'TCT',
                         'ATA', 'ATC', 'ATG', 'ATT', 'CTA', 'CTC', 'CTG', 'CTT', 'GTA', 'GTC', 'GTG', 'GTT', 'TTA', 'TTC', 'TTG', 'TTT']
 
+contexts_formatted_sigprofiler = ['A[C>A]A', 'A[C>C]A', 'A[C>G]A', 'A[C>T]A', 'C[C>A]A', 'C[C>C]A', 'C[C>G]A', 'C[C>T]A', 'G[C>A]A', 'G[C>C]A', 'G[C>G]A', 'G[C>T]A', 'T[C>A]A', 'T[C>C]A', 'T[C>G]A', 'T[C>T]A',
+                                    'A[C>A]G', 'A[C>C]G', 'A[C>G]G', 'A[C>T]G', 'C[C>A]G', 'C[C>C]G', 'C[C>G]G', 'C[C>T]G', 'G[C>A]G', 'G[C>C]G', 'G[C>G]G', 'G[C>T]G', 'T[C>A]G', 'T[C>C]G', 'T[C>G]G', 'T[C>T]G',
+                                    'A[C>A]T', 'A[C>C]T', 'A[C>G]T', 'A[C>T]T', 'C[C>A]T', 'C[C>C]T', 'C[C>G]T', 'C[C>T]T', 'G[C>A]T', 'G[C>C]T', 'G[C>G]T', 'G[C>T]T', 'T[C>A]T', 'T[C>C]T', 'T[C>G]T', 'T[C>T]T',
+                                    'A[T>A]A', 'A[T>C]A', 'A[T>G]A', 'A[T>T]A', 'C[T>A]A', 'C[T>C]A', 'C[T>G]A', 'C[T>T]A', 'G[T>A]A', 'G[T>C]A', 'G[T>G]A', 'G[T>T]A', 'T[T>A]A', 'T[T>C]A', 'T[T>G]A', 'T[T>T]A',
+                                    'A[T>A]C', 'A[T>C]C', 'A[T>G]C', 'A[T>T]C', 'C[T>A]C', 'C[T>C]C', 'C[T>G]C', 'C[T>T]C', 'G[T>A]C', 'G[T>C]C', 'G[T>G]C', 'G[T>T]C', 'T[T>A]C', 'T[T>C]C', 'T[T>G]C', 'T[T>T]C',
+                                    'A[T>A]G', 'A[T>C]G', 'A[T>G]G', 'A[T>T]G', 'C[T>A]G', 'C[T>C]G', 'C[T>G]G', 'C[T>T]G', 'G[T>A]G', 'G[T>C]G', 'G[T>G]G', 'G[T>T]G', 'T[T>A]G', 'T[T>C]G', 'T[T>G]G', 'T[T>T]G']
+
+
+
 # subs = [''.join(z) for z in itertools.product('CT', 'ACGT') if z[0] != z[1]]
 # flanks = [''.join(z) for z in itertools.product('ACGT', repeat=2)]
 # contexts_unformatted = sorted([(a, b) for a, b in itertools.product(subs, flanks)], key=lambda x: (x[0], x[1]))

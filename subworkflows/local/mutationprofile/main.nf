@@ -46,6 +46,11 @@ workflow MUTATIONAL_PROFILE {
 
     COMPUTEMATRIX(SUBSET_MUTPROFILE.out.mutations)
 
+    COMPUTEMATRIX.out.per_sample_sigprof
+    .join( Channel.of([ [ id: "all_samples" ], [] ]) )
+    .map{ it -> [ it[0], it[1]]  }
+    .set{ sigprofiler_matrix }
+
 
     COMPUTETRINUC(depth)
     COMPUTETRINUC.out.trinucleotides.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_trinucleotides }
@@ -67,7 +72,8 @@ workflow MUTATIONAL_PROFILE {
 
 
     emit:
-    profile     = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
-    mutability  = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
-    versions    = ch_versions                           // channel: [ versions.yml ]
+    profile        = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
+    mutability     = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
+    matrix_sigprof = sigprofiler_matrix
+    versions       = ch_versions                           // channel: [ versions.yml ]
 }

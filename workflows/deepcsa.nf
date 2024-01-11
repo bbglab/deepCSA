@@ -46,7 +46,7 @@ include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/lo
 // include { OMEGA_ANALYSIS as OMEGA       } from '../subworkflows/local/omega/main'
 
 // include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
-// include { DEPTH_ANALYSIS as SIGNATURES       } from '../subworkflows/local/depthanalysis/main'
+include { SIGNATURES as SIGNATURES       } from '../subworkflows/local/signatures/main'
 // include { DEPTH_ANALYSIS as MUTRATE       } from '../subworkflows/local/depthanalysis/main'
 
 
@@ -169,7 +169,8 @@ workflow DEEPCSA {
     // ONCODRIVECLUSTL()
 
     // Signature Analysis
-    // SIGNATURES()
+    SIGNATURES(MUTPROFILE.out.matrix_sigprof, params.cosmic_ref_signatures)
+    ch_versions = ch_versions.mix(SIGNATURES.out.versions)
 
     // Mutation Rate
     // MUTRATE()
