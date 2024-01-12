@@ -169,7 +169,7 @@ workflow DEEPCSA {
     // ONCODRIVECLUSTL()
 
     // Signature Analysis
-    SIGNATURES(MUTPROFILE.out.matrix_sigprof, params.cosmic_ref_signatures)
+    SIGNATURES(MUTPROFILE.out.wgs_sigprofiler, params.cosmic_ref_signatures)
     ch_versions = ch_versions.mix(SIGNATURES.out.versions)
 
     // Mutation Rate

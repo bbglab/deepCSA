@@ -1,4 +1,6 @@
-include { SIGPROFILERASSIGNMENT } from '../../../modules/local/signatures/sigprofiler/assignment/main'
+include { SIGPROFILERASSIGNMENT  } from '../../../modules/local/signatures/sigprofiler/assignment/main'
+include { MATRIX_CONCAT          } from '../../../modules/local/sig_matrix_concat/main'
+
 
 
 workflow SIGNATURES {
@@ -10,13 +12,17 @@ workflow SIGNATURES {
     main:
     // actual code
     ch_versions = Channel.empty()
-    SIGPROFILERASSIGNMENT(matrix, reference_signatures)
+    matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ matrix_all_samples }
+
+    MATRIX_CONCAT(matrix_all_samples)
+
+    SIGPROFILERASSIGNMENT(MATRIX_CONCAT.out.wgs_tsv, reference_signatures)
 
     // PROCESSDEPTHSTABLE()
 
     // PLOTDEPTHS()
 
     emit:
-    depths   = SIGPROFILERASSIGNMENT.out.plots  // channel: [ val(meta), file(depths) ]
+    plots    = SIGPROFILERASSIGNMENT.out.plots  // channel: [ val(meta), file(depths) ]
     versions = ch_versions                      // channel: [ versions.yml ]
 }
