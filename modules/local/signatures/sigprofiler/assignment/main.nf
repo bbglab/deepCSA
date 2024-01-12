@@ -28,7 +28,7 @@ process SIGPROFILERASSIGNMENT {
     //                    sample_reconstruction_plots=False, verbose=False)"
     """
     #python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output', input_type='matrix', context_type='96', signature_database='${reference_signatures}', genome_build='GRCh38', sample_reconstruction_plots= 'pdf', exclude_signature_subgroups=['Chemotherapy_signatures','Immunosuppressants_signatures'])"
-    python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output', input_type='matrix', context_type='96', genome_build='GRCh38', sample_reconstruction_plots= 'pdf', exclude_signature_subgroups=['Chemotherapy_signatures','Immunosuppressants_signatures'])"
+    python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output', input_type='matrix', context_type='96', genome_build='GRCh38', exclude_signature_subgroups=['Chemotherapy_signatures','Immunosuppressants_signatures'])"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
