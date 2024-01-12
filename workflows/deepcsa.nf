@@ -101,27 +101,27 @@ workflow DEEPCSA {
     set{ meta_bams_alone }
 
 
+    // TODO: test if downloading VEP cache works
+    // Download Ensembl VEP cache if needed
+    // Assuming that if the cache is provided, the user has already downloaded it
+    ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
+    if (params.download_cache) {
+        PREPARE_CACHE(ensemblvep_info)
+        vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ meta, cache -> [ cache ] }
+        ch_versions = ch_versions.mix(PREPARE_CACHE.out.versions)
+    } else {
+        vep_cache = params.vep_cache
+    }
+    vep_extra_files = []
+
+
     // Depth analysis: compute and plots
     DEPTHANALYSIS(meta_bams_alone)
     ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
     // Panels generation: all modalities
-    CREATEPANELS(DEPTHANALYSIS.out.depths)
+    CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
-
-
-    // TODO: test if downloading VEP cache works
-    // Download Ensembl VEP cache if needed
-    // Assuming that if the cache is provided, the user has already downloaded it
-    // ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
-    // if (params.download_cache) {
-    //     PREPARE_CACHE(ensemblvep_info)
-    //     vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ meta, cache -> [ cache ] }
-    //     ch_versions = ch_versions.mix(PREPARE_CACHE.out.versions)
-    // } else {
-    //     vep_cache = params.vep_cache
-    // }
-    // vep_extra_files = []
 
 
     // Mutation preprocessing
