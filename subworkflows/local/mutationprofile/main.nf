@@ -70,10 +70,17 @@ workflow MUTATIONAL_PROFILE {
 
     MUTABILITY_BGZIPTABIX( COMPUTEMUTABILITY.out.mutability )
 
+    sigprofiler_empty = Channel.of([])
+    sigprofiler_empty
+    .concat(COMPUTEPROFILE.out.wgs_sigprofiler)
+    .set{ sigprofiler_wgs }
+
 
     emit:
-    profile        = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
-    mutability     = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
-    matrix_sigprof = sigprofiler_matrix
-    versions       = ch_versions                           // channel: [ versions.yml ]
+    profile         = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
+    mutability      = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
+    matrix_sigprof  = sigprofiler_matrix
+    trinucleotides  = named_trinucleotides
+    wgs_sigprofiler = sigprofiler_wgs
+    versions        = ch_versions                           // channel: [ versions.yml ]
 }
