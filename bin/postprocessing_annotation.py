@@ -1,12 +1,14 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-
+import sys
 import pandas as pd
 import numpy as np
-import sys
 
-from itertools import product
 from bgreference import hg38
+
+
+
+
 
 
 
@@ -40,109 +42,78 @@ def vartype(x,
 
 
 
-
-cb = dict(zip('ACGT', 'TGCA'))
-
-def canonical_channels():
-
-    subs = [''.join(z) for z in product('CT', 'ACGT') if z[0] != z[1]]
-    flanks = [''.join(z) for z in product('ACGT', repeat=2)]
-    contexts_tuples = [(a, b) for a, b in product(subs, flanks)]
-    sorted_contexts_tuples = sorted(contexts_tuples, key=lambda x: (x[0], x[1]))
-    sorted_contexts = [b[0] + a[0] + b[1] + '>' + a[1] for a, b in sorted_contexts_tuples]
-    return sorted_contexts
+##########
+# These are functions used for computing the contexts of a dataframe of mutations or sites
+##########
+def getContext_from_row(x, context_size = 3):
+    """
+    Use bgreference to get the context around a specific position
+    """
+    return hg38(x["CHROM"], x["POS"] - context_size//2, size=context_size)
 
 
-def transform_context(chr_, pos, mut):
-    ref, alt = tuple(mut.split('/'))
-    ref_triplet = hg38(chr_, pos-1, size=3)
-    if ref_triplet[1] not in ['C', 'T']:
-        ref_triplet = ''.join(list(map(lambda x: cb[x], ref_triplet[::-1])))
-        alt = cb[alt]
-    return ref_triplet + '>' + alt
+def translate_context(s, mapping):
+    """
+    Transcribe a string using the mapping dictionary
+    Used for translating the DNA trinucleotide context when
+    changing G or A centered contexts to their complement
+    """
+    translation_table = str.maketrans(mapping)
+    return s.translate(translation_table)
+
+
+def curate_context(x, context_size = 3, nucl_dict = { "A":"T", "C":"G", "G":"C", "T":"A" }):
+    """
+    Curate trinucleotide context to ensure that the middle position is a C or a T
+    """
+
+    mid_pos = context_size // 2
+
+    # if the mutated position is an A or a G invert the trinucleotide context
+    if x[mid_pos] == "A" or x[mid_pos] == "G":
+        upd_context = translate_context(x, nucl_dict)[::-1]
+        return f"{ upd_context }"
+    return f"{x}"
+
+
+def getContext_from_df(df_mutations, context_size = 3):
+    """
+    Provide a dataframe with mutations
+
+    return a pandas series with the number of mutations in each context
+    """
+
+    cols_of_interest = df_mutations[["CHROM","POS"]]
+    df_mutations["CONTEXT"] = cols_of_interest.apply(getContext_from_row, axis = 1,
+                                                    context_size = context_size
+                                                    )
+
+    df_mutations["CONTEXT"] = df_mutations["CONTEXT"].apply(curate_context, context_size = context_size)
+
+    return df_mutations
+
+def build_context_mut_simple(x, nucl_dict = { "A":"T", "C":"G", "G":"C", "T":"A" }):
+    """
+    Build the context>MUT string ensuring that the mutation is in the correct format
+    the context format is enforced in previous functions
+    """
+
+    if x["TYPE"] != "SNV":
+        return "-"
+    # since the context is already corrected to only C and T in the middle we do not need to translate here
+    # we are only translating the mutation in case the reference was an A or a G
+    if x['REF'] == "A" or x['REF'] == "G":
+        return f"{ x['CONTEXT'] }>{ nucl_dict[x['ALT']] }"
+
+    return f"{x['CONTEXT']}>{x['ALT']}"
 
 
 
 
 
-GROUPING_DICT = {
-
-    'transcript_ablation': 'nonsense',
-    'splice_acceptor_variant': 'nonsense',
-    'splice_donor_variant': 'nonsense',
-    'stop_gained': 'nonsense',
-    'frameshift_variant': 'nonsense',
-    'stop_lost': 'nonsense',
-    'start_lost': 'nonsense',
-
-    'missense_variant': 'missense',
-    'inframe_insertion': 'missense',
-    'inframe_deletion': 'missense',
-
-    'splice_donor_variant': 'essential_splice',
-    'splice_acceptor_variant': 'essential_splice',
 
 
-    'splice_region_variant': 'splice_region',
-    'splice_donor_5th_base_variant': 'splice_region',
-    'splice_donor_region_variant': 'splice_region',
-    'splice_polypyrimidine_tract_variant': 'splice_region',
-
-    'synonymous_variant': 'synonymous',
-    'incomplete_terminal_codon_variant': 'synonymous',
-    'start_retained_variant': 'synonymous',
-    'stop_retained_variant': 'synonymous',
-
-    'protein_altering_variant' : 'protein_altering_variant', ##
-    'transcript_amplification' : 'transcript_amplification', ##
-    'coding_sequence_variant': 'coding_sequence_variant', ##
-
-
-    'mature_miRNA_variant': 'non_coding_exon_region',
-    '5_prime_UTR_variant': 'non_coding_exon_region',
-    '3_prime_UTR_variant': 'non_coding_exon_region',
-    'non_coding_transcript_exon_variant': 'non_coding_exon_region',
-
-    'NMD_transcript_variant': 'non_coding_exon_region',
-
-    'intron_variant': 'intron_variant',
-
-    'non_coding_transcript_variant' : 'non_coding_transcript_variant',
-    'upstream_gene_variant': 'non_genic_variant',
-    'downstream_gene_variant': 'non_genic_variant',
-    'TFBS_ablation': 'non_genic_variant',
-    'TFBS_amplification': 'non_genic_variant',
-    'TF_binding_site_variant': 'non_genic_variant',
-    'regulatory_region_ablation': 'non_genic_variant',
-    'regulatory_region_amplification': 'non_genic_variant',
-    'feature_elongation': 'non_genic_variant',
-    'regulatory_region_variant': 'non_genic_variant',
-    'feature_truncation': 'non_genic_variant',
-    'intergenic_variant': 'non_genic_variant',
-    '-'  : '-'
-
-}
-
-PROTEIN_AFFECTING_DICT = {
-
-    'nonsense' : 'protein_affecting',
-    'missense' : 'protein_affecting',
-    'essential_splice' : 'protein_affecting',
-    'splice_region' : 'ambiguous',
-    'synonymous' : 'non_protein_affecting',
-
-    'protein_altering_variant' : 'protein_affecting',
-    'transcript_amplification' : 'protein_affecting',
-    'coding_sequence_variant' : 'ambiguous',
-
-    'non_coding_exon_region' : 'non_protein_affecting',
-    'intron_variant' : 'non_protein_affecting',
-    'non_coding_transcript_variant' : 'non_protein_affecting',
-    'non_genic_variant' : 'non_protein_affecting',
-    '-'  : '-',
-}
-
-
+# These functions are for annotating the mutations
 CONSEQUENCES_LIST = [
     'transcript_ablation',
     'splice_acceptor_variant',
@@ -182,159 +153,153 @@ CONSEQUENCES_LIST = [
     'feature_elongation',
     'regulatory_region_variant',
     'feature_truncation',
-    'intergenic_variant',
-    '-'
+    'intergenic_variant'
 ]
 
+GROUPING_CONSEQUENCE_DICT = {
+    'transcript_ablation': 'nonsense',
+
+    'splice_acceptor_variant': 'nonsense',
+    'splice_donor_variant': 'nonsense',
+    'stop_gained': 'nonsense',
+    'frameshift_variant': 'nonsense',
+    'stop_lost': 'nonsense',
+    'start_lost': 'nonsense',
+
+    'missense_variant': 'missense',
+    'inframe_insertion': 'missense',
+    'inframe_deletion': 'missense',
+
+    'protein_altering_variant' : 'protein_altering_variant', ##
+    'transcript_amplification' : 'transcript_amplification', ##
+    'coding_sequence_variant': 'coding_sequence_variant', ##
+
+    'splice_donor_variant': 'essential_splice',
+    'splice_acceptor_variant': 'essential_splice',
+
+    'splice_region_variant': 'splice_region',
+    'splice_donor_5th_base_variant': 'splice_region',
+    'splice_donor_region_variant': 'splice_region',
+    'splice_polypyrimidine_tract_variant': 'splice_region',
+
+    'synonymous_variant': 'synonymous',
+    'incomplete_terminal_codon_variant': 'synonymous',
+    'start_retained_variant': 'synonymous',
+    'stop_retained_variant': 'synonymous',
+
+    'mature_miRNA_variant': 'non_coding_exon_region',
+    '5_prime_UTR_variant': 'non_coding_exon_region',
+    '3_prime_UTR_variant': 'non_coding_exon_region',
+    'non_coding_transcript_exon_variant': 'non_coding_exon_region',
+    'NMD_transcript_variant': 'non_coding_exon_region',
+
+    'intron_variant': 'intron_variant',
+
+    'non_coding_transcript_variant' : 'non_coding_transcript_variant',
+
+    'upstream_gene_variant': 'non_genic_variant',
+    'downstream_gene_variant': 'non_genic_variant',
+    'TFBS_ablation': 'non_genic_variant',
+    'TFBS_amplification': 'non_genic_variant',
+    'TF_binding_site_variant': 'non_genic_variant',
+    'regulatory_region_ablation': 'non_genic_variant',
+    'regulatory_region_amplification': 'non_genic_variant',
+    'feature_elongation': 'non_genic_variant',
+    'regulatory_region_variant': 'non_genic_variant',
+    'feature_truncation': 'non_genic_variant',
+    'intergenic_variant': 'non_genic_variant'
+}
+
+consequence_rank_dict = { consequence : rank for rank, consequence in enumerate(CONSEQUENCES_LIST) }
+rank_consequence_dict = { rank : consequence for rank, consequence in enumerate(CONSEQUENCES_LIST) }
+
+
+# consequence_rank_dict
+def get_single_annotation(annotations):
+    all_consequences = annotations.split(",")
+    all_consequences_ranks = map(lambda x: consequence_rank_dict[x], all_consequences)
+    return rank_consequence_dict[min(all_consequences_ranks)]
 
 
 
-CONSEQUENCES_LIST_WITHIN = [
-    'NMD_transcript_variant',
-    'non_coding_transcript_exon_variant',
-    'non_coding_transcript_variant',
 
-    'transcript_ablation',
-    'splice_acceptor_variant',
-    'splice_donor_variant',
-    'stop_gained',
-    'frameshift_variant',
-    'stop_lost',
-    'start_lost',
-    'transcript_amplification',
-    'inframe_insertion',
-    'inframe_deletion',
-    'missense_variant',
-    'protein_altering_variant',
-    'splice_region_variant',
-    'splice_donor_5th_base_variant',
-    'splice_donor_region_variant',
-    'splice_polypyrimidine_tract_variant',
-    'incomplete_terminal_codon_variant',
-    'start_retained_variant',
-    'stop_retained_variant',
-    'synonymous_variant',
-    'coding_sequence_variant',
-    'mature_miRNA_variant',
-    '5_prime_UTR_variant',
-    '3_prime_UTR_variant',
-    'intron_variant',
-    'upstream_gene_variant',
-    'downstream_gene_variant',
-    'TFBS_ablation',
-    'TFBS_amplification',
-    'TF_binding_site_variant',
-    'regulatory_region_ablation',
-    'regulatory_region_amplification',
-    'feature_elongation',
-    'regulatory_region_variant',
-    'feature_truncation',
-    'intergenic_variant',
-    '-'
-]
-
-
-
-consequence_rank_dict = {consequence : rank for rank, consequence in enumerate(CONSEQUENCES_LIST)}
-rank_consequence_dict = {rank : consequence for rank, consequence in enumerate(CONSEQUENCES_LIST)}
-
-
-
-consequence_rank_dict_within = {consequence : rank for rank, consequence in enumerate(CONSEQUENCES_LIST_WITHIN)}
-rank_consequence_dict_within = {rank : consequence for rank, consequence in enumerate(CONSEQUENCES_LIST_WITHIN)}
-
-def most_deleterious_within_variant(impact_vep_string):
+def VEP_annotation_to_single_row(df_annotation,
+                                    canonical_only = True):
     """
-    to be used when summarizing the different consquences assigned to a same variable in the same transcript
-    here we change for example the relevance of NMD_transcript_variant, since we do not want it to make it very damaging
+    [['MUT_ID',
+     'Location', 'Allele',
+     'Gene', 'Feature', 'Feature_type',
+     'Consequence',
+     'IMPACT',
+     'cDNA_position', 'CDS_position', 'Protein_position',
+     'Amino_acids', 'Codons',
+     'DISTANCE', 'STRAND',
+     'Existing_variation',
+     'SYMBOL', 'CANONICAL',
+     'ENSP'
+    ]]
     """
-    all_consequences = impact_vep_string.split(",")
-    all_consequences_ranks = map(lambda x: consequence_rank_dict_within[x], all_consequences)
-    return rank_consequence_dict_within[min(all_consequences_ranks)]
+
+    # print(f"Initial number of rows:\t{df_annotation.shape}")
+    df_annotation = df_annotation.drop_duplicates().reset_index(drop = True)
+    # print(f"Initial number without duplicates:\t{df_annotation.shape}")
 
 
-
-
-
-def VEP_annotation_to_single_row(df_annotation):
-    """
-    Process Ensembl VEP output to get a single consequence per gene
-    Select always the most deleterious
-    """
     # update the first column name to ID
     df_annotation.columns = ["MUT_ID"] + list(df_annotation.columns[1:])
 
-    # select a subset of the columns
-    if "CANONICAL" in df_annotation.columns:
+    if canonical_only:
+        df_annotation = df_annotation[df_annotation["CANONICAL"] == "YES"]
+        df_annotation = df_annotation.drop("CANONICAL", axis = 1)
 
+        # select a subset of the columns
         df_annotation_small = df_annotation[['MUT_ID',
-                                                'Consequence',
-                                                'SYMBOL',
-                                                'CANONICAL']]
-    else:
-        df_annotation_small = df_annotation[['MUT_ID',
-                                                'Consequence',
-                                                'SYMBOL']]
-
-
-    df_annotation_small = df_annotation_small.drop_duplicates()
-
-
-    # add a new column containing a single consequence per variant
-    df_annotation_small["Consequence_single"] = df_annotation_small["Consequence"].apply(most_deleterious_within_variant)
-
-    # assign a numerical value to each consequence according to its rank in damaging consequence
-    df_annotation_small["NUM_Consequence"] = df_annotation_small["Consequence_single"].map(consequence_rank_dict)
-
-    # sort the data by the ID and the IMPACT in numerical format.
-    # The smaller the value of NUM_IMPACT the bigger the impact.
-    if "CANONICAL" in df_annotation_small.columns:
-        print("prioritizing canonical")
-        df_annotation_small_sorted = df_annotation_small.sort_values(by = ['MUT_ID', "NUM_Consequence", "CANONICAL"],
-                                                                        ascending = (True, True, False)
-                                                                    )
-    else:
-        df_annotation_small_sorted = df_annotation_small.sort_values(by = ['MUT_ID', "NUM_Consequence"],
-                                                                        ascending = (True, True)
-                                                                    )
-
-
-    df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'],
-                                                                                    keep='first')
-    returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
-    returned_df = returned_df.reset_index(drop = True)
-
-    # we return the dataframe with all the original columns of the VEP file
-    return returned_df
-
-
-
-def VEP_annotation_to_single_row_only_canonical(df_annotation):
-    """
-    Process Ensembl VEP output to get a single consequence per gene
-    Use only the information in the canonical transcript!!
-    (select always the most deleterious)
-    """
-    # update the first column name to ID
-    df_annotation.columns = ["MUT_ID"] + list(df_annotation.columns[1:])
-
-    # select a subset of the columns
-    if "CANONICAL" not in df_annotation.columns:
-        return None
-
-    df_annotation = df_annotation[df_annotation["CANONICAL"] == "YES"].reset_index(drop = True)
-    df_annotation_small = df_annotation[['MUT_ID',
+                                            # 'Location', 'Allele',
+                                            # 'Gene', 'Feature', 'Feature_type',
                                             'Consequence',
-                                            'SYMBOL']]
+                                            'IMPACT',
+                                            # 'cDNA_position', 'CDS_position', 'Protein_position',
+                                            # 'Amino_acids', 'Codons',
+                                            # 'DISTANCE', 'STRAND',
+                                            # 'Existing_variation',
+                                            'SYMBOL', 'CANONICAL',
+                                            # 'ENSP'
+                                            ]]
 
 
-    df_annotation_small = df_annotation_small.drop_duplicates()
+        df_annotation_small = df_annotation_small.drop_duplicates()
+        # print(f"Selecting specific columns and removing duplicates:\t{df_annotation.shape}")
+
+    else:
+        # select a subset of the columns
+        df_annotation_small = df_annotation[['MUT_ID',
+                                            # 'Location', 'Allele',
+                                            # 'Gene', 'Feature', 'Feature_type',
+                                            'Consequence',
+                                            'IMPACT',
+                                            # 'cDNA_position', 'CDS_position', 'Protein_position',
+                                            # 'Amino_acids', 'Codons',
+                                            # 'DISTANCE', 'STRAND',
+                                            # 'Existing_variation',
+                                            'SYMBOL',
+                                            # 'CANONICAL',
+                                            # 'ENSP'
+                                            ]]
+
+
+        df_annotation_small = df_annotation_small.drop_duplicates()
+        # print(f"Selecting specific columns and removing duplicates:\t{df_annotation.shape}")
+
+
 
     # add a new column containing a single consequence per variant
-    df_annotation_small["Consequence_single"] = df_annotation_small["Consequence"].apply(most_deleterious_within_variant)
+    df_annotation_small["Consequence"] = df_annotation_small["Consequence"].apply(get_single_annotation)
 
     # assign a numerical value to each consequence according to its rank in damaging consequence
-    df_annotation_small["NUM_Consequence"] = df_annotation_small["Consequence_single"].map(consequence_rank_dict)
+    df_annotation_small["NUM_Consequence"] = df_annotation_small["Consequence"].map(consequence_rank_dict)
+
+    # # get the IMPACT field in a numerical scale
+    # df_annotation_small["NUM_IMPACT"] = df_annotation_small["IMPACT"].map(impact2numbers)
 
     # sort the data by the ID and the IMPACT in numerical format.
     # The smaller the value of NUM_IMPACT the bigger the impact.
@@ -342,12 +307,19 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
                                                                     ascending = (True, True)
                                                                 )
 
-    df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'],
+    df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'
+                                                                                            , 'SYMBOL'
+                                                                                            ],
                                                                                     keep='first')
+
+    # print(f"Selecting row with highest impact per variant:\t{df_annotation_small_highest_impact.shape}")
     returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
     returned_df = returned_df.reset_index(drop = True)
+    # print(f"Selecting row with highest impact per variant:\t{returned_df.shape}")
 
-    returned_df.columns = ["MUT_ID"] + [f"canonical_{x}" for x in returned_df.columns[1:]]
+    # update the Consequence column to containing a single consequence per variant
+    returned_df["Consequence"] = returned_df["Consequence"].apply(get_single_annotation)
+
     # we return the dataframe with all the original columns of the VEP file
     return returned_df
 
@@ -357,89 +329,60 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 
-def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_ = False):
-    """
-    # TODO
-    explain what this function does
-    """
+
+
+def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file):
 
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0)
 
-    if all_ :
-        all_possible_sites[["CHROM", "POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
-        all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split("/", expand = True)
-        all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
-    else:
-        all_possible_sites[["CHROM:POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
-        all_possible_sites[["CHROM", "POS"]] = all_possible_sites["CHROM:POS"].str.split(":", expand = True)
-#        mut_split  = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
-        all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
-#        print(all_possible_sites.head())
-        all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
+    all_possible_sites[["CHROM", "POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
+    all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split("/", expand = True)
+    all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
 
     # TODO: Is it robust enough to use columns names here?
-#    all_possible_sites = all_possible_sites[['#Uploaded_variation', 'Consequence', 'SYMBOL',
-#                                                'CHROM', 'POS', 'REF', 'ALT', 'MUT']]
+    all_possible_sites = all_possible_sites[['#Uploaded_variation', 'Location', 'Allele', 'Consequence', 'IMPACT',
+                                            'SYMBOL', 'CHROM', 'POS', 'MUT', 'REF', 'ALT']]
 
     all_possible_sites["TYPE"] = all_possible_sites[["REF", "ALT"]].apply(vartype, axis = 1)
-
-    # if the annotation already contains a single consequence per gene this function does not do much
-    # but if it contains multiple variants per gene it keeps only the most deleterious
-    annotated_variants = VEP_annotation_to_single_row(all_possible_sites)
-    annotated_variants_only_canonical = VEP_annotation_to_single_row_only_canonical(all_possible_sites)
-    if annotated_variants_only_canonical is not None:
-        annotated_variants = annotated_variants.merge(annotated_variants_only_canonical, on = "MUT_ID", how = 'left')
-        annotated_variants_only_canonical = annotated_variants_only_canonical[annotated_variants_only_canonical.columns[1:]].fillna('-')
-        annotated_variants['canonical_Consequence_single'] = annotated_variants['canonical_Consequence'].apply(most_deleterious_within_variant)
-        annotated_variants['canonical_Consequence_broader'] = annotated_variants['canonical_Consequence_single'].apply(lambda x: GROUPING_DICT[x])
-        annotated_variants['canonical_Protein_affecting'] = annotated_variants['canonical_Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
+    all_possible_sites = all_possible_sites[all_possible_sites["TYPE"] == "SNV"].reset_index(drop = True)
 
 
+    # work to improve this function
+    annotated_variants = VEP_annotation_to_single_row(all_possible_sites, canonical_only = False)
 
     # TODO: agree on a consensus for these broader consequence types
     # add a new column containing a broader  consequence per variant
-    annotated_variants['Consequence_single'] = annotated_variants['Consequence'].apply(most_deleterious_within_variant)
-    annotated_variants['Consequence_broader'] = annotated_variants['Consequence_single'].apply(lambda x: GROUPING_DICT[x])
-    annotated_variants['Protein_affecting'] = annotated_variants['Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
-
+    annotated_variants["Consequence_broader"] = annotated_variants["Consequence"].map(GROUPING_CONSEQUENCE_DICT)
 
     # add context type to all SNVs
     # remove context from the other substitution types
-    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}') if x["TYPE"] == "SNV" else "-", axis = 1)
+    annotated_variants_context = getContext_from_df(annotated_variants)
+    annotated_variants["CONTEXT"] = annotated_variants_context.apply(build_context_mut_simple, axis = 1)
 
-#    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'IMPACT', 'CONTEXT']]
-#    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
-    annotated_variants_columns = [x for x in annotated_variants.columns if x.replace("canonical_", "") not in ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'CHROM:POS', 'MUT'] ]
-    annotated_variants_reduced = annotated_variants.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
-    annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
+
+    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'Consequence_broader', 'CONTEXT']]
+    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
+    annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
+    # annotated_variants_reduced.head()
+
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,
                                         index = False,
                                         sep = "\t")
 
+    # return annotated_variants_reduced
+
 
 if __name__ == '__main__':
     # Input
-    #VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
+    # VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
     VEP_output_file = sys.argv[1]
-    if len(sys.argv) >= 3:
-        print("Using the provided value:", end = "\t")
-        try:
-            all_sep = eval(f"{sys.argv[3]}")
-            print(all_sep)
-        except:
-            print("You should provide either True or False as the third argument.")
-            exit(1)
-    else:
-        all_sep = False
 
     # Output
-    #all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
+    # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     all_possible_sites_annotated_file = sys.argv[2]
 
-
-
-    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep)
+    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file)
 
 
