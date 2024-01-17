@@ -10,6 +10,7 @@ process CREATECAPTUREDPANELS {
     tuple val(meta), path(compact_captured_panel_annotation)
 
     output:
+    tuple val(meta), path("*.compact.all.tsv"), emit: captured_panel_all
     tuple val(meta), path("*.compact.protein_affecting.tsv"), emit: captured_panel_protein_affecting
     tuple val(meta), path("*.compact.non_protein_affecting.tsv"), emit: captured_panel_non_protein_affecting
     tuple val(meta), path("*.compact.exons_splice_sites.tsv"), emit: captured_panel_exons_splice_sites
@@ -36,6 +37,7 @@ process CREATECAPTUREDPANELS {
     stub:
     def prefix = task.ext.prefix ?: "TargetRegions"
     """
+    touch ${prefix}.compact.protein_affecting.tsv
     touch ${prefix}.compact.protein_affecting.tsv
     touch ${prefix}.compact.non_protein_affecting.tsv
     touch ${prefix}.compact.exons_splice_sites.tsv

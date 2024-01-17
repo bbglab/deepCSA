@@ -8,7 +8,7 @@ process CREATESAMPLEPANELS {
 
     input:
     tuple val(meta), path(compact_captured_panel_annotation)
-    path(depths)
+    tuple val(meta2), path(depths)
     val(min_depth)
 
     output:
@@ -38,8 +38,7 @@ process CREATESAMPLEPANELS {
     stub:
     def prefix = task.ext.prefix ?: "TargetRegions"
     """
-    touch sample_specific_panel
-
+    touch ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

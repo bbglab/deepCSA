@@ -46,6 +46,10 @@ def create_panel_versions(compact_annot_panel_path, output_path):
         panel_version.to_csv(f"{output_path}.compact.{version}.tsv",
                              sep = "\t", index = False)
 
+    # Store complete panel (better change this way of using this version in nextflow)
+    version = "all"
+    compact_annot_panel_df.to_csv(f"{output_path}.compact.{version}.tsv",
+                             sep = "\t", index = False)
 
 if __name__ == '__main__':
     compact_annot_panel_path = sys.argv[1]

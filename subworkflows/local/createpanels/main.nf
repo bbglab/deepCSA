@@ -2,7 +2,11 @@ include { SITESFROMPOSITIONS }                                     from '../../.
 include { VCF_ANNOTATE_ALL              as VCFANNOTATEPANEL    }   from '../../../subworkflows/local/annotatepanel/main'
 include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL }   from '../../../modules/local/process_annotation/main'
 include { CREATECAPTUREDPANELS }                                   from '../../../modules/local/createcapturedpanels/main'
-include { CREATESAMPLEPANELS }                                     from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL}     from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT}     from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT}  from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS}          from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS}        from '../../../modules/local/createsamplepanels/main'
 
 
 workflow CREATE_PANELS{
@@ -45,8 +49,16 @@ workflow CREATE_PANELS{
     CREATECAPTUREDPANELS(compact_panel_annotation)
 
     // Create sample-specific panels: all modalities
-    CREATECAPTUREDPANELS.out.collect().set{ captured_panels }
-    CREATESAMPLEPANELS(captured_panels, depths, params.min_depth)
+    // CREATECAPTUREDPANELS.out.captured_panel_protein_affecting.concat(
+	// 										CREATECAPTUREDPANELS.out.captured_panel_non_protein_affecting,
+	// 										CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites,
+	// 										CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic )
+	// 										.set{ captured_panels }
+    CREATESAMPLEPANELSALL(CREATECAPTUREDPANELS.out.captured_panel_all, depths, params.min_depth)
+    CREATESAMPLEPANELSPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_protein_affecting, depths, params.min_depth)
+    CREATESAMPLEPANELSNONPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_non_protein_affecting, depths, params.min_depth)
+    CREATESAMPLEPANELSEXONS(CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites, depths, params.min_depth)
+    CREATESAMPLEPANELSINTRONS(CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic, depths, params.min_depth)
 
     // Create consensus panel: all modalities
     // CREATECONSENSUSPANEL()
