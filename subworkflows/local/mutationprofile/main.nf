@@ -4,6 +4,7 @@
 // include { INTERSECT_BED     as BED_INTERSECTNONPA    } from '../../modules/local/bedtools/intersect/main'
 
 include { SUBSET_MAF    as SUBSET_MUTPROFILE } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF    as SUBSET_MUTABILITY } from '../../../modules/local/subsetmaf/main'
 
 include { COMPUTE_MATRIX          as COMPUTEMATRIX      } from '../../../modules/local/mutation_matrix/main'
 include { COMPUTE_PROFILE         as COMPUTEPROFILE     } from '../../../modules/local/compute_profile/main'
@@ -43,6 +44,7 @@ workflow MUTATIONAL_PROFILE {
     // .set { all_beds }
 
     SUBSET_MUTPROFILE(mutations)
+    SUBSET_MUTABILITY(mutations)
 
     COMPUTEMATRIX(SUBSET_MUTPROFILE.out.mutations)
 
@@ -55,18 +57,17 @@ workflow MUTATIONAL_PROFILE {
     COMPUTETRINUC(depth)
     COMPUTETRINUC.out.trinucleotides.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_trinucleotides }
 
-
     COMPUTEMATRIX.out.matrix
     .join(named_trinucleotides)
     .set{ matrix_n_trinucleotide }
 
     COMPUTEPROFILE(matrix_n_trinucleotide)
 
-    COMPUTEMATRIX.out.matrix
+    SUBSET_MUTABILITY.out.mutations
     .join(COMPUTEPROFILE.out.profile)
-    .set{ matrix_n_profile }
+    .set{ mutations_n_profile }
 
-    COMPUTEMUTABILITY( matrix_n_profile, depth.first() )
+    COMPUTEMUTABILITY( mutations_n_profile, depth.first() )
 
     MUTABILITY_BGZIPTABIX( COMPUTEMUTABILITY.out.mutability )
 

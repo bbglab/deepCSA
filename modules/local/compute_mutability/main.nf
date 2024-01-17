@@ -15,8 +15,14 @@ process COMPUTE_MUTABILITY {
     tuple val(meta2), path(depths)
 
     output:
-    tuple val(meta), path("*.mutability_per_site.tsv") , emit: mutability
-    path "versions.yml"                                , emit: versions
+    // TODO revise this to see which one is outputed and why
+    tuple val(meta), path("*.mutability_per_site.tsv")                           , emit: mutability_not_adjusted
+    tuple val(meta), path("*.mutability_per_site.tsv.adjusted")                  , emit: mutability
+    path "versions.yml"                                                          , emit: versions
+
+    // tuple val(meta), path("*.mutability_per_site.tsv")                           , emit: mutability
+    // tuple val(meta), path("*.mutability_per_site.tsv.adjusted") , optional:true  , emit: mutability_adjusted
+    // path "versions.yml"                                                          , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -31,7 +37,7 @@ process COMPUTE_MUTABILITY {
                     --mutation_matrix ${matrix} \\
                     --depths ${depths} \\
                     --profile ${mut_profile} \\
-                    --bedfile ${params.bedf} \\
+                    --bedfile ${params.bedf_annotated} \\
                     --out_mutability ${prefix}.mutability_per_site.tsv \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
