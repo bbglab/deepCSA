@@ -1,4 +1,4 @@
-process CREATESAMPLEPANELS {
+process CREATECONSENSUSPANELS {
     tag "$meta.id"
     label 'process_single'
 
@@ -9,10 +9,10 @@ process CREATESAMPLEPANELS {
     input:
     tuple val(meta), path(compact_captured_panel_annotation)
     tuple val(meta2), path(depths)
-    val(min_depth)
+    val(consensus_min_depth)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: sample_specific_panel
+    tuple val(meta), path("*.tsv"), emit: consensus_panel
     path "versions.yml"           , emit: versions
 
     when:
@@ -23,10 +23,10 @@ process CREATESAMPLEPANELS {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    create_panel4sample.py \\
+    create_consensus_panel.py \\
                     ${prefix}.compact.*.tsv \\
                     all_samples.depths.tsv.gz \\
-                    $min_depth
+                    $consensus_min_depth
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -37,7 +37,7 @@ process CREATESAMPLEPANELS {
     stub:
     def prefix = task.ext.prefix ?: "TargetRegions"
     """
-    touch ${prefix}
+    touch consensus_panel.*.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

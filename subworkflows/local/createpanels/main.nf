@@ -1,12 +1,22 @@
-include { SITESFROMPOSITIONS }                                     from '../../../modules/local/sitesfrompositions/main'
-include { VCF_ANNOTATE_ALL              as VCFANNOTATEPANEL    }   from '../../../subworkflows/local/annotatepanel/main'
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL }   from '../../../modules/local/process_annotation/main'
-include { CREATECAPTUREDPANELS }                                   from '../../../modules/local/createcapturedpanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL}     from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT}     from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT}  from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS}          from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS}        from '../../../modules/local/createsamplepanels/main'
+include { SITESFROMPOSITIONS }                                           from '../../../modules/local/sitesfrompositions/main'
+include { VCF_ANNOTATE_ALL              as VCFANNOTATEPANEL    }         from '../../../subworkflows/local/annotatepanel/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL }         from '../../../modules/local/process_annotation/main'
+
+include { CREATECAPTUREDPANELS }                                         from '../../../modules/local/createcapturedpanels/main'
+
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL}                  from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT}           from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT}        from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS}                from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS}              from '../../../modules/local/createsamplepanels/main'
+
+
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL}              from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT}       from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT}    from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS}            from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS}          from '../../../modules/local/createconsensuspanels/main'
+
 
 
 workflow CREATE_PANELS{
@@ -61,7 +71,11 @@ workflow CREATE_PANELS{
     CREATESAMPLEPANELSINTRONS(CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic, depths, params.min_depth)
 
     // Create consensus panel: all modalities
-    // CREATECONSENSUSPANEL()
+    CREATECONSENSUSPANELSALL(CREATECAPTUREDPANELS.out.captured_panel_all, depths, params.consensus_min_depth)
+    CREATECONSENSUSPANELSPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_protein_affecting, depths, params.consensus_min_depth)
+    CREATECONSENSUSPANELSNONPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_non_protein_affecting, depths, params.consensus_min_depth)
+    CREATECONSENSUSPANELSEXONS(CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites, depths, params.consensus_min_depth)
+    CREATECONSENSUSPANELSINTRONS(CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic, depths, params.consensus_min_depth)
 
     emit:
     // annotated_panel  = CREATECAPTUREDPANELS.out.captured_panel_protein_affecting   // channel: [ val(meta), file(depths) ]
