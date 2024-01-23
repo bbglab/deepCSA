@@ -6,7 +6,7 @@ process ONCODRIVEFML {
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
     //     'biocontainers/YOUR-TOOL-HERE' }"
-    container 'docker.io/ferriolcalvet/oncodrivefml:mutabilities'
+    container 'docker.io/ferriolcalvet/oncodrivefml:latest'
 
     input:
     tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)

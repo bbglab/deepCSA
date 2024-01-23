@@ -1,7 +1,6 @@
-process COMPUTE_MATRIX {
-
+process MATRIX_CONCAT {
     tag "$meta.id"
-    label 'process_low'
+    label 'process_high'
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -10,14 +9,11 @@ process COMPUTE_MATRIX {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(mut_files)
+    tuple val(meta), path(matrix_files)
 
     output:
-    tuple val(meta), path("*.matrix.tsv")                             , emit: matrix
-    tuple val(meta), path("*.single.sigprofiler")      , optional:true, emit: single_sigprof
-    tuple val(meta), path("*.per_sample")              , optional:true, emit: per_sample
-    tuple val(meta), path("*.per_sample.sigprofiler")  , optional:true, emit: per_sample_sigprof
-    path "versions.yml"                                               , emit: versions
+    tuple val(meta), path("*.wgs.tsv")  , emit: wgs_tsv
+    path "versions.yml"                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -26,11 +22,16 @@ process COMPUTE_MATRIX {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mut_profile.py matrix \\
-                    --sample_name ${prefix} \\
-                    --mut_file ${mut_files} \\
-                    --out_matrix ${prefix}.matrix.tsv \\
-                    ${args}
+    #for file in ${matrix_files}; do
+    for file in *.WGS.sigprofiler; do
+        if [ -s ${prefix}.final_matrix.wgs.tsv ]; then
+            paste \$file <(cut -f 2- ${prefix}.final_matrix.wgs.tsv) > final_matrix.tsv.tmp;
+        else
+            mv \$file final_matrix.tsv.tmp;
+        fi
+        mv final_matrix.tsv.tmp ${prefix}.final_matrix.wgs.tsv;
+    done;
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
@@ -41,7 +42,7 @@ process COMPUTE_MATRIX {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.matrix.tsv
+    touch ${prefix}.final_matrix.wgs.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
