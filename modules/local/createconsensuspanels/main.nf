@@ -6,12 +6,9 @@ process CREATECONSENSUSPANELS {
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
             'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
             'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
 
     input:
-    tuple val(meta), path(compact_captured_panel_annotation)
+    tuple val(meta) , path(compact_captured_panel_annotation)
     tuple val(meta2), path(depths)
     val(consensus_min_depth)
 
@@ -32,11 +29,11 @@ process CREATECONSENSUSPANELS {
                     ${prefix}.compact.*.tsv \\
                     all_samples.depths.tsv.gz \\
                     $consensus_min_depth;
-    for consensus_panel in \$(ls *.tsv | grep -v '^captured_panel');
-    do bedtools merge \\
-    -i <(tail -n +2 \$consensus_panel | \\
-    awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > \${consensus_panel%.tsv}.bed;
-    done
+    for consensus_panel in \$(ls *.tsv | grep -v '^captured_panel'); do
+        bedtools merge \\
+                -i <(tail -n +2 \$consensus_panel | \\
+                awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > \${consensus_panel%.tsv}.bed;
+    done;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -23,9 +23,11 @@ process POSTPROCESS_VEP_ANNOTATION {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "TargetRegions"
+    // TODO
+    // change panel postprocessing annotation into the same post processing annotation as before
     """
     zegrep -v '^##' ${vep_annotated_file} | gzip > ${vep_annotated_file}.tmp.gz
-    postprocessing_annotation.py \\
+    panel_postprocessing_annotation.py \\
                     ${vep_annotated_file}.tmp.gz \\
                     ${vep_annotated_file.getBaseName()}.compact.tsv;
     cat <<-END_VERSIONS > versions.yml

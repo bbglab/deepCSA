@@ -20,7 +20,8 @@ process COMPUTEDEPTHS {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-
+    // TODO
+    // add -H with $args
     """
     ls -1 *.bam > bam_files_list.txt;
     samtools \\

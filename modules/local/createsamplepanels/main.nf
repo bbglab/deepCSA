@@ -32,10 +32,10 @@ process CREATESAMPLEPANELS {
                     ${prefix}.compact.*.tsv \\
                     all_samples.depths.tsv.gz \\
                     $min_depth;
-    for sample_panel in \$(ls *.tsv| grep -v '^captured_panel');
-    do bedtools merge \\
-    -i <(tail -n +2 \$sample_panel | \\
-    awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > \${sample_panel%.tsv}.bed;
+    for sample_panel in \$(ls *.tsv | grep -v '^captured_panel'); do
+        bedtools merge \\
+                -i <(tail -n +2 \$sample_panel | \\
+                awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > \${sample_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml

@@ -14,17 +14,17 @@ process CREATECAPTUREDPANELS {
     tuple val(meta), path(compact_captured_panel_annotation)
 
     output:
-    tuple val(meta), path("*.compact.all.tsv"), emit: captured_panel_all
-    tuple val(meta), path("*.compact.protein_affecting.tsv"), emit: captured_panel_protein_affecting
-    tuple val(meta), path("*.compact.non_protein_affecting.tsv"), emit: captured_panel_non_protein_affecting
-    tuple val(meta), path("*.compact.exons_splice_sites.tsv"), emit: captured_panel_exons_splice_sites
-    tuple val(meta), path("*.compact.introns_intergenic.tsv"), emit: captured_panel_introns_intergenic
-    tuple val(meta), path("*.compact.all.bed"), emit: captured_panel_all_bed
-    tuple val(meta), path("*.compact.protein_affecting.bed"), emit: captured_panel_protein_affecting_bed
-    tuple val(meta), path("*.compact.non_protein_affecting.bed"), emit: captured_panel_non_protein_affecting_bed
-    tuple val(meta), path("*.compact.exons_splice_sites.bed"), emit: captured_panel_exons_splice_sites_bed
-    tuple val(meta), path("*.compact.introns_intergenic.bed"), emit: captured_panel_introns_intergenic_bed
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*.compact.all.tsv")                      , emit: captured_panel_all
+    tuple val(meta), path("*.compact.protein_affecting.tsv")        , emit: captured_panel_protein_affecting
+    tuple val(meta), path("*.compact.non_protein_affecting.tsv")    , emit: captured_panel_non_protein_affecting
+    tuple val(meta), path("*.compact.exons_splice_sites.tsv")       , emit: captured_panel_exons_splice_sites
+    tuple val(meta), path("*.compact.introns_intergenic.tsv")       , emit: captured_panel_introns_intergenic
+    tuple val(meta), path("*.compact.all.bed")                      , emit: captured_panel_all_bed
+    tuple val(meta), path("*.compact.protein_affecting.bed")        , emit: captured_panel_protein_affecting_bed
+    tuple val(meta), path("*.compact.non_protein_affecting.bed")    , emit: captured_panel_non_protein_affecting_bed
+    tuple val(meta), path("*.compact.exons_splice_sites.bed")       , emit: captured_panel_exons_splice_sites_bed
+    tuple val(meta), path("*.compact.introns_intergenic.bed")       , emit: captured_panel_introns_intergenic_bed
+    path "versions.yml"                                             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
