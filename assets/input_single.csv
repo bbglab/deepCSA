@@ -1,0 +1,2 @@
+sample,batch,vcf,bam
+K_5_1_A_1,PROM_05,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_5_1_A_1.high.filtered.vcf,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_5_1_A_1.sorted.bam

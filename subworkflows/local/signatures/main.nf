@@ -1,21 +1,28 @@
-include { COMPUTEDEPTHS } from '../../modules/local/computedepths/main'
+include { SIGPROFILERASSIGNMENT  } from '../../../modules/local/signatures/sigprofiler/assignment/main'
+include { MATRIX_CONCAT          } from '../../../modules/local/sig_matrix_concat/main'
 
 
-workflow DEPTH_ANALYSIS{
+
+workflow SIGNATURES {
     take:
     // inputs
-    bam_list
+    matrix
+    reference_signatures
 
     main:
     // actual code
     ch_versions = Channel.empty()
-    COMPUTEDEPTHS(bam_list)
+    matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ matrix_all_samples }
+
+    MATRIX_CONCAT(matrix_all_samples)
+
+    SIGPROFILERASSIGNMENT(MATRIX_CONCAT.out.wgs_tsv, reference_signatures)
 
     // PROCESSDEPTHSTABLE()
 
     // PLOTDEPTHS()
 
     emit:
-    depths   = COMPUTEDEPTHS.out.depths   // channel: [ val(meta), file(depths) ]
-    versions = ch_versions                // channel: [ versions.yml ]
+    plots    = SIGPROFILERASSIGNMENT.out.plots  // channel: [ val(meta), file(depths) ]
+    versions = ch_versions                      // channel: [ versions.yml ]
 }

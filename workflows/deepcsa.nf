@@ -35,17 +35,22 @@ Consisting of a mix of local and nf-core/modules.
 
 // SUBWORKFLOW
 include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
+
 include { DEPTH_ANALYSIS as DEPTHANALYSIS             } from '../subworkflows/local/depthanalysis/main'
 include { CREATE_PANELS as CREATEPANELS               } from '../subworkflows/local/createpanels/main'
-// include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
-// include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
-// include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
+
 
 // include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
-// include { DEPTH_ANALYSIS as MUTPROFILE       } from '../subworkflows/local/depthanalysis/main'
-// include { DEPTH_ANALYSIS as OMEGA       } from '../subworkflows/local/depthanalysis/main'
+include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
+
+include { MUTATIONAL_PROFILE     as MUTPROFILE        } from '../subworkflows/local/mutationprofile/main'
+
+include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
+// include { OMEGA_ANALYSIS as OMEGA       } from '../subworkflows/local/omega/main'
+
 // include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
-// include { DEPTH_ANALYSIS as SIGNATURES       } from '../subworkflows/local/depthanalysis/main'
+include { SIGNATURES as SIGNATURES       } from '../subworkflows/local/signatures/main'
 // include { DEPTH_ANALYSIS as MUTRATE       } from '../subworkflows/local/depthanalysis/main'
 
 
@@ -101,6 +106,7 @@ workflow DEEPCSA {
     set{ meta_bams_alone }
 
 
+
     // TODO: test if downloading VEP cache works
     // Download Ensembl VEP cache if needed
     // Assuming that if the cache is provided, the user has already downloaded it
@@ -125,62 +131,83 @@ workflow DEEPCSA {
 
 
     // Mutation preprocessing
-    // bedfile = params.bedf
-    // MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
-    // ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
+    bedfile = params.bedf
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
     // Mutational profile
-    // MUTPROFILE(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
+    depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
+    MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
+    ch_versions = ch_versions.mix(MUTPROFILE.out.versions)
 
 
     //
     // Positive selection
     //
 
+    MUT_PREPROCESSING.out.mafs
+    .join(MUTPROFILE.out.mutability)
+    .set{mutations_n_mutabilities}
+
     // OncodriveFML
-    // ONCODRIVEFML(params.muts, params.mutabs, params.mutabs_index, params.bedf)
+    ONCODRIVEFML(mutations_n_mutabilities, params.bedf)
+    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     // Oncodrive3D
-    // ONCODRIVE3D(params.muts_3d, params.mutabs, params.mutabs_index)
+    ONCODRIVE3D(mutations_n_mutabilities)
+    ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     // Omega
-    // OMEGA()
+    // MUT_PREPROCESSING.out.mafs
+    // .join(MUTPROFILE.out.profile)
+    // .set{mutations_n_profile}
+
+    // mutations_n_profile
+    // .join(depths)
+    // .set{mutations_n_profile_n_depths}
+
+    // annotated_panel should come from depth analysis
+    // OMEGA(mutations_n_profile_n_depths, annotated_panel)
+
+
 
     // OncodriveClustl
     // ONCODRIVECLUSTL()
 
     // Signature Analysis
-    // SIGNATURES()
+    SIGNATURES(MUTPROFILE.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    ch_versions = ch_versions.mix(SIGNATURES.out.versions)
 
     // Mutation Rate
     // MUTRATE()
 
-//     CUSTOM_DUMPSOFTWAREVERSIONS (
-//         ch_versions.unique().collectFile(name: 'collated_versions.yml')
-//     )
 
-//     //
-//     // MODULE: MultiQC
-//     //
-//     workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
-//     ch_workflow_summary = Channel.value(workflow_summary)
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
 
-//     methods_description    = WorkflowDeepcsa.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-//     ch_methods_description = Channel.value(methods_description)
+    //
+    // MODULE: MultiQC
+    //
+    workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
+    ch_workflow_summary = Channel.value(workflow_summary)
 
-//     ch_multiqc_files = Channel.empty()
-//     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-//     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-//     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-//     // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    methods_description    = WorkflowDeepcsa.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    ch_methods_description = Channel.value(methods_description)
 
-//     MULTIQC (
-//         ch_multiqc_files.collect(),
-//         ch_multiqc_config.toList(),
-//         ch_multiqc_custom_config.toList(),
-//         ch_multiqc_logo.toList()
-//     )
-//     multiqc_report = MULTIQC.out.report.toList()
+    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+
+    MULTIQC (
+        ch_multiqc_files.collect(),
+        ch_multiqc_config.toList(),
+        ch_multiqc_custom_config.toList(),
+        ch_multiqc_logo.toList()
+    )
+    multiqc_report = MULTIQC.out.report.toList()
 }
 
 
