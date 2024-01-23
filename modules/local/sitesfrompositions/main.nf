@@ -1,5 +1,8 @@
 process SITESFROMPOSITIONS {
-    // tag "$bed_file"
+    // TODO
+    // add proper tags
+
+    tag "${meta.id}"
     // label 'cpu_single'
     // label 'time_low'
     // label 'process_low_memory'

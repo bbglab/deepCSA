@@ -1,21 +1,21 @@
-include { SITESFROMPOSITIONS }                                           from '../../../modules/local/sitesfrompositions/main'
-include { VCF_ANNOTATE_ALL              as VCFANNOTATEPANEL    }         from '../../../subworkflows/local/annotatepanel/main'
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL }         from '../../../modules/local/process_annotation/main'
+include { SITESFROMPOSITIONS }                                        from '../../../modules/local/sitesfrompositions/main'
+include { VCF_ANNOTATE_ALL              as VCFANNOTATEPANEL    }      from '../../../subworkflows/local/annotatepanel/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL }      from '../../../modules/local/process_annotation/main'
 
-include { CREATECAPTUREDPANELS }                                         from '../../../modules/local/createcapturedpanels/main'
+include { CREATECAPTUREDPANELS }                                      from '../../../modules/local/createcapturedpanels/main'
 
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL}                  from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT}           from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT}        from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS}                from '../../../modules/local/createsamplepanels/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS}              from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL              } from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT       } from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT    } from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS            } from '../../../modules/local/createsamplepanels/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS          } from '../../../modules/local/createsamplepanels/main'
 
 
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL}              from '../../../modules/local/createconsensuspanels/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT}       from '../../../modules/local/createconsensuspanels/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT}    from '../../../modules/local/createconsensuspanels/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS}            from '../../../modules/local/createconsensuspanels/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS}          from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL        } from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT } from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT} from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS      } from '../../../modules/local/createconsensuspanels/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS    } from '../../../modules/local/createconsensuspanels/main'
 
 
 
