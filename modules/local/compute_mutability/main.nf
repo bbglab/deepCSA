@@ -1,7 +1,7 @@
 process COMPUTE_MUTABILITY {
 
     tag "$meta.id"
-    label 'process_single'
+    label 'process_low_fixed_cpus'
     label 'process_high_memory'
 
     // // conda "YOUR-TOOL-HERE"

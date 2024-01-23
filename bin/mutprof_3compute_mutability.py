@@ -104,7 +104,8 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
 
     # Either load or compute a dataframe with all sites annotated
     # all_sites_to_be_included_annotated = generate_all_sites_with_context(regions_bedfile)
-    all_sites_to_be_included_annotated = pd.read_csv(regions_bedfile, sep="\t", header=0, usecols = ["CHROM", "POS", "REF", "ALT", "GENE", "CONTEXT_MUT"])
+    all_sites_to_be_included_annotated = pd.read_csv(regions_bedfile, sep="\t", header=0, usecols = ["CHROM", "POS", "REF", "ALT", "GENE", "CONTEXT_MUT"],
+                                                        dtype={"CHROM": str})
 
     print("All loaded")
 
