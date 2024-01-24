@@ -34,24 +34,24 @@ Consisting of a mix of local and nf-core/modules.
 */
 
 // SUBWORKFLOW
-include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
+include { INPUT_CHECK                                       } from '../subworkflows/local/input_check'
 
-include { DEPTH_ANALYSIS as DEPTHANALYSIS             } from '../subworkflows/local/depthanalysis/main'
-include { CREATE_PANELS as CREATEPANELS               } from '../subworkflows/local/createpanels/main'
+include { DEPTH_ANALYSIS            as DEPTHANALYSIS        } from '../subworkflows/local/depthanalysis/main'
+include { CREATE_PANELS             as CREATEPANELS         } from '../subworkflows/local/createpanels/main'
 
+include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkflows/local/mutationpreprocessing/main'
 
-// include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
-include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILE           } from '../subworkflows/local/mutationprofile/main'
 
-include { MUTATIONAL_PROFILE     as MUTPROFILE        } from '../subworkflows/local/mutationprofile/main'
+include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFML         } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVE3D_ANALYSIS      as ONCODRIVE3D          } from '../subworkflows/local/oncodrive3d/main'
+// include { OMEGA_ANALYSIS            as OMEGA                } from '../subworkflows/local/omega/main'
+// include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkflows/local/depthanalysis/main'
 
-include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
-include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
-// include { OMEGA_ANALYSIS as OMEGA       } from '../subworkflows/local/omega/main'
+include { SIGNATURES                as SIGNATURES           } from '../subworkflows/local/signatures/main'
 
-// include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
-include { SIGNATURES as SIGNATURES       } from '../subworkflows/local/signatures/main'
-// include { DEPTH_ANALYSIS as MUTRATE       } from '../subworkflows/local/depthanalysis/main'
+// include { DEPTH_ANALYSIS            as MUTRATE              } from '../subworkflows/local/depthanalysis/main'
+
 
 
 // Download annotation cache if needed

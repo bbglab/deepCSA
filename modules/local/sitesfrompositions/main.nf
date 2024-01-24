@@ -1,11 +1,10 @@
 process SITESFROMPOSITIONS {
-    // TODO
-    // add proper tags
 
     tag "${meta.id}"
-    // label 'cpu_single'
-    // label 'time_low'
-    // label 'process_low_memory'
+
+    label 'cpu_single'
+    label 'time_low'
+    label 'process_low_memory'
 
     container "docker.io/ferriolcalvet/bgreference"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -17,15 +16,17 @@ process SITESFROMPOSITIONS {
     tuple val(meta), path(depths)
 
     output:
-    path("*.tsv")        , emit: annotated_panel_reg
-    path  "versions.yml" , emit: versions
+    tuple val(meta), path("*.sites4VEP.tsv")  , emit: annotated_panel_reg
+    path  "versions.yml"                      , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "TargetRegions"
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    // TODO
+    // fix this so that it uses the meta id or the prefix to set the names
     """
     zcat ${depths} | cut -f1,2  > captured_positions.tsv;
     sites_table_from_positions.py \\
@@ -38,7 +39,7 @@ process SITESFROMPOSITIONS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "TargetRegions"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch captured_positions.sites4VEP.tsv;
 

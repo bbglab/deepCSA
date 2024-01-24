@@ -6,9 +6,13 @@ import numpy as np
 import sys
 
 from itertools import product
-from bgreference import hg38
+from bgreference import hg38, hg19, mm10
 
+from utils_context import canonical_channels, transform_context
 
+assembly_name2function = {"hg38": hg38,
+                            "hg19": hg19,
+                            "mm10": mm10}
 
 def vartype(x,
             letters = ['A', 'T', 'C', 'G'],
@@ -36,30 +40,6 @@ def vartype(x,
         return "DELETION"
 
     return "COMPLEX"
-
-
-
-
-
-cb = dict(zip('ACGT', 'TGCA'))
-
-def canonical_channels():
-
-    subs = [''.join(z) for z in product('CT', 'ACGT') if z[0] != z[1]]
-    flanks = [''.join(z) for z in product('ACGT', repeat=2)]
-    contexts_tuples = [(a, b) for a, b in product(subs, flanks)]
-    sorted_contexts_tuples = sorted(contexts_tuples, key=lambda x: (x[0], x[1]))
-    sorted_contexts = [b[0] + a[0] + b[1] + '>' + a[1] for a, b in sorted_contexts_tuples]
-    return sorted_contexts
-
-
-def transform_context(chr_, pos, mut):
-    ref, alt = tuple(mut.split('/'))
-    ref_triplet = hg38(chr_, pos-1, size=3)
-    if ref_triplet[1] not in ['C', 'T']:
-        ref_triplet = ''.join(list(map(lambda x: cb[x], ref_triplet[::-1])))
-        alt = cb[alt]
-    return ref_triplet + '>' + alt
 
 
 
@@ -307,6 +287,8 @@ def VEP_annotation_to_single_row(df_annotation):
     df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'],
                                                                                     keep='first')
     returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
+
+    # TODO see if we can reduce this code by outputting the variable directly
     returned_df = returned_df.reset_index(drop = True)
 
     # we return the dataframe with all the original columns of the VEP file
@@ -362,7 +344,7 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 
-def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_ = False):
+def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_ = False, assembly = 'hg38'):
     """
     # TODO
     explain what this function does
@@ -410,7 +392,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
 
     # add context type to all SNVs
     # remove context from the other substitution types
-    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}') if x["TYPE"] == "SNV" else "-", axis = 1)
+    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', assembly_name2function[assembly]) if x["TYPE"] == "SNV" else "-", axis = 1)
 
 #    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'IMPACT', 'CONTEXT']]
 #    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
@@ -443,6 +425,15 @@ if __name__ == '__main__':
     #all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     all_possible_sites_annotated_file = sys.argv[2]
 
+    try:
+        assembly_name = sys.argv[4]
+        if assembly_name not in ["hg38", "hg19", "mm10"]:
+            print("invalid assembly name")
+            exit(1)
+    except:
+        print("No assembly name provided, using hg38 as default.")
+        assembly_name = 'hg38'
 
-    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep)
+
+    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep, assembly_name)
 

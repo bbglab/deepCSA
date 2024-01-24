@@ -32,15 +32,14 @@ process CREATECAPTUREDPANELS {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     create_panel_versions.py \\
-                    captured_panel.compact.tsv \\
+                    ${compact_captured_panel_annotation} \\
                     ${prefix};
     for captured_panel in \$(ls *.tsv);
     do bedtools merge \\
     -i <(tail -n +2 \$captured_panel | \\
-    awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > \${captured_panel%.tsv}.bed;
+    awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > \${captured_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml

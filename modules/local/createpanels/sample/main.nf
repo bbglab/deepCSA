@@ -11,7 +11,7 @@ process CREATESAMPLEPANELS {
     //     'biocontainers/pandas:1.5.2' }"
 
     input:
-    tuple val(meta), path(compact_captured_panel_annotation)
+    tuple val(meta) , path(compact_captured_panel_annotation)
     tuple val(meta2), path(depths)
     val(min_depth)
 
@@ -26,16 +26,15 @@ process CREATESAMPLEPANELS {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     create_panel4sample.py \\
                     ${prefix}.compact.*.tsv \\
                     all_samples.depths.tsv.gz \\
-                    $min_depth;
+                    ${min_depth};
     for sample_panel in \$(ls *.tsv | grep -v '^captured_panel'); do
         bedtools merge \\
                 -i <(tail -n +2 \$sample_panel | \\
-                awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > \${sample_panel%.tsv}.bed;
+                awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > \${sample_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml

@@ -1,5 +1,7 @@
 process POSTPROCESS_VEP_ANNOTATION {
+
     tag "${vep_annotated_file}"
+
     label 'cpu_single'
     label 'time_low'
     label 'process_low_memory'
@@ -14,8 +16,8 @@ process POSTPROCESS_VEP_ANNOTATION {
     tuple val(meta), path(vep_annotated_file)
 
     output:
-    path ("*.compact.tsv") , emit: compact_panel_annotation
-    path  "versions.yml"  , emit: versions
+    tuple val(meta), path ("*.compact.tsv") , emit: compact_panel_annotation
+    path  "versions.yml"                    , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
