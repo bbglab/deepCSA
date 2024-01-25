@@ -68,6 +68,8 @@ Installed directly from nf-core/modules.
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
+include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,17 +131,24 @@ workflow DEEPCSA {
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.captured_panel_all)
 
     // Mutation preprocessing
-    bedfile = params.bedf
+    // bedfile = params.bedf
+    bedfile = CREATEPANELS.out.exons_consensus_bed
     MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
+
+
     // Mutational profile
     meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
-    depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
-    MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
+    // depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
+
+    MUTPROFILE(MUT_PREPROCESSING.out.mafs, ANNOTATEDEPTHS.out.annotated_depths, bedfiles_var)
     ch_versions = ch_versions.mix(MUTPROFILE.out.versions)
+
+
 
 
     //

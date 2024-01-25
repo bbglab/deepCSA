@@ -30,6 +30,7 @@ process COMPUTEDEPTHS {
         -H \\
         -@ $task.cpus \\
         -f bam_files_list.txt \\
+        | tail -c +2 \\
         | gzip -c > ${prefix}.depths.tsv.gz;
 
     cat <<-END_VERSIONS > versions.yml
