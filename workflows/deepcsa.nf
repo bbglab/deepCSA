@@ -41,6 +41,8 @@ include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/lo
 
 include { MUTATIONAL_PROFILE     as MUTPROFILE        } from '../subworkflows/local/mutationprofile/main'
 
+include { MUTATION_RATE          as MUTRATE           } from '../subworkflows/local/mutationrate/main'
+
 include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
 include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
 // include { OMEGA_ANALYSIS as OMEGA       } from '../subworkflows/local/omega/main'
@@ -124,32 +126,41 @@ workflow DEEPCSA {
 
 
     // Mutation preprocessing
-    bedfile = params.bedf
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
-    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
+    // bedfile = params.bedf
+    // MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    // ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
     // Mutational profile
-    meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
-    depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
-    MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
-    ch_versions = ch_versions.mix(MUTPROFILE.out.versions)
+    // meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
+    // depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
+    // MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
+    // ch_versions = ch_versions.mix(MUTPROFILE.out.versions)
 
+    // Mutation Rate
+    // TODO: input all the bedfiles in the same channel
+    consensus_annot_panel_all = Channel.of([ [ id: "consensus_panel_all" ], params.consensus_annot_panel_all ])
+    consensus_annot_panel_protaffect = Channel.of([ [ id: "consensus_panel_protaffect" ], params.consensus_annot_panel_protaffect ])
+    consensus_annot_panel_nonprotaffect = Channel.of([ [ id: "consensus_panel_nonprotaffect" ], params.consensus_annot_panel_nonprotaffect ])
+    depths = Channel.of([ [ id: "all_samples" ], params.depths ])
+    maf = Channel.of([ [ id: "all_samples" ], params.maf ])
+    MUTRATE(maf, depths, consensus_annot_panel_all, consensus_annot_panel_protaffect, consensus_annot_panel_nonprotaffect)
+    ch_versions = ch_versions.mix(MUTRATE.out.versions)
 
     //
     // Positive selection
     //
 
-    MUT_PREPROCESSING.out.mafs
-    .join(MUTPROFILE.out.mutability)
-    .set{mutations_n_mutabilities}
+    // MUT_PREPROCESSING.out.mafs
+    // .join(MUTPROFILE.out.mutability)
+    // .set{mutations_n_mutabilities}
 
     // OncodriveFML
-    ONCODRIVEFML(mutations_n_mutabilities, params.bedf)
-    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
+    // ONCODRIVEFML(mutations_n_mutabilities, params.bedf)
+    // ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     // Oncodrive3D
-    ONCODRIVE3D(mutations_n_mutabilities)
-    ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
+    // ONCODRIVE3D(mutations_n_mutabilities)
+    // ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     // Omega
     // MUT_PREPROCESSING.out.mafs
@@ -169,11 +180,10 @@ workflow DEEPCSA {
     // ONCODRIVECLUSTL()
 
     // Signature Analysis
-    SIGNATURES(MUTPROFILE.out.wgs_sigprofiler, params.cosmic_ref_signatures)
-    ch_versions = ch_versions.mix(SIGNATURES.out.versions)
+    // SIGNATURES(MUTPROFILE.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    // ch_versions = ch_versions.mix(SIGNATURES.out.versions)
 
-    // Mutation Rate
-    // MUTRATE()
+
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
