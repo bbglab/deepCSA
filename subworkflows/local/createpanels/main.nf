@@ -79,7 +79,10 @@ workflow CREATE_PANELS {
     annotated_panel         = CREATECAPTUREDPANELS.out.captured_panel_protein_affecting   // channel: [ val(meta), file(depths) ]
     exons_consensus_panel   = CREATECONSENSUSPANELSEXONS.out.consensus_panel
     exons_consensus_bed     = CREATECONSENSUSPANELSEXONS.out.consensus_panel_bed
-    captured_panel_all      = CREATECAPTUREDPANELS.out.captured_panel_all
-
+    captured_panel          = CREATECAPTUREDPANELS.out.captured_panel_all
+    captured_bed            = CREATECAPTUREDPANELS.out.captured_panel_all_bed
+    introns_consensus_panel = CREATECONSENSUSPANELSINTRONS.out.consensus_panel
+    introns_consensus_bed   = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed
+    // captured_bed            = CREATESAMPLEPANELSNONPROTAFFECT.out.captured_panel_all_bed
     versions = ch_versions                // channel: [ versions.yml ]
 }

@@ -77,12 +77,14 @@ workflow MUTATION_PREPROCESSING {
     //     ?- also non mutated sites that do have lots of Ns
 
     // bedfiles.sample_discarded
+    bedfile.set{ bedfile_updated }
 
 
     emit:
     // cohort_maf  = FILTERBATCH.out.cohort_maf
     // mafs        = WRITEMAF.out.mafs
-    mafs        = named_mafs
-    versions    = ch_versions
+    mafs            = named_mafs
+    bedfile_clean   = bedfile_updated
+    versions        = ch_versions
 
 }

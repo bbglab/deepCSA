@@ -14,8 +14,8 @@ process ANNOTATE_DEPTHS {
     tuple val(meta2), path(panel_all)
 
     output:
-    tuple val(meta), path("*.depths.annotated.tsv") , emit: annotated_depths
-    path "versions.yml"                             , emit: versions
+    tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
+    path "versions.yml"                                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,8 +28,7 @@ process ANNOTATE_DEPTHS {
     cut -f 1,2,9 ${panel_all} | uniq > ${panel_all}.contexts
     merge_annotation_depths.py \\
         --annotation ${panel_all}.contexts \\
-        --depths ${depths} \\
-        --output ${prefix}.depths.annotated.tsv
+        --depths ${depths}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

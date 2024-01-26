@@ -7,7 +7,7 @@ import pandas as pd
 from utils import contexts_no_change
 
 
-def compute_trinucleotides(depths_file, pseudocount = 0):
+def compute_trinucleotides(sample_name, depths_file, pseudocount = 0):
     """
     Compute mutational profile from the input data
           ***Remember to add some pseudocounts to the computation***
@@ -31,28 +31,19 @@ def compute_trinucleotides(depths_file, pseudocount = 0):
         trinucleotides_per_sample = trinucleotides_per_sample.drop("-", axis = 0)
     trinucleotides_per_sample.index.name = "CONTEXT"
     trinucleotides_per_sample = trinucleotides_per_sample.reset_index(drop = False)
+    trinucleotides_per_sample.columns = ["CONTEXT", sample_name]
 
-    trinucleotides_per_sample[samples] = trinucleotides_per_sample[samples] + pseudocount
+    trinucleotides_per_sample[sample_name] = trinucleotides_per_sample[sample_name] + pseudocount
 
 
-    for sample in samples:
-        trinucleotides_per_sample[["CONTEXT", sample]].to_csv(f"{sample}.trinucleotides.tsv.gz",
+    trinucleotides_per_sample[["CONTEXT", sample_name]].to_csv(f"{sample_name}.trinucleotides.tsv.gz",
                                                                 sep = "\t",
                                                                 header = True,
                                                                 index = False)
 
-    all_samples_trinucleotides = trinucleotides_per_sample[samples].sum(axis = 1).to_frame("all_samples")
-    all_samples_trinucleotides["CONTEXT"] = trinucleotides_per_sample["CONTEXT"]
-
-    all_samples_trinucleotides[["CONTEXT", "all_samples"]].to_csv(f"all_samples.trinucleotides.tsv.gz",
-                                                                    sep = "\t",
-                                                                    header = True,
-                                                                    index = False)
-
-
 
 @click.command()
-# @click.option('--sample_name', type=str, help='Name of the sample being processed.')
+@click.option('--sample_name', type=str, help='Name of the sample being processed.')
 @click.option('--depths_file', type=click.Path(exists=True), help='Input depths file')
 # @click.option('--out_matrix', type=click.Path(), help='Output mutation matrix file')
 # @click.option('--json_filters', type=click.Path(exists=True), help='Input mutation filtering criteria file')
@@ -65,10 +56,10 @@ def compute_trinucleotides(depths_file, pseudocount = 0):
 # @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 
 # def main(mode, sample_name, mut_file, out_matrix, json_filters, method, pseud, mutation_matrix, trinucleotide_counts, out_profile, plot):
-def main(depths_file, pseud):
+def main(sample_name, depths_file, pseud):
     click.echo(f"Running the trinucleotide computation...")
     click.echo(f"Using the pseudocount: {pseud}")
-    compute_trinucleotides( depths_file, pseud )
+    compute_trinucleotides(sample_name, depths_file, pseud )
     click.echo("Trinucleotides computation completed.")
 
 if __name__ == '__main__':

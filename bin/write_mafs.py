@@ -14,3 +14,8 @@ for sample in unique_samples:
                                                     sep = "\t",
                                                     header = True,
                                                     index = False)
+
+maf_df.sort_values(by = ["CHROM", "POS"]).to_csv(f"all_samples.filtered.tsv.gz",
+                                                    sep = "\t",
+                                                    header = True,
+                                                    index = False)

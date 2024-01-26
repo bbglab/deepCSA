@@ -26,7 +26,6 @@ process WRITE_MAFS {
     // def repetitive_variant = task.ext.repetitive_variant ?: "5"
     """
     write_mafs.py ${maf}
-    cp ${maf} ${prefix}.filtered.tsv.gz;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

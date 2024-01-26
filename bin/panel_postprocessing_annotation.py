@@ -78,7 +78,7 @@ GROUPING_DICT = {
     'coding_sequence_variant': 'coding_sequence_variant', ##
 
 
-    'mature_miRNA_variant': 'non_coding_exon_region',
+    'mature_miRNA_variant': 'non_coding_exon_region', # TODO fix this
     '5_prime_UTR_variant': 'non_coding_exon_region',
     '3_prime_UTR_variant': 'non_coding_exon_region',
     'non_coding_transcript_exon_variant': 'non_coding_exon_region',

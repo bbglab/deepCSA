@@ -3,15 +3,15 @@
 // include { INTERSECT_BED     as BED_INTERSECTPA       } from '../../modules/local/bedtools/intersect/main'
 // include { INTERSECT_BED     as BED_INTERSECTNONPA    } from '../../modules/local/bedtools/intersect/main'
 
-include { SUBSET_MAF    as SUBSET_MUTPROFILE } from '../../../modules/local/subsetmaf/main'
-include { SUBSET_MAF    as SUBSET_MUTABILITY } from '../../../modules/local/subsetmaf/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { COMPUTE_MATRIX          as COMPUTEMATRIX      } from '../../../modules/local/mutation_matrix/main'
-include { COMPUTE_PROFILE         as COMPUTEPROFILE     } from '../../../modules/local/compute_profile/main'
-include { COMPUTE_TRINUCLEOTIDE   as COMPUTETRINUC      } from '../../../modules/local/compute_trinucleotide/main'
-include { COMPUTE_MUTABILITY      as COMPUTEMUTABILITY  } from '../../../modules/local/compute_mutability/main'
+include { SUBSET_MAF                as SUBSET_MUTPROFILE        } from '../../../modules/local/subsetmaf/main'
 
-include { TABIX_BGZIPTABIX        as MUTABILITY_BGZIPTABIX  } from '../../../modules/nf-core/tabix/bgziptabix/main'
+include { COMPUTE_MATRIX            as COMPUTEMATRIX            } from '../../../modules/local/mutation_matrix/main'
+include { COMPUTE_TRINUCLEOTIDE     as COMPUTETRINUC            } from '../../../modules/local/compute_trinucleotide/main'
+
+include { COMPUTE_PROFILE           as COMPUTEPROFILE           } from '../../../modules/local/compute_profile/main'
 
 
 
@@ -43,8 +43,10 @@ workflow MUTATIONAL_PROFILE {
     // .join( bedfiles.nonpa_sites )
     // .set { all_beds }
 
-    SUBSET_MUTPROFILE(mutations)
-    SUBSET_MUTABILITY(mutations)
+    SUBSETDEPTHS(depth, bedfiles)
+    SUBSETMUTATIONS(mutations, bedfiles)
+
+    SUBSET_MUTPROFILE(SUBSETMUTATIONS.out.subset)
 
     COMPUTEMATRIX(SUBSET_MUTPROFILE.out.mutations)
 
@@ -54,7 +56,7 @@ workflow MUTATIONAL_PROFILE {
     .set{ sigprofiler_matrix }
 
 
-    COMPUTETRINUC(depth)
+    COMPUTETRINUC(SUBSETDEPTHS.out.subset)
     COMPUTETRINUC.out.trinucleotides.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_trinucleotides }
 
     COMPUTEMATRIX.out.matrix
@@ -62,14 +64,6 @@ workflow MUTATIONAL_PROFILE {
     .set{ matrix_n_trinucleotide }
 
     COMPUTEPROFILE(matrix_n_trinucleotide)
-
-    SUBSET_MUTABILITY.out.mutations
-    .join(COMPUTEPROFILE.out.profile)
-    .set{ mutations_n_profile }
-
-    COMPUTEMUTABILITY( mutations_n_profile, depth.first() )
-
-    MUTABILITY_BGZIPTABIX( COMPUTEMUTABILITY.out.mutability )
 
     sigprofiler_empty = Channel.of([])
     sigprofiler_empty
@@ -79,7 +73,6 @@ workflow MUTATIONAL_PROFILE {
 
     emit:
     profile         = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
-    mutability      = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
     matrix_sigprof  = sigprofiler_matrix
     trinucleotides  = named_trinucleotides
     wgs_sigprofiler = sigprofiler_wgs
