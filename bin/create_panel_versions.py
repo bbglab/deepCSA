@@ -8,26 +8,49 @@ import sys
 
 panel_impact_dict = {
 
-    "protein_affecting": ["nonsense", "missense", "protein_altering_variant",
-                          "transcript_amplification", "coding_sequence_variant",
-                         "essential_splice"
+    "protein_affecting": ["nonsense", "missense",
+                            "essential_splice",
+                            "protein_altering_variant",     # probably not appear
+                            "transcript_amplification",     # probably not appear
+                            "coding_sequence_variant"       # probably not appear AMBIGUOUS TODO                            
                          ],
 
     "non_protein_affecting": ["synonymous", "intron_variant",
-                              "non_coding_exon_region", "splice_region",
-                              "non_genic_variant", "non_coding_transcript_variant"
+                                "non_coding_exon_region", "splice_region",
+                                "non_genic_variant", "non_coding_transcript_variant"
                               ],
 
-    "exons_splice_sites": ["missense", "essential_splice", "coding_sequence_variant",
-                          "synonymous",
-                          "nonsense", "protein_altering_variant", # unclear
-                           "transcript_amplification", "non_coding_exon_region", # unclear
-                           "non_coding_transcript_variant"   # unclear
+    "exons_splice_sites": ["nonsense", "missense",
+                            "essential_splice",
+                            "synonymous",
+                            "coding_sequence_variant",
+                            
+                        #    "protein_altering_variant", # unclear   # probably not appear
+                        #    "transcript_amplification",             # probably not appear
+                        #    "non_coding_exon_region", # unclear
+                        #    "non_coding_transcript_variant"   # unclear
                           ],
 
     "introns_intergenic": ["splice_regions", "intron_variant",
                           "non_genic_variant"   # unclear
                           ]
+
+## CONTENT of the kidney regions
+#       1 IMPACT
+#    2787 essential_splice
+#    7276 nonsense
+#  119061 missense
+
+#   36745 synonymous
+
+#  174240 non_coding_exon_region
+
+#  685875 intron_variant
+
+#   74913 non_coding_transcript_variant
+#  436551 non_genic_variant
+
+#   14662 splice_region
 
 }
 
