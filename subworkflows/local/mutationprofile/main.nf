@@ -73,7 +73,7 @@ workflow MUTATIONAL_PROFILE {
     emit:
     profile         = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
     matrix_sigprof  = sigprofiler_matrix
-    trinucleotides  = named_trinucleotides
+    trinucleotides  = COMPUTETRINUC.out.trinucleotides
     wgs_sigprofiler = sigprofiler_wgs
     versions        = ch_versions                           // channel: [ versions.yml ]
 }

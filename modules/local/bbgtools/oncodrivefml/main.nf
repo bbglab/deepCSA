@@ -9,14 +9,14 @@ process ONCODRIVEFML {
     container 'docker.io/ferriolcalvet/oncodrivefml:latest'
 
     input:
-    tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
-    path (bed_file)
+    tuple val(meta) , path(mutations), path(mutabilities), path(mutabilities_ind)
+    tuple val(meta2), path (bed_file)
 
     output:
     tuple val(meta), path("**.tsv.gz")  , emit: tsv
     tuple val(meta), path("**.png")     , emit: png
     tuple val(meta), path("**.html")    , emit: html
-    path "versions.yml"                , emit: versions
+    path "versions.yml"                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

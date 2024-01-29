@@ -169,7 +169,7 @@ workflow DEEPCSA {
     .set{mutations_n_mutabilities}
 
     // OncodriveFML
-    ONCODRIVEFML(mutations_n_mutabilities, params.bedf)
+    ONCODRIVEFML(mutations_n_mutabilities, CREATEPANELS.out.exons_consensus_panel)
     ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     // Oncodrive3D
