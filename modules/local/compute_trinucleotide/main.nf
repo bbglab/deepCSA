@@ -13,7 +13,7 @@ process COMPUTE_TRINUCLEOTIDE {
     tuple val(meta), path(depths)
 
     output:
-    path("*.trinucleotides.tsv.gz"), emit: trinucleotides
+    tuple val(meta), path("*.trinucleotides.tsv.gz"), emit: trinucleotides
     path "versions.yml"                             , emit: versions
 
     when:
@@ -27,6 +27,7 @@ process COMPUTE_TRINUCLEOTIDE {
     """
     mutprof_2compute_trinucleotide.py \\
                     --depths_file ${depths} \\
+                    --sample_name ${prefix} \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -9,14 +9,16 @@ def annotate_depths(annotation_file, depths_file):
     """
     INFO
     """
-    
+
     raw_depths = pd.read_csv(depths_file, sep = "\t", header = 0)
     annotations = pd.read_csv(annotation_file, sep = "\t", header = 0)
 
     annotated_depths = raw_depths.merge(annotations, on = ["CHROM", "POS"], how = 'left')
-    
+
     del raw_depths
     del annotations
+
+    print(annotated_depths.head())
 
     annotated_depths["CONTEXT"] = annotated_depths["CONTEXT"].fillna('-')
     sample_columns = [x for x in annotated_depths.columns if x not in ["CHROM", "POS", "CONTEXT"] ]

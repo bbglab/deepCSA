@@ -50,9 +50,10 @@ workflow MUTABILITY {
     SUBSET_MUTABILITY(SUBSETMUTATIONS.out.subset)
     SUBSET_MUTABILITY.out.mutations
     .join(profile)
-    .set{ mutations_n_profile }
+    .join(depth)
+    .set{ mutations_n_profile_n_depth }
 
-    COMPUTEMUTABILITY( mutations_n_profile, depth, panel_file)
+    COMPUTEMUTABILITY( mutations_n_profile_n_depth, panel_file)
 
     MUTABILITY_BGZIPTABIX( COMPUTEMUTABILITY.out.mutability )
 

@@ -57,10 +57,9 @@ workflow MUTATIONAL_PROFILE {
 
 
     COMPUTETRINUC(SUBSETDEPTHS.out.subset)
-    COMPUTETRINUC.out.trinucleotides.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_trinucleotides }
 
     COMPUTEMATRIX.out.matrix
-    .join(named_trinucleotides)
+    .join(COMPUTETRINUC.out.trinucleotides)
     .set{ matrix_n_trinucleotide }
 
     COMPUTEPROFILE(matrix_n_trinucleotide)

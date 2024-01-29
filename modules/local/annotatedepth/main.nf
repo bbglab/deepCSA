@@ -14,8 +14,9 @@ process ANNOTATE_DEPTHS {
     tuple val(meta2), path(panel_all)
 
     output:
-    tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
-    path "versions.yml"                                , emit: versions
+    // tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
+    path("*.depths.annotated.tsv.gz") , emit: annotated_depths
+    path "versions.yml"               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

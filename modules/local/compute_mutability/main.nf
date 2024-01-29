@@ -11,9 +11,8 @@ process COMPUTE_MUTABILITY {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta) , path(matrix), path(mut_profile)
-    tuple val(meta2), path(depths)
-    tuple val(meta3), path(bedfile)
+    tuple val(meta) , path(matrix), path(mut_profile), path(depths)
+    tuple val(meta2), path(bedfile)
 
     output:
     // TODO revise this to see which one is outputed and why
