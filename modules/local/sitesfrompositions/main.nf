@@ -28,10 +28,11 @@ process SITESFROMPOSITIONS {
     // TODO
     // fix this so that it uses the meta id or the prefix to set the names
     """
-    zcat ${depths} | cut -f1,2  > captured_positions.tsv;
+    cat <(printf "CHROM\\tPOS\\n") <( zcat ${depths} | cut -f1,2  | sed 's/^chr//1' | awk 'length(\$1) <= 2' ) > captured_positions.tsv;
     sites_table_from_positions.py \\
                     captured_positions.tsv \\
-                    captured_positions.sites4VEP.tsv;
+                    captured_positions.sites4VEP.tmp.tsv;
+    awk 'NR==1 {print; next} {print "chr"\$0}' captured_positions.sites4VEP.tmp.tsv > captured_positions.sites4VEP.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

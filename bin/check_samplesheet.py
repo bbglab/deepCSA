@@ -35,7 +35,6 @@ class RowChecker:
     def __init__(
         self,
         sample_col="sample",
-        batch_col="batch",
         vcf_col="vcf",
         bam_col="bam",
         **kwargs,
@@ -58,7 +57,6 @@ class RowChecker:
         """
         super().__init__(**kwargs)
         self._sample_col = sample_col
-        self._batch_col = batch_col
         self._vcf_col = vcf_col
         self._bam_col = bam_col
         self._seen = set()

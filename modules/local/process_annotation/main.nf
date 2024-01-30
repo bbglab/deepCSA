@@ -4,7 +4,7 @@ process POSTPROCESS_VEP_ANNOTATION {
 
     label 'cpu_single'
     label 'time_low'
-    label 'process_low_memory'
+    label 'process_high_memory'
 
     container "docker.io/ferriolcalvet/bgreference"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -24,7 +24,7 @@ process POSTPROCESS_VEP_ANNOTATION {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "TargetRegions"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO
     // change panel postprocessing annotation into the same post processing annotation as before
     """
@@ -39,7 +39,7 @@ process POSTPROCESS_VEP_ANNOTATION {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "TargetRegions"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${vep_annotated_file.getBaseName()}.compact.tsv;
 

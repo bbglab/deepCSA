@@ -19,10 +19,8 @@ def generate_all_sites_4VEP(input_positions, output_file_with_sites):
 
     # read CHROM,POS positions file; check dtypes
     positions_df = pd.read_csv(input_positions, sep = "\t", header = 0,
-                                names = ["CHROM", "POS"])
-
-    positions_df["CHROM"] = positions_df["CHROM"].astype(str)
-    positions_df["POS"] = positions_df["POS"].astype(int)
+                                names = ["CHROM", "POS"], dtype = {"CHROM" : str, "POS" : int}
+                                )
 
     # assign REF and all possible ALTs to each positions; add MUTATION and STRAND columnS to meet VEP standards
     positions_df["SEQ"] = positions_df.apply(
