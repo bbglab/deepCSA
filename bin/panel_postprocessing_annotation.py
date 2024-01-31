@@ -243,8 +243,6 @@ def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
     Process Ensembl VEP output to get a single consequence per gene
     Select always the most deleterious
     """
-    # update the first column name to ID
-    df_annotation.columns = ["MUT_ID"] + list(df_annotation.columns[1:])
 
     # select a subset of the columns
     if "CANONICAL" in df_annotation.columns:
@@ -309,8 +307,6 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
     Use only the information in the canonical transcript!!
     (select always the most deleterious)
     """
-    # update the first column name to ID
-    df_annotation.columns = ["MUT_ID"] + list(df_annotation.columns[1:])
 
     # select a subset of the columns
     if "CANONICAL" not in df_annotation.columns:
@@ -358,35 +354,20 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
 
 
 
-def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, all_ = False, assembly = 'hg38'):
+def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly = 'hg38'):
     """
     # TODO
     explain what this function does
     """
+    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
+                                        header = None)
+    print("all possible sites loaded")
+    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'SYMBOL']
 
-    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0)
-
-    if all_ :
-        all_possible_sites[["CHROM", "POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
-        all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split("/", expand = True)
-        all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
-    else:
-        all_possible_sites[["CHROM:POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
-        all_possible_sites[["CHROM", "POS"]] = all_possible_sites["CHROM:POS"].str.split(":", expand = True)
-#        mut_split  = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
-        all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
-#        print(all_possible_sites.head())
-        all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
-
-    # TODO: Is it robust enough to use columns names here?
-#    all_possible_sites = all_possible_sites[['#Uploaded_variation', 'Consequence', 'SYMBOL',
-#                                                'CHROM', 'POS', 'REF', 'ALT', 'MUT']]
-
-    all_possible_sites["TYPE"] = all_possible_sites[["REF", "ALT"]].apply(vartype, axis = 1)
-
-    # if the annotation already contains a single consequence per gene this function does not do much
-    # but if it contains multiple variants per gene it keeps only the most deleterious
     annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
+    del all_possible_sites
+    print("VEP to single row working")
+
 
     # annotated_variants_only_canonical = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
     # if annotated_variants_only_canonical is not None:
@@ -402,18 +383,20 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     # add a new column containing a broader  consequence per variant
     annotated_variants['Consequence_single'] = annotated_variants['Consequence'].apply(most_deleterious_within_variant)
     annotated_variants['Consequence_broader'] = annotated_variants['Consequence_single'].apply(lambda x: GROUPING_DICT[x])
-    annotated_variants['Protein_affecting'] = annotated_variants['Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
-
+    print("Consequence to IMPACT working")
 
     # add context type to all SNVs
     # remove context from the other substitution types
     chosen_assembly = assembly_name2function[assembly]
-    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', chosen_assembly) if x["TYPE"] == "SNV" else "-", axis = 1)
+    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', chosen_assembly) , axis = 1)
+    print("Context added")
+
     annotated_variants["CONTEXT"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: x[:3])
 
     annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'Consequence_broader', 'CONTEXT_MUT', 'CONTEXT']]
     annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT', 'CONTEXT']
-    annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
+    annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] )
+    print("Annotation sorted")
 
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
@@ -431,6 +414,6 @@ if __name__ == '__main__':
     # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     all_possible_sites_annotated_file = sys.argv[2]
 
-    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, all_ = True, assembly= 'hg38')
+    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly= 'hg38')
 
 

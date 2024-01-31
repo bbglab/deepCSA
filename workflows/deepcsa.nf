@@ -41,8 +41,11 @@ include { CREATE_PANELS             as CREATEPANELS         } from '../subworkfl
 
 include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkflows/local/mutationpreprocessing/main'
 
-include { MUTATIONAL_PROFILE        as MUTPROFILE           } from '../subworkflows/local/mutationprofile/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILEEXONS      } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILEINTRONS    } from '../subworkflows/local/mutationprofile/main'
+
 include { MUTABILITY                as MUTABILITY           } from '../subworkflows/local/mutability/main'
 
 include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFML         } from '../subworkflows/local/oncodrivefml/main'
@@ -134,28 +137,26 @@ workflow DEEPCSA {
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.captured_panel)
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
     // Mutation preprocessing
-    // bedfile = params.bedf
-    bedfile = CREATEPANELS.out.exons_consensus_bed
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
 
 
     // Mutational profile
-    // meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
-    // meta_vcfs_alone.map{ it -> [[ id : it[0]], bedfile] }.set{ bedfiles_var }
-
-    MUTPROFILE(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.captured_bed)
+    MUTPROFILEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_bed)
+    MUTPROFILENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
+    MUTPROFILEEXONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed)
     MUTPROFILEINTRONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed)
-    ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
+
+    ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
 
     MUTABILITY(MUT_PREPROCESSING.out.mafs,
                 annotated_depths,
-                MUTPROFILE.out.profile,
+                MUTPROFILEALL.out.profile,
                 CREATEPANELS.out.exons_consensus_panel,
                 CREATEPANELS.out.exons_consensus_bed
                 )
@@ -194,7 +195,7 @@ workflow DEEPCSA {
     // ONCODRIVECLUSTL()
 
     // Signature Analysis
-    SIGNATURES(MUTPROFILE.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    SIGNATURES(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures)
     SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
     ch_versions = ch_versions.mix(SIGNATURES.out.versions)
 

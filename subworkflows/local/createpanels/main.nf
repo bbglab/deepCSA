@@ -58,8 +58,6 @@ workflow CREATE_PANELS {
     // CREATECAPTUREDPANELS(compact_panel_annotation)
 
     // Create sample-specific panels: all modalities
-    // TODO confirm if this is true
-    // here every process generates a multiple tsvs and beds, one for each sample
     CREATESAMPLEPANELSALL(CREATECAPTUREDPANELS.out.captured_panel_all, depths, params.min_depth)
     CREATESAMPLEPANELSPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_protein_affecting, depths, params.min_depth)
     CREATESAMPLEPANELSNONPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_non_protein_affecting, depths, params.min_depth)
@@ -67,8 +65,6 @@ workflow CREATE_PANELS {
     CREATESAMPLEPANELSINTRONS(CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic, depths, params.min_depth)
 
     // Create consensus panel: all modalities
-    // TODO confirm if this is true
-    // here every process generates a single tsv and bed file
     CREATECONSENSUSPANELSALL(CREATECAPTUREDPANELS.out.captured_panel_all, depths, params.consensus_min_depth)
     CREATECONSENSUSPANELSPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_protein_affecting, depths, params.consensus_min_depth)
     CREATECONSENSUSPANELSNONPROTAFFECT(CREATECAPTUREDPANELS.out.captured_panel_non_protein_affecting, depths, params.consensus_min_depth)
@@ -76,13 +72,41 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSINTRONS(CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic, depths, params.consensus_min_depth)
 
     emit:
-    annotated_panel         = CREATECAPTUREDPANELS.out.captured_panel_protein_affecting   // channel: [ val(meta), file(depths) ]
+    all_panel               = CREATECAPTUREDPANELS.out.captured_panel_all
+    all_bed                 = CREATECAPTUREDPANELS.out.captured_panel_all_bed
+    prot_panel              = CREATECAPTUREDPANELS.out.captured_panel_protein_affecting
+    prot_bed                = CREATECAPTUREDPANELS.out.captured_panel_protein_affecting_bed
+    nonprot_panel           = CREATECAPTUREDPANELS.out.captured_panel_non_protein_affecting
+    nonprot_bed             = CREATECAPTUREDPANELS.out.captured_panel_non_protein_affecting_bed
+    exons_panel             = CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites
+    exons_bed               = CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites_bed
+    introns_panel           = CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic
+    introns_bed             = CREATECAPTUREDPANELS.out.captured_panel_introns_intergenic_bed
+
+
+    all_consensus_panel     = CREATECONSENSUSPANELSALL.out.consensus_panel
+    all_consensus_bed       = CREATECONSENSUSPANELSALL.out.consensus_panel_bed
+    prot_consensus_panel    = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel
+    prot_consensus_bed      = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel_bed
+    nonprot_consensus_panel = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel
+    nonprot_consensus_bed   = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel_bed
     exons_consensus_panel   = CREATECONSENSUSPANELSEXONS.out.consensus_panel
     exons_consensus_bed     = CREATECONSENSUSPANELSEXONS.out.consensus_panel_bed
-    captured_panel          = CREATECAPTUREDPANELS.out.captured_panel_all
-    captured_bed            = CREATECAPTUREDPANELS.out.captured_panel_all_bed
     introns_consensus_panel = CREATECONSENSUSPANELSINTRONS.out.consensus_panel
     introns_consensus_bed   = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed
-    // captured_bed            = CREATESAMPLEPANELSNONPROTAFFECT.out.captured_panel_all_bed
+
+
+    all_sample_panel        = CREATESAMPLEPANELSALL.out.sample_specific_panel
+    all_sample_bed          = CREATESAMPLEPANELSALL.out.sample_specific_panel_bed
+    prot_sample_panel       = CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel
+    prot_sample_bed         = CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel_bed
+    nonprot_sample_panel    = CREATESAMPLEPANELSNONPROTAFFECT.out.sample_specific_panel
+    nonprot_sample_bed      = CREATESAMPLEPANELSNONPROTAFFECT.out.sample_specific_panel_bed
+    exons_sample_panel      = CREATESAMPLEPANELSEXONS.out.sample_specific_panel
+    exons_sample_bed        = CREATESAMPLEPANELSEXONS.out.sample_specific_panel_bed
+    introns_sample_panel    = CREATESAMPLEPANELSINTRONS.out.sample_specific_panel
+    introns_sample_bed      = CREATESAMPLEPANELSINTRONS.out.sample_specific_panel_bed
+
+
     versions = ch_versions                // channel: [ versions.yml ]
 }

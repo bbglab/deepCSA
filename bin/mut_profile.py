@@ -163,7 +163,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                 size_step = 10
 
         plot_profile(dict(zip(mut_probability["CONTEXT_MUT"], mut_probability[sample_name])),
-                        title=f'{sample_name}',
+                        title=f'{sample_name} ({round(total_mutations)} muts)',
                         ylabels = ylabs,
                         ymax = max_freq,
                         output_f = f'{sample_name}.profile.pdf')

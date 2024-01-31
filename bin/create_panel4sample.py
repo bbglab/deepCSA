@@ -11,7 +11,7 @@ def create_panel4sample(compact_annot_panel_path, depths_path, min_depth):
     compact_annot_panel_df = pd.read_csv(compact_annot_panel_path, sep = "\t")
     # version = compact_annot_panel_path.split("/")[-1].split(".")[2]
 
-    depths_df = pd.read_csv(depths_path, sep = "\t").rename({"#CHROM": "CHROM"}, axis = 1)
+    depths_df = pd.read_csv(depths_path, sep = "\t")
     depths_df.iloc[:, 1:] = depths_df.iloc[:, 1:].astype(int)
 
     # Generate panel subset per sample based on min_depth threshold

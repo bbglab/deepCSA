@@ -26,13 +26,15 @@ process SITESFROMPOSITIONS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO
-    // fix this so that it uses the meta id or the prefix to set the names
+    // see if there is a better way to filter out chromosomes
+    // that are not the canonical ones right now doing it by
+    // filtering the size of the chromosome name to be smaller of equal to 2
     """
-    cat <(printf "CHROM\\tPOS\\n") <( zcat ${depths} | cut -f1,2  | sed 's/^chr//1' | awk 'length(\$1) <= 2' ) > captured_positions.tsv;
+    cat <(printf "CHROM\\tPOS\\n") <( zcat ${depths} | cut -f1,2  | sed 's/^chr//g' | awk 'length(\$1) <= 2' ) > captured_positions.tsv;
     sites_table_from_positions.py \\
                     captured_positions.tsv \\
                     captured_positions.sites4VEP.tmp.tsv;
-    awk 'NR==1 {print; next} {print "chr"\$0}' captured_positions.sites4VEP.tmp.tsv > captured_positions.sites4VEP.tsv
+    awk '{print "chr"\$0}' captured_positions.sites4VEP.tmp.tsv > captured_positions.sites4VEP.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

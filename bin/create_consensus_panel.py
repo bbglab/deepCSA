@@ -10,7 +10,7 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, consensus_min_
     # Load captured panel and depths
     compact_annot_panel_df = pd.read_csv(compact_annot_panel_path, sep = "\t")
 
-    depths_df = pd.read_csv(depths_path, sep = "\t").rename({"#CHROM": "CHROM"}, axis = 1)
+    depths_df = pd.read_csv(depths_path, sep = "\t")
     depths_df.iloc[:, 1:] = depths_df.iloc[:, 1:].astype(int)
 
     # Keep only positions having the minimum consensus depth in all the samples

@@ -20,31 +20,15 @@ workflow MUTATIONAL_PROFILE {
     take:
     mutations
     depth
-    bedfiles
+    bedfile
 
     main:
     // actual code
     ch_versions = Channel.empty()
 
-    // // Intersect BED of all sites with BED of sample filtered sites
-    // BED_INTERSECTALL(bedfiles.all_sites, bedfiles.sample_discarded)
-
-    // BED_INTERSECTPA(bedfiles.pa_sites, bedfiles.sample_discarded)
-
-    // BED_INTERSECTNONPA(bedfiles.nonpa_sites, bedfiles.sample_discarded)
-
-    // BED_INTERSECTALL.out.bed
-    // .join( BED_INTERSECTPA.out.bed )
-    // .join( BED_INTERSECTNONPA.out.bed )
-    // .set { all_beds }
-
-    // bedfiles.all_sites
-    // .join( bedfiles.pa_sites )
-    // .join( bedfiles.nonpa_sites )
-    // .set { all_beds }
-
-    SUBSETDEPTHS(depth, bedfiles)
-    SUBSETMUTATIONS(mutations, bedfiles)
+    // Intersect BED of all sites with BED of sample filtered sites
+    SUBSETDEPTHS(depth, bedfile)
+    SUBSETMUTATIONS(mutations, bedfile)
 
     SUBSET_MUTPROFILE(SUBSETMUTATIONS.out.subset)
 
@@ -54,7 +38,6 @@ workflow MUTATIONAL_PROFILE {
     .join( Channel.of([ [ id: "all_samples" ], [] ]) )
     .map{ it -> [ it[0], it[1]]  }
     .set{ sigprofiler_matrix }
-
 
     COMPUTETRINUC(SUBSETDEPTHS.out.subset)
 

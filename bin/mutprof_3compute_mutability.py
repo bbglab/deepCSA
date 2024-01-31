@@ -91,7 +91,7 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
 
     # Load mutation profiles file
     mut_probability = pd.read_csv(mut_profile_file, sep="\t", header=0)
-    mut_probability.columns = ["CONTEXT_MUT"] + list(mut_probability.columns[1:])
+    mut_probability.columns = ["CONTEXT_MUT"] + [ x.split('.')[0] for x in mut_probability.columns[1:] ]
     mut_prob_samples = list(mut_probability.columns[1:])
 
 
@@ -265,6 +265,7 @@ def adjust_mutabilities(sample_name, mutation_matrix_file, mutability_info, out_
 def main(sample_name, mutation_matrix, depths, profile, bedfile, out_mutability, adjust_local_rate):
     click.echo(f"Computing the mutabilities...")
     # click.echo(f"Using the pseudocount: {pseud}")
+    sample_name = sample_name.split('.')[0]
     mutabilities_with_gene = compute_mutabilities(sample_name, depths, profile, bedfile, out_mutability)
     click.echo("Mutabilities computed.")
     if adjust_local_rate:
