@@ -53,12 +53,12 @@ include { ONCODRIVE3D_ANALYSIS      as ONCODRIVE3D          } from '../subworkfl
 // include { OMEGA_ANALYSIS            as OMEGA                } from '../subworkflows/local/omega/main'
 // include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkflows/local/depthanalysis/main'
 
-include { SIGNATURES                as SIGNATURES           } from '../subworkflows/local/signatures/main'
+include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
+include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
+include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
 // include { DEPTH_ANALYSIS            as MUTRATE              } from '../subworkflows/local/depthanalysis/main'
-
-
 
 // Download annotation cache if needed
 include { PREPARE_CACHE                               } from '../subworkflows/local/prepare_cache/main'
@@ -195,9 +195,11 @@ workflow DEEPCSA {
     // ONCODRIVECLUSTL()
 
     // Signature Analysis
-    SIGNATURES(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
     SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
-    ch_versions = ch_versions.mix(SIGNATURES.out.versions)
+    ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
 
     // Mutation Rate
     // MUTRATE()

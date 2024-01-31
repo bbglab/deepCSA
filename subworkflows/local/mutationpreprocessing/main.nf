@@ -81,8 +81,6 @@ workflow MUTATION_PREPROCESSING {
 
 
     emit:
-    // cohort_maf  = FILTERBATCH.out.cohort_maf
-    // mafs        = WRITEMAF.out.mafs
     mafs            = named_mafs
     bedfile_clean   = bedfile_updated
     versions        = ch_versions

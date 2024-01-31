@@ -149,6 +149,8 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     if plot:
         from utils_plot import plot_profile
 
+        # TODO
+        # revise if we can find a better way of defining the y axis labels
         max_freq = max(mut_probability[sample_name]) * 1.1
 
         order_mag = 100
