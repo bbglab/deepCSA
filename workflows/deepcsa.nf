@@ -46,9 +46,11 @@ include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkfl
 include { MUTATIONAL_PROFILE        as MUTPROFILEEXONS      } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILEINTRONS    } from '../subworkflows/local/mutationprofile/main'
 
-include { MUTABILITY                as MUTABILITY           } from '../subworkflows/local/mutability/main'
+include { MUTABILITY                as MUTABILITYALL        } from '../subworkflows/local/mutability/main'
+include { MUTABILITY                as MUTABILITYNONPROT    } from '../subworkflows/local/mutability/main'
 
-include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFML         } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFMLALL      } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFMLNONPROT  } from '../subworkflows/local/oncodrivefml/main'
 include { ONCODRIVE3D_ANALYSIS      as ONCODRIVE3D          } from '../subworkflows/local/oncodrive3d/main'
 // include { OMEGA_ANALYSIS            as OMEGA                } from '../subworkflows/local/omega/main'
 // include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkflows/local/depthanalysis/main'
@@ -154,27 +156,39 @@ workflow DEEPCSA {
 
     ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
 
-    MUTABILITY(MUT_PREPROCESSING.out.mafs,
-                annotated_depths,
-                MUTPROFILEALL.out.profile,
-                CREATEPANELS.out.exons_consensus_panel,
-                CREATEPANELS.out.exons_consensus_bed
-                )
+    MUTABILITYALL(MUT_PREPROCESSING.out.mafs,
+                    annotated_depths,
+                    MUTPROFILEALL.out.profile,
+                    CREATEPANELS.out.exons_consensus_panel,
+                    CREATEPANELS.out.exons_consensus_bed
+                    )
+
+    MUTABILITYNONPROT(MUT_PREPROCESSING.out.mafs,
+                        annotated_depths,
+                        MUTPROFILENONPROT.out.profile,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        CREATEPANELS.out.exons_consensus_bed
+                        )
 
     //
     // Positive selection
     //
 
     MUT_PREPROCESSING.out.mafs
-    .join(MUTABILITY.out.mutability)
-    .set{mutations_n_mutabilities}
+    .join(MUTABILITYALL.out.mutability)
+    .set{mutations_n_mutabilitiesall}
+
+    MUT_PREPROCESSING.out.mafs
+    .join(MUTABILITYNONPROT.out.mutability)
+    .set{mutations_n_mutabilitiesnonprot}
 
     // OncodriveFML
-    ONCODRIVEFML(mutations_n_mutabilities, CREATEPANELS.out.exons_consensus_panel)
-    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
+    ONCODRIVEFMLALL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
+    ONCODRIVEFMLNONPROT(mutations_n_mutabilitiesnonprot, CREATEPANELS.out.exons_consensus_panel)
+    ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
 
     // Oncodrive3D
-    ONCODRIVE3D(mutations_n_mutabilities)
+    ONCODRIVE3D(mutations_n_mutabilitiesall)
     ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     // Omega

@@ -1,7 +1,9 @@
-include { SUBSET_MAF             as SUBSET_ONCODRIVEFML } from '../../../modules/local/subsetmaf/main'
 include { CREATECUSTOMBEDFILE    as ONCODRIVEFMLBED     } from '../../../modules/local/createpanels/custombedfile/main'
 
-include { ONCODRIVEFML } from '../../../modules/local/bbgtools/oncodrivefml/main'
+include { SUBSET_MAF             as SUBSET_ONCODRIVEFML } from '../../../modules/local/subsetmaf/main'
+
+include { ONCODRIVEFML                                  } from '../../../modules/local/bbgtools/oncodrivefml/main'
+include { ONCODRIVEFML           as ONCODRIVEFMLSNVS    } from '../../../modules/local/bbgtools/oncodrivefml/main'
 
 
 
@@ -38,11 +40,11 @@ workflow ONCODRIVEFML_ANALYSIS{
     .set{ muts_n_mutability }
 
     ONCODRIVEFML(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
+    ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
     ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
-    // TODO: add a second run of ONCODRIVEFML only with SNVs --no-indels
-
     emit:
-    results = ONCODRIVEFML.out.tsv   // channel: [ val(meta), file(results) ]
-    versions = ch_versions           // channel: [ versions.yml ]
+    results         = ONCODRIVEFML.out.tsv          // channel: [ val(meta), file(results) ]
+    results_snvs    = ONCODRIVEFMLSNVS.out.tsv      // channel: [ val(meta), file(results) ]
+    versions        = ch_versions                   // channel: [ versions.yml ]
 }
