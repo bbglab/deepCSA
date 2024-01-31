@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python
 
 
 import sys
@@ -149,6 +149,8 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     if plot:
         from utils_plot import plot_profile
 
+        # TODO
+        # revise if we can find a better way of defining the y axis labels
         max_freq = max(mut_probability[sample_name]) * 1.1
 
         order_mag = 100
@@ -163,7 +165,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                 size_step = 10
 
         plot_profile(dict(zip(mut_probability["CONTEXT_MUT"], mut_probability[sample_name])),
-                        title=f'{sample_name}',
+                        title=f'{sample_name} ({round(total_mutations)} muts)',
                         ylabels = ylabs,
                         ymax = max_freq,
                         output_f = f'{sample_name}.profile.pdf')

@@ -1,6 +1,6 @@
-process COMPUTE_TRINUCLEOTIDE {
+process ANNOTATE_DEPTHS {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     // // conda "YOUR-TOOL-HERE"
@@ -10,11 +10,13 @@ process COMPUTE_TRINUCLEOTIDE {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(depths)
+    tuple val(meta) , path(depths)
+    tuple val(meta2), path(panel_all)
 
     output:
-    tuple val(meta), path("*.trinucleotides.tsv.gz"), emit: trinucleotides
-    path "versions.yml"                             , emit: versions
+    // tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
+    path("*.depths.annotated.tsv.gz") , emit: annotated_depths
+    path "versions.yml"               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,25 +24,24 @@ process COMPUTE_TRINUCLEOTIDE {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def filters = task.ext.filters ?: ""
-
+    // TODO check if the file is compressed and uncompress if needed before subsetting
     """
-    mutprof_2compute_trinucleotide.py \\
-                    --depths_file ${depths} \\
-                    --sample_name ${prefix} \\
-                    ${args}
+    cut -f 1,2,9 ${panel_all} | uniq > ${panel_all}.contexts
+    merge_annotation_depths.py \\
+        --annotation ${panel_all}.contexts \\
+        --depths ${depths}
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
 
-
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.profile.json
+    touch all_samples.cohort.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python
 
 import sys
 import pandas as pd
@@ -11,6 +11,11 @@ unique_samples = pd.unique(maf_df["SAMPLE_ID"])
 
 for sample in unique_samples:
     maf_df[maf_df["SAMPLE_ID"] == sample].to_csv(f"{sample}.filtered.tsv.gz",
+                                                    sep = "\t",
+                                                    header = True,
+                                                    index = False)
+
+maf_df.sort_values(by = ["CHROM", "POS"]).to_csv(f"all_samples.filtered.tsv.gz",
                                                     sep = "\t",
                                                     header = True,
                                                     index = False)

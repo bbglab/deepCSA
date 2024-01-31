@@ -34,21 +34,33 @@ Consisting of a mix of local and nf-core/modules.
 */
 
 // SUBWORKFLOW
-include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
+include { INPUT_CHECK                                       } from '../subworkflows/local/input_check'
 
-// include { DEPTH_ANALYSIS as DEPTHANALYSIS       } from '../subworkflows/local/depthanalysis/main'
-include { MUTATION_PREPROCESSING as MUT_PREPROCESSING } from '../subworkflows/local/mutationpreprocessing/main'
+include { DEPTH_ANALYSIS            as DEPTHANALYSIS        } from '../subworkflows/local/depthanalysis/main'
+include { CREATE_PANELS             as CREATEPANELS         } from '../subworkflows/local/createpanels/main'
 
-include { MUTATIONAL_PROFILE     as MUTPROFILE        } from '../subworkflows/local/mutationprofile/main'
+include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkflows/local/mutationpreprocessing/main'
 
-include { ONCODRIVEFML_ANALYSIS  as ONCODRIVEFML      } from '../subworkflows/local/oncodrivefml/main'
-include { ONCODRIVE3D_ANALYSIS   as ONCODRIVE3D       } from '../subworkflows/local/oncodrive3d/main'
-// include { OMEGA_ANALYSIS as OMEGA       } from '../subworkflows/local/omega/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILEEXONS      } from '../subworkflows/local/mutationprofile/main'
+include { MUTATIONAL_PROFILE        as MUTPROFILEINTRONS    } from '../subworkflows/local/mutationprofile/main'
 
-// include { DEPTH_ANALYSIS as ONCODRIVECLUSTL       } from '../subworkflows/local/depthanalysis/main'
-include { SIGNATURES as SIGNATURES       } from '../subworkflows/local/signatures/main'
-// include { DEPTH_ANALYSIS as MUTRATE       } from '../subworkflows/local/depthanalysis/main'
+include { MUTABILITY                as MUTABILITYALL        } from '../subworkflows/local/mutability/main'
+include { MUTABILITY                as MUTABILITYNONPROT    } from '../subworkflows/local/mutability/main'
 
+include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFMLALL      } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFMLNONPROT  } from '../subworkflows/local/oncodrivefml/main'
+include { ONCODRIVE3D_ANALYSIS      as ONCODRIVE3D          } from '../subworkflows/local/oncodrive3d/main'
+// include { OMEGA_ANALYSIS            as OMEGA                } from '../subworkflows/local/omega/main'
+// include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkflows/local/depthanalysis/main'
+
+include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
+include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
+include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
+include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
+
+// include { DEPTH_ANALYSIS            as MUTRATE              } from '../subworkflows/local/depthanalysis/main'
 
 // Download annotation cache if needed
 include { PREPARE_CACHE                               } from '../subworkflows/local/prepare_cache/main'
@@ -63,6 +75,8 @@ Installed directly from nf-core/modules.
 // MODULE
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+
+include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
 
 
 /*
@@ -102,12 +116,6 @@ workflow DEEPCSA {
     set{ meta_bams_alone }
 
 
-    // Run depth analysis subworkflow
-    // DEPTHANALYSIS(meta_bams_alone)
-    // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
-    // Create a version of the panel annotated with this columns: ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
-    // This will be used for OMEGA: annotated_panel
-
 
     // TODO: test if downloading VEP cache works
     // Download Ensembl VEP cache if needed
@@ -123,32 +131,64 @@ workflow DEEPCSA {
     vep_extra_files = []
 
 
+    // Depth analysis: compute and plots
+    DEPTHANALYSIS(meta_bams_alone)
+    ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+
+    // Panels generation: all modalities
+    CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
+    ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
+
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel)
+    ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
+
     // Mutation preprocessing
-    bedfile = params.bedf
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, bedfile)
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
-    // Mutational profile
-    meta_vcfs_alone.map{ it -> [[ id : it[0]], [all_sites : bedfile, pa_sites : bedfile, non_pa_sites : bedfile ]] }.set{ bedfiles_var }
-    depths = Channel.of([ [ id: "all_samples" ], params.annotated_depth ])
-    MUTPROFILE(MUT_PREPROCESSING.out.mafs, depths, bedfiles_var)
-    ch_versions = ch_versions.mix(MUTPROFILE.out.versions)
 
+
+    // Mutational profile
+    MUTPROFILEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_bed)
+    MUTPROFILENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
+    MUTPROFILEEXONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed)
+    MUTPROFILEINTRONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed)
+
+    ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
+
+    MUTABILITYALL(MUT_PREPROCESSING.out.mafs,
+                    annotated_depths,
+                    MUTPROFILEALL.out.profile,
+                    CREATEPANELS.out.exons_consensus_panel,
+                    CREATEPANELS.out.exons_consensus_bed
+                    )
+
+    MUTABILITYNONPROT(MUT_PREPROCESSING.out.mafs,
+                        annotated_depths,
+                        MUTPROFILENONPROT.out.profile,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        CREATEPANELS.out.exons_consensus_bed
+                        )
 
     //
     // Positive selection
     //
 
     MUT_PREPROCESSING.out.mafs
-    .join(MUTPROFILE.out.mutability)
-    .set{mutations_n_mutabilities}
+    .join(MUTABILITYALL.out.mutability)
+    .set{mutations_n_mutabilitiesall}
+
+    MUT_PREPROCESSING.out.mafs
+    .join(MUTABILITYNONPROT.out.mutability)
+    .set{mutations_n_mutabilitiesnonprot}
 
     // OncodriveFML
-    ONCODRIVEFML(mutations_n_mutabilities, params.bedf)
-    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
+    ONCODRIVEFMLALL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
+    ONCODRIVEFMLNONPROT(mutations_n_mutabilitiesnonprot, CREATEPANELS.out.exons_consensus_panel)
+    ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
 
     // Oncodrive3D
-    ONCODRIVE3D(mutations_n_mutabilities)
+    ONCODRIVE3D(mutations_n_mutabilitiesall)
     ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     // Omega
@@ -169,11 +209,15 @@ workflow DEEPCSA {
     // ONCODRIVECLUSTL()
 
     // Signature Analysis
-    SIGNATURES(MUTPROFILE.out.wgs_sigprofiler, params.cosmic_ref_signatures)
-    ch_versions = ch_versions.mix(SIGNATURES.out.versions)
+    SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
+    ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
 
     // Mutation Rate
     // MUTRATE()
+
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')

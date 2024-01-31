@@ -78,7 +78,7 @@ GROUPING_DICT = {
     'coding_sequence_variant': 'coding_sequence_variant', ##
 
 
-    'mature_miRNA_variant': 'non_coding_exon_region',
+    'mature_miRNA_variant': 'non_coding_exon_region', # TODO fix this
     '5_prime_UTR_variant': 'non_coding_exon_region',
     '3_prime_UTR_variant': 'non_coding_exon_region',
     'non_coding_transcript_exon_variant': 'non_coding_exon_region',
@@ -238,16 +238,11 @@ def most_deleterious_within_variant(impact_vep_string):
         return '-'
 
 
-
-
-
-def VEP_annotation_to_single_row(df_annotation):
+def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
     """
     Process Ensembl VEP output to get a single consequence per gene
     Select always the most deleterious
     """
-    # update the first column name to ID
-    df_annotation.columns = ["MUT_ID"] + list(df_annotation.columns[1:])
 
     # select a subset of the columns
     if "CANONICAL" in df_annotation.columns:
@@ -283,27 +278,35 @@ def VEP_annotation_to_single_row(df_annotation):
                                                                         ascending = (True, True)
                                                                     )
 
+    if keep_genes:
+        df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'
+                                                                                                ,'SYMBOL']
+                                                                                            , keep='first'
+                                                                                            )
+    else:
+        df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID']
+                                                                                            , keep='first'
+                                                                                            )
 
-    df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'],
-                                                                                    keep='first')
     returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
 
     # TODO see if we can reduce this code by outputting the variable directly
     returned_df = returned_df.reset_index(drop = True)
+
+    # returned_df["Consequence"] = returned_df["Consequence"].apply(get_single_annotation)
 
     # we return the dataframe with all the original columns of the VEP file
     return returned_df
 
 
 
-def VEP_annotation_to_single_row_only_canonical(df_annotation):
+
+def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = False):
     """
     Process Ensembl VEP output to get a single consequence per gene
     Use only the information in the canonical transcript!!
     (select always the most deleterious)
     """
-    # update the first column name to ID
-    df_annotation.columns = ["MUT_ID"] + list(df_annotation.columns[1:])
 
     # select a subset of the columns
     if "CANONICAL" not in df_annotation.columns:
@@ -329,8 +332,16 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
                                                                     ascending = (True, True)
                                                                 )
 
-    df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'],
-                                                                                    keep='first')
+    if keep_genes:
+        df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID'
+                                                                                                ,'SYMBOL']
+                                                                                            , keep='first'
+                                                                                            )
+    else:
+        df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID']
+                                                                                            , keep='first'
+                                                                                            )
+
     returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
     returned_df = returned_df.reset_index(drop = True)
 
@@ -343,43 +354,28 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 
-
-def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_ = False, assembly = 'hg38'):
+def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly = 'hg38'):
     """
     # TODO
     explain what this function does
     """
+    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
+                                        header = None)
+    print("all possible sites loaded")
+    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'SYMBOL']
 
-    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0)
+    annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
+    del all_possible_sites
+    print("VEP to single row working")
 
-    if all_ :
-        all_possible_sites[["CHROM", "POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
-        all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split("/", expand = True)
-        all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
-    else:
-        all_possible_sites[["CHROM:POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
-        all_possible_sites[["CHROM", "POS"]] = all_possible_sites["CHROM:POS"].str.split(":", expand = True)
-#        mut_split  = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
-        all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
-#        print(all_possible_sites.head())
-        all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
 
-    # TODO: Is it robust enough to use columns names here?
-#    all_possible_sites = all_possible_sites[['#Uploaded_variation', 'Consequence', 'SYMBOL',
-#                                                'CHROM', 'POS', 'REF', 'ALT', 'MUT']]
-
-    all_possible_sites["TYPE"] = all_possible_sites[["REF", "ALT"]].apply(vartype, axis = 1)
-
-    # if the annotation already contains a single consequence per gene this function does not do much
-    # but if it contains multiple variants per gene it keeps only the most deleterious
-    annotated_variants = VEP_annotation_to_single_row(all_possible_sites)
-    annotated_variants_only_canonical = VEP_annotation_to_single_row_only_canonical(all_possible_sites)
-    if annotated_variants_only_canonical is not None:
-        annotated_variants = annotated_variants.merge(annotated_variants_only_canonical, on = "MUT_ID", how = 'left')
-        annotated_variants_only_canonical = annotated_variants_only_canonical[annotated_variants_only_canonical.columns[1:]].fillna('-')
-        annotated_variants['canonical_Consequence_single'] = annotated_variants['canonical_Consequence'].apply(most_deleterious_within_variant)
-        annotated_variants['canonical_Consequence_broader'] = annotated_variants['canonical_Consequence_single'].apply(lambda x: GROUPING_DICT[x])
-        annotated_variants['canonical_Protein_affecting'] = annotated_variants['canonical_Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
+    # annotated_variants_only_canonical = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
+    # if annotated_variants_only_canonical is not None:
+    #     annotated_variants = annotated_variants.merge(annotated_variants_only_canonical, on = "MUT_ID", how = 'left')
+    #     annotated_variants_only_canonical = annotated_variants_only_canonical[annotated_variants_only_canonical.columns[1:]].fillna('-')
+    #     annotated_variants['canonical_Consequence_single'] = annotated_variants['canonical_Consequence'].apply(most_deleterious_within_variant)
+    #     annotated_variants['canonical_Consequence_broader'] = annotated_variants['canonical_Consequence_single'].apply(lambda x: GROUPING_DICT[x])
+    #     annotated_variants['canonical_Protein_affecting'] = annotated_variants['canonical_Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
 
 
 
@@ -387,18 +383,21 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     # add a new column containing a broader  consequence per variant
     annotated_variants['Consequence_single'] = annotated_variants['Consequence'].apply(most_deleterious_within_variant)
     annotated_variants['Consequence_broader'] = annotated_variants['Consequence_single'].apply(lambda x: GROUPING_DICT[x])
-    annotated_variants['Protein_affecting'] = annotated_variants['Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
-
+    print("Consequence to IMPACT working")
 
     # add context type to all SNVs
     # remove context from the other substitution types
-    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', assembly_name2function[assembly]) if x["TYPE"] == "SNV" else "-", axis = 1)
+    chosen_assembly = assembly_name2function[assembly]
+    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', chosen_assembly) , axis = 1)
+    print("Context added")
 
-#    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'IMPACT', 'CONTEXT']]
-#    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
-    annotated_variants_columns = [x for x in annotated_variants.columns if x.replace("canonical_", "") not in ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'CHROM:POS', 'MUT'] ]
-    annotated_variants_reduced = annotated_variants.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
-    annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
+    annotated_variants["CONTEXT"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: x[:3])
+
+    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'Consequence_broader', 'CONTEXT_MUT', 'CONTEXT']]
+    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT', 'CONTEXT']
+    annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] )
+    print("Annotation sorted")
+
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,
@@ -408,32 +407,13 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
 
 if __name__ == '__main__':
     # Input
-    #VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
+    # VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
     VEP_output_file = sys.argv[1]
-    if len(sys.argv) >= 3:
-        print("Using the provided value:", end = "\t")
-        try:
-            all_sep = eval(f"{sys.argv[3]}")
-            print(all_sep)
-        except:
-            print("You should provide either True or False as the third argument.")
-            exit(1)
-    else:
-        all_sep = False
 
     # Output
-    #all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
+    # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     all_possible_sites_annotated_file = sys.argv[2]
 
-    try:
-        assembly_name = sys.argv[4]
-        if assembly_name not in ["hg38", "hg19", "mm10"]:
-            print("invalid assembly name")
-            exit(1)
-    except:
-        print("No assembly name provided, using hg38 as default.")
-        assembly_name = 'hg38'
+    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly= 'hg38')
 
-
-    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep, assembly_name)
 
