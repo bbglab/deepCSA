@@ -8,7 +8,6 @@ process OMEGA_PREPROCESS {
     //     'biocontainers/YOUR-TOOL-HERE' }"
 
     // TODO create a container for omega, for both the preprocessing and the estimation
-    container 'docker.io/ferriolcalvet/bgreference'
 
     input:
     tuple val(meta), path(mutations), path(depths), path(mutation_profile)

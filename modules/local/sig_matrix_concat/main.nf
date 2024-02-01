@@ -6,7 +6,6 @@ process MATRIX_CONCAT {
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
     //     'biocontainers/YOUR-TOOL-HERE' }"
-    container 'docker.io/ferriolcalvet/bgreference'
 
     input:
     tuple val(meta), path(matrix_files)
