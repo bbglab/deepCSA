@@ -52,8 +52,9 @@ include { MUTABILITY                as MUTABILITYNONPROT    } from '../subworkfl
 include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFMLALL      } from '../subworkflows/local/oncodrivefml/main'
 include { ONCODRIVEFML_ANALYSIS     as ONCODRIVEFMLNONPROT  } from '../subworkflows/local/oncodrivefml/main'
 include { ONCODRIVE3D_ANALYSIS      as ONCODRIVE3D          } from '../subworkflows/local/oncodrive3d/main'
+include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkflows/local/oncodriveclustl/main'
 // include { OMEGA_ANALYSIS            as OMEGA                } from '../subworkflows/local/omega/main'
-// include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkflows/local/depthanalysis/main'
+
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
@@ -203,10 +204,9 @@ workflow DEEPCSA {
     // annotated_panel should come from depth analysis
     // OMEGA(mutations_n_profile_n_depths, annotated_panel)
 
-
-
     // OncodriveClustl
-    // ONCODRIVECLUSTL()
+    ONCODRIVECLUSTL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
+
 
     // Signature Analysis
     SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures)
