@@ -11,8 +11,8 @@ process COMPUTE_MUTABILITY {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(matrix), path(mut_profile)
-    tuple val(meta2), path(depths)
+    tuple val(meta) , path(matrix), path(mut_profile), path(depths)
+    tuple val(meta2), path(bedfile)
 
     output:
     // TODO revise this to see which one is outputed and why
@@ -37,7 +37,7 @@ process COMPUTE_MUTABILITY {
                     --mutation_matrix ${matrix} \\
                     --depths ${depths} \\
                     --profile ${mut_profile} \\
-                    --bedfile ${params.bedf_annotated} \\
+                    --bedfile ${bedfile} \\
                     --out_mutability ${prefix}.mutability_per_site.tsv \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml

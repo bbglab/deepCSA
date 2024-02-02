@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python
 
 import sys
 import click
@@ -91,7 +91,7 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
 
     # Load mutation profiles file
     mut_probability = pd.read_csv(mut_profile_file, sep="\t", header=0)
-    mut_probability.columns = ["CONTEXT_MUT"] + list(mut_probability.columns[1:])
+    mut_probability.columns = ["CONTEXT_MUT"] + [ x.split('.')[0] for x in mut_probability.columns[1:] ]
     mut_prob_samples = list(mut_probability.columns[1:])
 
 
@@ -117,10 +117,6 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
         coverage_info_all_samples["CHROM"] = "chr" + coverage_info_all_samples["CHROM"].astype(str)
 
 
-    if sample_name == "all_samples":
-        coverage_info_all_samples["all_samples"] = coverage_info_all_samples[coverage_samples].sum(axis = 1)
-        coverage_info_all_samples = coverage_info_all_samples.drop(coverage_samples, axis = 1)
-
     all_sites_context_n_coverage = all_sites_to_be_included_annotated.merge(coverage_info_all_samples,
                                                                             on = ["CHROM", "POS"],
                                                                             how = 'left')
@@ -130,16 +126,15 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
                                                                     on = "CONTEXT_MUT",
                                                                     suffixes = ("_coverage", "_probability"),
                                                                     how = 'left')
+
     print("Coverage and probability merged")
     del all_sites_context_n_coverage
     del coverage_info_all_samples
     del all_sites_to_be_included_annotated
     print("Remove unnecessary objects")
 
-    # if sample_name != "all_samples":
 
     coverage_and_probability[f"{sample_name}_adjusted_probability"] = coverage_and_probability[f"{sample_name}_probability"] * coverage_and_probability[f"{sample_name}_coverage"]
-    # coverage_and_probability[f"{samp}_adjusted_probability"] = coverage_and_probability[f"{samp}_adjusted_probability"] * norm_mut_burden_sample
 
     list_of_samples_columns = [f"{sample_name}_adjusted_probability" ]
     all_samples_mutability_per_site = coverage_and_probability[ ['CHROM', 'POS', 'REF', 'ALT', 'GENE'] + list_of_samples_columns ].fillna(0)
@@ -151,7 +146,6 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
                                                         keep='first').drop("GENE", axis = 1)
     print("Mutabilities computed")
 
-    # print(sample_mutability_info_store[sample_mutability_info_store[f"{sample_name}_adjusted_probability"] > 0].head(50))
     sample_mutability_info_store.to_csv(out_mutability,
                                             sep = "\t",
                                             header = False,
@@ -166,37 +160,6 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
 
     return sample_mutability_info
 
-
-    # else:
-
-    #     samples = sorted(list(set(mut_prob_samples).intersection(coverage_samples)))
-    #     for samp in samples:
-    #         # # this should be a single value of the relative mutational burden
-    #         # # of this sample
-    #         # norm_mut_burden_sample = snv_counts_per_sample[snv_counts_per_sample["SAMPLE_ID"] == samp]["NORM_COUNT"].values[0]
-
-    #         coverage_and_probability[f"{samp}_adjusted_probability"] = coverage_and_probability[f"{samp}_probability"] * coverage_and_probability[f"{samp}_coverage"]
-    #         # coverage_and_probability[f"{samp}_adjusted_probability"] = coverage_and_probability[f"{samp}_adjusted_probability"] * norm_mut_burden_sample
-
-    #     list_of_samples_columns = [ x for x in coverage_and_probability.columns if x.endswith("_adjusted_probability") ]
-    #     all_samples_mutability_per_site = coverage_and_probability[ ['CHROM', 'POS', 'REF', 'MUT'] + list_of_samples_columns ].fillna(0)
-    #     all_samples_mutability_per_site_indexed = all_samples_mutability_per_site.set_index(['CHROM', 'POS', 'REF', 'MUT'])
-
-    #     all_samples_mutability_per_site_all_samples = all_samples_mutability_per_site_indexed.sum(axis = 1).reset_index()
-    #     all_samples_mutability_per_site_all_samples.columns = ['CHROM', 'POS', 'REF', 'MUT', 'all_samples_adjusted_probability']
-    #     all_samples_mutability_per_site_all_samples = all_samples_mutability_per_site_all_samples.sort_values(
-    #                                                                 by = ['CHROM', 'POS', 'REF', 'MUT']).reset_index(drop = True)
-    #     all_samples_mutability_per_site_all_samples
-
-    # all_samples_mutability_per_site = all_samples_mutability_per_site.sort_values(
-    #                                                             by = ['CHROM', 'POS', 'REF', 'MUT']).reset_index(drop = True)
-
-    # for samp in [x.replace("_adjusted_probability", "") for x in all_samples_mutability_per_site.columns]:
-    #     sample_mutability_info = all_samples_mutability_per_site[['CHROM', 'POS', 'REF', 'MUT', f"{samp}_adjusted_probability"]]
-    #     sample_mutability_info.to_csv(f"{samp}.mutability_per_site.tsv",
-    #                                 sep = "\t",
-    #                                 header = False,
-    #                                 index = False)
 
 def process_gene_chunk(chunk, sample_name, mutation_matrix_per_sample_gene_int):
     processed_data_chunk = pd.DataFrame()
@@ -302,6 +265,7 @@ def adjust_mutabilities(sample_name, mutation_matrix_file, mutability_info, out_
 def main(sample_name, mutation_matrix, depths, profile, bedfile, out_mutability, adjust_local_rate):
     click.echo(f"Computing the mutabilities...")
     # click.echo(f"Using the pseudocount: {pseud}")
+    sample_name = sample_name.split('.')[0]
     mutabilities_with_gene = compute_mutabilities(sample_name, depths, profile, bedfile, out_mutability)
     click.echo("Mutabilities computed.")
     if adjust_local_rate:

@@ -15,8 +15,8 @@ process FILTERBED {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(maf)
-    path(bedfile)
+    tuple val(meta)     , path(maf)
+    tuple val(meta2)    , path(bedfile)
 
     output:
     tuple val(meta), path("*.tsv.gz")  , emit: maf
