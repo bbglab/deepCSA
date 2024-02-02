@@ -6,6 +6,7 @@ from utils import add_filter
 
 maf_df_file = sys.argv[1]
 samp_name = sys.argv[2]
+intogen_mutations = sys.argv[3]
 
 maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t')  # Read gzipped TSV
 
@@ -27,8 +28,6 @@ if len(n_samples) == 0:
     print("Not enough samples to identify potential repetitive variants!")
 
 else:
-    intogen_mutations = f"/workspace/projects/intogen_plus/fixdatasets-20230223/intogen-plus/run_20230224_ALL/intogen_analysis/mutations.tsv"
-
     # Repetitive variants
     intogen_muts_df = pd.read_csv(intogen_mutations, sep = "\t")
 

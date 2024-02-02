@@ -55,7 +55,7 @@ workflow MUTATION_PREPROCESSING {
     ch_versions = ch_versions.mix(MERGEBATCH.out.versions)
 
 
-    FILTERBATCH(MERGEBATCH.out.cohort_maf)
+    FILTERBATCH(MERGEBATCH.out.cohort_maf, params.intogen_mutations)
     ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
 
 

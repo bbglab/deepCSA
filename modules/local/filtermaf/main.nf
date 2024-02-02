@@ -15,6 +15,7 @@ process FILTER_BATCH {
 
     input:
     tuple val(meta), path(maf)
+    path (mutations)
 
     output:
     tuple val(meta), path("*.cohort.filtered.tsv.gz") , emit: cohort_maf
@@ -29,7 +30,7 @@ process FILTER_BATCH {
     def filters = task.ext.filters ?: "other_sample_germline,is_SNP,repetitive_variant"
     def repetitive_variant = task.ext.repetitive_variant ?: "5"
     """
-    filter_cohort.py ${maf} ${prefix}
+    filter_cohort.py ${maf} ${prefix} ${mutations}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
