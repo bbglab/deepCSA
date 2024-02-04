@@ -1,29 +1,41 @@
-include { MUTRATE as MUTRATE_ALL} from '../../../modules/local/computemutrate/main'
-include { MUTRATE as MUTRATE_PROTAFFECT} from '../../../modules/local/computemutrate/main'
-include { MUTRATE as MUTRATE_NONPROTAFFECT} from '../../../modules/local/computemutrate/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+
+include { SUBSET_MAF                as SUBSET_MUTRATE        } from '../../../modules/local/subsetmaf/main'
+
+include { COMPUTE_MATRIX            as COMPUTEMATRIX            } from '../../../modules/local/mutation_matrix/main'
+include { COMPUTE_TRINUCLEOTIDE     as COMPUTETRINUC            } from '../../../modules/local/compute_trinucleotide/main'
+
+include { COMPUTE_PROFILE           as COMPUTEPROFILE           } from '../../../modules/local/compute_profile/main'
+
+
+include { MUTRATE as MUTRATE } from '../../../modules/local/computemutrate/main'
 
 
 workflow MUTATION_RATE{
     take:
-    maf
-    depths
-    consensus_annot_panel_all
-    consensus_annot_panel_protaffect
-    consensus_annot_panel_nonprotaffect
+    mutations
+    depth
+    bedfile
+    panel
 
     main:
     ch_versions = Channel.empty()
 
-    MUTRATE_ALL(maf, depths, consensus_annot_panel_all)
-    MUTRATE_PROTAFFECT(maf, depths, consensus_annot_panel_protaffect)
-    MUTRATE_NONPROTAFFECT(maf, depths, consensus_annot_panel_nonprotaffect)
+    // Intersect BED of all sites with BED of sample filtered sites
+    SUBSETDEPTHS(depth, bedfile)
+    SUBSETMUTATIONS(mutations, bedfile)
 
+    SUBSET_MUTRATE(SUBSETMUTATIONS.out.subset)
+
+    SUBSET_MUTRATE.out.mutations
+    .join(SUBSETDEPTHS.out.subset)
+    .set{ mutations_n_depth }
+
+    MUTRATE(mutations_n_depth, panel)
     // PLOTMUTRATE()
 
     emit:
-    mutrates_all   = MUTRATE_ALL.out.mutrates
-    mutrates_protaffect   = MUTRATE_PROTAFFECT.out.mutrates
-    mutrates_nonprotaffect   = MUTRATE_NONPROTAFFECT.out.mutrates
-
+    mutrates      = MUTRATE.out.mutrates
     versions = ch_versions                // channel: [ versions.yml ]
 }

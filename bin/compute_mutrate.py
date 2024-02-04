@@ -1,109 +1,125 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python
 
-import pandas as pd
 import sys
+import pandas as pd
 
 # -- Auxiliary functions -- #
 
-def mutrate_sample(maf_df, depths_df):
+def mutrate_sample(maf_df, depths_df, sample_name, method = 'unique'):
     """
     computes mutation rate per Mb sequenced
     per sample
     """
+    print(maf_df.shape)
+    unique_maf = maf_df[["SAMPLE_ID", "MUT_ID", "ALT_DEPTH"]].drop_duplicates()
+    print(unique_maf.shape)
 
-    # muts per group
-    nmuts_df = maf_df.groupby("SAMPLE_ID").size().to_frame("N_MUTS").reset_index()
+    # make sure to count each mutation only once (avoid annotation issues)
+    n_muts = unique_maf.shape[0]
+    print(n_muts)
 
-    # depth per group
-    depth_samples_df = depths_df[["CHROM", "POS", "SAMPLE_ID", "DEPTH"]].groupby("SAMPLE_ID")["DEPTH"].sum()
+    # make sure to count each mutation only once (avoid annotation issues)
+    n_muts_per_sample = unique_maf.groupby(by = ["SAMPLE_ID", "MUT_ID"] ).agg({"ALT_DEPTH" : "sum" }).reset_index()
+    n_mutated_reads = n_muts_per_sample["ALT_DEPTH"].sum()
+    n_mutated_reads2 = unique_maf["ALT_DEPTH"].sum()
+    print(n_muts_per_sample, n_mutated_reads, n_mutated_reads2)
 
-    # merge
-    mutrate_df = nmuts_df.merge(depth_samples_df, on = "SAMPLE_ID")
 
-    # calculate Mb mutation rate
-    mutrate_df["MUTRATE_MB"] = (mutrate_df["N_MUTS"] / mutrate_df["DEPTH"] * 1000000).astype("float")
-    mutrate_df["canonical_SYMBOL"] = "ALL_GENES"
+    sample_features = {"N_MUTS" : n_muts,
+                        "N_MUTATED" : n_mutated_reads,
+                        "DEPTH" : depths_df[f"{sample_name}"].sum()
+                        }
+    sample_features["MUTRATE_MB"] = ( sample_features["N_MUTS"] / sample_features["DEPTH"] * 1000000 ).astype(float)
+    sample_features["MUTREADSRATE_MB"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH"] * 1000000 ).astype(float)
+    sample_features["GENE"] = "ALL_GENES"
 
-    return mutrate_df
+    return pd.DataFrame([sample_features])
 
-def mutrate_gene(maf_df, depths_df):
+
+def mutrate_gene(maf_df, depths_df, sample_name, method = 'unique'):
     """
     computes mutation rate per Mb sequenced
     per gene
     """
+    unique_maf = maf_df[["SAMPLE_ID", "GENE", "MUT_ID", "ALT_DEPTH"]].drop_duplicates()
 
-    # muts per group
-    nmuts_df = maf_df.groupby("canonical_SYMBOL").size().to_frame("N_MUTS").reset_index()
+    # make sure to count each mutation only once (avoid annotation issues)
+    n_muts_gene = unique_maf.groupby(by = ["GENE"] ).agg({"ALT_DEPTH" : "count" })
+    n_muts_gene.columns = ["N_MUTS"]
+    print(n_muts_gene)
 
-    # depth per group
-    depth_gene_df = depths_df.groupby("canonical_SYMBOL")["DEPTH"].sum()
+    # make sure to count each mutation only once (avoid annotation issues)
+    n_mutated_reads = unique_maf.groupby(by = ["GENE"] ).agg({"ALT_DEPTH" : "sum" })
+    n_mutated_reads.columns = ["N_MUTATED"]
+    print(n_mutated_reads)
 
-    # merge
-    mutrate_df = nmuts_df.merge(depth_gene_df, on = "canonical_SYMBOL")
+    depths_gene_df = depths_df.groupby("GENE").agg({f"{sample_name}" : "sum" })
+    depths_gene_df.columns = ["DEPTH"]
 
-    # calculate Mb mutation rate
-    mutrate_df["MUTRATE_MB"] = (mutrate_df["N_MUTS"] / mutrate_df["DEPTH"] * 1000000).astype("float")
-    mutrate_df["SAMPLE_ID"] = "ALL_SAMPLES"
+    print(n_muts_gene)
+    print(depths_gene_df)
 
-    return mutrate_df
+    mut_rate_mut_reads_df = n_muts_gene.merge(n_mutated_reads, on = "GENE")
+    mut_depths_df = depths_gene_df.merge(mut_rate_mut_reads_df, on = "GENE")
 
-def mutrate_sample_gene(maf_df, depths_df):
-    """
-    computes mutation rate per Mb sequenced
-    per sample and gene
-    """
+    mut_depths_df["MUTRATE_MB"] = (mut_depths_df["N_MUTS"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
+    mut_depths_df["MUTREADSRATE_MB"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
 
-    # muts per group
-    nmuts_df = maf_df.groupby(["canonical_SYMBOL", "SAMPLE_ID"]).size().to_frame("N_MUTS").reset_index()
+    print(mut_depths_df)
 
-    # depth per group
-    depth_sample_gene_df = depths_df.groupby(["canonical_SYMBOL", "SAMPLE_ID"])["DEPTH"].sum()
+    return mut_depths_df.reset_index()
 
-    # merge
-    mutrate_df = nmuts_df.merge(depth_sample_gene_df, on = ["canonical_SYMBOL", "SAMPLE_ID"])
 
-    # calculate Mb mutation rate
-    mutrate_df["MUTRATE_MB"] = (mutrate_df["N_MUTS"] / mutrate_df["DEPTH"] * 1000000).astype("float")
-
-    return mutrate_df
 
 
 # -- Main function -- #
-
-def compute_mutrate(maf_path, depths_path, annot_panel_path, output_prefix):
+def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_v):
 
     # File loading
     depths_df = pd.read_csv(depths_path, sep = "\t")
     annot_panel_df = pd.read_csv(annot_panel_path, sep = "\t")
     maf_df = pd.read_csv(maf_path, sep = "\t")
 
+    depths_df = depths_df.drop("CONTEXT", axis = 1)
+
     # Subset MAF and depths with panel
-    depths_df = depths_df.melt(id_vars = ["CHROM", "POS"], var_name = "SAMPLE_ID", value_name = "DEPTH")
-    depths_df["SAMPLE_ID"] = depths_df.apply(lambda row: row["SAMPLE_ID"].split(".")[0], axis = 1)
     depths_subset_df = depths_df.merge(annot_panel_df[["CHROM", "POS", "GENE"]].drop_duplicates(),
-                                       on = ["CHROM", "POS"], how = "inner").rename({"GENE": "canonical_SYMBOL"}, axis = 1)
+                                        on = ["CHROM", "POS"], how = "inner")
+
+    del depths_df
+    del annot_panel_df
 
     ## double filtering: panel and consequence (some parts of the panels intersect)
-    maf_subset_df = maf_df.merge(annot_panel_df[["CHROM", "POS"]].drop_duplicates(),
-                                 on = ["CHROM", "POS"], how = "inner")
-    maf_subset_df = maf_subset_df.loc[maf_subset_df["Consequence_broader"].isin(annot_panel_df["IMPACT"].unique())]
+    # maf_subset_df = maf_df.merge(annot_panel_df[["CHROM", "POS"]].drop_duplicates(),
+    #                                 on = ["CHROM", "POS"], how = "inner")
+    # maf_subset_df = maf_subset_df.loc[maf_subset_df["Consequence_broader"].isin(annot_panel_df["IMPACT"].unique())]
 
     # Compute mutation rates
-    mutrate_samples_df = mutrate_sample(maf_subset_df, depths_subset_df)
-    mutrate_genes_df = mutrate_gene(maf_subset_df, depths_subset_df)
-    mutrate_samples_genes_df = mutrate_sample_gene(maf_subset_df, depths_subset_df)
-    mutrate_df = pd.concat([mutrate_samples_df, mutrate_genes_df, mutrate_samples_genes_df])
+    mutrate_samples_df = mutrate_sample(maf_df, depths_subset_df, sample_name.split('.')[0])
+    mutrate_genes_df = mutrate_gene(maf_df, depths_subset_df, sample_name.split('.')[0])
+    mutrate_df = pd.concat([mutrate_samples_df, mutrate_genes_df])
+    mutrate_df["SAMPLE_ID"] = sample_name.split('.')[0]
+    mutrate_df["REGIONS"] = panel_v
 
     # Save
-    mutrate_df.to_csv(f"{output_prefix}.mutrates.tsv", sep = "\t", index = False)
+    mutrate_df[["SAMPLE_ID", "GENE", "REGIONS",
+                "N_MUTS", "N_MUTATED", "DEPTH",
+                "MUTRATE_MB", "MUTREADSRATE_MB"]].to_csv(f"{sample_name}.{panel_v}.mutrates.tsv",
+                                                            sep = "\t",
+                                                            header = True,
+                                                            index = False
+                                                            )
+
 
 
 if __name__ == '__main__':
+    # TODO reimplement with click
     maf_path = sys.argv[1]
     depths_path = sys.argv[2]
     annot_panel_path = sys.argv[3]
-    output_prefix = sys.argv[4]
+    sample_name = sys.argv[4]
+    panel_version = sys.argv[5]
 
-    compute_mutrate(maf_path, depths_path, annot_panel_path, output_prefix)
+    compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_version)
 
 

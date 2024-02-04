@@ -7,9 +7,8 @@ process MUTRATE {
         'biocontainers/pandas:1.5.2' }"
 
     input:
-    tuple val(meta), path(allsamples_maf)
-    tuple val(meta2), path(allsamples_depths)
-    tuple val(meta3), path(consensus_panel)
+    tuple val(meta), path(mutations), path(depth)
+    tuple val(meta2), path(consensus_panel)
 
     output:
     tuple val(meta), path("*.mutrates.tsv"), emit: mutrates
@@ -20,13 +19,14 @@ process MUTRATE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def version = task.ext.prefix ?: "${meta3.id}"
+    def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
     compute_mutrate.py \\
-                ${allsamples_maf} \\
-                ${allsamples_depths} \\
+                ${mutations} \\
+                ${depth} \\
                 ${consensus_panel} \\
-                ${prefix}.${version};
+                ${prefix} \\
+                ${panel_version};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -36,8 +36,9 @@ process MUTRATE {
 
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
+    def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    touch ${prefix}.mutrates.tsv
+    touch ${prefix}.${panel_version}.mutrates.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

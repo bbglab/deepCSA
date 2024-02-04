@@ -41,7 +41,9 @@ include { CREATE_PANELS             as CREATEPANELS         } from '../subworkfl
 
 include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkflows/local/mutationpreprocessing/main'
 
-include { MUTATION_RATE          as MUTRATE           } from '../subworkflows/local/mutationrate/main'
+include { MUTATION_RATE             as MUTRATEALL           } from '../subworkflows/local/mutationrate/main'
+include { MUTATION_RATE             as MUTRATEPROT          } from '../subworkflows/local/mutationrate/main'
+include { MUTATION_RATE             as MUTRATENONPROT       } from '../subworkflows/local/mutationrate/main'
 
 include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
@@ -149,16 +151,17 @@ workflow DEEPCSA {
     MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
+    // Consider applying a subset of the mutations at this stage for somatic and filters
+    // also reducing the main columns
+    // MUT_PREPROCESSING.out.mafs
+
 
     // Mutation Rate
     // TODO: input all the bedfiles in the same channel
-    consensus_annot_panel_all = Channel.of([ [ id: "consensus_panel_all" ], params.consensus_annot_panel_all ])
-    consensus_annot_panel_protaffect = Channel.of([ [ id: "consensus_panel_protaffect" ], params.consensus_annot_panel_protaffect ])
-    consensus_annot_panel_nonprotaffect = Channel.of([ [ id: "consensus_panel_nonprotaffect" ], params.consensus_annot_panel_nonprotaffect ])
-    depths = Channel.of([ [ id: "all_samples" ], params.depths ])
-    maf = Channel.of([ [ id: "all_samples" ], params.maf ])
-    MUTRATE(maf, depths, consensus_annot_panel_all, consensus_annot_panel_protaffect, consensus_annot_panel_nonprotaffect)
-    ch_versions = ch_versions.mix(MUTRATE.out.versions)
+    MUTRATEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
+    MUTRATEPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
+    MUTRATENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
+    ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
 
     // Mutational profile
     MUTPROFILEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_bed)
