@@ -5,7 +5,7 @@ import sys
 
 # -- Main function -- #
 
-def create_panel4sample(compact_annot_panel_path, depths_path, min_depth):
+def create_panel4sample(compact_annot_panel_path, depths_path, panel_name, min_depth):
 
     # Load captured panel and depths
     compact_annot_panel_df = pd.read_csv(compact_annot_panel_path, sep = "\t")
@@ -21,13 +21,14 @@ def create_panel4sample(compact_annot_panel_path, depths_path, min_depth):
         sample_depth = depths_df[["CHROM", "POS", sample]]
         sample_depth = sample_depth.loc[sample_depth[sample] >= min_depth]
         sample_panel = compact_annot_panel_df.merge(sample_depth, on = ["CHROM", "POS"], how = "inner").drop(sample, axis = 1)
-        # sample_panel.to_csv(f"{output_path}/{sample.split('.')[0]}.{version}.tsv")
-        sample_panel.to_csv(f"{sample.split('.')[0]}.tsv", index = False, sep = "\t")
+
+        sample_panel.to_csv(f"{sample.split('.')[0]}.{panel_name}.tsv", index = False, sep = "\t")
 
 
 if __name__ == '__main__':
     compact_annot_panel_path = sys.argv[1]
     depths_path = sys.argv[2]
-    min_depth = sys.argv[3]
+    panel_v = sys.argv[3]
+    min_depth = sys.argv[4]
 
-    create_panel4sample(compact_annot_panel_path, depths_path, min_depth)
+    create_panel4sample(compact_annot_panel_path, depths_path, panel_v, min_depth)
