@@ -392,7 +392,8 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
 
     # add context type to all SNVs
     # remove context from the other substitution types
-    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', assembly_name2function[assembly]) if x["TYPE"] == "SNV" else "-", axis = 1)
+    genome_func = assembly_name2function[assembly]
+    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', genome_func) if x["TYPE"] == "SNV" else "-", axis = 1)
 
 #    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'IMPACT', 'CONTEXT']]
 #    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
@@ -410,29 +411,32 @@ if __name__ == '__main__':
     # Input
     #VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
     VEP_output_file = sys.argv[1]
-    if len(sys.argv) >= 3:
-        print("Using the provided value:", end = "\t")
-        try:
-            all_sep = eval(f"{sys.argv[3]}")
-            print(all_sep)
-        except:
-            print("You should provide either True or False as the third argument.")
-            exit(1)
-    else:
-        all_sep = False
 
     # Output
     #all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     all_possible_sites_annotated_file = sys.argv[2]
 
     try:
-        assembly_name = sys.argv[4]
+        assembly_name = sys.argv[3]
         if assembly_name not in ["hg38", "hg19", "mm10"]:
             print("invalid assembly name")
             exit(1)
     except:
         print("No assembly name provided, using hg38 as default.")
         assembly_name = 'hg38'
+
+
+    if len(sys.argv) >= 4:
+        print("Using the provided value:", end = "\t")
+        try:
+            all_sep = eval(f"{sys.argv[4]}")
+            print(all_sep)
+        except:
+            print("You should provide either True or False as the fourth argument.")
+            exit(1)
+    else:
+        all_sep = False
+
 
 
     vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep, assembly_name)

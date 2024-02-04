@@ -25,6 +25,8 @@ process POSTPROCESS_VEP_ANNOTATION {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def assembly = task.ext.assembly ?: "hg38"
+    // TODO add assembly parameter to modules.config
     // TODO
     // change panel postprocessing annotation into the same post processing annotation as before
     // keep it as the one for omega that is the one minimizing the computational processing
@@ -38,6 +40,7 @@ process POSTPROCESS_VEP_ANNOTATION {
 
     panel_postprocessing_annotation.py \\
                     ${prefix}.tmp.gz \\
+                    ${assembly} \\
                     ${vep_annotated_file.getBaseName()}.compact.tsv;
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

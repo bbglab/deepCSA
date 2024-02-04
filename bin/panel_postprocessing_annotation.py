@@ -410,10 +410,15 @@ if __name__ == '__main__':
     # VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
     VEP_output_file = sys.argv[1]
 
+    assembly = sys.argv[2]
+
     # Output
     # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
-    all_possible_sites_annotated_file = sys.argv[2]
+    all_possible_sites_annotated_file = sys.argv[3]
 
-    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly= 'hg38')
+
+
+
+    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly)
 
 
