@@ -66,12 +66,12 @@ def create_panel_versions(compact_annot_panel_path, output_path):
     for version in panel_impact_dict:
 
         panel_version = compact_annot_panel_df.loc[compact_annot_panel_df["IMPACT"].isin(panel_impact_dict[version])]
-        panel_version.to_csv(f"{output_path}.compact.{version}.tsv",
+        panel_version.to_csv(f"{output_path}.{version}.tsv",
                                 sep = "\t", index = False)
 
     # Store complete panel (better change this way of using this version in nextflow)
     version = "all"
-    compact_annot_panel_df.to_csv(f"{output_path}.compact.{version}.tsv",
+    compact_annot_panel_df.to_csv(f"{output_path}.{version}.tsv",
                                     sep = "\t", index = False)
 
 if __name__ == '__main__':

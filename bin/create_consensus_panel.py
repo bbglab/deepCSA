@@ -5,7 +5,7 @@ import sys
 
 # -- Main function -- #
 
-def create_consensus_panel(compact_annot_panel_path, depths_path, consensus_min_depth):
+def create_consensus_panel(compact_annot_panel_path, depths_path, version, consensus_min_depth):
 
     # Load captured panel and depths
     compact_annot_panel_df = pd.read_csv(compact_annot_panel_path, sep = "\t")
@@ -19,12 +19,13 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, consensus_min_
 
     # Filter captured panel to only keep minimally covered positions
     consensus_panel = compact_annot_panel_df.merge(min_depths_df[["CHROM", "POS"]], on = ["CHROM", "POS"], how = "inner")
-    version = compact_annot_panel_path.split("/")[-1].split(".")[2]
-    consensus_panel.to_csv(f"consensus_panel.{version}.tsv", sep = "\t", index = False)
+    consensus_panel.to_csv(f"consensus.{version}.tsv", sep = "\t", index = False)
 
 if __name__ == '__main__':
     compact_annot_panel_path = sys.argv[1]
     depths_path = sys.argv[2]
-    min_depth = sys.argv[3]
+    version = sys.argv[3]
+    min_depth = sys.argv[4]
 
-    create_consensus_panel(compact_annot_panel_path, depths_path, min_depth)
+
+    create_consensus_panel(compact_annot_panel_path, depths_path, version, min_depth)

@@ -13,9 +13,9 @@ process CREATECONSENSUSPANELS {
     val(consensus_min_depth)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: consensus_panel
-    tuple val(meta), path("*.bed"), emit: consensus_panel_bed
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*.tsv")       , emit: consensus_panel
+    tuple val(meta), path("*.bed")       , emit: consensus_panel_bed
+    path "versions.yml"                  , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,18 +23,16 @@ process CREATECONSENSUSPANELS {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     create_consensus_panel.py \\
-                    ${prefix}.compact.*.tsv \\
+                    ${compact_captured_panel_annotation} \\
                     all_samples.depths.tsv.gz \\
+                    ${prefix} \\
                     $consensus_min_depth;
-    for consensus_panel in \$(ls *.tsv | grep -v '^captured_panel'); do
-        bedtools merge \\
-                -i <(tail -n +2 \$consensus_panel | \\
-                awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > \${consensus_panel%.tsv}.bed;
-    done;
 
+    bedtools merge \\
+            -i <(tail -n +2 consensus.${prefix}.tsv | \\
+            awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > consensus.${prefix}.bed;
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
@@ -42,10 +40,10 @@ process CREATECONSENSUSPANELS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "TargetRegions"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch consensus_panel.*.tsv
-    touch consensus_panel.*.bed
+    touch consensus.${prefix}.tsv
+    touch consensus.${prefix}.bed
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

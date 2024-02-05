@@ -21,8 +21,9 @@ process SUMMARIZE_ANNOTATION {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
+    def assembly = task.ext.assembly ?: "hg38"
+
+    // TODO reimplement python script with click
     """
     zcat <\$(ls *.tab.gz | head -1) | grep '#' | grep -v '##' > header.tsv;
     for file in *.tab.gz; do
@@ -32,7 +33,7 @@ process SUMMARIZE_ANNOTATION {
     cat header.tsv <(sort -u ${prefix}.vep.tab.tmp | grep -v '#') > ${prefix}.vep.tab ;
     rm ${prefix}.vep.tab.tmp;
 
-    postprocessing_annotation.py ${prefix}.vep.tab ${prefix}.vep.summary.tab False;
+    postprocessing_annotation.py ${prefix}.vep.tab ${prefix}.vep.summary.tab ${assembly} False;
     gzip ${prefix}.vep.summary.tab;
 
     rm ${prefix}.vep.tab;

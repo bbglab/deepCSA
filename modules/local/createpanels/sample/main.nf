@@ -16,9 +16,9 @@ process CREATESAMPLEPANELS {
     val(min_depth)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: sample_specific_panel
-    tuple val(meta), path("*.bed"), emit: sample_specific_panel_bed
-    path "versions.yml"           , emit: versions
+    path("*.tsv")           , emit: sample_specific_panel
+    path("*.bed")           , emit: sample_specific_panel_bed
+    path "versions.yml"     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,10 +28,12 @@ process CREATESAMPLEPANELS {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     create_panel4sample.py \\
-                    ${prefix}.compact.*.tsv \\
+                    ${compact_captured_panel_annotation} \\
                     all_samples.depths.tsv.gz \\
+                    ${prefix} \\
                     ${min_depth};
-    for sample_panel in \$(ls *.tsv | grep -v '^captured_panel'); do
+
+    for sample_panel in \$(ls *${prefix}.tsv ); do
         bedtools merge \\
                 -i <(tail -n +2 \$sample_panel | \\
                 awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > \${sample_panel%.tsv}.bed;

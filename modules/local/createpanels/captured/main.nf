@@ -14,17 +14,17 @@ process CREATECAPTUREDPANELS {
     tuple val(meta), path(compact_captured_panel_annotation)
 
     output:
-    tuple val(meta), path("*.compact.all.tsv")                      , emit: captured_panel_all
-    tuple val(meta), path("*.compact.protein_affecting.tsv")        , emit: captured_panel_protein_affecting
-    tuple val(meta), path("*.compact.non_protein_affecting.tsv")    , emit: captured_panel_non_protein_affecting
-    tuple val(meta), path("*.compact.exons_splice_sites.tsv")       , emit: captured_panel_exons_splice_sites
-    tuple val(meta), path("*.compact.introns_intergenic.tsv")       , emit: captured_panel_introns_intergenic
-    tuple val(meta), path("*.compact.all.bed")                      , emit: captured_panel_all_bed
-    tuple val(meta), path("*.compact.protein_affecting.bed")        , emit: captured_panel_protein_affecting_bed
-    tuple val(meta), path("*.compact.non_protein_affecting.bed")    , emit: captured_panel_non_protein_affecting_bed
-    tuple val(meta), path("*.compact.exons_splice_sites.bed")       , emit: captured_panel_exons_splice_sites_bed
-    tuple val(meta), path("*.compact.introns_intergenic.bed")       , emit: captured_panel_introns_intergenic_bed
-    path "versions.yml"                                             , emit: versions
+    path("*.all.tsv")                      , emit: captured_panel_all
+    path("*.protein_affecting.tsv")        , emit: captured_panel_protein_affecting
+    path("*.non_protein_affecting.tsv")    , emit: captured_panel_non_protein_affecting
+    path("*.exons_splice_sites.tsv")       , emit: captured_panel_exons_splice_sites
+    path("*.introns_intergenic.tsv")       , emit: captured_panel_introns_intergenic
+    path("*.all.bed")                      , emit: captured_panel_all_bed
+    path("*.protein_affecting.bed")        , emit: captured_panel_protein_affecting_bed
+    path("*.non_protein_affecting.bed")    , emit: captured_panel_non_protein_affecting_bed
+    path("*.exons_splice_sites.bed")       , emit: captured_panel_exons_splice_sites_bed
+    path("*.introns_intergenic.bed")       , emit: captured_panel_introns_intergenic_bed
+    path "versions.yml"                    , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -36,10 +36,10 @@ process CREATECAPTUREDPANELS {
     create_panel_versions.py \\
                     ${compact_captured_panel_annotation} \\
                     ${prefix};
-    for captured_panel in \$(ls *.tsv);
-    do bedtools merge \\
-    -i <(tail -n +2 \$captured_panel | \\
-    awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > \${captured_panel%.tsv}.bed;
+    for captured_panel in \$(ls -l *.tsv | grep -v '^l' | awk '{print \$NF}'); do
+        bedtools merge \\
+            -i <(tail -n +2 \$captured_panel | \\
+            awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > \${captured_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml
@@ -49,18 +49,18 @@ process CREATECAPTUREDPANELS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "TargetRegions"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.compact.all.tsv
-    touch ${prefix}.compact.protein_affecting.tsv
-    touch ${prefix}.compact.non_protein_affecting.tsv
-    touch ${prefix}.compact.exons_splice_sites.tsv
-    touch ${prefix}.compact.introns_intergenic.tsv
-    touch ${prefix}.compact.all.bed
-    touch ${prefix}.compact.protein_affecting.bed
-    touch ${prefix}.compact.non_protein_affecting.bed
-    touch ${prefix}.compact.exons_splice_sites.bed
-    touch ${prefix}.compact.introns_intergenic.bed
+    touch ${prefix}.all.tsv
+    touch ${prefix}.protein_affecting.tsv
+    touch ${prefix}.non_protein_affecting.tsv
+    touch ${prefix}.exons_splice_sites.tsv
+    touch ${prefix}.introns_intergenic.tsv
+    touch ${prefix}.all.bed
+    touch ${prefix}.protein_affecting.bed
+    touch ${prefix}.non_protein_affecting.bed
+    touch ${prefix}.exons_splice_sites.bed
+    touch ${prefix}.introns_intergenic.bed
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
