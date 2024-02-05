@@ -25,6 +25,7 @@ process ONCODRIVECLUSTL {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def assembly = task.ext.assembly ?: "hg38"
     """
     cat > mutability_config.json << EOF
     {
@@ -43,6 +44,7 @@ process ONCODRIVECLUSTL {
                     -r ${bed_file} \\
                     -o ${prefix} \\
                     --cores ${task.cpus} \\
+                    -g ${assembly} \\
                     ${args} \\
                     -mutab mutability_config.json
 
@@ -64,7 +66,7 @@ process ONCODRIVECLUSTL {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrivefml: \$(echo \$(oncodrivefml --version | rev | cut -d ' ' -f1 | rev))
+        oncodriveclustl: \$(echo \$(oncodriveclustl --version | rev | cut -d ' ' -f1 | rev))
     END_VERSIONS
     """
 }
