@@ -63,12 +63,15 @@ workflow CREATE_PANELS {
                     params.vep_cache_version,
                     vep_cache,
                     vep_extra_files)
+    ch_versions = ch_versions.mix(VCFANNOTATEPANEL.out.versions)
 
     // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
+    ch_versions = ch_versions.mix(POSTPROCESSVEPPANEL.out.versions)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
+    ch_versions = ch_versions.mix(CREATECAPTUREDPANELS.out.versions)
 
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all).set{all_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all_bed).set{all_bed}

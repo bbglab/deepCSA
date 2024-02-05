@@ -145,6 +145,7 @@ workflow DEEPCSA {
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel)
+    ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
     // Mutation preprocessing
@@ -155,21 +156,26 @@ workflow DEEPCSA {
     // also reducing the main columns
     // MUT_PREPROCESSING.out.mafs
 
-
     // Mutation Rate
     // TODO: input all the bedfiles in the same channel
     MUTRATEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
     MUTRATEPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
     MUTRATENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
     ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
+    ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
+    ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
+
 
     // Mutational profile
     MUTPROFILEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_bed)
     MUTPROFILENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
     MUTPROFILEEXONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed)
     MUTPROFILEINTRONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed)
-
     ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
+    ch_versions = ch_versions.mix(MUTPROFILENONPROT.out.versions)
+    ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
+    ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
+
 
     MUTABILITYALL(MUT_PREPROCESSING.out.mafs,
                     annotated_depths,
@@ -184,6 +190,8 @@ workflow DEEPCSA {
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.exons_consensus_bed
                         )
+    ch_versions = ch_versions.mix(MUTABILITYALL.out.versions)
+    ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
 
     //
     // Positive selection
@@ -201,6 +209,7 @@ workflow DEEPCSA {
     ONCODRIVEFMLALL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
     ONCODRIVEFMLNONPROT(mutations_n_mutabilitiesnonprot, CREATEPANELS.out.exons_consensus_panel)
     ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
+    ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
 
     // Oncodrive3D
     ONCODRIVE3D(mutations_n_mutabilitiesall)
@@ -217,9 +226,11 @@ workflow DEEPCSA {
 
     // annotated_panel should come from depth analysis
     // OMEGA(mutations_n_profile_n_depths, annotated_panel)
+    // ch_versions = ch_versions.mix(OMEGA.out.versions)
 
     // OncodriveClustl
     ONCODRIVECLUSTL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
+    ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
 
 
     // Signature Analysis
@@ -228,12 +239,18 @@ workflow DEEPCSA {
     SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
     SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
     ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
+    ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
+    ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
+    ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
+
+
 
 
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
+
 
     //
     // MODULE: MultiQC
