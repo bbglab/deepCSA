@@ -156,14 +156,15 @@ workflow DEEPCSA {
     // also reducing the main columns
     // MUT_PREPROCESSING.out.mafs
 
+    if (params.mutationrate){
     // Mutation Rate
-    // TODO: input all the bedfiles in the same channel
-    MUTRATEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
-    MUTRATEPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
-    MUTRATENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
+        MUTRATEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
+        MUTRATEPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
+        MUTRATENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
     ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
     ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
     ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
+    }
 
 
     // Mutational profile
@@ -205,15 +206,21 @@ workflow DEEPCSA {
     .join(MUTABILITYNONPROT.out.mutability)
     .set{mutations_n_mutabilitiesnonprot}
 
+    if (params.oncodrivefml){
     // OncodriveFML
     ONCODRIVEFMLALL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
     ONCODRIVEFMLNONPROT(mutations_n_mutabilitiesnonprot, CREATEPANELS.out.exons_consensus_panel)
     ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
     ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
+    }
 
+    if (params.oncodrive3d){
     // Oncodrive3D
     ONCODRIVE3D(mutations_n_mutabilitiesall)
     ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
+    }
+
+
 
     // Omega
     // MUT_PREPROCESSING.out.mafs
@@ -228,11 +235,14 @@ workflow DEEPCSA {
     // OMEGA(mutations_n_profile_n_depths, annotated_panel)
     // ch_versions = ch_versions.mix(OMEGA.out.versions)
 
+    if (params.oncodriveclustl){
     // OncodriveClustl
     ONCODRIVECLUSTL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
     ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
+    }
 
 
+    if (params.signatures){
     // Signature Analysis
     SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures)
     SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures)
@@ -242,8 +252,7 @@ workflow DEEPCSA {
     ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
     ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
     ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
-
-
+    }
 
 
 
