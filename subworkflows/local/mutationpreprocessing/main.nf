@@ -1,14 +1,14 @@
 // Annotation
-include { VCF_ANNOTATE_ENSEMBLVEP   as VCFANNOTATE    } from '../../nf-core/vcf_annotate_ensemblvep/main'
+include { VCF_ANNOTATE_ENSEMBLVEP   as VCFANNOTATE      } from '../../nf-core/vcf_annotate_ensemblvep/main'
 
 
-include { SUMMARIZE_ANNOTATION      as SUMANNOTATION  } from '../../../modules/local/summarize_annotation/main'
-include { VCF2MAF                   as VCF2MAF        } from '../../../modules/local/vcf2maf/main'
-include { FILTERBED                 as FILTERPANEL    } from '../../../modules/local/filterbed/main'
-include { MERGE_BATCH               as MERGEBATCH     } from '../../../modules/local/mergemafs/main'
-include { FILTER_BATCH              as FILTERBATCH    } from '../../../modules/local/filtermaf/main'
-include { WRITE_MAFS                as WRITEMAF       } from '../../../modules/local/writemaf/main'
-
+include { SUMMARIZE_ANNOTATION      as SUMANNOTATION    } from '../../../modules/local/summarize_annotation/main'
+include { VCF2MAF                   as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
+include { FILTERBED                 as FILTERPANEL      } from '../../../modules/local/filterbed/main'
+include { MERGE_BATCH               as MERGEBATCH       } from '../../../modules/local/mergemafs/main'
+include { FILTER_BATCH              as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
+include { WRITE_MAFS                as WRITEMAF         } from '../../../modules/local/writemaf/main'
+include { SUBSET_MAF                as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -55,16 +55,20 @@ workflow MUTATION_PREPROCESSING {
     ch_versions = ch_versions.mix(MERGEBATCH.out.versions)
 
 
-    FILTERBATCH(MERGEBATCH.out.cohort_maf)
-    ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
+    // FILTERBATCH(MERGEBATCH.out.cohort_maf)
+    // ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
 
 
-    WRITEMAF(FILTERBATCH.out.cohort_maf)
+    // WRITEMAF(FILTERBATCH.out.cohort_maf)
+    WRITEMAF(MERGEBATCH.out.cohort_maf)
     ch_versions = ch_versions.mix(WRITEMAF.out.versions)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
 
+
+    SOMATICMUTATIONS(named_mafs)
+    ch_versions = ch_versions.mix(SOMATICMUTATIONS.out.versions)
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
@@ -82,6 +86,7 @@ workflow MUTATION_PREPROCESSING {
 
     emit:
     mafs            = named_mafs
+    somatic_mafs    = SOMATICMUTATIONS.out.mutations
     bedfile_clean   = bedfile_updated
     versions        = ch_versions
 

@@ -22,6 +22,7 @@ process SUBSET_MAF {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_prefix = task.ext.output_prefix ?: ""
     def filters = task.ext.filters ?: ""
     def output_format = task.ext.output_fmt ?: ""
     """
@@ -40,7 +41,7 @@ process SUBSET_MAF {
     subset_maf.py \\
                     --sample_name ${prefix} \\
                     --mut_file ${mut_files} \\
-                    --out_maf ${prefix}.mutations.tsv \\
+                    --out_maf ${prefix}${output_prefix}.mutations.tsv \\
                     --json_filters mutations_subset.conf \\
                     --req_fields output_formats.conf \\
                     ${args}
