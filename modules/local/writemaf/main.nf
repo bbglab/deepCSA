@@ -11,6 +11,7 @@ process WRITE_MAFS {
 
     input:
     tuple val(meta), path(maf)
+    path (json_groups)
 
     output:
     path("*.filtered.tsv.gz") , emit: mafs
@@ -25,7 +26,7 @@ process WRITE_MAFS {
     // def filters = task.ext.filters ?: "other_sample_germline,is_SNP,repetitive_variant"
     // def repetitive_variant = task.ext.repetitive_variant ?: "5"
     """
-    write_mafs.py ${maf}
+    write_mafs.py ${maf} ${json_groups}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

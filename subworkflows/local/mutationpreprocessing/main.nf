@@ -18,6 +18,7 @@ workflow MUTATION_PREPROCESSING {
     vep_cache
     vep_extra_files
     bedfile
+    groups
 
     main:
 
@@ -60,7 +61,7 @@ workflow MUTATION_PREPROCESSING {
 
 
     // WRITEMAF(FILTERBATCH.out.cohort_maf)
-    WRITEMAF(MERGEBATCH.out.cohort_maf)
+    WRITEMAF(MERGEBATCH.out.cohort_maf, groups)
     ch_versions = ch_versions.mix(WRITEMAF.out.versions)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair

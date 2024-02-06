@@ -82,6 +82,7 @@ include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
+include { TABLE_2_GROUP             as TABLE2GROUP              } from '../modules/local/table2groups/main'
 
 
 /*
@@ -136,6 +137,10 @@ workflow DEEPCSA {
     vep_extra_files = []
 
 
+    TABLE2GROUP(params.features_table)
+    ch_versions = ch_versions.mix(TABLE2GROUP.out.versions)
+
+
     // Depth analysis: compute and plots
     DEPTHANALYSIS(meta_bams_alone)
     ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
@@ -144,12 +149,12 @@ workflow DEEPCSA {
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel)
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
     ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
     // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed)
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed, TABLE2GROUP.out.json_allgroups)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
     // Consider applying a subset of the mutations at this stage for somatic and filters
