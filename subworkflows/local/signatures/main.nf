@@ -5,18 +5,20 @@ include { MATRIX_CONCAT          } from '../../../modules/local/sig_matrix_conca
 
 workflow SIGNATURES {
     take:
-    // inputs
     matrix
     reference_signatures
+    samples
 
     main:
     // actual code
     ch_versions = Channel.empty()
-    matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ matrix_all_samples }
+    matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ all_matrices }
 
-    MATRIX_CONCAT(matrix_all_samples)
+    MATRIX_CONCAT(all_matrices, samples)
 
-    SIGPROFILERASSIGNMENT(MATRIX_CONCAT.out.wgs_tsv, reference_signatures)
+    MATRIX_CONCAT.out.wgs_tsv.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_matrices }
+
+    SIGPROFILERASSIGNMENT(named_matrices, reference_signatures)
 
     // PROCESSDEPTHSTABLE()
 

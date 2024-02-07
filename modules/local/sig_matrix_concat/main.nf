@@ -1,6 +1,6 @@
 process MATRIX_CONCAT {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_low'
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -10,10 +10,11 @@ process MATRIX_CONCAT {
 
     input:
     tuple val(meta), path(matrix_files)
+    path (json_samples)
 
     output:
-    tuple val(meta), path("*.wgs.tsv")  , emit: wgs_tsv
-    path "versions.yml"                 , emit: versions
+    path("*_matrix.tsv")  , emit: wgs_tsv
+    path "versions.yml"   , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,15 +23,8 @@ process MATRIX_CONCAT {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    #for file in ${matrix_files}; do
-    for file in *.WGS.sigprofiler; do
-        if [ -s ${prefix}.final_matrix.wgs.tsv ]; then
-            paste \$file <(cut -f 2- ${prefix}.final_matrix.wgs.tsv) > final_matrix.tsv.tmp;
-        else
-            mv \$file final_matrix.tsv.tmp;
-        fi
-        mv final_matrix.tsv.tmp ${prefix}.final_matrix.wgs.tsv;
-    done;
+    ls ${matrix_files} > all_files.txt
+    concat_sigprot_matrices.py all_files.txt ${json_samples}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -42,7 +36,8 @@ process MATRIX_CONCAT {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.final_matrix.wgs.tsv
+    touch samples_matrix.tsv
+    touch groups_matrix.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
