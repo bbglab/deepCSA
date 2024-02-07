@@ -23,8 +23,6 @@ process WRITE_MAFS {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // def filters = task.ext.filters ?: "other_sample_germline,is_SNP,repetitive_variant"
-    // def repetitive_variant = task.ext.repetitive_variant ?: "5"
     """
     write_mafs.py ${maf} ${json_groups}
 

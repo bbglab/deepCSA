@@ -32,7 +32,7 @@ def annotate_depths(annotation_file, depths_file, json_f):
 
     if json_f:
         with open(json_f, 'r') as file:
-                groups_info = json.load(file)
+            groups_info = json.load(file)
 
         for group_name, samples in groups_info.items():
             annotated_depths[group_name] = annotated_depths.loc[:,samples].sum(axis=1)

@@ -13,10 +13,10 @@ process TABLE_2_GROUP {
     path(features_table)
 
     output:
-    path("samples.json")      , emit: json_samples
-    path("groups.json")       , emit: json_groups
-    path("all_groups.json")   , emit: json_allgroups
-    path "versions.yml"       , emit: versions
+    path("samples.json")                        , emit: json_samples
+    path("groups.json")       , optional : true , emit: json_groups
+    path("all_groups.json")                     , emit: json_allgroups
+    path "versions.yml"                         , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,8 +24,16 @@ process TABLE_2_GROUP {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "groups"
+    def separator = task.ext.separator ?: "comma"
+    def features = task.ext.features ?: ""
     """
-    features_1table2groups.py ${features_table} tab
+    cat > features_table_information.json << EOF
+    {
+        ${features}
+    }
+    EOF
+
+    features_1table2groups.py ${features_table} ${separator} features_table_information.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

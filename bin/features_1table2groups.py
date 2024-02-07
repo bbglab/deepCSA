@@ -6,6 +6,7 @@ import json
 
 table_filename = sys.argv[1]
 separator_input = sys.argv[2] # either tab or comma
+json_information = sys.argv[3]
 
 separator2character = {
     'tab' : '\t',
@@ -21,10 +22,15 @@ separator = separator2character.get(separator_input, separator_input)
 features_table = pd.read_table(table_filename, header = 0, sep=separator)
 
 
-dict_of_columns = { 'unique_identifier' : 'sample' }
-groups_of_interest = [ ['DMBA'], ['TPA'], ['DMBA', 'TPA'] ]
+with open(json_information, 'r') as file:
+    dict_of_columns = json.load(file)
 
-uniq_name = dict_of_columns['unique_identifier']
+if len(dict_of_columns) > 0:
+    uniq_name = dict_of_columns['unique_identifier']
+    groups_of_interest = dict_of_columns['groups_of_interest']
+else:
+    uniq_name = "sample"
+    groups_of_interest = []
 
 samples_json = { name : [name] for name in features_table[uniq_name] }
 
@@ -60,9 +66,10 @@ with open("samples.json", "w") as outfile:
     json.dump(samples_json, outfile)
 
 
-# Write groups json
-with open("groups.json", "w") as outfile:
-    json.dump(json_groups, outfile)
+if len(json_groups) > 0:
+    # Write groups json
+    with open("groups.json", "w") as outfile:
+        json.dump(json_groups, outfile)
 
 
 # Write all samples and groups json
