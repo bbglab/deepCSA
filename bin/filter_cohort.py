@@ -6,8 +6,8 @@ from utils import add_filter
 
 maf_df_file = sys.argv[1]
 samp_name = sys.argv[2]
-repetitive_variant_treshold = sys.argv[3]
-somatic_vaf_boundary = sys.argv[4]
+repetitive_variant_treshold = int(sys.argv[3])
+somatic_vaf_boundary = float(sys.argv[4])
 
 maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t')  # Read gzipped TSV
 
@@ -78,6 +78,9 @@ maf_df["FILTER"] = maf_df[["FILTER","other_sample_SNP"]].apply(
                                             )
 maf_df = maf_df.drop("other_sample_SNP", axis = 1)
 
+
+for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
+    maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].str.contains(filt)
 
 
 maf_df.to_csv(f"{samp_name}.cohort.filtered.tsv.gz",

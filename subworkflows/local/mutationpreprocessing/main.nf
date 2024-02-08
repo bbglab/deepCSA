@@ -56,12 +56,12 @@ workflow MUTATION_PREPROCESSING {
     ch_versions = ch_versions.mix(MERGEBATCH.out.versions)
 
 
-    // FILTERBATCH(MERGEBATCH.out.cohort_maf)
-    // ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
+    FILTERBATCH(MERGEBATCH.out.cohort_maf)
+    ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
 
 
-    // WRITEMAF(FILTERBATCH.out.cohort_maf)
-    WRITEMAF(MERGEBATCH.out.cohort_maf, groups)
+    WRITEMAF(FILTERBATCH.out.cohort_maf, groups)
+    // WRITEMAF(MERGEBATCH.out.cohort_maf, groups)
     ch_versions = ch_versions.mix(WRITEMAF.out.versions)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair

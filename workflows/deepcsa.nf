@@ -94,7 +94,7 @@ include { TABLE_2_GROUP             as TABLE2GROUP              } from '../modul
 // Info required for completion email and summary
 def multiqc_report = []
 
-workflow DEEPCSA {
+workflow DEEPCSA{
 
     ch_versions = Channel.empty()
 
