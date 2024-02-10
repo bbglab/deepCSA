@@ -29,21 +29,21 @@ process TABIX_BGZIPTABIX_QUERY {
     """
     if [[ ${input} == *.gz ]]; then
         if [[ "${header}" == "1" ]]; then
-            zcat ${input} | tail -n +2 | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
+            zcat ${input} | tail -n +2 | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
             tabix $args2 ${prefix}.tmp.${extension}.gz;
             cat <(zcat ${input} | head -n 1) <(tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz) | gzip > ${prefix}.${extension}.gz;
         else
-            zcat ${input} | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
+            zcat ${input} | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
             tabix $args2 ${prefix}.tmp.${extension}.gz;
             tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz | gzip > ${prefix}.${extension}.gz;
         fi
     else
         if [[ "${header}" == "1" ]]; then
-            tail -n +2 ${input} | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
+            tail -n +2 ${input} | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
             tabix $args2 ${prefix}.tmp.${extension}.gz;
             cat <(head -n 1 ${input}) <(tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz) | gzip > ${prefix}.${extension}.gz;
         else
-            bgzip --threads ${task.cpus} -c $args ${input} > ${prefix}.tmp.${extension}.gz;
+            sort -k1,1 -k2,2n ${input} | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
             tabix $args2 ${prefix}.tmp.${extension}.gz;
             tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz | gzip > ${prefix}.${extension}.gz;
         fi

@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # input_positions = "/workspace/datasets/prominent/metadata/regions/data/oncodrivefml/kidneypanel4oncodrivefml.bed5.bed"
     input_positions = sys.argv[1]
 
-    # assmebly
+    # assembly
     genome_assembly = sys.argv[2]
 
     # Output

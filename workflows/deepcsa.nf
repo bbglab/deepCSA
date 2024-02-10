@@ -26,6 +26,8 @@ ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.mu
 ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
 ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
+features_table = params.features_table ? Channel.fromPath( params.features_table, checkIfExists: true) : Channel.fromPath(params.input)
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT LOCAL MODULES/SUBWORKFLOWS
@@ -65,8 +67,6 @@ include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkfl
 include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
-// include { DEPTH_ANALYSIS            as MUTRATE              } from '../subworkflows/local/depthanalysis/main'
-
 // Download annotation cache if needed
 include { PREPARE_CACHE                               } from '../subworkflows/local/prepare_cache/main'
 
@@ -82,6 +82,7 @@ include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
+include { TABLE_2_GROUP             as TABLE2GROUP              } from '../modules/local/table2groups/main'
 
 
 /*
@@ -93,7 +94,7 @@ include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modul
 // Info required for completion email and summary
 def multiqc_report = []
 
-workflow DEEPCSA {
+workflow DEEPCSA{
 
     ch_versions = Channel.empty()
 
@@ -136,6 +137,10 @@ workflow DEEPCSA {
     vep_extra_files = []
 
 
+    TABLE2GROUP(features_table)
+    ch_versions = ch_versions.mix(TABLE2GROUP.out.versions)
+
+
     // Depth analysis: compute and plots
     DEPTHANALYSIS(meta_bams_alone)
     ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
@@ -144,47 +149,45 @@ workflow DEEPCSA {
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel)
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
     ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
     // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed)
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed, TABLE2GROUP.out.json_allgroups)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
-    // Consider applying a subset of the mutations at this stage for somatic and filters
-    // also reducing the main columns
-    // MUT_PREPROCESSING.out.mafs
 
-    // Mutation Rate
-    // TODO: input all the bedfiles in the same channel
-    MUTRATEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
-    MUTRATEPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
-    MUTRATENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
-    ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
-    ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
-    ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
+    if (params.mutationrate){
+        // Mutation Rate
+        MUTRATEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
+        MUTRATEPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
+        MUTRATENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
+        ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
+        ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
+        ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
+    }
 
 
     // Mutational profile
-    MUTPROFILEALL(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.all_bed)
-    MUTPROFILENONPROT(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
-    MUTPROFILEEXONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed)
-    MUTPROFILEINTRONS(MUT_PREPROCESSING.out.mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed)
+    MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_bed)
+    MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
+    MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed)
+    MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed)
     ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
     ch_versions = ch_versions.mix(MUTPROFILENONPROT.out.versions)
     ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
     ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
 
 
-    MUTABILITYALL(MUT_PREPROCESSING.out.mafs,
+    MUTABILITYALL(MUT_PREPROCESSING.out.somatic_mafs,
                     annotated_depths,
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_panel,
                     CREATEPANELS.out.exons_consensus_bed
                     )
 
-    MUTABILITYNONPROT(MUT_PREPROCESSING.out.mafs,
+    MUTABILITYNONPROT(MUT_PREPROCESSING.out.somatic_mafs,
                         annotated_depths,
                         MUTPROFILENONPROT.out.profile,
                         CREATEPANELS.out.exons_consensus_panel,
@@ -197,23 +200,29 @@ workflow DEEPCSA {
     // Positive selection
     //
 
-    MUT_PREPROCESSING.out.mafs
+    MUT_PREPROCESSING.out.somatic_mafs
     .join(MUTABILITYALL.out.mutability)
     .set{mutations_n_mutabilitiesall}
 
-    MUT_PREPROCESSING.out.mafs
+    MUT_PREPROCESSING.out.somatic_mafs
     .join(MUTABILITYNONPROT.out.mutability)
     .set{mutations_n_mutabilitiesnonprot}
 
-    // OncodriveFML
-    ONCODRIVEFMLALL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
-    ONCODRIVEFMLNONPROT(mutations_n_mutabilitiesnonprot, CREATEPANELS.out.exons_consensus_panel)
-    ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
-    ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
+    if (params.oncodrivefml){
+        // OncodriveFML
+        ONCODRIVEFMLALL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
+        ONCODRIVEFMLNONPROT(mutations_n_mutabilitiesnonprot, CREATEPANELS.out.exons_consensus_panel)
+        ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
+        ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
+    }
 
-    // Oncodrive3D
-    ONCODRIVE3D(mutations_n_mutabilitiesall)
-    ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
+    if (params.oncodrive3d){
+        // Oncodrive3D
+        ONCODRIVE3D(mutations_n_mutabilitiesall)
+        ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
+    }
+
+
 
     // Omega
     // MUT_PREPROCESSING.out.mafs
@@ -228,22 +237,24 @@ workflow DEEPCSA {
     // OMEGA(mutations_n_profile_n_depths, annotated_panel)
     // ch_versions = ch_versions.mix(OMEGA.out.versions)
 
-    // OncodriveClustl
-    ONCODRIVECLUSTL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
-    ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
+    if (params.oncodriveclustl){
+        // OncodriveClustl
+        ONCODRIVECLUSTL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
+        ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
+    }
 
 
-    // Signature Analysis
-    SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures)
-    SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures)
-    SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
-    SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures)
-    ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
-    ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
-    ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
-    ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
-
-
+    if (params.signatures){
+        // Signature Analysis
+        SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+        SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+        SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+        SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+        ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
+        ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
+        ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
+        ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
+    }
 
 
 

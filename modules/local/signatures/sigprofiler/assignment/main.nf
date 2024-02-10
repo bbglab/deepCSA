@@ -2,7 +2,6 @@ process SIGPROFILERASSIGNMENT {
     tag "$meta.id"
     label 'process_medium'
 
-
     container 'docker.io/ferriolcalvet/sigprofilerassignment'
 
     input:
@@ -10,9 +9,10 @@ process SIGPROFILERASSIGNMENT {
     path(reference_signatures)
 
     output:
-    tuple val(meta), path("**.pdf"), emit: plots
-    tuple val(meta), path("**.txt"), emit: stats
-    path "versions.yml"            , emit: versions
+    tuple val(meta), path("**.pdf")                                     , emit: plots
+    tuple val(meta), path("**.txt")                                     , emit: stats
+    tuple val(meta), path("**Decomposed_MutationType_Probabilities.txt"), emit: mutation_probs
+    path "versions.yml"                                                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -20,6 +20,7 @@ process SIGPROFILERASSIGNMENT {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def assembly = task.ext.assembly ?: "GRCh38"
     // python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output', input_type='matrix', context_type='96',
     //                    collapse_to_SBS96=True, cosmic_version=3.4, exome=False,
     //                    genome_build="GRCh38", signature_database='${reference_signatures}',
@@ -27,12 +28,13 @@ process SIGPROFILERASSIGNMENT {
     //                    export_probabilities_per_mutation=False, make_plots=True,
     //                    sample_reconstruction_plots=False, verbose=False)"
     """
-    #python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${prefix}', input_type='matrix', context_type='96', signature_database='${reference_signatures}', genome_build='GRCh38', sample_reconstruction_plots= 'pdf', exclude_signature_subgroups= ${params.exclude_subgroups})"
-    python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${prefix}', input_type='matrix', context_type='96', genome_build='GRCh38', exclude_signature_subgroups=${params.exclude_subgroups})"
+    #python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${prefix}', input_type='matrix', context_type='96', signature_database='${reference_signatures}', genome_build='${assembly}', sample_reconstruction_plots= 'pdf', exclude_signature_subgroups= ${params.exclude_subgroups})"
+    python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${prefix}', input_type='matrix', context_type='96', genome_build='${assembly}', exclude_signature_subgroups=${params.exclude_subgroups})"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        : \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' ))
+        python: \$(python --version | sed 's/Python //g')
+        SigProfilerAssignment : 0.1.1
     END_VERSIONS
     """
 
@@ -44,7 +46,8 @@ process SIGPROFILERASSIGNMENT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        : \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' ))
+        python: \$(python --version | sed 's/Python //g')
+        SigProfilerAssignment : 0.1.1
     END_VERSIONS
     """
 }
