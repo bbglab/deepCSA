@@ -157,9 +157,6 @@ workflow DEEPCSA{
     MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed, TABLE2GROUP.out.json_allgroups)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
-    // Consider applying a subset of the mutations at this stage for somatic and filters
-    // also reducing the main columns
-    // MUT_PREPROCESSING.out.mafs
 
     if (params.mutationrate){
         // Mutation Rate
