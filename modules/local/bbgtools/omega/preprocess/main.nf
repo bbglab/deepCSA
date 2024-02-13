@@ -11,11 +11,9 @@ process OMEGA_PREPROCESS {
     input:
     tuple val(meta), path(mutations), path(depths), path(mutation_profile)
     tuple val(meta2), path (annotated_panel)
-    // TODO see if we provide directly the panel annotated as omega requires
-    // see regions_sites.annotation_summary.tsv in some omega test directory
 
     output:
-    tuple val(meta), path("mutability_per_sample_gene_context.tsv"), path("mutations_per_sample_gene_impact_context.tsv") , emit: mutabs_n_mutations_tsv
+    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv") , emit: mutabs_n_mutations_tsv
     path "versions.yml"                   , emit: versions
 
     when:
@@ -29,8 +27,8 @@ process OMEGA_PREPROCESS {
                         --depths-file ${depths} \\
                         --mutations-file ${mutations} \\
                         --input-vep-postprocessed-file ${annotated_panel} \\
-                        --mutabilities-table mutability_per_sample_gene_context.tsv \\
-                        --table-observed-muts mutations_per_sample_gene_impact_context.tsv
+                        --mutabilities-table mutability_per_sample_gene_context.${prefix}.tsv \\
+                        --table-observed-muts mutations_per_sample_gene_impact_context.${prefix}.tsv
     #--mutational-profile ${mutation_profile}
     # $args -c $task.cpus
 

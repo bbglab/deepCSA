@@ -224,9 +224,15 @@ workflow DEEPCSA{
 
 
 
-    // Omega
-    OMEGA(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, MUTPROFILEALL.out.profile, CREATEPANELS.out.exons_consensus_panel)
-    ch_versions = ch_versions.mix(OMEGA.out.versions)
+    if (params.omega){
+        // Omega
+        OMEGA(MUT_PREPROCESSING.out.somatic_mafs,
+                annotated_depths,
+                MUTPROFILEALL.out.profile,
+                CREATEPANELS.out.exons_consensus_bed,
+                CREATEPANELS.out.exons_consensus_panel)
+        ch_versions = ch_versions.mix(OMEGA.out.versions)
+    }
 
     if (params.oncodriveclustl){
         // OncodriveClustl

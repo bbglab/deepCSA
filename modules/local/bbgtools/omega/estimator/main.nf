@@ -23,7 +23,7 @@ process OMEGA_ESTIMATOR {
 
     script:
     def args = task.ext.args ?: ""
-    def option = task.ext.option ?: "bayes"
+    def option = task.ext.option ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
 
@@ -61,7 +61,7 @@ process OMEGA_ESTIMATOR {
                     --depths-file ${depths} \\
                     --vep-annotation-file ${annotated_panel} \\
                     --grouping-folder ./groups/ \\
-                    --output-fn output_${option}.tsv \\
+                    --output-fn output_${option}.${prefix}.tsv \\
                     --option ${option} \\
                     --cores 4
                     # --cores ${task.cpus}
