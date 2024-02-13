@@ -22,14 +22,17 @@ process OMEGA_PREPROCESS {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    // TODO revise this fix
+    def sample_name = prefix.tokenize('.')[0]
     """
     omega preprocessing --preprocessing-mode compute_mutabilities \\
                         --depths-file ${depths} \\
                         --mutations-file ${mutations} \\
                         --input-vep-postprocessed-file ${annotated_panel} \\
                         --mutabilities-table mutability_per_sample_gene_context.${prefix}.tsv \\
-                        --table-observed-muts mutations_per_sample_gene_impact_context.${prefix}.tsv
-    #--mutational-profile ${mutation_profile}
+                        --table-observed-muts mutations_per_sample_gene_impact_context.${prefix}.tsv \\
+                        --mutational-profile ${mutation_profile} \\
+                        --single-sample ${sample_name}
     # $args -c $task.cpus
 
     cat <<-END_VERSIONS > versions.yml
