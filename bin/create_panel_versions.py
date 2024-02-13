@@ -12,27 +12,37 @@ panel_impact_dict = {
                             "essential_splice",
                             "protein_altering_variant",     # probably not appear
                             "transcript_amplification",     # probably not appear
-                            "coding_sequence_variant"       # probably not appear AMBIGUOUS TODO
+                            "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
+                            # "splice_region_variant",
+                            # "splice_donor_region_variant",
+                            # "splice_polypyrimidine_tract_variant",
                             ],
 
     "non_protein_affecting": ["synonymous", "intron_variant",
-                                "non_coding_exon_region", "splice_region",
-                                "non_genic_variant", "non_coding_transcript_variant"
+                                "non_coding_exon_region",
+                                "non_genic_variant", "non_coding_transcript_variant",
+                                # "splice_region_variant",
+                                # "splice_donor_region_variant",
+                                # "splice_polypyrimidine_tract_variant",
                                 ],
 
     "exons_splice_sites": ["nonsense", "missense",
                             "essential_splice",
                             "synonymous",
-                            "coding_sequence_variant"
-
+                            "coding_sequence_variant",
+                            "splice_region_variant",
+                            "splice_donor_region_variant",
+                            "splice_polypyrimidine_tract_variant",
                         #    "protein_altering_variant", # unclear   # probably not appear
                         #    "transcript_amplification",             # probably not appear
                         #    "non_coding_exon_region", # unclear
                         #    "non_coding_transcript_variant"   # unclear
                             ],
 
-    "introns_intergenic": ["splice_regions", "intron_variant",
-                            "non_genic_variant"   # unclear
+    "introns_intergenic": ["intron_variant",
+                            "non_genic_variant",
+                            # "splice_donor_region_variant",
+                            # "splice_polypyrimidine_tract_variant",
                             ]
 
 ## CONTENT of the kidney regions
