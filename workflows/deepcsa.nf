@@ -207,25 +207,17 @@ workflow DEEPCSA{
     // Positive selection
     //
 
-    MUT_PREPROCESSING.out.somatic_mafs
-    .join(MUTABILITYALL.out.mutability)
-    .set{mutations_n_mutabilitiesall}
-
-    MUT_PREPROCESSING.out.somatic_mafs
-    .join(MUTABILITYNONPROT.out.mutability)
-    .set{mutations_n_mutabilitiesnonprot}
-
     if (params.oncodrivefml){
         // OncodriveFML
-        ONCODRIVEFMLALL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
-        ONCODRIVEFMLNONPROT(mutations_n_mutabilitiesnonprot, CREATEPANELS.out.exons_consensus_panel)
+        ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
+        ONCODRIVEFMLNONPROT(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYNONPROT.out.mutability, CREATEPANELS.out.exons_consensus_panel)
         ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
         ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
     }
 
     if (params.oncodrive3d){
         // Oncodrive3D
-        ONCODRIVE3D(mutations_n_mutabilitiesall)
+        ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed)
         ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
     }
 
@@ -241,16 +233,16 @@ workflow DEEPCSA{
         ch_versions = ch_versions.mix(OMEGA.out.versions)
 
         OMEGANONPROT(MUT_PREPROCESSING.out.somatic_mafs,
-                annotated_depths,
-                MUTPROFILENONPROT.out.profile,
-                CREATEPANELS.out.exons_consensus_bed,
-                CREATEPANELS.out.exons_consensus_panel)
+                        annotated_depths,
+                        MUTPROFILENONPROT.out.profile,
+                        CREATEPANELS.out.exons_consensus_bed,
+                        CREATEPANELS.out.exons_consensus_panel)
         ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
     }
 
     if (params.oncodriveclustl){
         // OncodriveClustl
-        ONCODRIVECLUSTL(mutations_n_mutabilitiesall, CREATEPANELS.out.exons_consensus_panel)
+        ONCODRIVECLUSTL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
         ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
     }
 
