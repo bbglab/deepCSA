@@ -1,8 +1,4 @@
 
-// include { INTERSECT_BED     as BED_INTERSECTALL      } from '../../modules/local/bedtools/intersect/main'
-// include { INTERSECT_BED     as BED_INTERSECTPA       } from '../../modules/local/bedtools/intersect/main'
-// include { INTERSECT_BED     as BED_INTERSECTNONPA    } from '../../modules/local/bedtools/intersect/main'
-
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
@@ -21,6 +17,7 @@ workflow MUTATIONAL_PROFILE {
     mutations
     depth
     bedfile
+    wgs_trinuc
 
     main:
     // actual code
@@ -45,7 +42,7 @@ workflow MUTATIONAL_PROFILE {
     .join(COMPUTETRINUC.out.trinucleotides)
     .set{ matrix_n_trinucleotide }
 
-    COMPUTEPROFILE(matrix_n_trinucleotide)
+    COMPUTEPROFILE(matrix_n_trinucleotide, wgs_trinuc)
 
     sigprofiler_empty = Channel.of([])
     sigprofiler_empty

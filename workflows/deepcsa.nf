@@ -28,6 +28,11 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 
 features_table = params.features_table ? Channel.fromPath( params.features_table, checkIfExists: true) : Channel.fromPath(params.input)
 
+wgs_trinucs = params.wgs_trinuc_counts ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first() : Channel.empty()
+cosmic_ref = params.cosmic_ref_signatures ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first() : Channel.empty()
+datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() : Channel.empty()
+
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT LOCAL MODULES/SUBWORKFLOWS
@@ -172,10 +177,10 @@ workflow DEEPCSA{
 
 
     // Mutational profile
-    MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_bed)
-    MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
-    MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed)
-    MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed)
+    MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_bed, wgs_trinucs)
+    MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
+    MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs)
+    MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
     ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
     ch_versions = ch_versions.mix(MUTPROFILENONPROT.out.versions)
     ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
