@@ -12,6 +12,7 @@ workflow ONCODRIVE3D_ANALYSIS{
     mutations
     mutabilities
     bedfile
+    datasets
 
     main:
     ch_versions = Channel.empty()
@@ -26,8 +27,14 @@ workflow ONCODRIVE3D_ANALYSIS{
     .join(mutabilities)
     .set{ muts_n_mutability }
 
+    // if (datasets) {
+    //      do something
+    // } else {
+    //     BUILDDATASETS
+    // }
 
-    ONCODRIVE3D(muts_n_mutability)
+
+    ONCODRIVE3D(muts_n_mutability, datasets)
     ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     emit:
