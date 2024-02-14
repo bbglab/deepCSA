@@ -173,6 +173,16 @@ workflow DEEPCSA{
         ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
         ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
         ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
+
+        // Concatenate all outputs into a single file
+        mutrate_empty = Channel.empty()
+        mutrate_empty
+        .concat(MUTRATEALL.out.mutrates.map{ it -> it[1]}.flatten())
+        .concat(MUTRATEPROT.out.mutrates.map{ it -> it[1]}.flatten())
+        .concat(MUTRATENONPROT.out.mutrates.map{ it -> it[1]}.flatten())
+        .set{ all_mutrates }
+        all_mutrates.collectFile(name: "all_mutrates.tsv", storeDir:"${params.outdir}/mutrate", skip: 1, keepHeader: true)
+
     }
 
 
@@ -217,7 +227,7 @@ workflow DEEPCSA{
 
     if (params.oncodrive3d){
         // Oncodrive3D
-        ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed)
+        ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed, datasets3d)
         ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
     }
 
