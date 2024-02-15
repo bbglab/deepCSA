@@ -67,6 +67,9 @@ include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkfl
 
 include { OMEGA_ANALYSIS            as OMEGA                } from '../subworkflows/local/omega/main'
 include { OMEGA_ANALYSIS            as OMEGANONPROT         } from '../subworkflows/local/omega/main'
+include { OMEGA_ANALYSIS            as OMEGAMULTI           } from '../subworkflows/local/omega/main'
+// include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkflows/local/omega/main'
+
 
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
@@ -248,6 +251,22 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel)
         ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
+
+        // Omega multi
+        OMEGAMULTI(MUT_PREPROCESSING.out.somatic_mafs,
+                    annotated_depths,
+                    MUTPROFILEALL.out.profile,
+                    CREATEPANELS.out.exons_consensus_bed,
+                    CREATEPANELS.out.exons_consensus_panel)
+        ch_versions = ch_versions.mix(OMEGA.out.versions)
+
+        // OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
+        //                 annotated_depths,
+        //                 MUTPROFILENONPROT.out.profile,
+        //                 CREATEPANELS.out.exons_consensus_bed,
+        //                 CREATEPANELS.out.exons_consensus_panel)
+        // ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
+
     }
 
     if (params.oncodriveclustl){
