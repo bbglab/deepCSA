@@ -8,7 +8,7 @@ process ONCODRIVE3D {
     //     'biocontainers/YOUR-TOOL-HERE' }"
 
     // TODO pending to push the container somewhere and be able to retrieve it
-    container "oncodrive3d_231221.sif"
+    container 'docker.io/ferriolcalvet/oncodrive3d:latest'
 
     input:
     tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
