@@ -68,7 +68,7 @@ include { ONCODRIVECLUSTL_ANALYSIS  as ONCODRIVECLUSTL      } from '../subworkfl
 include { OMEGA_ANALYSIS            as OMEGA                } from '../subworkflows/local/omega/main'
 include { OMEGA_ANALYSIS            as OMEGANONPROT         } from '../subworkflows/local/omega/main'
 include { OMEGA_ANALYSIS            as OMEGAMULTI           } from '../subworkflows/local/omega/main'
-// include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkflows/local/omega/main'
+include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkflows/local/omega/main'
 
 
 
@@ -115,9 +115,6 @@ workflow DEEPCSA{
         file(params.input)
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
-    // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
-    // ! There is currently no tooling to help you write a sample sheet schema
 
 
     //
@@ -216,6 +213,7 @@ workflow DEEPCSA{
     ch_versions = ch_versions.mix(MUTABILITYALL.out.versions)
     ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
 
+
     //
     // Positive selection
     //
@@ -258,14 +256,14 @@ workflow DEEPCSA{
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel)
-        ch_versions = ch_versions.mix(OMEGA.out.versions)
+        ch_versions = ch_versions.mix(OMEGAMULTI.out.versions)
 
-        // OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
-        //                 annotated_depths,
-        //                 MUTPROFILENONPROT.out.profile,
-        //                 CREATEPANELS.out.exons_consensus_bed,
-        //                 CREATEPANELS.out.exons_consensus_panel)
-        // ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
+        OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
+                        annotated_depths,
+                        MUTPROFILENONPROT.out.profile,
+                        CREATEPANELS.out.exons_consensus_bed,
+                        CREATEPANELS.out.exons_consensus_panel)
+        ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
 
     }
 
