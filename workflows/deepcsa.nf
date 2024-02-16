@@ -93,6 +93,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 
 include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
 include { TABLE_2_GROUP             as TABLE2GROUP              } from '../modules/local/table2groups/main'
+include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
 
 
 /*
@@ -273,6 +274,11 @@ workflow DEEPCSA{
         ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
         ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
         ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
+
+        SIGNATURESALL.out.mutation_probs.map{ it -> it[1] }.collect().map{ it -> [[ id: "all_samples" ], it]}.set{ all_sigs_probs }
+        MUTS2SIGS(MUT_PREPROCESSING.out.somatic_mafs, all_sigs_probs)
+        ch_versions = ch_versions.mix(MUTS2SIGS.out.versions)
+
     }
 
 

@@ -175,6 +175,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     # remove context from the other substitution types
     genome_func = assembly_name2function[assembly]
     annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', genome_func) if x["TYPE"] == "SNV" else "-", axis = 1)
+    annotated_variants["CONTEXT_MUT_SIGPRO"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: f"{x[0]}[{x[1]}>{x[4]}]{x[2]}" if x != '-' else '-')
 
 #    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'IMPACT', 'CONTEXT']]
 #    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']

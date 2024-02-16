@@ -25,6 +25,7 @@ workflow SIGNATURES {
     // PLOTDEPTHS()
 
     emit:
-    plots    = SIGPROFILERASSIGNMENT.out.plots  // channel: [ val(meta), file(depths) ]
-    versions = ch_versions                      // channel: [ versions.yml ]
+    plots           = SIGPROFILERASSIGNMENT.out.plots               // channel: [ val(meta), file(depths) ]
+    mutation_probs  = SIGPROFILERASSIGNMENT.out.mutation_probs
+    versions        = ch_versions                                   // channel: [ versions.yml ]
 }
