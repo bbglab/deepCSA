@@ -33,6 +33,9 @@ cosmic_ref = params.cosmic_ref_signatures ? Channel.fromPath( params.cosmic_ref_
 datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() : Channel.empty()
 
 
+def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
+
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT LOCAL MODULES/SUBWORKFLOWS
@@ -197,21 +200,24 @@ workflow DEEPCSA{
     ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
 
 
-    MUTABILITYALL(MUT_PREPROCESSING.out.somatic_mafs,
-                    annotated_depths,
-                    MUTPROFILEALL.out.profile,
-                    CREATEPANELS.out.exons_consensus_panel,
-                    CREATEPANELS.out.exons_consensus_bed
-                    )
-
-    MUTABILITYNONPROT(MUT_PREPROCESSING.out.somatic_mafs,
+    if (run_mutabilities) {
+        MUTABILITYALL(MUT_PREPROCESSING.out.somatic_mafs,
                         annotated_depths,
-                        MUTPROFILENONPROT.out.profile,
+                        MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.exons_consensus_bed
                         )
-    ch_versions = ch_versions.mix(MUTABILITYALL.out.versions)
-    ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
+
+        MUTABILITYNONPROT(MUT_PREPROCESSING.out.somatic_mafs,
+                            annotated_depths,
+                            MUTPROFILENONPROT.out.profile,
+                            CREATEPANELS.out.exons_consensus_panel,
+                            CREATEPANELS.out.exons_consensus_bed
+                            )
+        ch_versions = ch_versions.mix(MUTABILITYALL.out.versions)
+        ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
+    }
+
 
     //
     // Positive selection
