@@ -1,51 +1,54 @@
-include { SUBSET_MAF          as SUBSET_OMEGA  } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS    as PREPROCESSING } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR     as ESTIMATOR     } from '../../../modules/local/bbgtools/omega/estimator/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS         } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+
+
+include { SUBSET_MAF                as SUBSET_OMEGA         } from '../../../modules/local/subsetmaf/main'
+include { OMEGA_PREPROCESS          as PREPROCESSING        } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { OMEGA_ESTIMATOR           as ESTIMATOR            } from '../../../modules/local/bbgtools/omega/estimator/main'
 
 
 
 workflow OMEGA_ANALYSIS{
 
     take:
-    muts
-    annotated_panel
+    mutations
+    depth
+    profile
+    bedfile
+    panel
 
     main:
     ch_versions = Channel.empty()
 
-    //
-    // Separate input mutations and mutabilities
-    //
-    muts.
-    map{ it -> [it[0], it[1]]}.
-    set{ meta_muts }
+    // TODO
+    // We should revise how is tabix doing the subset
+    //      whether it include the ends or not
+    //      and see how to take this into account for the other analysis
 
-    muts.
-    map{ it -> [it[0], it[2]]}.
-    set{ meta_profile }
+    // Intersect BED of all sites with BED of sample filtered sites
+    SUBSETDEPTHS(depth, bedfile)
+    ch_versions = ch_versions.mix(SUBSETDEPTHS.out.versions)
 
-    muts.
-    map{ it -> [it[0], it[2], it[3]]}.
-    set{ meta_profile_n_depths }
+    SUBSETMUTATIONS(mutations, bedfile)
+    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-
-    SUBSET_OMEGA(meta_muts)
+    SUBSET_OMEGA(SUBSETMUTATIONS.out.subset)
     ch_versions = ch_versions.mix(SUBSET_OMEGA.out.versions)
 
     SUBSET_OMEGA.out.mutations
-    .join(meta_profile_n_depths)
-    .set{ muts_n_profile_n_depths }
-
-    // TODO
-    // Here we would need to add a module or something that puts together all the mutational profiles of the different samples
-    // and the same for the depths and the mutations all into the same dataframe
-    // this would be a value channel with 3 elements, mutations, depths and mutation profile
+    .join( SUBSETDEPTHS.out.subset )
+    .join( profile )
+    .set{ muts_n_depths_n_profile }
 
 
-    PREPROCESSING( muts_n_profile_n_depths, annotated_panel)
+    PREPROCESSING( muts_n_depths_n_profile, panel)
     ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
 
-    ESTIMATOR( PREPROCESSING.out.mutabs_n_mutations_tsv, annotated_panel)
+    PREPROCESSING.out.mutabs_n_mutations_tsv
+    .join( SUBSETDEPTHS.out.subset )
+    .set{ preprocess_n_depths }
+
+    ESTIMATOR( preprocess_n_depths, panel)
     ch_versions = ch_versions.mix(ESTIMATOR.out.versions)
 
 

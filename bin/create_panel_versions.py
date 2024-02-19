@@ -12,27 +12,37 @@ panel_impact_dict = {
                             "essential_splice",
                             "protein_altering_variant",     # probably not appear
                             "transcript_amplification",     # probably not appear
-                            "coding_sequence_variant"       # probably not appear AMBIGUOUS TODO
+                            "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
+                            # "splice_region_variant",
+                            # "splice_donor_region_variant",
+                            # "splice_polypyrimidine_tract_variant",
                             ],
 
     "non_protein_affecting": ["synonymous", "intron_variant",
-                                "non_coding_exon_region", "splice_region",
-                                "non_genic_variant", "non_coding_transcript_variant"
+                                "non_coding_exon_region",
+                                "non_genic_variant", "non_coding_transcript_variant",
+                                # "splice_region_variant",
+                                # "splice_donor_region_variant",
+                                # "splice_polypyrimidine_tract_variant",
                                 ],
 
     "exons_splice_sites": ["nonsense", "missense",
                             "essential_splice",
                             "synonymous",
-                            "coding_sequence_variant"
-
+                            "coding_sequence_variant",
+                            "splice_region_variant",
+                            "splice_donor_region_variant",
+                            "splice_polypyrimidine_tract_variant",
                         #    "protein_altering_variant", # unclear   # probably not appear
                         #    "transcript_amplification",             # probably not appear
                         #    "non_coding_exon_region", # unclear
                         #    "non_coding_transcript_variant"   # unclear
                             ],
 
-    "introns_intergenic": ["splice_regions", "intron_variant",
-                            "non_genic_variant"   # unclear
+    "introns_intergenic": ["intron_variant",
+                            "non_genic_variant",
+                            # "splice_donor_region_variant",
+                            # "splice_polypyrimidine_tract_variant",
                             ]
 
 ## CONTENT of the kidney regions
@@ -66,12 +76,12 @@ def create_panel_versions(compact_annot_panel_path, output_path):
     for version in panel_impact_dict:
 
         panel_version = compact_annot_panel_df.loc[compact_annot_panel_df["IMPACT"].isin(panel_impact_dict[version])]
-        panel_version.to_csv(f"{output_path}.compact.{version}.tsv",
+        panel_version.to_csv(f"{output_path}.{version}.tsv",
                                 sep = "\t", index = False)
 
     # Store complete panel (better change this way of using this version in nextflow)
     version = "all"
-    compact_annot_panel_df.to_csv(f"{output_path}.compact.{version}.tsv",
+    compact_annot_panel_df.to_csv(f"{output_path}.{version}.tsv",
                                     sep = "\t", index = False)
 
 if __name__ == '__main__':

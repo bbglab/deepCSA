@@ -9,12 +9,14 @@ process OMEGA_ESTIMATOR {
 
     // TODO create a container for omega, for both the preprocessing and the estimation
 
+    container 'docker.io/ferriolcalvet/omega:latest'
+
     input:
-    tuple val(meta), path(mutations_table), path(mutabilities_table), path(depths)
-    path (annotated_panel)
+    tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
+    tuple val(meta2), path(annotated_panel)
 
     output:
-    tuple val(meta), path("output_*.tsv"), emit: result
+    tuple val(meta), path("output_*.tsv"), emit: results
     path "versions.yml"                  , emit: versions
 
     when:
@@ -22,22 +24,48 @@ process OMEGA_ESTIMATOR {
 
     script:
     def args = task.ext.args ?: ""
-    def option = task.ext.option ?: "bayes"
+    def option = task.ext.option ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    cat > input_estimator.json << EOF
+
+    mkdir groups;
+    # Read the input file and extract unique gene names
+    genes=\$(awk 'NR>1 {print \$1}' ${mutations_table} | sort | uniq)
+
+    # Initialize an empty JSON object
+    json="{"
+
+    for gene in \$genes; do
+        json="\$json\\"\$gene\\": [\\"\$gene\\"], "
+    done;
+    echo \$json | rev | cut -d ',' -f 2- | rev | cat - <(echo '}') > groups/group_genes.json
+
+
+    cat > groups/group_impacts.json << EOF
     {
-    "observed_mutations_file": "${mutations_table}",
-    "mutability_file":         "${mutabilities_table}",
-    "depths_file"       :      "${depths}",
-    "vep_annotation_file":     "${annotated_panel}",
-    "grouping_folder":         "groups_dir/"
+        "missense": ["missense"],
+        "nonsense": ["nonsense"],
+        "essential_splice": ["essential_splice"],
+        "nonsynonymous": ["missense", "nonsense"],
+        "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"]
     }
     EOF
-    python ../src/estimator/main.py --option ${option} --cores ${task.cpus} input_estimator.json output_${option}.tsv
 
+    cat > groups/group_samples.json << EOF
+    {
+        "${meta.id}" : ["${meta.id}"]
+    }
+    EOF
+
+    omega estimator --mutability-file ${mutabilities_table} \\
+                    --observed-mutations-file ${mutations_table} \\
+                    --depths-file ${depths} \\
+                    --vep-annotation-file ${annotated_panel} \\
+                    --grouping-folder ./groups/ \\
+                    --output-fn output_${option}.${prefix}.tsv \\
+                    --option ${option} \\
+                    --cores 4
+                    # --cores ${task.cpus}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         omega: 1.0

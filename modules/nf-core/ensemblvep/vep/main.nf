@@ -1,11 +1,15 @@
 process ENSEMBLVEP_VEP {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_high'
 
-    conda "bioconda::ensembl-vep=108.2"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ensembl-vep:108.2--pl5321h4a94de4_0' :
-        'biocontainers/ensembl-vep:108.2--pl5321h4a94de4_0' }"
+    // conda "bioconda::ensembl-vep=108.2"
+    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    //     'https://depot.galaxyproject.org/singularity/ensembl-vep:108.2--pl5321h4a94de4_0' :
+    //     'biocontainers/ensembl-vep:108.2--pl5321h4a94de4_0' }"
+
+    conda { cache_version == 108 ? 'bioconda::ensembl-vep=108.2' : cache_version == 102 ? 'bioconda::ensembl-vep=102.0' :  'unknown' }
+    container { cache_version == 108 ? "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/ensembl-vep:108.2--pl5321h4a94de4_0' : 'biocontainers/ensembl-vep:108.2--pl5321h4a94de4_0' }" : cache_version == 102 ? "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/ensembl-vep:102.0--pl526hecda079_0' : 'biocontainers/ensembl-vep:102.0--pl526hecda079_0' }" : 'unknown'}
+    // container { cache_version == 108 ? "biocontainers/ensembl-vep:108.2--pl5321h4a94de4_0" : cache_version == 102 ? "biocontainers/ensembl-vep:102.0--pl526hecda079_0" : 'unknown'}
 
     input:
     tuple val(meta), path(vcf)
@@ -51,7 +55,7 @@ process ENSEMBLVEP_VEP {
         --cache \\
         --cache_version $cache_version \\
         --dir_cache $dir_cache \\
-        --fork $task.cpus
+        --fork ${task.cpus}
 
 
     cat <<-END_VERSIONS > versions.yml

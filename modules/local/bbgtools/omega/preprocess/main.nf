@@ -7,16 +7,14 @@ process OMEGA_PREPROCESS {
     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
     //     'biocontainers/YOUR-TOOL-HERE' }"
 
-    // TODO create a container for omega, for both the preprocessing and the estimation
+    container 'docker.io/ferriolcalvet/omega:latest'
 
     input:
     tuple val(meta), path(mutations), path(depths), path(mutation_profile)
-    path (annotated_panel)
-    // TODO see if we provide directly the panel annotated as omega requires
-    // see regions_sites.annotation_summary.tsv in some omega test directory
+    tuple val(meta2), path (annotated_panel)
 
     output:
-    tuple val(meta), path("mutability_per_sample_gene_context.tsv"), path("mutations_per_sample_gene_impact_context.tsv") , emit: mutabs_n_mutations_tsv
+    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv") , emit: mutabs_n_mutations_tsv
     path "versions.yml"                   , emit: versions
 
     when:
@@ -25,25 +23,22 @@ process OMEGA_PREPROCESS {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
+    // TODO revise this fix
+    def sample_name = prefix.tokenize('.')[0]
     """
-    cat > input_preprocessing.json << EOF
-    {
-    "vep_output_file"       : "${annotated_panel}",
-    "depths_file"           : "${depths}",
-    "mutations_file"        : "${mutations}",
-    "mutabilities_table"    : "mutability_per_sample_gene_context.tsv",
-    "table_observed_muts"   : "mutations_per_sample_gene_impact_context.tsv",
-    "additional_params"     : {"mutational_profile": "${mutation_profile}"}
-    }
-    EOF
-    python ../src/preprocessing/main.py input_preprocessing.json
+    omega preprocessing --preprocessing-mode compute_mutabilities \\
+                        --depths-file ${depths} \\
+                        --mutations-file ${mutations} \\
+                        --input-vep-postprocessed-file ${annotated_panel} \\
+                        --mutabilities-table mutability_per_sample_gene_context.${prefix}.tsv \\
+                        --table-observed-muts mutations_per_sample_gene_impact_context.${prefix}.tsv \\
+                        --mutational-profile ${mutation_profile} \\
+                        --single-sample ${sample_name}
     # $args -c $task.cpus
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 1.0
+        omega: 1.0
     END_VERSIONS
     """
 
@@ -55,7 +50,7 @@ process OMEGA_PREPROCESS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 1.0
+        omega: 1.0
     END_VERSIONS
     """
 }

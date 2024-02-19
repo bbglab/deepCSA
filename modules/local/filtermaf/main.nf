@@ -28,10 +28,11 @@ process FILTER_BATCH {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def filters = task.ext.filters ?: "other_sample_germline,is_SNP,repetitive_variant"
     def repetitive_variant = task.ext.repetitive_variant ?: "5"
+    def germline_threshold = task.ext.germline_threshold ?: "0.35"
     """
-    filter_cohort.py ${maf} ${prefix} ${mutations}
+    filter_cohort.py ${maf} ${prefix} ${repetitive_variant} ${germline_threshold}
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

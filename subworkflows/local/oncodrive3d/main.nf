@@ -1,4 +1,7 @@
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+
 include { SUBSET_MAF    as SUBSET_ONCODRIVE3D } from '../../../modules/local/subsetmaf/main'
+
 include { ONCODRIVE3D } from '../../../modules/local/bbgtools/oncodrive3d/main'
 
 
@@ -6,31 +9,32 @@ include { ONCODRIVE3D } from '../../../modules/local/bbgtools/oncodrive3d/main'
 workflow ONCODRIVE3D_ANALYSIS{
 
     take:
-    muts
+    mutations
+    mutabilities
+    bedfile
+    datasets
 
     main:
     ch_versions = Channel.empty()
 
-    //
-    // Separate input mutations and mutabilities
-    //
-    muts.
-    map{ it -> [it[0], it[1]]}.
-    set{ meta_muts }
+    SUBSETMUTATIONS(mutations, bedfile)
+    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-    muts.
-    map{ it -> [it[0], it[2], it[3]]}.
-    set{ meta_mutabs }
-
-    SUBSET_ONCODRIVE3D(meta_muts)
+    SUBSET_ONCODRIVE3D(SUBSETMUTATIONS.out.subset)
     ch_versions = ch_versions.mix(SUBSET_ONCODRIVE3D.out.versions)
 
     SUBSET_ONCODRIVE3D.out.mutations
-    .join(meta_mutabs)
+    .join(mutabilities)
     .set{ muts_n_mutability }
 
+    // if (datasets) {
+    //      do something
+    // } else {
+    //     BUILDDATASETS
+    // }
 
-    ONCODRIVE3D(muts_n_mutability)
+
+    ONCODRIVE3D(muts_n_mutability, datasets)
     ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
 
     emit:

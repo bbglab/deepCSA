@@ -20,6 +20,7 @@ process CREATECUSTOMBEDFILE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def tool = task.ext.tool ?: 'oncodrivefml'
 
     // find a better solution for doing this,
     // probably in python
@@ -27,7 +28,11 @@ process CREATECUSTOMBEDFILE {
     // step 1 make it robust
     // step 2 allow groups
     """
-    cat <(printf "CHROMOSOME\\tSTART\\tEND\\tELEMENT\\tSEGMENT\\n") <(cut -f1,2,6,7 ${panel_tsv} | tail -n +2 | uniq | awk -F'\\t' '{print \$1, \$2, \$2, \$3}' OFS='\\t' | bedtools merge -c 4 -o distinct | sed 's/^chr//g' | awk -F'\\t' '{print \$1, \$2, \$3, \$4, 1}' OFS='\\t' ) > ${prefix}.annotated.bed
+    if [ "$tool" == "oncodrivefml" ]; then
+        cat <(printf "CHROMOSOME\\tSTART\\tEND\\tELEMENT\\tSEGMENT\\n") <(cut -f1,2,6,7 ${panel_tsv} | tail -n +2 | uniq | awk -F'\\t' '{print \$1, \$2, \$2, \$3}' OFS='\\t' | bedtools merge -c 4 -o distinct | sed 's/^chr//g' | awk -F'\\t' '{print \$1, \$2, \$3, \$4, 1}' OFS='\\t' ) > ${prefix}.annotated.bed
+    elif [ "$tool" == "oncodriveclustl" ]; then
+        cat <(printf "CHROMOSOME\\tSTART\\tEND\\tELEMENT_ID\\tSYMBOL\\n") <(cut -f1,2,6,7 ${panel_tsv} | tail -n +2 | uniq | awk -F'\\t' '{print \$1, \$2, \$2, \$3}' OFS='\\t' | bedtools merge -c 4 -o distinct | sed 's/^chr//g' | awk -F'\\t' '{print \$1, \$2, \$3, \$4, \$4}' OFS='\\t' ) > ${prefix}.annotated.bed
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

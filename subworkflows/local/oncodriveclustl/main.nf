@@ -1,21 +1,38 @@
-include { COMPUTEDEPTHS } from '../../modules/local/computedepths/main'
+include { CREATECUSTOMBEDFILE    as ONCODRIVECLUSTLBED     } from '../../../modules/local/createpanels/custombedfile/main'
+
+include { SUBSET_MAF             as SUBSET_ONCODRIVECLUSTL } from '../../../modules/local/subsetmaf/main'
+
+include { ONCODRIVECLUSTL                                  } from '../../../modules/local/bbgtools/oncodriveclustl/main'
+// include { ONCODRIVECLUSTL           as ONCODRIVECLUSTLSNVS    } from '../../../modules/local/bbgtools/oncodriveclustl/main'
 
 
-workflow DEPTH_ANALYSIS{
+
+workflow ONCODRIVECLUSTL_ANALYSIS{
+
     take:
-    // inputs
-    bam_list
+    mutations
+    mutabilities
+    panel_file
 
     main:
-    // actual code
     ch_versions = Channel.empty()
-    COMPUTEDEPTHS(bam_list)
 
-    // PROCESSDEPTHSTABLE()
+    ONCODRIVECLUSTLBED(panel_file)
+    ch_versions = ch_versions.mix(ONCODRIVECLUSTLBED.out.versions)
 
-    // PLOTDEPTHS()
+    SUBSET_ONCODRIVECLUSTL(mutations)
+    ch_versions = ch_versions.mix(ONCODRIVECLUSTLBED.out.versions)
+
+    SUBSET_ONCODRIVECLUSTL.out.mutations
+    .join(mutabilities)
+    .set{ muts_n_mutability }
+
+    ONCODRIVECLUSTL(muts_n_mutability,  ONCODRIVECLUSTLBED.out.bed)
+    // ONCODRIVECLUSTLSNVS(muts_n_mutability,  ONCODRIVECLUSTLBED.out.bed)
+    ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
 
     emit:
-    depths   = COMPUTEDEPTHS.out.depths   // channel: [ val(meta), file(depths) ]
-    versions = ch_versions                // channel: [ versions.yml ]
+    results         = ONCODRIVECLUSTL.out.tsv          // channel: [ val(meta), file(results) ]
+    // results_snvs    = ONCODRIVECLUSTLSNVS.out.tsv      // channel: [ val(meta), file(results) ]
+    versions        = ch_versions                   // channel: [ versions.yml ]
 }
