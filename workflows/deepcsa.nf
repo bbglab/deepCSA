@@ -191,32 +191,43 @@ workflow DEEPCSA{
 
 
     // Mutational profile
-    MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_bed, wgs_trinucs)
-    MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
-    MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs)
-    MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
-    ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
-    ch_versions = ch_versions.mix(MUTPROFILENONPROT.out.versions)
-    ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
-    ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
+    if (profileall){
+        MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_bed, wgs_trinucs)
+        ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
+    }
+    if (profilenonprot){
+        MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
+        ch_versions = ch_versions.mix(MUTPROFILENONPROT.out.versions)
+    }
+    if (profileexons){
+        MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs)
+        ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
+    }
+    if (profileintrons){
+        MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
+        ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
+    }
 
 
     if (run_mutabilities) {
-        MUTABILITYALL(MUT_PREPROCESSING.out.somatic_mafs,
-                        annotated_depths,
-                        MUTPROFILEALL.out.profile,
-                        CREATEPANELS.out.exons_consensus_panel,
-                        CREATEPANELS.out.exons_consensus_bed
-                        )
-
-        MUTABILITYNONPROT(MUT_PREPROCESSING.out.somatic_mafs,
+        if (profileall){
+            MUTABILITYALL(MUT_PREPROCESSING.out.somatic_mafs,
                             annotated_depths,
-                            MUTPROFILENONPROT.out.profile,
+                            MUTPROFILEALL.out.profile,
                             CREATEPANELS.out.exons_consensus_panel,
                             CREATEPANELS.out.exons_consensus_bed
                             )
-        ch_versions = ch_versions.mix(MUTABILITYALL.out.versions)
-        ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
+            ch_versions = ch_versions.mix(MUTABILITYALL.out.versions)
+        }
+        if (profilenonprot){
+            MUTABILITYNONPROT(MUT_PREPROCESSING.out.somatic_mafs,
+                                annotated_depths,
+                                MUTPROFILENONPROT.out.profile,
+                                CREATEPANELS.out.exons_consensus_panel,
+                                CREATEPANELS.out.exons_consensus_bed
+                                )
+            ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
+        }
     }
 
 
@@ -224,60 +235,86 @@ workflow DEEPCSA{
     // Positive selection
     //
 
+    // OncodriveFML
     if (params.oncodrivefml){
-        // OncodriveFML
-        ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
-        ONCODRIVEFMLNONPROT(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYNONPROT.out.mutability, CREATEPANELS.out.exons_consensus_panel)
-        ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
-        ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
+        if (profileall){
+            ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
+            ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
+        }
+        if (profilenonprot){
+            ONCODRIVEFMLNONPROT(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYNONPROT.out.mutability, CREATEPANELS.out.exons_consensus_panel)
+            ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
+        }
     }
 
     if (params.oncodrive3d){
-        // Oncodrive3D
-        ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed, datasets3d)
-        ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
+        if (profileall){
+            // Oncodrive3D
+            ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed, datasets3d)
+            ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
+        }
     }
 
 
 
     if (params.omega){
-        // Omega
-        OMEGA(MUT_PREPROCESSING.out.somatic_mafs,
-                annotated_depths,
-                MUTPROFILEALL.out.profile,
-                CREATEPANELS.out.exons_consensus_bed,
-                CREATEPANELS.out.exons_consensus_panel)
-        ch_versions = ch_versions.mix(OMEGA.out.versions)
 
-        OMEGANONPROT(MUT_PREPROCESSING.out.somatic_mafs,
-                        annotated_depths,
-                        MUTPROFILENONPROT.out.profile,
-                        CREATEPANELS.out.exons_consensus_bed,
-                        CREATEPANELS.out.exons_consensus_panel)
-        ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
+        // Omega
+        if (profileall){
+            OMEGA(MUT_PREPROCESSING.out.somatic_mafs,
+                    annotated_depths,
+                    MUTPROFILEALL.out.profile,
+                    CREATEPANELS.out.exons_consensus_bed,
+                    CREATEPANELS.out.exons_consensus_panel)
+            ch_versions = ch_versions.mix(OMEGA.out.versions)
+        }
+        if (profilenonprot){
+            OMEGANONPROT(MUT_PREPROCESSING.out.somatic_mafs,
+                            annotated_depths,
+                            MUTPROFILENONPROT.out.profile,
+                            CREATEPANELS.out.exons_consensus_bed,
+                            CREATEPANELS.out.exons_consensus_panel)
+            ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
+        }
     }
 
     if (params.oncodriveclustl){
         // OncodriveClustl
-        ONCODRIVECLUSTL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
-        ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
+        if (profileall){
+            ONCODRIVECLUSTL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
+            ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
+        }
     }
 
 
     if (params.signatures){
-        // Signature Analysis
-        SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-        SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-        SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-        SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-        ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
-        ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
-        ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
-        ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
 
-        SIGNATURESALL.out.mutation_probs.map{ it -> it[1] }.collect().map{ it -> [[ id: "all_samples" ], it]}.set{ all_sigs_probs }
-        MUTS2SIGS(MUT_PREPROCESSING.out.somatic_mafs, all_sigs_probs)
-        ch_versions = ch_versions.mix(MUTS2SIGS.out.versions)
+        // Signature Analysis
+        if (profileall){
+            SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
+
+            MUT_PREPROCESSING.out.somatic_mafs
+            .join(SIGNATURESALL.out.mutation_probs)
+            .set{mutations_n_sbs}
+            MUTS2SIGS(mutations_n_sbs)
+            ch_versions = ch_versions.mix(MUTS2SIGS.out.versions)
+
+
+        }
+        if (profilenonprot){
+            SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
+        }
+        if (profileexons){
+            SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
+        }
+        if (profileintrons){
+            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
+        }
+
 
     }
 

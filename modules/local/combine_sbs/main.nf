@@ -1,4 +1,4 @@
-process MUTATIONS_2_SIGNATURES {
+process SIGNATURES_PROBABILITIES {
 
     tag "${meta.id}"
     label 'process_low'
@@ -12,11 +12,11 @@ process MUTATIONS_2_SIGNATURES {
 
 
     input:
-    tuple val(meta), path (maf), path (signature_probabilities)
+    tuple val(meta), path (signature_probabilities)
 
     output:
-    tuple val(meta), path ("*.sigs.annotated.tsv.gz")   , emit: mafs_sigs_info
-    path "versions.yml"                                 , emit: versions
+    path ("*.decomposed_probabilities.tsv") , emit: signature_probs
+    path "versions.yml"                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -25,9 +25,8 @@ process MUTATIONS_2_SIGNATURES {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mutations_n_sbs.py --mutations ${maf} \\
-                        --signature-probabilities ${signature_probabilities} \\
-                        --output ${prefix}.sigs.annotated.tsv.gz
+    ls ${signature_probabilities} > signature_probs_files.txt
+    concat_sbs_probs.py --signature-probabilities signature_probs_files.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -39,7 +38,7 @@ process MUTATIONS_2_SIGNATURES {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.sigs.annotated.tsv.gz
+    touch ${prefix}.decomposed_probabilities.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

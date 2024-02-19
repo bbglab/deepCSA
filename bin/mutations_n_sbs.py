@@ -12,30 +12,17 @@ def combine_mutations_n_signatures(mutations_file, signature_probabilities_files
 
     mutations = pd.read_csv(mutations_file, sep = "\t", header = 0)
 
-    sig_probs_matrix = pd.concat((pd.read_csv(file.strip(), sep='\t', header=0) for file in open(signature_probabilities_files, 'r')), axis=0)
-    ## this is equivalent to the line above
-    # sig_probs_matrix = pd.DataFrame()
-    # with open(signature_probabilities_files, 'r') as file:
-    #     for line in file.readlines():
-    #         sig_file = line.strip()
-    #         sig_probs_matrix_single = pd.read_csv(sig_file, sep = "\t", header = 0)
-    #         sig_probs_matrix = pd.concat((sig_probs_matrix, sig_probs_matrix_single), axis = 0)
-    sig_probs_matrix = sig_probs_matrix.fillna(0)
-
-    sig_probs_matrix.to_csv("test_signature_probs.tsv",
-                                header=True,
-                                index=False,
-                                sep="\t")
+    sig_probs_matrix = pd.read_csv(signature_probabilities_files, sep = "\t", header = 0)
 
     muts_with_sbs = mutations.merge(sig_probs_matrix,
-                                    left_on = ["SAMPLE_ID", "CONTEXT_MUT_SIGPRO"],
-                                    right_on = ["Sample Names", "MutationType"],
+                                    left_on = ["CONTEXT_MUT_SIGPRO"],
+                                    right_on = ["MutationType"],
                                     how = 'left')
 
-    muts_with_sbs.drop(["Sample Names", "MutationType"], axis = 1).to_csv(f"{output_file}",
-                                                                            header=True,
-                                                                            index=False,
-                                                                            sep="\t")
+    muts_with_sbs.drop(["MutationType"], axis = 1).to_csv(f"{output_file}",
+                                                            header=True,
+                                                            index=False,
+                                                            sep="\t")
 
 
 
