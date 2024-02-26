@@ -23,9 +23,7 @@ process VCF2MAF {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def batch = task.ext.batch ?: "${meta.batch}"
-    def level = task.ext.level ?: "high"// "${meta.level}"
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
+    def level = task.ext.level ?: "high"
     """
     vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation};
 
