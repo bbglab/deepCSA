@@ -212,6 +212,7 @@ def reformat_alleles_to_OncodriveFML(dat, letters = ['A', 'T', 'C', 'G']):
     (indels represented by - without repeating the nucleotides.)
     """
     chromosome = dat["CHROM"].replace("chr", "")
+
     if dat["ALT"][0] in letters:
         position = dat["Location"].split(":")[1].split("-")[0]
         if len(dat["REF"]) == len(dat["ALT"]):
@@ -231,6 +232,7 @@ def reformat_alleles_to_OncodriveFML(dat, letters = ['A', 'T', 'C', 'G']):
         return chromosome, position, ref, allele
 
     return chromosome, dat['POS'], dat['REF'], dat['ALT']
+
 
 
 def add_alternative_format_columns(dataframe):
@@ -298,6 +300,7 @@ sample_muts["SAMPLE_ID"] = sampleid
 sample_muts["METHOD"] = level
 sample_muts["PROJECT_NAME"] = project_name
 
+sample_muts = sample_muts[sample_muts["CHROM"].apply(lambda x: '_' not in x)].reset_index(drop = True)
 
 # annotate the variants
 # use the MUT_ID field to intersect with the EnsemblVEP annotation
