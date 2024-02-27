@@ -43,30 +43,31 @@ def plot_profile(frequencies, title='title', ylabels=[0, 0.1], ymax=0.3, output_
 
     ax[axis_key].set_yticks([])
 
+    fontsize_subs_title = 3.5
     subs = 'C>A'
     rect1 = Rectangle((0, 0.15), 15.75, 0.5, color=snv_color[subs])
     ax[axis_key].add_patch(rect1)
-    ax[axis_key].text(15.75/2, 0.75, subs, fontsize=3.5, weight='normal', ha='center')
+    ax[axis_key].text(15.75/2, 0.75, subs, fontsize=fontsize_subs_title, weight='normal', ha='center')
     subs = 'C>G'
     rect1 = Rectangle((16,0.1), 15.75, 0.5, color=snv_color[subs])
     ax[axis_key].add_patch(rect1)
-    ax[axis_key].text(16 + 15.75/2 -1, 0.75, subs, fontsize=3.5, weight='normal', ha='center')
+    ax[axis_key].text(16 + 15.75/2 -1, 0.75, subs, fontsize=fontsize_subs_title, weight='normal', ha='center')
     subs = 'C>T'
     rect1 = Rectangle((32,0.1), 15.75, 0.5, color=snv_color[subs])
     ax[axis_key].add_patch(rect1)
-    ax[axis_key].text(32 + 15.75/2 -1, 0.75, subs, fontsize=3.5, weight='normal', ha='center')
+    ax[axis_key].text(32 + 15.75/2 -1, 0.75, subs, fontsize=fontsize_subs_title, weight='normal', ha='center')
     subs = 'T>A'
     rect1 = Rectangle((48,0.1), 15.75, 0.5, color=snv_color[subs])
     ax[axis_key].add_patch(rect1)
-    ax[axis_key].text(48 + 15.75/2 -1, 0.75, subs, fontsize=3.5, weight='normal', ha='center')
+    ax[axis_key].text(48 + 15.75/2 -1, 0.75, subs, fontsize=fontsize_subs_title, weight='normal', ha='center')
     subs = 'T>C'
     rect1 = Rectangle((64,0.1), 15.75, 0.5, color=snv_color[subs])
     ax[axis_key].add_patch(rect1)
-    ax[axis_key].text(64 + 15.75/2 -1, 0.75, subs, fontsize=3.5, weight='normal', ha='center')
+    ax[axis_key].text(64 + 15.75/2 -1, 0.75, subs, fontsize=fontsize_subs_title, weight='normal', ha='center')
     subs = 'T>G'
     rect1 = Rectangle((80,0.1), 15.75, 0.5, color=snv_color[subs])
     ax[axis_key].add_patch(rect1)
-    ax[axis_key].text(80 + 15.75/2 -1, 0.75, subs, fontsize=3.5, weight='normal', ha='center')
+    ax[axis_key].text(80 + 15.75/2 -1, 0.75, subs, fontsize=fontsize_subs_title, weight='normal', ha='center')
 
 
     #### PLOT 1

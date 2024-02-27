@@ -3,7 +3,7 @@ from bgreference import hg38, hg19, mm10
 from itertools import product
 
 
-cb = dict(zip('ACGT', 'TGCA'))
+cb = dict(zip('ACGTN', 'TGCAN'))
 
 def canonical_channels():
 
@@ -16,9 +16,19 @@ def canonical_channels():
 
 
 def transform_context(chr_, pos, mut, assembly = hg38):
-    ref, alt = tuple(mut.split('/'))
-    ref_triplet = assembly(chr_, pos-1, size=3)
-    if ref_triplet[1] not in ['C', 'T']:
-        ref_triplet = ''.join(list(map(lambda x: cb[x], ref_triplet[::-1])))
-        alt = cb[alt]
-    return ref_triplet + '>' + alt
+    # TODO remove this try-except
+    try:
+        ref, alt = tuple(mut.split('/'))
+        ref_triplet = assembly(chr_, pos-1, size=3)
+        if ref_triplet[1] not in ['C', 'T']:
+            ref_triplet = ''.join(list(map(lambda x: cb[x], ref_triplet[::-1])))
+            alt = cb[alt]
+        return ref_triplet + '>' + alt
+
+    except:
+        print('Missing position', chr_, pos, mut, pos - 1)
+        ref_triplet = f'N{ref}N'
+        if ref_triplet[1] not in ['C', 'T']:
+            ref_triplet = ''.join(list(map(lambda x: cb[x], ref_triplet[::-1])))
+            alt = cb[alt]
+        return ref_triplet + '>' + alt
