@@ -32,7 +32,7 @@ process CREATECONSENSUSPANELS {
 
     bedtools merge \\
             -i <(tail -n +2 consensus.${prefix}.tsv | \\
-            awk -F'\t' '{print \$1, \$2, \$2}' OFS='\t') > consensus.${prefix}.bed;
+            awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > consensus.${prefix}.bed;
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
