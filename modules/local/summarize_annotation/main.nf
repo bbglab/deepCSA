@@ -30,7 +30,7 @@ process SUMMARIZE_ANNOTATION {
             zgrep -v '#' \$file >> ${prefix}.vep.tab.tmp;
             echo \$file;
     done;
-    cat header.tsv <(sort -u ${prefix}.vep.tab.tmp | grep -v '#' | sed 's/^chr//g' | awk -F ':' 'length(\$1) <= 2' | awk '{ printf "chr"\$0 }') > ${prefix}.vep.tab ;
+    cat header.tsv <(sort -u ${prefix}.vep.tab.tmp | grep -v '#' | sed 's/^chr//g' | awk -F ':' 'length(\$1) <= 2' | awk '{ printf "chr"\$0"\\n" }') > ${prefix}.vep.tab ;
     rm ${prefix}.vep.tab.tmp;
 
     postprocessing_annotation.py ${prefix}.vep.tab ${prefix}.vep.summary.tab ${assembly} False;

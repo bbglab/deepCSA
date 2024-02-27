@@ -13,7 +13,10 @@ from utils import vartype
 vcf = sys.argv[1]
 
 sampleid = sys.argv[2]
+
+# TODO remove project_name variable
 project_name = sys.argv[3]
+
 level = sys.argv[4]
 
 annotation_file = sys.argv[5]
