@@ -32,7 +32,7 @@ def plot_profile(frequencies, title='title', ylabels=[0, 0.1], ymax=0.3, output_
                         wspace=0.01,
                         hspace=0)
 
-    plt.title(title, fontsize=7)
+    plt.title(title, fontsize=7, y = 1.2)
 
     #### Top
     axis_key = 0
@@ -43,7 +43,7 @@ def plot_profile(frequencies, title='title', ylabels=[0, 0.1], ymax=0.3, output_
 
     ax[axis_key].set_yticks([])
 
-    fontsize_subs_title = 3.5
+    fontsize_subs_title = 5
     subs = 'C>A'
     rect1 = Rectangle((0, 0.15), 15.75, 0.5, color=snv_color[subs])
     ax[axis_key].add_patch(rect1)
@@ -99,7 +99,7 @@ def plot_profile(frequencies, title='title', ylabels=[0, 0.1], ymax=0.3, output_
     ax[axis_key].set_yticklabels(ylabels, fontsize=3.5, color='black', va="top", ha="center")
     ax[axis_key].set_xticks([])
     ax[axis_key].set_xticks(list(range(0, 96)))
-    ax[axis_key].set_xticklabels(labels, fontsize=2, color='black', va="top", ha="center")
+    ax[axis_key].set_xticklabels(labels, fontsize=3.5, color='black', va="top", ha="center")
     plt.xticks(rotation=90)
 
     for key, value in ylabels_dict.items():
