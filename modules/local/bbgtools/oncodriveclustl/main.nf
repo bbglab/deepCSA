@@ -13,11 +13,11 @@ process ONCODRIVECLUSTL {
     tuple val(meta2), path (bed_file)
 
     output:
-    tuple val(meta), path("**.tsv")  , emit: tsv
-    tuple val(meta), path("**.txt")  , emit: txt
-    tuple val(meta), path("**.png")  , emit: png
-    tuple val(meta), path("**.log")  , emit: log
-    path "versions.yml"              , emit: versions
+    tuple val(meta), path("**.tsv")                 , emit: tsv
+    tuple val(meta), path("**.txt")                 , emit: txt
+    tuple val(meta), path("**.png")  , optional:true, emit: png
+    tuple val(meta), path("**.log")                 , emit: log
+    path "versions.yml"                             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
