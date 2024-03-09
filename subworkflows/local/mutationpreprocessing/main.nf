@@ -9,6 +9,7 @@ include { MERGE_BATCH               as MERGEBATCH       } from '../../../modules
 include { FILTER_BATCH              as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                as WRITEMAF         } from '../../../modules/local/writemaf/main'
 include { SUBSET_MAF                as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
+include { PLOT_MUTATIONS            as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -59,6 +60,8 @@ workflow MUTATION_PREPROCESSING {
     FILTERBATCH(MERGEBATCH.out.cohort_maf)
     ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
 
+    PLOTMAF(FILTERBATCH.out.cohort_maf)
+    ch_versions = ch_versions.mix(PLOTMAF.out.versions)
 
     WRITEMAF(FILTERBATCH.out.cohort_maf, groups)
     ch_versions = ch_versions.mix(WRITEMAF.out.versions)
