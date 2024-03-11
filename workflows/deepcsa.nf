@@ -308,7 +308,7 @@ workflow DEEPCSA{
 
         // Signature Analysis
         if (params.profileall){
-            SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
             ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
 
             MUT_PREPROCESSING.out.somatic_mafs
@@ -320,15 +320,15 @@ workflow DEEPCSA{
 
         }
         if (params.profilenonprot){
-            SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
             ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
         }
         if (params.profileexons){
-            SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
             ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
         }
         if (params.profileintrons){
-            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
             ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
         }
 
