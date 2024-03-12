@@ -127,23 +127,23 @@ print(packageVersion("mSigHdp"))
 # TODO
 # revise whether we should change any of the parameters here for a better optimization
 mSigHdp::RunHdpxParallel(
-    input.catalog = input_catalog,
-    seedNumber = seed,
-    K.guess = K_guess,
-    out.dir = output_home,
-    multi.types = FALSE,
-    burnin = 1000,
-    burnin.multiplier = 2,
-    post.n = 5,
-    post.space = 10,
-    num.child.process = 2 * num_cpus,
-    CPU.cores = num_cpus,
-    high.confidence.prop = 0.9,
-    gamma.alpha = 1,
-    gamma.beta = 20,
-    checkpoint = TRUE,
-    verbose = TRUE,
-    # downsample_threshold = 3000
+    input.catalog           = input_catalog,
+    seedNumber              = seed,
+    K.guess                 = K_guess,
+    out.dir                 = output_home,
+    multi.types             = FALSE,
+    burnin                  = 5000,
+    burnin.multiplier       = 20,
+    post.n                  = 200,
+    post.space              = 100,
+    num.child.process       = 20,
+    CPU.cores               = num_cpus,
+    high.confidence.prop    = 0.9,
+    gamma.alpha             = 1,
+    gamma.beta              = 20,
+    checkpoint              = TRUE,
+    verbose                 = TRUE,
+    downsample_threshold    = 3000
 )
 
 message("Finished running mSigHdp")

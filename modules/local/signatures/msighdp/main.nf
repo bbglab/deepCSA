@@ -25,7 +25,7 @@ process MSIGHDP {
                 ${matrix} \\
                 output.${prefix} \\
                 ${k_guess} \\
-                2
+                ${task.cpus}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
