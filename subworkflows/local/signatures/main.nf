@@ -39,8 +39,8 @@ workflow SIGNATURES {
     ch_versions = ch_versions.mix(MSIGHDP.out.versions)
 
     emit:
-    plots               = SIGPROFILERASSIGNMENT.out.plots               // channel: [ val(meta), file(depths) ]
-    plots_extraction    = MSIGHDP.out.plots               // channel: [ val(meta), file(depths) ]
+    plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]
+    plots_extraction    = MSIGHDP.out.plots                     // channel: [ val(meta), file(depths) ]
     mutation_probs      = signature_probs_samples
-    versions            = ch_versions                                   // channel: [ versions.yml ]
+    versions            = ch_versions                           // channel: [ versions.yml ]
 }
