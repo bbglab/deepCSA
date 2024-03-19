@@ -1,8 +1,10 @@
 include { SIGPROFILERASSIGNMENT                                     } from '../../../modules/local/signatures/sigprofiler/assignment/main'
 include { MATRIX_CONCAT                        as MATRIXCONCATWGS   } from '../../../modules/local/sig_matrix_concat/main'
 // include { MATRIX_CONCAT                        as MATRIXCONCAT      } from '../../../modules/local/sig_matrix_concat/main'
-include { SIGNATURES_PROBABILITIES             as SIGPROBS     } from '../../../modules/local/combine_sbs/main'
+include { SIGNATURES_PROBABILITIES             as SIGPROBS          } from '../../../modules/local/combine_sbs/main'
 include { MSIGHDP                                                   } from '../../../modules/local/signatures/msighdp/main'
+include { MUSICAL                                                   } from '../../../modules/local/signatures/musical/main'
+
 
 
 
@@ -35,12 +37,19 @@ workflow SIGNATURES {
     // matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ all_matrices }
     // MATRIXCONCAT(all_matrices, samples)
     // MATRIXCONCAT.out.wgs_tsv.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_matrices }
+
     MSIGHDP(matrix)
     ch_versions = ch_versions.mix(MSIGHDP.out.versions)
+
+    MUSICAL(named_matrices_wgs)
+    ch_versions = ch_versions.mix(MUSICAL.out.versions)
+
 
     emit:
     plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]
     plots_extraction    = MSIGHDP.out.plots                     // channel: [ val(meta), file(depths) ]
+    plots_musical       = MUSICAL.out.plots                     // channel: [ val(meta), file(depths) ]
     mutation_probs      = signature_probs_samples
     versions            = ch_versions                           // channel: [ versions.yml ]
+
 }
