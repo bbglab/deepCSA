@@ -15,8 +15,9 @@ process OMEGA_ESTIMATOR {
     tuple val(meta2), path(annotated_panel)
 
     output:
-    tuple val(meta), path("output_*.tsv"), emit: results
-    path "versions.yml"                  , emit: versions
+    tuple val(meta), path("output_*.tsv")       , emit: results
+    tuple val(meta), path("output_*.tsv.log")   , emit: log
+    path "versions.yml"                         , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
