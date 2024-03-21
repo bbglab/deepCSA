@@ -101,13 +101,13 @@ def matching_n_refitting(sample, model):
 
 
 @click.command()
-@click.option('--matrixfile', type=click.Path(exists=True), help='File listing decomposed mutation probability files.')
 @click.option('--sample', type=str, help='Define sample name.')
+@click.option('--matrixfile', type=click.Path(exists=True), help='File listing decomposed mutation probability files.')
 @click.option('--cpus', type=int, help='Number of CPUs to use.')
 @click.option('--minprocess', type=int, help='Minimum number of processes to test.')
 @click.option('--maxprocess', type=int, help='Maximum number of processes to test.')
 
-def main(matrixfile, cpus, minprocess, maxprocess):
+def main(sample, matrixfile, cpus, minprocess, maxprocess):
     click.echo(f"Computing signatures with MuSiCal...")
     modd = run_musical(sample, matrixfile, cpus, minprocess, maxprocess)
     matching_n_refitting(sample, modd)
