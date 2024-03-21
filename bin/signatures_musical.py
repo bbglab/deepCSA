@@ -19,7 +19,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import musical
 
 
-def run_musical(matrix_file, cpus, minprocess, maxprocess):
+def run_musical(sample, matrix_file, cpus, minprocess, maxprocess):
     """
     INFO
     """
@@ -47,7 +47,7 @@ def run_musical(matrix_file, cpus, minprocess, maxprocess):
     # Number of discovered de novo signatures
     print(model.n_components)
 
-    with PdfPages(f'test.pdf') as pdf:
+    with PdfPages(f'{sample}.pdf') as pdf:
         model.plot_selection()
         pdf.savefig()
         plt.close()
@@ -56,9 +56,12 @@ def run_musical(matrix_file, cpus, minprocess, maxprocess):
         pdf.savefig()
         plt.close()
 
+    with open(f'{sample}.pkl', 'wb') as file:
+        pickle.dump(model, file)
+
     return model
 
-def matching_n_refitting(model):
+def matching_n_refitting(sample, model):
     thresh_grid = np.array([
         # 0.0001, 0.0002, 0.0005,
         0.001, 0.002, 0.005,
@@ -93,20 +96,21 @@ def matching_n_refitting(model):
     W_s = model.W_s
     H_s = model.H_s
 
-    W_s.to_csv("test.W_s.tsv", header = True, index = True, sep = '\t')
-    H_s.to_csv("test.H_s.tsv", header = True, index = True, sep = '\t')
+    W_s.to_csv(f"{sample}.W_s.tsv", header = True, index = True, sep = '\t')
+    H_s.to_csv(f"{sample}.H_s.tsv", header = True, index = True, sep = '\t')
 
 
 @click.command()
 @click.option('--matrixfile', type=click.Path(exists=True), help='File listing decomposed mutation probability files.')
+@click.option('--sample', type=str, help='Define sample name.')
 @click.option('--cpus', type=int, help='Number of CPUs to use.')
 @click.option('--minprocess', type=int, help='Minimum number of processes to test.')
 @click.option('--maxprocess', type=int, help='Maximum number of processes to test.')
 
 def main(matrixfile, cpus, minprocess, maxprocess):
     click.echo(f"Computing signatures with MuSiCal...")
-    modd = run_musical(matrixfile, cpus, minprocess, maxprocess)
-    matching_n_refitting(modd)
+    modd = run_musical(sample, matrixfile, cpus, minprocess, maxprocess)
+    matching_n_refitting(sample, modd)
 
 if __name__ == '__main__':
     main()

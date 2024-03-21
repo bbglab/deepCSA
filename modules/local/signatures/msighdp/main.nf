@@ -20,7 +20,7 @@ process MSIGHDP {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def k_guess = task.ext.k_guess ?: "12"
     """
-    msighdp_run.R \\
+    signatures_msighdp_run.R \\
                 123 \\
                 ${matrix} \\
                 output.${prefix} \\

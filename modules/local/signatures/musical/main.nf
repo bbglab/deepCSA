@@ -11,6 +11,7 @@ process MUSICAL {
     output:
     tuple val(meta), path("**.pdf")     , emit: plots
     tuple val(meta), path("**.tsv")     , emit: stats
+    tuple val(meta), path("**.pkl")     , emit: model
     path "versions.yml"                 , emit: versions
 
     when:
@@ -23,6 +24,7 @@ process MUSICAL {
     def max_processes = task.ext.max_processes ?: "10"
     """
     signatures_musical.py \\
+                --sample ${prefix} \\
                 --matrixfile ${matrix} \\
                 --minprocess ${min_processes} \\
                 --maxprocess ${max_processes} \\
