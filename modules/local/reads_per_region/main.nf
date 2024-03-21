@@ -9,11 +9,12 @@ process READS_PER_REGION {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta) , path(pileup), path(fragments_coords)
+    tuple val(meta) , path(pileup), path(pileupindex), path(fragments_coords)
     tuple val(meta2), path(regions)
 
     output:
     tuple val(meta), path("*.reads_x_region.tsv.gz")    , emit: read_counts
+    tuple val(meta), path("*.custom.bed")               , emit: redesigned_bed
     path "versions.yml"                                 , emit: versions
 
     when:
@@ -22,9 +23,11 @@ process READS_PER_REGION {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    // TODO decide whether any of these would be useful in here
+    // zcat ${pileup} | bgzip -c > ${prefix}.indexed.tsv.tmp.gz; tabix -s 1 -b 2 -e 2 ${prefix}.indexed.tsv.tmp.gz
+    // tabix -s 1 -b 2 -e 2 ${prefix}.indexed.tsv.tmp.gz
     """
-    head ${regions} > regions.tmp
-    reads_x_region.py ${pileup} ${fragments_coords} regions.tmp ${prefix}
+    reads_x_region.py ${prefix}.indexed.tsv.tmp.gz ${fragments_coords} ${regions} ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

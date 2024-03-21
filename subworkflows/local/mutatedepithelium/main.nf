@@ -1,8 +1,8 @@
-include { CREATECUSTOMBEDFILE       as ONCODRIVEFMLBED          } from '../../../modules/local/createpanels/custombedfile/main'
-include { COMPUTE_FRAGMENT_COORDS            as COMPUTEFRAGMENTSCOORDS   } from '../../../modules/local/fragments_from_bam/main'
-include { READS_PER_REGION          as READSPERREGION           } from '../../../modules/local/reads_per_region/main'
+include { CREATECUSTOMBEDFILE           as READSPOSBED          } from '../../../modules/local/createpanels/custombedfile/main'
+include { COMPUTE_FRAGMENT_COORDS       as COMPUTEFRAGMENTSCOORDS   } from '../../../modules/local/fragments_from_bam/main'
+include { READS_PER_REGION              as READSPERREGION           } from '../../../modules/local/reads_per_region/main'
 
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETPILEUP             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY_INDEX  as SUBSETPILEUP             } from '../../../modules/nf-core/tabix/bgziptabixqueryindex/main'
 
 // include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 // include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
@@ -31,17 +31,16 @@ workflow MUTATED_EPITHELIUM {
     ch_versions = ch_versions.mix(SUBSETPILEUP.out.versions)
 
     COMPUTEFRAGMENTSCOORDS(bamfile)
-    // COMPUTEFRAGMENTSCOORDS.out.fragments
+    ch_versions = ch_versions.mix(COMPUTEFRAGMENTSCOORDS.out.versions)
 
-    ONCODRIVEFMLBED(panel)
-    // ONCODRIVEFMLBED.out.bed
-    ch_versions = ch_versions.mix(ONCODRIVEFMLBED.out.versions)
+    READSPOSBED(panel)
+    ch_versions = ch_versions.mix(READSPOSBED.out.versions)
 
     SUBSETPILEUP.out.subset
     .join(COMPUTEFRAGMENTSCOORDS.out.fragments)
     .set{ pileup_n_fragments }
 
-    READSPERREGION(pileup_n_fragments, ONCODRIVEFMLBED.out.bed)
+    READSPERREGION(pileup_n_fragments, READSPOSBED.out.bed)
     ch_versions = ch_versions.mix(READSPERREGION.out.versions)
 
     emit:
