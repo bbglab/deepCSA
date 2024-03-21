@@ -1,6 +1,7 @@
 process TABIX_BGZIPTABIX_QUERY {
     tag "$meta.id"
-    label 'process_single'
+    label 'process_high'
+    label 'process_high_memory'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -8,8 +9,8 @@ process TABIX_BGZIPTABIX_QUERY {
         'biocontainers/tabix:1.11--hdfd78af_0' }"
 
     input:
-    tuple val(meta)     , path(input)
-    tuple val(meta2)    , path(bedfile)
+    tuple val(meta)   , path(input)
+    tuple val(meta2)  , path(bedfile)
 
     output:
     tuple val(meta), path("*.gz")   , emit: subset
@@ -25,30 +26,37 @@ process TABIX_BGZIPTABIX_QUERY {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def extension = task.ext.extension ?: "${input.getExtension()}"
     def header = task.ext.header ?: "1"
-    // TODO add a variable that tells if the input file will be compressed / will contain header and act accordingly
     """
     if [[ ${input} == *.gz ]]; then
         if [[ "${header}" == "1" ]]; then
-            zcat ${input} | tail -n +2 | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
-            tabix $args2 ${prefix}.tmp.${extension}.gz;
-            cat <(zcat ${input} | head -n 1) <(tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz) | gzip > ${prefix}.${extension}.gz;
+            echo "mode compressed and header";
+            zcat ${input} | tail -n +2 | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c ${args} > ${prefix}.tmp.${extension}.gz;
+            tabix ${args2} ${prefix}.tmp.${extension}.gz;
+            cat <(zcat ${input} | head -n 1) <(tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz) | gzip > ${prefix}.${extension}.gz;
+        elif [[ "${header}" == "pile" ]]; then
+            echo "mode pileup";
+            tabix ${args2} ${input};
+            tabix --regions ${bedfile} ${args3}  ${input} | gzip > ${prefix}.${extension}.gz;        
         else
-            zcat ${input} | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
-            tabix $args2 ${prefix}.tmp.${extension}.gz;
-            tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz | gzip > ${prefix}.${extension}.gz;
+            echo "mode compressed without header";
+            zcat ${input} | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c ${args} > ${prefix}.tmp.${extension}.gz;
+            tabix ${args2} ${prefix}.tmp.${extension}.gz;
+            tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz | gzip > ${prefix}.${extension}.gz;
         fi
     else
         if [[ "${header}" == "1" ]]; then
-            tail -n +2 ${input} | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
-            tabix $args2 ${prefix}.tmp.${extension}.gz;
-            cat <(head -n 1 ${input}) <(tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz) | gzip > ${prefix}.${extension}.gz;
+            echo "mode uncompressed with header";
+            tail -n +2 ${input} | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c ${args} > ${prefix}.tmp.${extension}.gz;
+            tabix ${args2} ${prefix}.tmp.${extension}.gz;
+            cat <(head -n 1 ${input}) <(tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz) | gzip > ${prefix}.${extension}.gz;
         else
-            sort -k1,1 -k2,2n ${input} | bgzip --threads ${task.cpus} -c $args > ${prefix}.tmp.${extension}.gz;
-            tabix $args2 ${prefix}.tmp.${extension}.gz;
-            tabix --regions ${bedfile} $args3 ${prefix}.tmp.${extension}.gz | gzip > ${prefix}.${extension}.gz;
+            echo "mode uncompressed without header";
+            sort -k1,1 -k2,2n ${input} | bgzip --threads ${task.cpus} -c ${args} > ${prefix}.tmp.${extension}.gz;
+            tabix ${args2} ${prefix}.tmp.${extension}.gz;
+            tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz | gzip > ${prefix}.${extension}.gz;
         fi
     fi
-    rm ${prefix}.tmp.${extension}.gz*;
+    rm -f ${prefix}.tmp.${extension}.gz*;
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         tabix: \$(echo \$(tabix -h 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
