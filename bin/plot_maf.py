@@ -79,14 +79,13 @@ def plot_mutations_per_gene(sample_name, maf, parameters = {}):
     # fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     fig, ax = plt.subplots(figsize=(18, 4))
 
-    muts_per_gene = muts_per_gene.sort_values(by = "NUM_MUTS").reset_index(drop = True)
+    muts_per_gene = muts_per_gene.sort_values(by = "NUM_MUTS", ascending = False).reset_index(drop = True)
 
     # Plot the barplot
     sns.barplot(data=muts_per_gene,
                 x = default_vals['gene_column_name'], y="NUM_MUTS",
                 ax=ax,
                 color="salmon"
-                #, order=gene_order
                 )
     if default_vals['annotation']:
         # Calculate the maximum height of the bars
