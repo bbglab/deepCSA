@@ -9,56 +9,61 @@ import numpy as np
 
 # Define a function to generate exon number
 def generate_exon_number(group):
+    '''
+    TODO
+    the way this function is being used will be deprecated
+    we should change the implementation
+    '''
     group['EXON'] = range(1, len(group) + 1)
     return group
 
 
-def parse_mpu(x):
-    '''
-    a typical mpileup output line look like (with option: -s -f $refgen)
-    ..+4ACAC.+4ACAC.+2AC => ['.', '.+ACAC', '.+ACAC', '.+AC']
-    .,,-7tttttgtt => ['.', ',', ',-tttttgt', 't']
-    ,$.,,^>. => [',$', '.', ',', ',', '^.']
-    ,.,.*.**.^*. => [',', '.', ',', '.', '*', '.', '*', '*', '.', '^.']
-    ,....,Tn.t => [',', '.', '.', '.', '.', ',', 'T', 'n', '.', 't']
-    A-1N => ['A-N']
-    '''
+# def parse_mpu(x):
+#     '''
+#     a typical mpileup output line look like (with option: -s -f $refgen)
+#     ..+4ACAC.+4ACAC.+2AC => ['.', '.+ACAC', '.+ACAC', '.+AC']
+#     .,,-7tttttgtt => ['.', ',', ',-tttttgt', 't']
+#     ,$.,,^>. => [',$', '.', ',', ',', '^.']
+#     ,.,.*.**.^*. => [',', '.', ',', '.', '*', '.', '*', '*', '.', '^.']
+#     ,....,Tn.t => [',', '.', '.', '.', '.', ',', 'T', 'n', '.', 't']
+#     A-1N => ['A-N']
+#     '''
 
-    reads = x["STATUS"].upper()
-    bqlist = x["QNAME"].split(",")
+#     reads = x["STATUS"].upper()
+#     bqlist = x["QNAME"].split(",")
 
-    readlist = []
-    i = 0        # input pointer in reads
-    j = 0        # output pointer in readlist
-    while i < len(reads):
-        if reads[i] in "ACGTN.,*":
-            readlist.append(reads[i])
-            i += 1
-            j += 1
-        elif reads[i] in '+-':
-            # determine length
-            digit = re.findall('[\+-](\d+)[ACGTN*]+',reads[i:])[0]
-            readlist[j-1] += reads[i] + reads[i+1+len(digit):i+1+len(digit)+int(digit)]
-            i += 1 + len(digit) + int(digit)
-        elif reads[i] == '$':
-            readlist[j-1] += '$'
-            i += 1
-        elif reads[i] == '^':
-            # ^Xa, ^Xa$
-            # readlist.append(reads[i:i+3])
-            readlist.append(reads[i] + reads[i+2])
-            i += 3
-            j += 1
-        else:
-            print('*ERROR* mpileup parser: Unknown char {} in {}[{}]'
-                    .format(reads[i], reads, i), file=sys.stderr)
+#     readlist = []
+#     i = 0        # input pointer in reads
+#     j = 0        # output pointer in readlist
+#     while i < len(reads):
+#         if reads[i] in "ACGTN.,*":
+#             readlist.append(reads[i])
+#             i += 1
+#             j += 1
+#         elif reads[i] in '+-':
+#             # determine length
+#             digit = re.findall('[\+-](\d+)[ACGTN*]+',reads[i:])[0]
+#             readlist[j-1] += reads[i] + reads[i+1+len(digit):i+1+len(digit)+int(digit)]
+#             i += 1 + len(digit) + int(digit)
+#         elif reads[i] == '$':
+#             readlist[j-1] += '$'
+#             i += 1
+#         elif reads[i] == '^':
+#             # ^Xa, ^Xa$
+#             # readlist.append(reads[i:i+3])
+#             readlist.append(reads[i] + reads[i+2])
+#             i += 3
+#             j += 1
+#         else:
+#             print('*ERROR* mpileup parser: Unknown char {} in {}[{}]'
+#                     .format(reads[i], reads, i), file=sys.stderr)
 
-    if len(readlist) != len(bqlist):
-        print('*ERROR* mpileup parser: length mismatch between BQ string {} '
-                'and reads string {} (breakdown={})'
-                .format(bqlist, reads, ':'.join(readlist)), file=sys.stderr)
+#     if len(readlist) != len(bqlist):
+#         print('*ERROR* mpileup parser: length mismatch between BQ string {} '
+#                 'and reads string {} (breakdown={})'
+#                 .format(bqlist, reads, ':'.join(readlist)), file=sys.stderr)
 
-    return readlist, bqlist
+#     return readlist, bqlist
 
 
 
@@ -75,6 +80,7 @@ def check_if_lost(chromosome, position, old_reads_only, fragments):
 
 def compute_in_exon_complete(record_list, frag_data):
     '''
+    count unique genomes and unique reads
     '''
 
     prev_reads = set()
@@ -107,8 +113,41 @@ def compute_in_exon_complete(record_list, frag_data):
         uniq_genomes += max(0, len_new - (released_spaces) )
 
         prev_reads = set(reads)
-        print(f'New reads: {len_new}\nReleased genomes: {released_spaces}\nNew genomes: {len_new - released_spaces}')
-        print(f'Total unique genomes: {uniq_genomes}\nTotal unique reads: {num_uniq_reads}\n\n')
+        #print(f'New reads: {len_new}\nReleased genomes: {released_spaces}\nNew genomes: {len_new - released_spaces}')
+        #print(f'Total unique genomes: {uniq_genomes}\nTotal unique reads: {num_uniq_reads}\n\n')
+
+
+    return (uniq_genomes, num_uniq_reads)
+
+
+
+def compute_in_exon_complete_df(chrom_pos_reads_values, frag_data):
+    '''
+    count unique genomes and unique reads
+    '''
+
+    prev_reads = set()
+    num_uniq_reads = 0
+    uniq_reads = set()
+    uniq_genomes = 0
+
+    for chrom, pos, set_reads in chrom_pos_reads_values:
+
+        new_reads_only = set_reads.difference(uniq_reads)
+        old_reads_only = prev_reads.difference(set_reads)
+
+        released_spaces = check_if_lost(chrom, pos, old_reads_only, frag_data)
+
+        len_new = len(new_reads_only)
+        num_uniq_reads += len_new
+
+        uniq_reads.update(new_reads_only)
+
+        uniq_genomes += max(0, len_new - (released_spaces) )
+
+        prev_reads = set_reads
+        #print(f'New reads: {len_new}\nReleased genomes: {released_spaces}\nNew genomes: {len_new - released_spaces}')
+        #print(f'Total unique genomes: {uniq_genomes}\nTotal unique reads: {num_uniq_reads}\n\n')
 
 
     return (uniq_genomes, num_uniq_reads)
@@ -132,19 +171,34 @@ def compute_in_exon_complete(record_list, frag_data):
 
 # Function to compute exons info for a subset of regions
 def compute_exons_info(sub_regions, tabix_file, frag_data):
+    '''
+    Wrapper to query the tabix indexed file
+    compile all the lines into a single list and
+    launch the compute_in_exon_complete_df function
+    '''
 
     chunk_exons_info = {}
     tb = tabix.open(tabix_file)
 
     for ind, int_row in sub_regions.iterrows():
         query = f"{int_row['CHROM']}:{int_row['START']}-{int_row['END']}"
-        records = tb.querys(query)
+        try :
+            records = tb.querys(query)
 
-        # Process records to compute exon info
-        numgenomes, numreads = compute_in_exon_complete(records, frag_data)
+            # Collect records into a list
+            records_list = []
+            for record in records:
+                records_list.append( [record[0], int(record[1]), set(record[6].split(",")) ] )
+
+            # Process records to compute exon info
+            numgenomes, numreads = compute_in_exon_complete_df(records_list, frag_data)
+
+        except:
+            numgenomes = 0
+            numreads = 0
+
         chunk_exons_info[f'{int_row["GENE"]}_{int_row["EXON"]}'] = (numgenomes, numreads)
-
-    tb.close()
+        print((int_row["GENE"], int_row["EXON"], numgenomes, numreads))
 
     return chunk_exons_info
 
