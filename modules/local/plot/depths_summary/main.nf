@@ -25,9 +25,9 @@ process PLOT_DEPTHS {
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
     plot_depths.py \\
+                ${prefix} \\
                 ${depth} \\
                 ${panel} \\
-                ${prefix} \\
                 ${panel_version};
 
     cat <<-END_VERSIONS > versions.yml

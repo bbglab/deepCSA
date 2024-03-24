@@ -118,9 +118,76 @@ def plot_mutations_per_gene(sample_name, maf, parameters = {}):
     return fig
 
 
+def plot_filter_stats(df, x_axis_group, hue_group, logy = False, stacked = True, fig_width = 20, fig_height = 5):
+    """
+    Only admits two variables to combine, ideally
+    the x_axis_group variable should be sample or
+    gene symbol
+    """
+
+    # create groupby object and count instances
+    ## displayed stacked values
+    if stacked:
+        gp_df = df.groupby([x_axis_group, hue_group], dropna = False).size().to_frame('number_mutations').reset_index().pivot(
+        columns=hue_group, index=x_axis_group, values="number_mutations")
+
+    # displayed in separated bars
+    else:
+        gp_df = df.groupby([x_axis_group, hue_group], dropna = False).size().to_frame('number_mutations').reset_index()
+        gp_df = gp_df.fillna("FALSE")
+
+    # plot
+    figu, ax = plt.subplots(1, 1)
+    figu.set_size_inches(fig_width, fig_height)
+    plt.xticks(rotation = 90)
+    plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
+
+    if stacked:
+        gp_df.plot(kind = 'bar', stacked = True, ax = ax)
+    else:
+        sns.barplot(data = gp_df, x = x_axis_group, y = "number_mutations", hue = hue_group, ax = ax)
+        if logy:
+            ax.set_yscale('log')
+
+    plt.tight_layout()
+
+    return figu
+
+
+
+def filter_wrapper(sample_name, maf, parameters = {}):
+    var_to_plot = parameters.get('variable', "SAMPLE_ID")
+    filters_to_plot = parameters.get('filter_list', ['no_pileup_support', 'n_rich'])
+
+    fig_list = []
+
+    for filt in filters_to_plot:
+        fig = plot_filter_stats(maf, var_to_plot, f"FILTER.{filt}")
+        fig_list.append(fig)
+
+    return fig_list
+
+
+
+def variable_plot_wrapper(sample_name, maf, parameters = {}):
+    var_to_plot = parameters.get('variable', "SAMPLE_ID")
+    vars_to_plot = parameters.get('columns_list', ['canonical_Consequence_broader', 'TYPE'])
+
+    fig_list = []
+
+    for varp in vars_to_plot:
+        fig = plot_filter_stats(maf, var_to_plot, f"{varp}")
+        fig_list.append(fig)
+
+    return fig_list
+
+
+
 dict_plotname2func = {
     "per_gene" : plot_mutations_per_gene,
-    "per_sample" : plot_mutations_per_sample
+    "per_sample" : plot_mutations_per_sample,
+    "filter_stats" : filter_wrapper,
+    "plot_stats" : variable_plot_wrapper
 }
 
 def plot_manager(sample_name, maf, plotting_criteria_file):
@@ -133,9 +200,32 @@ def plot_manager(sample_name, maf, plotting_criteria_file):
 
         with PdfPages(f'{sample_name}.{suffix}.pdf') as pdf:
             for criterion in criteria_list:
-                fig1 = dict_plotname2func[criterion](sample_name, maf)
-                pdf.savefig()
-                plt.close()
+                if criterion.startswith("filter_stats"):
+                    main_criterion = criterion.split(' ')[0]
+                    gene_or_sample = criterion.split(' ')[1]
+                    filters = criterion.split(' ')[2].split(",")
+                    fig_lisst = dict_plotname2func[main_criterion](sample_name, maf, parameters = {'variable' : gene_or_sample, 'filter_list' : filters})
+                    for ff in fig_lisst: pdf.savefig(ff)
+
+                elif criterion.startswith("plot_stats"):
+                    main_criterion = criterion.split(' ')[0]
+                    gene_or_sample = criterion.split(' ')[1]
+                    cols = criterion.split(' ')[2].split(",")
+                    fig_lisst = dict_plotname2func[main_criterion](sample_name, maf, parameters = {'variable' : gene_or_sample, 'columns_list' : cols})
+                    for ff in fig_lisst: pdf.savefig(ff)
+
+                elif ' ' in criterion:
+                    main_criterion = criterion.split(' ')[0]
+                    additional_params = { x.split(":")[0] : x.split(":")[1] for x in criterion.split(' ')[1:] }
+                    fig1 = dict_plotname2func[main_criterion](sample_name, maf, parameters = additional_params)
+                    pdf.savefig()
+                    plt.close()
+
+
+                else :
+                    fig1 = dict_plotname2func[criterion](sample_name, maf)
+                    pdf.savefig()
+                    plt.close()
 
 
 
