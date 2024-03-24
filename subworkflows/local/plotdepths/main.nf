@@ -1,9 +1,10 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS        } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { PLOTDEPTHS                as PLOTDEPTHS               } from '../../../modules/local/plot/depths_summary/main'
+include { PLOT_DEPTHS               as PLOTDEPTHS          } from '../../../modules/local/plot/depths_summary/main'
 
-include { MUTRATE as MUTRATE } from '../../../modules/local/computemutrate/main'
+include { MUTRATE                   as MUTRATE             } from '../../../modules/local/computemutrate/main'
 
+include { CREATECUSTOMBEDFILE       as ONCODRIVEFMLBED     } from '../../../modules/local/createpanels/custombedfile/main'
 
 workflow PLOT_DEPTHS {
 
@@ -19,8 +20,12 @@ workflow PLOT_DEPTHS {
     SUBSETDEPTHS(depth, bedfile)
     ch_versions = ch_versions.mix(SUBSETDEPTHS.out.versions)
 
-    PLOTDEPTHS(SUBSETDEPTHS.out.subset, panel)
+    ONCODRIVEFMLBED(panel)
+    ch_versions = ch_versions.mix(ONCODRIVEFMLBED.out.versions)
+
+    PLOTDEPTHS(SUBSETDEPTHS.out.subset, ONCODRIVEFMLBED.out.bed)
     ch_versions = ch_versions.mix(PLOTDEPTHS.out.versions)
+
 
     emit:
     plots = PLOTDEPTHS.out.plots
