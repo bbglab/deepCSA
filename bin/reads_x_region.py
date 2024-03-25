@@ -285,6 +285,7 @@ exons_counts_df.columns = ["UNIQ_GENOMES", "UNIQ_READS"]
 exons_counts_df = exons_counts_df.reset_index()
 exons_counts_df[["GENE", "EXON"]] = exons_counts_df["index"].str.split("_", expand = True)
 exons_counts_df = exons_counts_df[['GENE', 'EXON', 'UNIQ_GENOMES', 'UNIQ_READS']]
+exons_counts_df["EXON"] = exons_counts_df["EXON"].astype(int)
 
 exons_counts_df_regions = regions_df.merge(exons_counts_df, on = ['GENE', 'EXON'])
 exons_counts_df_regions = exons_counts_df_regions[['CHROM', 'START', 'END', 'GENE', 'EXON', 'UNIQ_GENOMES', 'UNIQ_READS']]
