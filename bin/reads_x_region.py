@@ -289,6 +289,7 @@ exons_counts_df["EXON"] = exons_counts_df["EXON"].astype(int)
 
 exons_counts_df_regions = regions_df.merge(exons_counts_df, on = ['GENE', 'EXON'])
 exons_counts_df_regions = exons_counts_df_regions[['CHROM', 'START', 'END', 'GENE', 'EXON', 'UNIQ_GENOMES', 'UNIQ_READS']]
+
 exons_counts_df_regions.to_csv(f"{sample}.reads_x_region.tsv.gz",
                                 sep = "\t",
                                 header = True,

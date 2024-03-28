@@ -239,7 +239,8 @@ workflow DEEPCSA{
 
     if (params.mutated_epithelium){
         MUTATEDEPITHELIUM(MUT_PREPROCESSING.out.somatic_mafs,
-                            CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel,
+                            CREATEPANELS.out.exons_consensus_bed,
+                            CREATEPANELS.out.exons_consensus_panel,
                             meta_bams_alone, meta_pileup_alone)
         ch_versions = ch_versions.mix(MUTATEDEPITHELIUM.out.versions)
     }
