@@ -15,6 +15,42 @@ sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
 
 
 
+def correct_vaf(maf):
+
+    """
+    Computes VAF_CORRECTED for the subset of variants satisfying 0 < VAF < 0.2
+    Returns the input MAF with two new columns:
+        VAF_CORRECTED with new corrected VAF else it copies the VAF
+        IS_VAF_CORRECTED with a boolean that indicates whether the VAF has been corrected
+    """
+
+    # TODO revise the 0.2 VAF threshold to see if it can be kept across datasets
+    df = maf[(0 < maf['VAF']) & (maf['VAF'] < 0.2)][['SAMPLE_ID', 'MUT_ID', 'VAF', 'DEPTH']]
+    df = df.sort_values('DEPTH')
+    N  = df.shape[0]
+    df['VAF_ROLLING_MEAN'] = df['VAF'].rolling(N // 25).mean()
+    df['VAF_ROLLING_STD'] = df['VAF'].rolling(N // 25).std()
+    stable_mean = df['VAF_ROLLING_MEAN'].values[-1]
+    stable_std  = df['VAF_ROLLING_STD'].values[-1]
+    df['VAF_CORRECTED'] = df.apply(lambda r: (r['VAF'] - r['VAF_ROLLING_MEAN']) * (stable_std / r['VAF_ROLLING_STD']) + stable_mean, axis=1)
+    df = maf.merge(df[['VAF_CORRECTED', 'MUT_ID', 'SAMPLE_ID']],
+                                    on=['MUT_ID', 'SAMPLE_ID'],
+                                    how='outer')
+    df['IS_VAF_CORRECTED'] = ~df['VAF_CORRECTED'].isnull()
+    df.loc[~df['IS_VAF_CORRECTED'], 'VAF_CORRECTED'] = df[~df['IS_VAF_CORRECTED']]['VAF'].values
+    return df
+
+
+
+#######
+###  Add a corrected VAF column
+#######
+maf_df = correct_vaf(maf_df)
+print("VAF corrected")
+
+
+
+
 #######
 ###  Filter repetitive variants
 #######
