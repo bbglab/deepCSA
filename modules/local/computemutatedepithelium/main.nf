@@ -1,4 +1,4 @@
-process COMPUTE_MUTATED_EPITEHLIUM {
+process COMPUTE_MUTATED_EPITHELIUM {
     tag "$meta.id"
     label 'process_single'
 

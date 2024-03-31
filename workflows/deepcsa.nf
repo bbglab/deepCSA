@@ -243,6 +243,26 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_panel,
                             meta_bams_alone, meta_pileup_alone)
         ch_versions = ch_versions.mix(MUTATEDEPITHELIUM.out.versions)
+
+
+        // Concatenate all outputs into a single file
+        mut_epithelium_empty = Channel.empty()
+        mut_epithelium_empty
+        .concat(MUTATEDEPITHELIUM.out.mut_epi_exon.map{ it -> it[1]}.flatten())
+        .set{ all_mutepiexon }
+        all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/computemutatedepithelium", skip: 1, keepHeader: true)
+
+        mut_epithelium_empty2 = Channel.empty()
+        mut_epithelium_empty2
+        .concat(MUTATEDEPITHELIUM.out.mut_epi_gene.map{ it -> it[1]}.flatten())
+        .set{ all_mutepigene }
+        all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/computemutatedepithelium", skip: 1, keepHeader: true)
+
+        mut_epithelium_empty3 = Channel.empty()
+        mut_epithelium_empty3
+        .concat(MUTATEDEPITHELIUM.out.mut_epi_sample.map{ it -> it[1]}.flatten())
+        .set{ all_mutepisample }
+        all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/computemutatedepithelium", skip: 1, keepHeader: true)
     }
 
 

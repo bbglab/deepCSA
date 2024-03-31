@@ -8,7 +8,7 @@ include { READS_PER_REGION              as READSPERREGION               } from '
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                    as SUBSET_MUTEPI                } from '../../../modules/local/subsetmaf/main'
 
-include { COMPUTE_MUTATED_EPITEHLIUM    as COMPUTEMUTATEDEPITEHLIUM     } from '../../../modules/local/computemutatedepithelium/main'
+include { COMPUTE_MUTATED_EPITHELIUM    as COMPUTEMUTATEDEPITHELIUM     } from '../../../modules/local/computemutatedepithelium/main'
 
 
 
@@ -56,11 +56,15 @@ workflow MUTATED_EPITHELIUM {
     .join(READSPERREGION.out.read_counts.map{it -> [ ["id" : it[0].id] , it[1] ]  })
     .set{ mutations_n_reads }
 
-    COMPUTEMUTATEDEPITEHLIUM(mutations_n_reads)
+    COMPUTEMUTATEDEPITHELIUM(mutations_n_reads)
+
 
 
     emit:
-    read_counts = READSPERREGION.out.read_counts
-    versions    = ch_versions                // channel: [ versions.yml ]
+    read_counts     = READSPERREGION.out.read_counts
+    mut_epi_exon    = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_exon
+    mut_epi_gene    = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_gene
+    mut_epi_sample  = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_sample
+    versions        = ch_versions                // channel: [ versions.yml ]
 
 }
