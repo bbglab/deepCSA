@@ -1,6 +1,8 @@
 process PLOT_DEPTHS {
     tag "$meta.id"
     label 'process_single'
+    label 'time_low'
+    label 'process_high_memory'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/seaborn:0.12.2_cv1' :
@@ -12,7 +14,7 @@ process PLOT_DEPTHS {
 
     output:
     tuple val(meta), path("*.pdf")          , emit: plots
-    tuple val(meta), path("*.depths.tsv")   , emit: depths
+    tuple val(meta), path("depth*.tsv")     , emit: depths
     path  "versions.yml"                    , emit: versions
 
 
