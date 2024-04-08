@@ -460,14 +460,15 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     depth_df_exonlab_exondepth_genedepth.to_csv("depth_df_exonlab_exondepth_genedepth.tsv", sep = '\t', header = True, index = False)
 
 
-    ### WORKING UNTIL HERE
     depth_df_exonlab_exondepth_genedepth_sample_depth = depth_df_exonlab_exondepth_genedepth.merge(avgdepth_per_sample_names, on = 'SAMPLE_ID')
     print(depth_df_exonlab_exondepth_genedepth_sample_depth.shape)
     print(depth_df_exonlab_exondepth_genedepth_sample_depth.head())
     depth_df_exonlab_exondepth_genedepth_sample_depth.to_csv("depth_df_exonlab_exondepth_genedepth_sample_depth.tsv", sep = '\t', header = True, index = False)
     # depth_df_exonlab_exondepth_genedepth_sample_depth
 
-
+    depth_df_exonlab_exondepth_genedepth_sample_depth = depth_df_exonlab_exondepth_genedepth_sample_depth[ (depth_df_exonlab_exondepth_genedepth_sample_depth["EXON_DEPTH"] > 0)
+                                                                                                            & (depth_df_exonlab_exondepth_genedepth_sample_depth["GENE_DEPTH"] > 0)
+                                                                                                            ].reset_index(drop = True)
 
 
 
