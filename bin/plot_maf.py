@@ -5,6 +5,7 @@
 import sys
 import json
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
@@ -118,40 +119,77 @@ def plot_mutations_per_gene(sample_name, maf, parameters = {}):
     return fig
 
 
-def plot_filter_stats(df, x_axis_group, hue_group, logy = False, stacked = True, fig_width = 20, fig_height = 5):
+def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig_width=20, fig_height=5, max_groups_per_plot=30):
     """
     Only admits two variables to combine, ideally
     the x_axis_group variable should be sample or
     gene symbol
     """
 
-    # create groupby object and count instances
-    ## displayed stacked values
-    if stacked:
-        gp_df = df.groupby([x_axis_group, hue_group], dropna = False).size().to_frame('number_mutations').reset_index().pivot(
-        columns=hue_group, index=x_axis_group, values="number_mutations")
+    # Get the unique values of x_axis_group
+    unique_x_values = sorted(df[x_axis_group].unique())
 
-    # displayed in separated bars
+    # Check if the number of unique values exceeds the maximum
+    num_unique_x_values = len(unique_x_values)
+    if num_unique_x_values > max_groups_per_plot:
+        # Calculate the number of plots needed
+        num_plots = int(np.ceil(num_unique_x_values / max_groups_per_plot))
+
+        # Split the unique x values into chunks for each plot
+        x_chunks = np.array_split(unique_x_values, num_plots)
+
+        # Iterate over the x chunks and create separate plots
+        fig_list = []
+        for i, x_chunk in enumerate(x_chunks):
+            # Create a new figure for each plot
+            fig, ax = plt.subplots(1, 1)
+            fig.set_size_inches(fig_width, fig_height)
+            plt.xticks(rotation=90)
+            plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
+
+            # Filter the dataframe to include only the rows with x values in the current chunk
+            subset_df = df[df[x_axis_group].isin(x_chunk)]
+
+            # Plot the data for the current chunk
+            if stacked:
+                gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index().pivot(
+                    columns=hue_group, index=x_axis_group, values="number_mutations")
+                gp_df.plot(kind='bar', stacked=True, ax=ax)
+            else:
+                gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index()
+                gp_df = gp_df.fillna("FALSE")
+                sns.barplot(data=gp_df, x=x_axis_group, y="number_mutations", hue=hue_group, ax=ax)
+                if logy:
+                    ax.set_yscale('log')
+
+            plt.tight_layout()
+            fig_list.append(fig)
+            plt.close()
+
+        return fig_list
+
     else:
-        gp_df = df.groupby([x_axis_group, hue_group], dropna = False).size().to_frame('number_mutations').reset_index()
-        gp_df = gp_df.fillna("FALSE")
+        # Plot all x values in a single plot
+        fig, ax = plt.subplots(1, 1)
+        fig.set_size_inches(fig_width, fig_height)
+        plt.xticks(rotation=90)
+        plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
 
-    # plot
-    figu, ax = plt.subplots(1, 1)
-    figu.set_size_inches(fig_width, fig_height)
-    plt.xticks(rotation = 90)
-    plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
+        if stacked:
+            gp_df = df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index().pivot(
+                columns=hue_group, index=x_axis_group, values="number_mutations")
+            gp_df.plot(kind='bar', stacked=True, ax=ax)
+        else:
+            gp_df = df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index()
+            gp_df = gp_df.fillna("FALSE")
+            sns.barplot(data=gp_df, x=x_axis_group, y="number_mutations", hue=hue_group, ax=ax)
+            if logy:
+                ax.set_yscale('log')
 
-    if stacked:
-        gp_df.plot(kind = 'bar', stacked = True, ax = ax)
-    else:
-        sns.barplot(data = gp_df, x = x_axis_group, y = "number_mutations", hue = hue_group, ax = ax)
-        if logy:
-            ax.set_yscale('log')
+        plt.tight_layout()
 
-    plt.tight_layout()
+        return [fig]
 
-    return figu
 
 
 
@@ -163,7 +201,11 @@ def filter_wrapper(sample_name, maf, parameters = {}):
 
     for filt in filters_to_plot:
         fig = plot_filter_stats(maf, var_to_plot, f"FILTER.{filt}")
-        fig_list.append(fig)
+        if type(fig) == list:
+            for subfig in fig:
+                fig_list.append(subfig)
+        else:
+            fig_list.append(fig)
 
     return fig_list
 
@@ -177,7 +219,11 @@ def variable_plot_wrapper(sample_name, maf, parameters = {}):
 
     for varp in vars_to_plot:
         fig = plot_filter_stats(maf, var_to_plot, f"{varp}")
-        fig_list.append(fig)
+        if type(fig) == list:
+            for subfig in fig:
+                fig_list.append(subfig)
+        else:
+            fig_list.append(fig)
 
     return fig_list
 
