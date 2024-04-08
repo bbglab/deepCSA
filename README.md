@@ -1,6 +1,6 @@
 ## Introduction
 
-**bbg/deepcsa** is a bioinformatics pipeline that ...
+**bbg/deepcsa** is a bioinformatics pipeline that can be used for analyzing targeted DNA sequencing data. It was designed for duplex sequencing data of normal tissues.
 
 <!-- TODO nf-core:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
@@ -12,16 +12,11 @@
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+<!-- 1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/)) -->
+
 
 ## Usage
-
-:::note
-If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how
-to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
-with `-profile test` before running the workflow on actual data.
-:::
 
 <!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
      Explain what rows and columns represent. For instance (please edit as appropriate):
@@ -44,11 +39,26 @@ Now, you can run the pipeline using:
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
-nextflow run bbg/deepcsa \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR>
+git clone https://github.com/bbglab/deepCSA.git
+cd deepCSA
+nextflow run main.nf --outdir <OUTDIR> -profile singularity,<DESIRED PROFILE>
 ```
+The input should be provided by the `--input` option but it is more recommended to define it within a given profile.
+
+Internally also use the -work-dir option:
+```
+-work-dir  /workspace/nobackup2/work/deepCSA/<NAME>
+```
+
+Also put the following content in an executor.config provided as `-c executor.config`
+```
+process {
+   executor = 'slurm'
+   errorStrategy = 'retry'
+   maxRetries = 2
+}
+```
+
 
 :::warning
 Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those
