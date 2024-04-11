@@ -1,14 +1,13 @@
 process CREATECAPTUREDPANELS {
     tag "$meta.id"
     label 'process_single'
+    label 'process_medium_high_memory'
 
     conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
             'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
             'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
+
 
     input:
     tuple val(meta), path(compact_captured_panel_annotation)
