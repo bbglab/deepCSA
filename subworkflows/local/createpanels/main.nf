@@ -86,19 +86,19 @@ workflow CREATE_PANELS {
 
 
     // Create sample-specific panels: all modalities
-    CREATESAMPLEPANELSALL(all_panel, depths, params.min_depth)
-    CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.min_depth)
-    CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.min_depth)
-    CREATESAMPLEPANELSEXONS(exons_panel, depths, params.min_depth)
-    CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.min_depth)
+    CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
+    CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.sample_panel_min_depth)
+    CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.sample_panel_min_depth)
+    CREATESAMPLEPANELSEXONS(exons_panel, depths, params.sample_panel_min_depth)
+    CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
 
 
     // Create consensus panel: all modalities
-    CREATECONSENSUSPANELSALL(all_panel, depths, params.consensus_min_depth)
-    CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths, params.consensus_min_depth)
-    CREATECONSENSUSPANELSNONPROTAFFECT(nonprot_panel, depths, params.consensus_min_depth)
-    CREATECONSENSUSPANELSEXONS(exons_panel, depths, params.consensus_min_depth)
-    CREATECONSENSUSPANELSINTRONS(introns_panel, depths, params.consensus_min_depth)
+    CREATECONSENSUSPANELSALL(all_panel, depths, params.consensus_panel_min_depth)
+    CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths, params.consensus_panel_min_depth)
+    CREATECONSENSUSPANELSNONPROTAFFECT(nonprot_panel, depths, params.consensus_panel_min_depth)
+    CREATECONSENSUSPANELSEXONS(exons_panel, depths, params.consensus_panel_min_depth)
+    CREATECONSENSUSPANELSINTRONS(introns_panel, depths, params.consensus_panel_min_depth)
 
 
     emit:
