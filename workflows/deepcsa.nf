@@ -272,7 +272,9 @@ workflow DEEPCSA{
                     annotated_depths,
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
-                    CREATEPANELS.out.exons_consensus_panel)
+                    CREATEPANELS.out.exons_consensus_panel,
+                    params.omega_globalloc
+                    )
             ch_versions = ch_versions.mix(OMEGA.out.versions)
 
             // Omega multi
@@ -280,7 +282,9 @@ workflow DEEPCSA{
                         annotated_depths,
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_bed,
-                        CREATEPANELS.out.exons_consensus_panel)
+                        CREATEPANELS.out.exons_consensus_panel,
+                        params.omega_globalloc
+                        )
             ch_versions = ch_versions.mix(OMEGAMULTI.out.versions)
         }
         if (params.profilenonprot){
@@ -288,14 +292,18 @@ workflow DEEPCSA{
                             annotated_depths,
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed,
-                            CREATEPANELS.out.exons_consensus_panel)
+                            CREATEPANELS.out.exons_consensus_panel,
+                            params.omega_globalloc
+                            )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
             OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
                                 annotated_depths,
                                 MUTPROFILENONPROT.out.profile,
                                 CREATEPANELS.out.exons_consensus_bed,
-                                CREATEPANELS.out.exons_consensus_panel)
+                                CREATEPANELS.out.exons_consensus_panel,
+                                params.omega_globalloc
+                                )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }
 
