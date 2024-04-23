@@ -31,8 +31,12 @@ process CREATECONSENSUSPANELS {
                     $consensus_min_depth;
 
     bedtools merge \\
-            -i <(tail -n +2 consensus.${prefix}.tsv | \\
-            awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > consensus.${prefix}.bed;
+            -i <(
+            tail -n +2 consensus.${prefix}.tsv | \\
+            awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t' | uniq
+            ) | \\
+            awk 'BEGIN { FS = "\\t"; OFS = "\\t" } { if (\$2 != \$3) { \$2 += 1 ; \$3 -= 1 } else { \$2 = \$2 ; \$3 = \$3 }; print }' > consensus.${prefix}.bed;
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
