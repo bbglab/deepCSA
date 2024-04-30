@@ -124,7 +124,7 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
     returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
     returned_df = returned_df.reset_index(drop = True)
 
-    returned_df.columns = ["MUT_ID"] + [f"canonical_{x}" for x in returned_df.columns[1:]]
+    returned_df.columns = [f"canonical_{x}" for x in returned_df.columns]
     # we return the dataframe with all the original columns of the VEP file
     return returned_df
 
@@ -133,7 +133,10 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
 
 
 
-def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly = 'hg38'):
+def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file,
+                                    assembly = 'hg38',
+                                    using_canonical = True
+                                    ):
     """
     # TODO
     explain what this function does
@@ -141,21 +144,24 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
                                         header = None)
     print("all possible sites loaded")
-    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'SYMBOL']
+    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'SYMBOL', 'CANONICAL']
 
-    annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
+    if using_canonical:
+        annotated_variants = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
+        if annotated_variants is not None:
+            annotated_variants.columns = [ x.replace("canonical_", "") for x in annotated_variants.columns]
+            print("Using only canonical transcript annotations for the panel")
+        else:
+            annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
+            print("CANONICAL was not available in the panel annotation.")
+            print("Using most deleterious consequence for the panel")
+    else:
+        annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
+        print("Using most deleterious consequence for the panel")
+
     del all_possible_sites
+    annotated_variants[annotated_variants.columns[1:]] = annotated_variants[annotated_variants.columns[1:]].fillna('-')
     print("VEP to single row working")
-
-
-    # annotated_variants_only_canonical = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
-    # if annotated_variants_only_canonical is not None:
-    #     annotated_variants = annotated_variants.merge(annotated_variants_only_canonical, on = "MUT_ID", how = 'left')
-    #     annotated_variants_only_canonical = annotated_variants_only_canonical[annotated_variants_only_canonical.columns[1:]].fillna('-')
-    #     annotated_variants['canonical_Consequence_single'] = annotated_variants['canonical_Consequence'].apply(most_deleterious_within_variant)
-    #     annotated_variants['canonical_Consequence_broader'] = annotated_variants['canonical_Consequence_single'].apply(lambda x: GROUPING_DICT[x])
-    #     annotated_variants['canonical_Protein_affecting'] = annotated_variants['canonical_Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
-
 
 
     # TODO: agree on a consensus for these broader consequence types
@@ -195,9 +201,8 @@ if __name__ == '__main__':
     # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     all_possible_sites_annotated_file = sys.argv[3]
 
+    only_canonical = bool(sys.argv[4])
 
-
-
-    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly)
+    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly, only_canonical)
 
 
