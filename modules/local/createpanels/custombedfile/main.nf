@@ -32,6 +32,8 @@ process CREATECUSTOMBEDFILE {
         cat <(printf "CHROMOSOME\\tSTART\\tEND\\tELEMENT\\tSEGMENT\\n") <(cut -f1,2,6,7 ${panel_tsv} | tail -n +2 | uniq | awk -F'\\t' '{print \$1, \$2, \$2, \$3}' OFS='\\t' | bedtools merge -c 4 -o distinct | sed 's/^chr//g' | awk -F'\\t' '{print \$1, \$2, \$3, \$4, 1}' OFS='\\t' ) > ${prefix}.annotated.bed
     elif [ "$tool" == "oncodriveclustl" ]; then
         cat <(printf "CHROMOSOME\\tSTART\\tEND\\tELEMENT_ID\\tSYMBOL\\n") <(cut -f1,2,6,7 ${panel_tsv} | tail -n +2 | uniq | awk -F'\\t' '{print \$1, \$2, \$2, \$3}' OFS='\\t' | bedtools merge -c 4 -o distinct | sed 's/^chr//g' | awk -F'\\t' '{print \$1, \$2, \$3, \$4, \$4}' OFS='\\t' ) > ${prefix}.annotated.bed
+    elif [ "$tool" == "readsxposition" ]; then
+        cat <(printf "CHROMOSOME\\tSTART\\tEND\\tGENE\\tSYMBOL\\n") <(cut -f1,2,6,7 ${panel_tsv} | tail -n +2 | uniq | awk -F'\\t' '{print \$1, \$2, \$2, \$3}' OFS='\\t' | bedtools merge -c 4 -o distinct | awk -F'\\t' '{print \$1, \$2, \$3, \$4, \$4}' OFS='\\t' ) > ${prefix}.annotated.bed
     fi
 
     cat <<-END_VERSIONS > versions.yml

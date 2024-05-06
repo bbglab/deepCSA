@@ -37,6 +37,7 @@ class RowChecker:
         sample_col="sample",
         vcf_col="vcf",
         bam_col="bam",
+        pileup_col="pileup",
         **kwargs,
     ):
         """
@@ -59,6 +60,7 @@ class RowChecker:
         self._sample_col = sample_col
         self._vcf_col = vcf_col
         self._bam_col = bam_col
+        self._pileup_col = pileup_col
         self._seen = set()
         self.modified = []
 

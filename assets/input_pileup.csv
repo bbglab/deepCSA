@@ -1,0 +1,3 @@
+sample,vcf,bam,pileup
+K_5_1_A_1,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_5_1_A_1.high.filtered.vcf,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_5_1_A_1.sorted.bam,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_5_1_A_1.high.mpileup.gz
+K_6_1_A_1,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_6_1_A_1.high.filtered.vcf,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_6_1_A_1.sorted.bam,/workspace/datasets/transfer/raquel_to_ferriol/deepCSA_test/K_6_1_A_1.high.mpileup.gz

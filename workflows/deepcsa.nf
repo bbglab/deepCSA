@@ -76,6 +76,8 @@ include { OMEGA_ANALYSIS            as OMEGANONPROT         } from '../subworkfl
 include { OMEGA_ANALYSIS            as OMEGAMULTI           } from '../subworkflows/local/omega/main'
 include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkflows/local/omega/main'
 
+include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/main'
+
 
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
@@ -134,6 +136,10 @@ workflow DEEPCSA{
     INPUT_CHECK.out.mutations.
     map{ it -> [it[0], it[2]]}.
     set{ meta_bams_alone }
+
+    INPUT_CHECK.out.mutations.
+    map{ it -> [it[0], it[3]]}.
+    set{ meta_pileup_alone }
 
 
 
@@ -234,6 +240,35 @@ workflow DEEPCSA{
                                 )
             ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
         }
+    }
+
+
+    if (params.mutated_epithelium){
+        MUTATEDEPITHELIUM(MUT_PREPROCESSING.out.somatic_mafs,
+                            CREATEPANELS.out.exons_consensus_bed,
+                            CREATEPANELS.out.exons_consensus_panel,
+                            meta_bams_alone, meta_pileup_alone)
+        ch_versions = ch_versions.mix(MUTATEDEPITHELIUM.out.versions)
+
+
+        // Concatenate all outputs into a single file
+        mut_epithelium_empty = Channel.empty()
+        mut_epithelium_empty
+        .concat(MUTATEDEPITHELIUM.out.mut_epi_exon.map{ it -> it[1]}.flatten())
+        .set{ all_mutepiexon }
+        all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/computemutatedepithelium", skip: 1, keepHeader: true)
+
+        mut_epithelium_empty2 = Channel.empty()
+        mut_epithelium_empty2
+        .concat(MUTATEDEPITHELIUM.out.mut_epi_gene.map{ it -> it[1]}.flatten())
+        .set{ all_mutepigene }
+        all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/computemutatedepithelium", skip: 1, keepHeader: true)
+
+        mut_epithelium_empty3 = Channel.empty()
+        mut_epithelium_empty3
+        .concat(MUTATEDEPITHELIUM.out.mut_epi_sample.map{ it -> it[1]}.flatten())
+        .set{ all_mutepisample }
+        all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/computemutatedepithelium", skip: 1, keepHeader: true)
     }
 
 
