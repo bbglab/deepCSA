@@ -37,8 +37,11 @@ process CREATECAPTUREDPANELS {
                     ${prefix};
     for captured_panel in \$(ls -l *.tsv | grep -v '^l' | awk '{print \$NF}'); do
         bedtools merge \\
-            -i <(tail -n +2 \$captured_panel | \\
-            awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > \${captured_panel%.tsv}.bed;
+            -i <(
+                tail -n +2 \$captured_panel | \\
+                awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t' | uniq
+            ) | \\
+            awk 'BEGIN { FS = "\\t"; OFS = "\\t" } { if (\$2 != \$3) { \$2 += 1 ; \$3 -= 1 } else { \$2 = \$2 ; \$3 = \$3 }; print }' > \${captured_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml

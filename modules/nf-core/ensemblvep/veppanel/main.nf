@@ -3,6 +3,7 @@
 process ENSEMBLVEP_VEP {
     tag "$meta.id"
     label 'process_high'
+    label 'cpu_high'
 
     conda params.vep_cache_version == 108 ? 'bioconda::ensembl-vep=108.2' : 
             params.vep_cache_version == 102 ? 'bioconda::ensembl-vep=102.0' :  
