@@ -150,6 +150,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run omega?"
                 },
+                "omega_globalloc": {
+                    "type": "boolean",
+                    "description": "Do you want to run omega with the globalloc mode?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run omega with the globalloc mode?"
+                },
                 "signatures": {
                     "type": "boolean",
                     "description": "Do you want to run signatures?",
@@ -163,6 +170,13 @@
                     "default": true,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutationrate?"
+                },
+                "mutated_epithelium": {
+                    "type": "boolean",
+                    "description": "Do you want to run mutated_epithelium?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run mutated_epithelium?"
                 }
             }
         },
@@ -217,6 +231,13 @@
                     "default": "high",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
+                },
+                "panel_with_canonical": {
+                    "type": "string",
+                    "description": "Using only data from canonical transcript for building the panels, can be either 'True' or 'False'",
+                    "default": "True",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Using only data from canonical transcript for building the panels, can be either 'True' or 'False'"
                 },
                 "sample_panel_min_depth": {
                     "type": "integer",
