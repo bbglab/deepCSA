@@ -53,12 +53,14 @@
             "properties": {
                 "low_mappability_file": {
                     "type": "string",
+                    "format": "file-path",
                     "description": "BED file with the low mappability regions.",
                     "fa_icon": "fas fa-book",
                     "help_text": "BED file that contains the regions to be discarded in the analysis."
                 },
                 "low_complex_file": {
                     "type": "string",
+                    "format": "file-path",
                     "description": "BED file with the low complex regions.",
                     "fa_icon": "fas fa-book",
                     "help_text": "BED file that contains the regions to be discarded in the analysis."
@@ -83,6 +85,246 @@
                 }
             }
         },
+        "grouping_configs": {
+            "title": "Sample grouping configurations",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Cohort related files that indicate which samples belong to the same group.",
+            "properties": {
+                "features_table": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to FASTA genome file.",
+                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_table_separator": {
+                    "type": "string",
+                    "description": "Separator of the features table file",
+                    "default": "comma",
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_table_dict": {
+                    "type": "string",
+                    "description": "String in JSON-like format defining the groups of samples.",
+                    "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "tool_execution_configs": {
+            "title": "Reference genome options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Reference genome related files and options required for the workflow.",
+            "properties": {
+                "oncodrivefml": {
+                    "type": "boolean",
+                    "description": "Do you want to run oncodrivefml?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run oncodrivefml?"
+                },
+                "oncodriveclustl": {
+                    "type": "boolean",
+                    "description": "Do you want to run oncodriveclustl?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run oncodriveclustl?"
+                },
+                "oncodrive3d": {
+                    "type": "boolean",
+                    "description": "Do you want to run oncodrive3d?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run oncodrive3d?"
+                },
+                "omega": {
+                    "type": "boolean",
+                    "description": "Do you want to run omega?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run omega?"
+                },
+                "omega_globalloc": {
+                    "type": "boolean",
+                    "description": "Do you want to run omega with the globalloc mode?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run omega with the globalloc mode?"
+                },
+                "signatures": {
+                    "type": "boolean",
+                    "description": "Do you want to run signatures?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run signatures?"
+                },
+                "mutationrate": {
+                    "type": "boolean",
+                    "description": "Do you want to run mutationrate?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run mutationrate?"
+                },
+                "mutated_epithelium": {
+                    "type": "boolean",
+                    "description": "Do you want to run mutated_epithelium?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run mutated_epithelium?"
+                }
+            }
+        },
+
+        "profile_computation_config": {
+            "title": "Profile computation options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Turn on and off the computation of the mutational profile in the different regions of the genome.",
+            "properties": {
+                "profileall": {
+                    "type": "boolean",
+                    "description": "Do you want to run the profile for all mutations?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run the profile for all mutations?"
+                },
+                "profilenonprot": {
+                    "type": "boolean",
+                    "description": "Do you want to run the profile for non-protein affecting mutations only?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run the profile for non-protein affecting mutations only?"
+                },
+                "profileexons": {
+                    "type": "boolean",
+                    "description": "Do you want to run the profile for exon mutations only?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run the profile for exon mutations only?"
+                },
+                "profileintrons": {
+                    "type": "boolean",
+                    "description": "Do you want to run the profile for intron mutations only?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run the profile for intron mutations only?"
+                }
+            }
+        },
+
+
+        "filtering_parameters": {
+            "title": "Profile computation options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Turn on and off the computation of the mutational profile in the different regions of the genome.",
+            "properties": {
+                "confidence_level": {
+                    "type": "string",
+                    "description": "Duplex reads confidence level",
+                    "default": "high",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "panel_with_canonical": {
+                    "type": "string",
+                    "description": "Using only data from canonical transcript for building the panels, can be either 'True' or 'False'",
+                    "default": "True",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Using only data from canonical transcript for building the panels, can be either 'True' or 'False'"
+                },
+                "sample_panel_min_depth": {
+                    "type": "integer",
+                    "description": "Depth threshold for the sample panels",
+                    "default": 10,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "consensus_panel_min_depth": {
+                    "type": "integer",
+                    "description": "Depth threshold for the consensus panel",
+                    "default": 1000,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "germline_threshold": {
+                    "type": "number",
+                    "description": "VAF threshold for definition of somatic variants.",
+                    "default": 0.3,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "mutation_depth_threshold": {
+                    "type": "integer",
+                    "description": "Depth threshold for discarding mutations. Minimum to have a reliable estimation of the VAF.",
+                    "default": 40,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "repetitive_variant_thres": {
+                    "type": "integer",
+                    "description": "Any variant shared among these or more samples is flagged as repetitive variant.",
+                    "default": 5,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                }
+            }
+        },
+
+        "reference_datasets": {
+            "title": "Reference datasets options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Reference datasets for running specific programs.",
+            "properties": {
+                "cosmic_ref_signatures": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "description": "Path to file containing the reference signatures to use in SigProfilerAssignment.",
+                    "help_text": "You can obtain it from COSMIC website or adapt one from any other source, but it should follow the same structure as the COSMIC one.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "wgs_trinuc_counts": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
+                    "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "exclude_subgroups": {
+                    "type": "string",
+                    "default": "[]",
+                    "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
+                    "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "datasets3d": {
+                    "type": "string",
+                    "description": "Path to folder containing the oncodrive3d datasets built.",
+                    "help_text": "Path to folder containing the oncodrive3d datasets built.",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+
+        "max_multiqc_email_size": {
+            "type": "string",
+            "description": "File size limit when attaching MultiQC reports to summary emails.",
+            "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+            "default": "25.MB",
+            "fa_icon": "fas fa-file-upload",
+            "hidden": true
+        },
+
         "ensembl_vep_options": {
             "title": "Ensembl VEP options",
             "type": "object",

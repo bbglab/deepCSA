@@ -45,7 +45,7 @@ process OMEGA_ESTIMATOR {
         "missense": ["missense"],
         "nonsense": ["nonsense"],
         "essential_splice": ["essential_splice"],
-        "nonsynonymous": ["missense", "nonsense"],
+        "truncating": ["nonsense", "essential_splice"],
         "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"]
     }
     EOF

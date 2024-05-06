@@ -102,7 +102,7 @@ unique_germline_vars = germline_vars.loc[germline_vars["n_samples"] == 1]["MUT_I
 
 
 print(len(germline_vars_all_samples), "using all germline variants of all samples")
-print(len(unique_germline_vars), "using only germline variants unique to a single sample")
+# print(len(unique_germline_vars), "using only germline variants unique to a single sample")
 
 maf_df["other_sample_SNP"] = False
 maf_df.loc[(maf_df["MUT_ID"].isin(germline_vars_all_samples)) &

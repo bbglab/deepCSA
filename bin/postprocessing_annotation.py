@@ -156,8 +156,9 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     annotated_variants = VEP_annotation_to_single_row(all_possible_sites)
     annotated_variants_only_canonical = VEP_annotation_to_single_row_only_canonical(all_possible_sites)
     if annotated_variants_only_canonical is not None:
-        annotated_variants = annotated_variants.merge(annotated_variants_only_canonical, on = "MUT_ID", how = 'left')
-        annotated_variants_only_canonical = annotated_variants_only_canonical[annotated_variants_only_canonical.columns[1:]].fillna('-')
+        gnomad_repeated_columns = [x for x in annotated_variants_only_canonical.columns if 'gnomAD' in x ]
+        annotated_variants_only_canonical_cleaned = annotated_variants_only_canonical.drop(gnomad_repeated_columns, axis = 'columns')
+        annotated_variants = annotated_variants.merge(annotated_variants_only_canonical_cleaned, on = "MUT_ID", how = 'left')
         annotated_variants['canonical_Consequence_single'] = annotated_variants['canonical_Consequence'].apply(most_deleterious_within_variant)
         annotated_variants['canonical_Consequence_broader'] = annotated_variants['canonical_Consequence_single'].apply(lambda x: GROUPING_DICT[x])
         annotated_variants['canonical_Protein_affecting'] = annotated_variants['canonical_Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])

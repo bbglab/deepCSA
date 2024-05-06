@@ -1,14 +1,13 @@
 process CREATECAPTUREDPANELS {
     tag "$meta.id"
     label 'process_single'
+    label 'process_medium_high_memory'
 
     conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
             'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
             'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
+
 
     input:
     tuple val(meta), path(compact_captured_panel_annotation)
@@ -38,8 +37,11 @@ process CREATECAPTUREDPANELS {
                     ${prefix};
     for captured_panel in \$(ls -l *.tsv | grep -v '^l' | awk '{print \$NF}'); do
         bedtools merge \\
-            -i <(tail -n +2 \$captured_panel | \\
-            awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t') > \${captured_panel%.tsv}.bed;
+            -i <(
+                tail -n +2 \$captured_panel | \\
+                awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t' | uniq
+            ) | \\
+            awk 'BEGIN { FS = "\\t"; OFS = "\\t" } { if (\$2 != \$3) { \$2 += 1 ; \$3 -= 1 } else { \$2 = \$2 ; \$3 = \$3 }; print }' > \${captured_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml
