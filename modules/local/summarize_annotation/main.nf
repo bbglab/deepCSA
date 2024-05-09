@@ -12,8 +12,9 @@ process SUMMARIZE_ANNOTATION {
     tuple val(meta), path(tab_files)
 
     output:
-    tuple val(meta), path("*.summary.tab.gz")  , emit: tab
-    path "versions.yml"                        , emit: versions
+    tuple val(meta), path("*.summary.tab.gz")   , emit: tab
+    tuple val(meta), path("*.vep.tab.gz")       , emit: tab_all
+    path "versions.yml"                         , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -36,7 +37,7 @@ process SUMMARIZE_ANNOTATION {
     postprocessing_annotation.py ${prefix}.vep.tab ${prefix}.vep.summary.tab ${assembly} False;
     gzip ${prefix}.vep.summary.tab;
 
-    rm ${prefix}.vep.tab;
+    gzip ${prefix}.vep.tab;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
