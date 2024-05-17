@@ -24,7 +24,6 @@ def mutrate_sample(maf_df, depths_df, depths_adj_df, sample_name, type_list = Fa
     # count number of mutations and mutated reads in the sample
     ## make sure to count each mutation only once (avoid annotation issues)
     n_muts = unique_maf.shape[0]
-    ## make sure to count each mutation only once (avoid annotation issues)
     n_muts_per_sample = unique_maf.groupby(by = ["SAMPLE_ID", "MUT_ID"] ).agg({"ALT_DEPTH" : "sum" }).reset_index()
     n_mutated_reads = n_muts_per_sample["ALT_DEPTH"].sum()
     n_mutated_reads2 = unique_maf["ALT_DEPTH"].sum()
