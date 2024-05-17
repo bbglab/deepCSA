@@ -232,6 +232,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "all_duplex_counts": {
+                    "type": "boolean",
+                    "description": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules.",
+                    "default": false,
+                    "fa_icon": "fas fa-question-circle",
+                    "help_text": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules."
+                },
                 "panel_with_canonical": {
                     "type": "string",
                     "description": "Using only data from canonical transcript for building the panels, can be either 'True' or 'False'",
