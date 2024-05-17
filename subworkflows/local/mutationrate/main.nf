@@ -3,12 +3,6 @@ include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../..
 
 include { SUBSET_MAF                as SUBSET_MUTRATE           } from '../../../modules/local/subsetmaf/main'
 
-include { COMPUTE_MATRIX            as COMPUTEMATRIX            } from '../../../modules/local/mutation_matrix/main'
-include { COMPUTE_TRINUCLEOTIDE     as COMPUTETRINUC            } from '../../../modules/local/compute_trinucleotide/main'
-
-include { COMPUTE_PROFILE           as COMPUTEPROFILE           } from '../../../modules/local/compute_profile/main'
-
-
 include { MUTRATE as MUTRATE } from '../../../modules/local/computemutrate/main'
 
 
