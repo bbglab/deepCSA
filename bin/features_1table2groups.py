@@ -32,7 +32,7 @@ else:
     uniq_name = "sample"
     groups_of_interest = []
 
-samples_json = { name : [name] for name in features_table[uniq_name] }
+samples_json = { str(name) : [str(name)] for name in features_table[uniq_name] }
 
 json_groups = {}
 
