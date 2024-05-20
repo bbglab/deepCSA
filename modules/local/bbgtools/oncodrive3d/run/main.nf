@@ -1,6 +1,6 @@
-process ONCODRIVE3D {
+process ONCODRIVE3D_RUN {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_high' // probably we don't need 'process_high' here
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -30,7 +30,10 @@ process ONCODRIVE3D {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    // To be set as true to prioritize MANE transcripts but penalize plotting 
+    // annotations (we should also change the datasets dir to the MANE one) 
     def mane = false
+    // TODO: to be set as true to use as input the unfiltered mutations file
     def vep_raw = false
     """
     cat > oncodrive3d.mutability.conf << EOF
@@ -59,7 +62,7 @@ process ONCODRIVE3D {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 1.0
+        oncodrive3D: 2.0
     END_VERSIONS
     """
 
