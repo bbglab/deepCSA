@@ -16,11 +16,13 @@ process ONCODRIVE3D {
 
 
     output:
-    tuple val(meta), path("**genes.csv")  , emit: csv_genes
-    tuple val(meta), path("**pos.csv")    , emit: csv_pos
-    tuple val(meta), path("**.log")       , emit: log
-
-    path "versions.yml"             , emit: versions
+    tuple val(meta), path("**genes.csv")                 , emit: csv_genes
+    tuple val(meta), path("**pos.csv")                   , emit: csv_pos
+    tuple val(meta), path("**mutations.processed.tsv")   , emit: mut_processed
+    tuple val(meta), path("**miss_prob.processed.json")  , emit: prob_processed
+    tuple val(meta), path("**seq_df.processed.tsv")      , emit: seq_processed
+    tuple val(meta), path("**.log")                      , emit: log
+    path "versions.yml"                                  , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,6 +30,8 @@ process ONCODRIVE3D {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def mane = false
+    def vep_raw = false
     """
     cat > oncodrive3d.mutability.conf << EOF
     {
@@ -48,7 +52,10 @@ process ONCODRIVE3D {
                     -C ${prefix} \\
                     -o ${prefix} \\
                     ${args} \\
-                    -c ${task.cpus}
+                    -c ${task.cpus} \\
+                    ${vep_raw ? '--o3d_transcripts --use_input_symbols' : ''} \\
+                    ${mane ? '--mane' : ''} \\
+                    
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -64,7 +71,7 @@ process ONCODRIVE3D {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 1.0
+        oncodrive3D: 2.0
     END_VERSIONS
     """
 }
