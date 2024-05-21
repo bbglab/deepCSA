@@ -69,11 +69,14 @@ process ONCODRIVEFML {
 
         [[indels]]
             include = True
-            method = 'max'
+            method = 'stop'
             max_consecutive = 7
+            gene_exomic_frameshift_ratio = True
+            stops_function = 'random_choice'
 
     [settings]
-    cores = $task.cpus
+    cores = ${task.cpus}
+    seed = 123
     EOF
 
     oncodrivefml -i $mutations \\
