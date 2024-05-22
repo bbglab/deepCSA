@@ -22,8 +22,8 @@ process ONCODRIVE3D_PLOT {
 
     output:
     tuple val(meta), path("**.summary_plot.png")                  , emit: summary_plot
-    tuple val(meta), path("**.genes_plots")                       , emit: genes_plot
-//    tuple val(meta), path("**.3d_clustering_pos.annotated.csv")   , emit: pos_annotated_tsv
+    tuple val(meta), path("**.genes_plots/**.png")                       , emit: genes_plot
+    // tuple val(meta), path("**.3d_clustering_pos.annotated.csv")   , emit: pos_annotated_tsv
     tuple val(meta), path("**.log")                               , emit: log
     path "versions.yml"                                           , emit: versions
 
@@ -33,19 +33,21 @@ process ONCODRIVE3D_PLOT {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+
+    // TODO: Update O3D code and add --c_ext and --output_tsv
+    // remove -o
     """
 
-    oncodrive3D plot -g $genes_csv \\
+    oncodrive3D plot -o $prefix \\
+                     -g $genes_csv \\
                      -p $pos_csv \\
                      -i $mutations_csv \\
                      -m $miss_prob_json \\
                      -s $seq_df_tsv \\
-                     -d ${params.data_dir} \\
-                     -a ${params.annotations_dir} \\
-                     -c ${prefix} \\
-                     --title ${prefix} \\
-                     --c_ext \\
-                     ${params.verbose ? '-v' : ''}
+                     -d $datasets \\
+                     -a $annotations \\
+                     -c $prefix \\
+                     --title $prefix
                     
 
     cat <<-END_VERSIONS > versions.yml

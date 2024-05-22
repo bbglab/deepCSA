@@ -49,16 +49,16 @@ process ONCODRIVE3D_RUN {
     }
     EOF
 
-    oncodrive3D run -i ${mutations} \\
+    oncodrive3D run -i $mutations \\
                     -m oncodrive3d.mutability.conf \\
-                    -d ${datasets} \\
-                    -C ${prefix} \\
-                    -o ${prefix} \\
-                    ${args} \\
+                    -d $datasets \\
+                    -C $prefix \\
+                    -o $prefix \\
+                    $args \\
                     -c ${task.cpus} \\
                     ${vep_raw ? '--o3d_transcripts --use_input_symbols' : ''} \\
                     ${mane ? '--mane' : ''} \\
-                    
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
