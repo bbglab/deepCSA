@@ -32,9 +32,8 @@ process ONCODRIVE3D_RUN {
     def prefix = task.ext.prefix ?: "${meta.id}"
     // To be set as true to prioritize MANE transcripts but penalize plotting 
     // annotations (we should also change the datasets dir to the MANE one) 
-    def mane = false
-    // TODO: to be set as true to use as input the unfiltered mutations file
-    def vep_raw = false
+    def mane = task.ext.mane ? '--mane' : ''
+    def vep_raw = task.ext.vep_raw ? '--o3d_transcripts --use_input_symbols' : ''
     """
     cat > oncodrive3d.mutability.conf << EOF
     {
@@ -56,8 +55,8 @@ process ONCODRIVE3D_RUN {
                     -o $prefix \\
                     $args \\
                     -c ${task.cpus} \\
-                    ${vep_raw ? '--o3d_transcripts --use_input_symbols' : ''} \\
-                    ${mane ? '--mane' : ''} \\
+                    ${vep_raw} \\
+                    ${mane}
 
 
     cat <<-END_VERSIONS > versions.yml

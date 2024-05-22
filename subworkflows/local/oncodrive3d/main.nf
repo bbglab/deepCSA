@@ -1,10 +1,10 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF    as SUBSET_ONCODRIVE3D } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSET_ONCODRIVE3D   } from '../../../modules/local/subsetmaf/main'
 
-include { ONCODRIVE3D_RUN } from '../../../modules/local/bbgtools/oncodrive3d/run/main'
-
-include { ONCODRIVE3D_PLOT } from '../../../modules/local/bbgtools/oncodrive3d/plot/main'
+include { ONCODRIVE3D_PREPROCESSING                         } from '../../../modules/local/bbgtools/oncodrive3d/preprocessing/main'
+include { ONCODRIVE3D_RUN                                   } from '../../../modules/local/bbgtools/oncodrive3d/run/main'
+include { ONCODRIVE3D_PLOT                                  } from '../../../modules/local/bbgtools/oncodrive3d/plot/main'
 
 // include { ONCODRIVE3D_COMP_PLOT } from '../../../modules/local/bbgtools/oncodrive3d/comparative_plot/main'
 
@@ -18,6 +18,7 @@ workflow ONCODRIVE3D_ANALYSIS{
     bedfile
     datasets
     annotations
+    raw_vep
 
     main:
     ch_versions = Channel.empty()
@@ -28,9 +29,22 @@ workflow ONCODRIVE3D_ANALYSIS{
     SUBSET_ONCODRIVE3D(SUBSETMUTATIONS.out.subset)
     ch_versions = ch_versions.mix(SUBSET_ONCODRIVE3D.out.versions)
 
-    SUBSET_ONCODRIVE3D.out.mutations
-    .join(mutabilities)
-    .set{ muts_n_mutability }
+
+    // mutations preprocessing
+    if (params.o3d_raw_vep){
+        ONCODRIVE3D_PREPROCESSING(SUBSET_ONCODRIVE3D.out.mutations, raw_vep)
+        ONCODRIVE3D_PREPROCESSING.out.vep_output4o3d
+        .join(mutabilities)
+        .set{ muts_n_mutability }
+        
+    } else {
+        SUBSET_ONCODRIVE3D.out.mutations
+        .join(mutabilities)
+        .set{ muts_n_mutability }
+
+    }
+    
+
 
     // if (datasets) {
     //      do something
