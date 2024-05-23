@@ -24,7 +24,7 @@ process VCF2MAF {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def batch = task.ext.batch ?: "${meta.batch}"
     def level = task.ext.level ?: "high"
-    def all_molecules_dp = task.ext.all_molecules_dp ? "True" : "False"
+    def all_molecules_dp = task.ext.all_molecules_dp ?: "false"
     """
     vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation} ${all_molecules_dp};
 

@@ -21,18 +21,22 @@ level = sys.argv[4]
 
 annotation_file = sys.argv[5]
 
-global vaf_all_molecules
-vaf_all_molecules = bool(sys.argv[6])
+vaf_all_molecules = sys.argv[6] == 'true'
+print(vaf_all_molecules)
 
 if vaf_all_molecules:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
                         'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', "numNs",
                         'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM"]
+    print("Using also information on all molecules, duplex and non-duplex.")
 else:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
                         'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', "numNs"]
+    print("Not using information on non-duplex molecules.")
+
+
 ######
 # Read VCF file coming from VarDict2
 #      Note that the file can only contain one sample
@@ -46,7 +50,8 @@ def read_from_vardict_VCF_all(sample,
                                 columns_to_keep = ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'REF_DEPTH', 'ALT_DEPTH', 'VAF',
                                                     'vd_DEPTH', 'vd_REF_DEPTH', 'vd_ALT_DEPTH'],
                                 n_bins = 100,
-                                plottingDist = True
+                                plottingDist = True,
+                                all_mols_fields = False
                                 ):
     """
     Read VCF file coming from Vardict
@@ -169,7 +174,7 @@ def read_from_vardict_VCF_all(sample,
     ##
     # All molecule depths
     ##
-    if vaf_all_molecules:
+    if all_mols_fields:
         for ele in ["CDPAM", "CADAM", "NDPAM"]:
             if ele not in dat_full.columns:
                 print(f"{ele} not present in the format field, revise the VCF reading function")
@@ -321,7 +326,8 @@ sample_muts = read_from_vardict_VCF_all(sampleid, file_muts,
                                         subset_val = 0.35,
                                         columns_to_keep = keep_all_columns,
                                         n_bins = 100,
-                                        plottingDist = False
+                                        plottingDist = False,
+                                        all_mols_fields = vaf_all_molecules
                                         )
 
 # Define some metadata related fields
