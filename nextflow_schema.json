@@ -177,6 +177,13 @@
                     "default": true,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutated_epithelium?"
+                },
+                "plot_depths": {
+                    "type": "boolean",
+                    "description": "Do you want to run plot_depths?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run plot_depths?"
                 }
             }
         },
