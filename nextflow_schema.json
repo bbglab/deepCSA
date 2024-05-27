@@ -177,6 +177,13 @@
                     "default": true,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutated_epithelium?"
+                },
+                "plot_depths": {
+                    "type": "boolean",
+                    "description": "Do you want to run plot_depths?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run plot_depths?"
                 }
             }
         },
@@ -231,6 +238,13 @@
                     "default": "high",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
+                },
+                "all_duplex_counts": {
+                    "type": "boolean",
+                    "description": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules.",
+                    "default": false,
+                    "fa_icon": "fas fa-question-circle",
+                    "help_text": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules."
                 },
                 "panel_with_canonical": {
                     "type": "string",
@@ -312,7 +326,14 @@
                     "description": "Path to folder containing the oncodrive3d datasets built.",
                     "help_text": "Path to folder containing the oncodrive3d datasets built.",
                     "fa_icon": "far fa-file-code"
+                },
+                "cadd_scores": {
+                    "type": "string",
+                    "description": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io",
+                    "help_text": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
+                    "fa_icon": "far fa-file-code"
                 }
+
             }
         },
 
