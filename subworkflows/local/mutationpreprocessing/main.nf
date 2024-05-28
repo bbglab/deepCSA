@@ -88,9 +88,10 @@ workflow MUTATION_PREPROCESSING {
 
 
     emit:
-    mafs            = named_mafs
-    somatic_mafs    = SOMATICMUTATIONS.out.mutations
-    bedfile_clean   = bedfile_updated
-    versions        = ch_versions
+    mafs                    = named_mafs
+    somatic_mafs            = SOMATICMUTATIONS.out.mutations
+    all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
+    bedfile_clean           = bedfile_updated
+    versions                = ch_versions
 
 }

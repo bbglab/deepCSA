@@ -293,7 +293,8 @@ workflow DEEPCSA{
     if (params.oncodrive3d){
         if (params.profileall){
             // Oncodrive3D
-            ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed, datasets3d, annotations3d)
+            ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
+                        datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
             ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
         }
     }
