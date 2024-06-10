@@ -26,7 +26,7 @@ process POSTPROCESS_VEP_ANNOTATION {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def assembly = task.ext.assembly ?: "hg38"
-    def canonical_only = task.ext.canonical_only ?: "True"
+    def canonical_only = task.ext.canonical_only ? "True" : "False"
     // TODO
     // change panel postprocessing annotation into the same post processing annotation as before
     // keep it as the one for omega that is the one minimizing the computational processing

@@ -79,7 +79,7 @@ process ONCODRIVEFML {
 
         [[indels]]
             include = True
-            method = 'stop'
+            method = 'max'
             max_consecutive = 7
             gene_exomic_frameshift_ratio = True
             stops_function = 'random_choice'
