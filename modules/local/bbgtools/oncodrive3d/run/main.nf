@@ -1,6 +1,6 @@
 process ONCODRIVE3D_RUN {
     tag "$meta.id"
-    label 'process_high' // probably we don't need 'process_high' here
+    label 'process_high'
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
