@@ -1,6 +1,6 @@
 process ONCODRIVE3D_PLOT {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_medium'
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -21,11 +21,14 @@ process ONCODRIVE3D_PLOT {
     path(annotations)
 
     output:
-    tuple val(meta), path("**.summary_plot.png")                  , emit: summary_plot
-    tuple val(meta), path("**.genes_plots/**.png")                       , emit: genes_plot
-    // tuple val(meta), path("**.3d_clustering_pos.annotated.csv")   , emit: pos_annotated_tsv
-    tuple val(meta), path("**.log")                               , emit: log
-    path "versions.yml"                                           , emit: versions
+    tuple val(meta), path("**.summary_plot.png")                               , emit: summary_plot
+    tuple val(meta), path("**.genes_plots/**.png")                             , emit: genes_plot
+    tuple val(meta), path("**.associations_plots/**.logodds_plot.png")         , emit: logodds_plot
+    tuple val(meta), path("**.associations_plots/**.volcano_plot.png")         , emit: volcano_plot
+    tuple val(meta), path("**.associations_plots/**.volcano_plot_gene.png")    , emit: volcano_plot_gene
+    tuple val(meta), path("**.3d_clustering_pos.annotated.csv")                , emit: pos_annotated_csv
+    tuple val(meta), path("**.log")                                            , emit: log
+    path "versions.yml"                                                        , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -34,8 +37,7 @@ process ONCODRIVE3D_PLOT {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
 
-    // TODO: Update O3D code and add --c_ext and --output_tsv
-    // remove -o
+
     """
 
     oncodrive3D plot -o $prefix \\
@@ -47,6 +49,7 @@ process ONCODRIVE3D_PLOT {
                      -d $datasets \\
                      -a $annotations \\
                      -c $prefix \\
+                     --output_csv \\
                      --title $prefix
                     
 
@@ -68,4 +71,63 @@ process ONCODRIVE3D_PLOT {
     END_VERSIONS
     """
 }
+
+
+// process ONCODRIVE3D_PLOT {
+//     tag "$meta.id"
+//     label 'process_medium'
+
+//     // // conda "YOUR-TOOL-HERE"
+//     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+//     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
+//     //     'biocontainers/YOUR-TOOL-HERE' }"
+
+//     // TODO pending to push the container somewhere and be able to retrieve it
+//     container 'docker.io/ferriolcalvet/oncodrive3d:latest'
+
+
+//     input:
+//     tuple val(meta), path(genes_csv)
+//     tuple val(meta), path(pos_csv)
+//     tuple val(meta), path(mutations_csv)
+//     tuple val(meta), path(miss_prob_json)
+//     tuple val(meta), path(seq_df_tsv)
+//     path(datasets)
+//     path(annotations)
+
+//     output:
+//     tuple val(meta), path("**.summary_plot.png")                  , emit: summary_plot
+//     tuple val(meta), path("**.genes_plots/**.png")                , emit: genes_plot
+//     // tuple val(meta), path("**.3d_clustering_pos.annotated.csv")   , emit: pos_annotated_csv
+//     tuple val(meta), path("**.log")                               , emit: log
+//     path "versions.yml"                                           , emit: versions
+
+//     when:
+//     task.ext.when == null || task.ext.when
+
+//     script:
+//     def args = task.ext.args ?: ""
+//     def prefix = task.ext.prefix ?: "${meta.id}"
+
+//     // --output_csv \\
+//     // remove -o
+//     """
+
+//     oncodrive3D plot -o $prefix \\
+//                      -g $genes_csv \\
+//                      -p $pos_csv \\
+//                      -i $mutations_csv \\
+//                      -m $miss_prob_json \\
+//                      -s $seq_df_tsv \\
+//                      -d $datasets \\
+//                      -a $annotations \\
+//                      -c $prefix \\
+//                      --title $prefix
+                    
+
+//     cat <<-END_VERSIONS > versions.yml
+//     "${task.process}":
+//         oncodrive3D: 2.0
+//     END_VERSIONS
+//     """
 
