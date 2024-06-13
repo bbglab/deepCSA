@@ -12,11 +12,7 @@ include { COMPUTE_MUTATED_EPITHELIUM    as COMPUTEMUTATEDEPITHELIUM     } from '
 
 include { SAMTOOLS_MPILEUP              as PILEUPBAMALL                 } from '../../../modules/nf-core/samtools/mpileup/main'
 
-    // bam_n_index_all_mol
-    // .join( READJUSTREGIONS.out.vcf_bed )
-    // .set { ch_bamall_bai_bed }
 
-    // PILEUPBAMALL(ch_bamall_bai_bed, reference_fasta)
 
 workflow MUTATED_EPITHELIUM {
 
@@ -24,18 +20,23 @@ workflow MUTATED_EPITHELIUM {
     mutations
     bedfile
     panel
-    bamfile
-    pileup
+    pileup_bam_bai
+    fasta
 
 
     main:
     ch_versions = Channel.empty()
 
-    pileup.map{ it -> [ it[0], it[1], it[2], bedfile.map{ it -> it[1] }.first() ]}
-    .set{ ch_bamall_bai_bed }
-    PILEUPBAMALL(ch_bamall_bai_bed, reference_fasta)
+    pileup_bam_bai.map{ it -> [ it[0], it[1] ]}
+    .set{ bamfile }
+
+    ch_bamall_bai_bed = pileup_bam_bai.combine(bedfile.map{ it -> [ it[1] ]}  )
+    PILEUPBAMALL(ch_bamall_bai_bed, fasta)
+    ch_versions = ch_versions.mix(PILEUPBAMALL.out.versions)
 
 
+    PILEUPBAMALL.out.mpileup.map{ it -> [it[0], it[1]] }
+    .set{ pileup }
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETPILEUP(pileup, bedfile)
@@ -68,7 +69,6 @@ workflow MUTATED_EPITHELIUM {
     .set{ mutations_n_reads }
 
     COMPUTEMUTATEDEPITHELIUM(mutations_n_reads)
-
 
 
     emit:

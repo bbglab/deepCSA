@@ -26,7 +26,6 @@ def create_input_channel(LinkedHashMap row) {
     def meta = [:]
     meta.id       = row.sample
     meta.batch    = row.batch
-    // meta.vcf_only = row.vcf_only.toBoolean()
 
     // add path(s) of the fastq file(s) to the meta map
     def vcf_bam_meta = []
@@ -36,10 +35,13 @@ def create_input_channel(LinkedHashMap row) {
     if (!file(row.bam).exists()) {
         exit 1, "ERROR: Please check input samplesheet -> BAM file does not exist!\n${row.bam}"
     }
-    if (!file(row.pileup).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> BAM file does not exist!\n${row.pileup}"
+    if (!file(row.pileup_bam).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> BAM file for pileup does not exist!\n${row.pileup_bam}"
     }
-    vcf_bam_meta = [ meta, file(row.vcf), file(row.bam), file(row.pileup) ]
+    if (!file(row.pileup_ind).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> Index of the BAM file for pileup does not exist!\n${row.pileup_ind}"
+    }
+    vcf_bam_meta = [ meta, file(row.vcf), file(row.bam), file(row.pileup_bam), file(row.pileup_ind) ]
 
     return vcf_bam_meta
 }

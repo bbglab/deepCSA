@@ -37,7 +37,8 @@ class RowChecker:
         sample_col="sample",
         vcf_col="vcf",
         bam_col="bam",
-        pileup_col="pileup",
+        pileupbam_col="pileup_bam",
+        pileupind_col="pileup_ind",
         **kwargs,
     ):
         """
@@ -60,7 +61,8 @@ class RowChecker:
         self._sample_col = sample_col
         self._vcf_col = vcf_col
         self._bam_col = bam_col
-        self._pileup_col = pileup_col
+        self._pileupbam_col = pileupbam_col
+        self._pileupind_col = pileupind_col
         self._seen = set()
         self.modified = []
 
@@ -96,16 +98,6 @@ class RowChecker:
         """Assert that the second FASTQ entry has the right format if it exists."""
         if len(row[self._bam_col]) > 0:
             self._validate_bam_format(row[self._bam_col])
-
-    # def _validate_pair(self, row):
-    #     """Assert that read pairs have the same file extension. Report pair status."""
-    #     if row[self._vcf_col] and row[self._bam_col]:
-    #         first_col_suffix = Path(row[self._vcf_col]).suffixes[-2:]
-    #         second_col_suffix = Path(row[self._bam_col]).suffixes[-2:]
-    #         if first_col_suffix != second_col_suffix:
-    #             raise AssertionError("FASTQ pairs must have the same file extensions.")
-    #     else:
-    #         row[self._single_col] = True
 
     def _validate_vcf_format(self, filename):
         """Assert that a given filename has one of the expected VCF extensions."""

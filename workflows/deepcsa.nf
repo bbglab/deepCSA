@@ -138,8 +138,8 @@ workflow DEEPCSA{
     set{ meta_bams_alone }
 
     INPUT_CHECK.out.mutations.
-    map{ it -> [it[0], it[3]]}.
-    set{ meta_pileup_alone }
+    map{ it -> [it[0], it[3], it[4]]}.
+    set{ meta_pileupbamindex_alone }
 
 
 
@@ -250,7 +250,9 @@ workflow DEEPCSA{
         MUTATEDEPITHELIUM(MUT_PREPROCESSING.out.somatic_mafs,
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
-                            meta_bams_alone, meta_pileup_alone)
+                            meta_pileupbamindex_alone,
+                            params.fasta
+                            )
         ch_versions = ch_versions.mix(MUTATEDEPITHELIUM.out.versions)
 
 
