@@ -1,7 +1,7 @@
 process ANNOTATE_DEPTHS {
-
     tag "${meta.id}"
     label 'process_low'
+    label 'time_low'
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
