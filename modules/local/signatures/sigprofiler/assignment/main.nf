@@ -30,6 +30,7 @@ process SIGPROFILERASSIGNMENT {
     """
     #python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${prefix}', input_type='matrix', context_type='96', signature_database='${reference_signatures}', genome_build='${assembly}', sample_reconstruction_plots= 'pdf', exclude_signature_subgroups= ${params.exclude_subgroups})"
     python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${prefix}', input_type='matrix', context_type='96', genome_build='${assembly}', exclude_signature_subgroups=${params.exclude_subgroups})"
+    #python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${prefix}', input_type='matrix', context_type='96', genome_build='${assembly}', signature_database='${reference_signatures}', exclude_signature_subgroups=${params.exclude_subgroups})"
 
     mv output_${prefix}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt output_${prefix}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${prefix}.txt;
 
