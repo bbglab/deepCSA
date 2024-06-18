@@ -21,12 +21,12 @@ process ONCODRIVE3D_PLOT {
     path(annotations)
 
     output:
-    tuple val(meta), path("**.summary_plot.png")                               , emit: summary_plot
-    tuple val(meta), path("**.genes_plots/**.png")                             , emit: genes_plot
-    tuple val(meta), path("**.associations_plots/**.logodds_plot.png")         , emit: logodds_plot
-    tuple val(meta), path("**.associations_plots/**.volcano_plot.png")         , emit: volcano_plot
-    tuple val(meta), path("**.associations_plots/**.volcano_plot_gene.png")    , emit: volcano_plot_gene
-    tuple val(meta), path("**.3d_clustering_pos.annotated.csv")                , emit: pos_annotated_csv
+    tuple val(meta), path("**.summary_plot.png")                               , emit: summary_plot, optional: true
+    tuple val(meta), path("**.genes_plots/**.png")                             , emit: genes_plot, optional: true
+    tuple val(meta), path("**.associations_plots/**.logodds_plot.png")         , emit: logodds_plot, optional: true
+    tuple val(meta), path("**.associations_plots/**.volcano_plot.png")         , emit: volcano_plot, optional: true
+    tuple val(meta), path("**.associations_plots/**.volcano_plot_gene.png")    , emit: volcano_plot_gene, optional: true
+    tuple val(meta), path("**.3d_clustering_pos.annotated.csv")                , emit: pos_annotated_csv, optional: true
     tuple val(meta), path("**.log")                                            , emit: log
     path "versions.yml"                                                        , emit: versions
 
@@ -39,7 +39,6 @@ process ONCODRIVE3D_PLOT {
 
 
     """
-
     oncodrive3D plot -o $prefix \\
                      -g $genes_csv \\
                      -p $pos_csv \\

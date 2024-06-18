@@ -18,9 +18,9 @@ process ONCODRIVE3D_RUN {
     output:
     tuple val(meta), path("**genes.csv")                 , emit: csv_genes
     tuple val(meta), path("**pos.csv")                   , emit: csv_pos
-    tuple val(meta), path("**mutations.processed.tsv")   , emit: mut_processed
-    tuple val(meta), path("**miss_prob.processed.json")  , emit: prob_processed
-    tuple val(meta), path("**seq_df.processed.tsv")      , emit: seq_processed
+    tuple val(meta), path("**mutations.processed.tsv")   , emit: mut_processed, optional: true
+    tuple val(meta), path("**miss_prob.processed.json")  , emit: prob_processed, optional: true
+    tuple val(meta), path("**seq_df.processed.tsv")      , emit: seq_processed, optional: true
     tuple val(meta), path("**.log")                      , emit: log
     path "versions.yml"                                  , emit: versions
 
