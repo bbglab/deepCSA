@@ -10,6 +10,7 @@ include { FILTER_BATCH              as FILTERBATCH      } from '../../../modules
 include { WRITE_MAFS                as WRITEMAF         } from '../../../modules/local/writemaf/main'
 include { SUBSET_MAF                as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
 include { PLOT_MUTATIONS            as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
+include { MUTATED_GENOMES_FROM_VAF as MUTATEDGENOMESFROMVAF } from '../../../modules/local/mutatedgenomesfromvaf/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -69,6 +70,8 @@ workflow MUTATION_PREPROCESSING {
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
 
+    MUTATEDGENOMESFROMVAF(named_mafs)
+    ch_versions = ch_versions.mix(MUTATEDGENOMESFROMVAF.out.versions)
 
     SOMATICMUTATIONS(named_mafs)
     ch_versions = ch_versions.mix(SOMATICMUTATIONS.out.versions)
