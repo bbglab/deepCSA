@@ -88,7 +88,7 @@ workflow ONCODRIVE3D_ANALYSIS{
     results_pos_annot   = ONCODRIVE3D_PLOT.out.pos_annotated_csv
     chimerax_defattr    = ONCODRIVE3D_PLOT_CHIMERAX.out.chimerax_defattr
     chimerax_plot       = ONCODRIVE3D_PLOT_CHIMERAX.out.chimerax_plot
-    log_files           = ONCODRIVE3D_RUN.out.log.mix(ONCODRIVE3D_PLOT.out.log)
+    log_files           = ONCODRIVE3D_RUN.out.log.mix(ONCODRIVE3D_PLOT.out.log, ONCODRIVE3D_PLOT_CHIMERAX.out.log)
     
 
     versions = ch_versions           // channel: [ versions.yml ]
