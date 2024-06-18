@@ -37,6 +37,13 @@ process OMEGA_ESTIMATOR {
     for gene in \$genes; do
         json="\$json\\"\$gene\\": [\\"\$gene\\"], "
     done;
+
+    json_all_genes="\\"ALL_GENES\\": ["
+    for gene in \$genes; do
+        json_all_genes="\$json_all_genes\\"\$gene\\", "
+    done;
+    json_all_genes=\$(echo \$json_all_genes | rev | cut -d ',' -f 2- | rev)
+    json="\$json\${json_all_genes}], "
     echo \$json | rev | cut -d ',' -f 2- | rev | cat - <(echo '}') > groups/group_genes.json
 
 

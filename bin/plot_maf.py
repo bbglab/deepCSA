@@ -37,7 +37,7 @@ def plot_mutations_per_sample(sample_name, maf, sample_column_name = "SAMPLE_ID"
     muts_per_sample = maf.groupby(sample_column_name).size().to_frame("NUM_MUTS").reset_index()
 
     # Calculate the length of the longest sample name
-    max_label_length = muts_per_sample[sample_column_name].str.len().max()
+    max_label_length = muts_per_sample[sample_column_name].astype(str).str.len().max()
 
     # Determine the rotation angle and adjust figure size accordingly
     rotation_angle = 90 if max_label_length > 7 else 30  # Adjust threshold as needed
@@ -200,6 +200,8 @@ def filter_wrapper(sample_name, maf, parameters = {}):
     fig_list = []
 
     for filt in filters_to_plot:
+        if f"FILTER.{filt}" not in maf.columns:
+            continue
         fig = plot_filter_stats(maf, var_to_plot, f"FILTER.{filt}")
         if type(fig) == list:
             for subfig in fig:

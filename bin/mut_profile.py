@@ -9,6 +9,7 @@ import numpy as np
 
 from utils import contexts_formatted, contexts_formatted_sigprofiler
 from utils import filter_maf
+from utils_plot import plot_profile
 
 
 def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method = 'unique', pseudocount = 0,
@@ -147,7 +148,6 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                             sep = "\t")
 
     if plot:
-        from utils_plot import plot_profile
 
         # TODO
         # revise if we can find a better way of defining the y axis labels
@@ -191,6 +191,31 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                     header = True,
                                     index = True,
                                     sep = "\t")
+
+        # if plot:
+
+        #     profile_trinuc_merge["WGS_MUT_PROFILE"] = profile_trinuc_merge["SAMPLE_MUTS_WGS"] / profile_trinuc_merge["COUNT"]
+        #     profile_trinuc_merge["WGS_MUT_PROFILE"] = profile_trinuc_merge["WGS_MUT_PROFILE"] / profile_trinuc_merge["WGS_MUT_PROFILE"].sum()
+
+        #     max_freq = max(profile_trinuc_merge["WGS_MUT_PROFILE"]) * 1.1
+
+        #     order_mag = 100
+        #     size_step = 10
+        #     ylabs = []
+        #     while len(ylabs) < 2:
+        #         ylabs = [ x/order_mag for x in range(0, round(max_freq * order_mag) + 1 ) if (x % size_step) == 0 ]
+        #         if size_step == 10:
+        #             size_step = 5
+        #         else:
+        #             order_mag *= 10
+        #             size_step = 10
+
+        #     plot_profile(dict(zip(profile_trinuc_merge["CONTEXT_MUT"], profile_trinuc_merge["WGS_MUT_PROFILE"])),
+        #                     title=f'{sample_name} ({round(total_mutations)} muts)',
+        #                     ylabels = ylabs,
+        #                     ymax = max_freq,
+        #                     output_f = f'{sample_name}.profile.WGS.pdf')
+
         if sigprofiler:
             profile_trinuc_clean.index = contexts_formatted_sigprofiler
             profile_trinuc_clean.index.name = "CONTEXT_MUT"

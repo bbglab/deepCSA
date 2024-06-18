@@ -150,6 +150,8 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
     all_samples_mutability_per_site = all_samples_mutability_per_site.sort_values(
                                                                 by = ['CHROM', 'POS', 'REF', 'ALT']).reset_index(drop = True)
     sample_mutability_info = all_samples_mutability_per_site[['CHROM', 'POS', 'REF', 'ALT', 'GENE', f"{sample_name}_adjusted_probability"]]
+    sample_mutability_info[f"{sample_name}_adjusted_probability"] /= (sample_mutability_info[f"{sample_name}_adjusted_probability"].min() * 100)
+
 
     sample_mutability_info_store = sample_mutability_info.drop_duplicates(subset=['CHROM', 'POS', 'REF', 'ALT'],
                                                         keep='first').drop("GENE", axis = 1)
@@ -239,6 +241,7 @@ def adjust_mutabilities(sample_name, mutation_matrix_file, mutability_info, out_
     print("Corrected mutabilities")
     del mutability_info
     print("Removing second table")
+    print(corrected_data.head())
     corrected_data = corrected_data.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT', f"{sample_name}_adjusted_probability"],
                                                     ascending = (True, True, True, True, False)
                                                     )

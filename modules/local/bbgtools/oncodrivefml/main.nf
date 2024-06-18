@@ -24,7 +24,7 @@ process ONCODRIVEFML {
     script:
     def args = task.ext.args ?: "" // "-s ${params.seed}"
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def cadd_scores = task.ext.cadd_scores ?: '/workspace/datasets/CADD/v1.6/hg38/whole_genome_SNVs.tsv.gz'
+    def cadd_scores = task.ext.cadd_scores ?: ''
     // TODO: See if we can provide the entire json as an input parameter
     """
     cat > oncodrivefml_v2.mutability.conf << EOF
@@ -47,8 +47,18 @@ process ONCODRIVEFML {
     mutab = 4
 
 
+    [depth]
+    adjusting = False
+    file = '${mutabilities}'
+    format = 'tabix'
+    chr = 0
+    chr_prefix = "chr"
+    pos = 1
+    depth = 2
+
+
     [score]
-    file = $cadd_scores
+    file = ${cadd_scores}
     format = 'tabix'
     chr = 0
     chr_prefix = ""
@@ -71,9 +81,12 @@ process ONCODRIVEFML {
             include = True
             method = 'max'
             max_consecutive = 7
+            gene_exomic_frameshift_ratio = True
+            stops_function = 'random_choice'
 
     [settings]
-    cores = $task.cpus
+    cores = ${task.cpus}
+    seed = 123
     EOF
 
     oncodrivefml -i $mutations \\

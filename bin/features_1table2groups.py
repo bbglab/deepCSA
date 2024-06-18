@@ -32,7 +32,7 @@ else:
     uniq_name = "sample"
     groups_of_interest = []
 
-samples_json = { name : [name] for name in features_table[uniq_name] }
+samples_json = { str(name) : [str(name)] for name in features_table[uniq_name] }
 
 json_groups = {}
 
@@ -41,7 +41,8 @@ json_groups = {}
 for col_names2group in groups_of_interest:
 
     dict_sample_groups = features_table.groupby(by = col_names2group).agg({uniq_name : list}).reset_index().to_dict()
-    # print(dict_sample_groups)
+    for category in list(dict_sample_groups[uniq_name].keys()):
+        dict_sample_groups[uniq_name][category] = [ str(x) for x in dict_sample_groups[uniq_name][category] ]
 
     for i in dict_sample_groups[col_names2group[0]].keys():
         sample_batch_name = ""
@@ -75,7 +76,7 @@ if len(json_groups) > 0:
 # Write all samples and groups json
 json_groups.update(samples_json)
 
-json_groups["all_samples"] = list(samples_json.keys())
+json_groups["all_samples"] = [str(x) for x in samples_json.keys()]
 with open("all_groups.json", "w") as outfile:
     json.dump(json_groups, outfile)
 
