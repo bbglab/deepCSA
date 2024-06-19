@@ -36,8 +36,6 @@ process ONCODRIVE3D_PLOT {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-
-
     """
     oncodrive3D plot -o $prefix \\
                      -g $genes_csv \\
@@ -50,7 +48,7 @@ process ONCODRIVE3D_PLOT {
                      -c $prefix \\
                      --output_csv \\
                      --title $prefix
-                    
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

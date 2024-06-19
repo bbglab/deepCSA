@@ -1,6 +1,8 @@
 process ONCODRIVE3D_PLOT_CHIMERAX {
     tag "$meta.id"
     label 'process_medium'
+
+    // FIXME we should remove this
     queue 'bigmem'     // For some reason in the normal nodes libQt6Core.so.6 can't get imported and returns an error
 
     // // conda "YOUR-TOOL-HERE"
@@ -31,8 +33,8 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    
-    // Increase/decreaase pixel_size to decrease/increase resolution and speed/slow png generation 
+
+    // Increase/decreaase pixel_size to decrease/increase resolution and speed/slow png generation
     """
     oncodrive3D chimerax-plot -o $prefix \\
                               -g $genes_csv \\
@@ -49,7 +51,7 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     "${task.process}":
         oncodrive3D: 2.0
     END_VERSIONS
-    """ 
+    """
 
     stub:
     def args = task.ext.args ?: ''

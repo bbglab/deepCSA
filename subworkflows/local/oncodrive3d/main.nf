@@ -37,14 +37,14 @@ workflow ONCODRIVE3D_ANALYSIS{
         ONCODRIVE3D_PREPROCESSING.out.vep_output4o3d
         .join(mutabilities)
         .set{ muts_n_mutability }
-        
+
     } else {
         SUBSET_ONCODRIVE3D.out.mutations
         .join(mutabilities)
         .set{ muts_n_mutability }
 
     }
-    
+
 
 
     // if (datasets) {
@@ -57,39 +57,43 @@ workflow ONCODRIVE3D_ANALYSIS{
     ONCODRIVE3D_RUN(muts_n_mutability, datasets)
     ch_versions = ch_versions.mix(ONCODRIVE3D_RUN.out.versions)
 
-    // if (params.o3d_plot) { ....
-    ONCODRIVE3D_PLOT(ONCODRIVE3D_RUN.out.csv_genes,
-                     ONCODRIVE3D_RUN.out.csv_pos,
-                     ONCODRIVE3D_RUN.out.mut_processed,
-                     ONCODRIVE3D_RUN.out.prob_processed,
-                     ONCODRIVE3D_RUN.out.seq_processed,
-                     datasets,
-                     annotations)
-    ch_versions = ch_versions.mix(ONCODRIVE3D_PLOT.out.versions)
+    if (params.o3d_plot) {
+        ONCODRIVE3D_PLOT(ONCODRIVE3D_RUN.out.csv_genes,
+                            ONCODRIVE3D_RUN.out.csv_pos,
+                            ONCODRIVE3D_RUN.out.mut_processed,
+                            ONCODRIVE3D_RUN.out.prob_processed,
+                            ONCODRIVE3D_RUN.out.seq_processed,
+                            datasets,
+                            annotations)
+        ch_versions = ch_versions.mix(ONCODRIVE3D_PLOT.out.versions)
+    }
 
-    // if (params.o3d_plot_chimerax) { ....
-    ONCODRIVE3D_PLOT_CHIMERAX(ONCODRIVE3D_RUN.out.csv_genes,
-                              ONCODRIVE3D_RUN.out.csv_pos,
-                              ONCODRIVE3D_RUN.out.prob_processed,
-                              ONCODRIVE3D_RUN.out.seq_processed,
-                              datasets)
-    ch_versions = ch_versions.mix(ONCODRIVE3D_PLOT_CHIMERAX.out.versions)
+    if (params.o3d_plot_chimerax) {
+        ONCODRIVE3D_PLOT_CHIMERAX(ONCODRIVE3D_RUN.out.csv_genes,
+                                    ONCODRIVE3D_RUN.out.csv_pos,
+                                    ONCODRIVE3D_RUN.out.prob_processed,
+                                    ONCODRIVE3D_RUN.out.seq_processed,
+                                    datasets)
+        ch_versions = ch_versions.mix(ONCODRIVE3D_PLOT_CHIMERAX.out.versions)
+    }
+
 
     emit:
+
     results             = ONCODRIVE3D_RUN.out.csv_genes
     results_pos         = ONCODRIVE3D_RUN.out.csv_pos
-    files_mut           = ONCODRIVE3D_RUN.out.mut_processed
-    files_prob          = ONCODRIVE3D_RUN.out.prob_processed
-    files_seq           = ONCODRIVE3D_RUN.out.seq_processed
-    genes_plot          = ONCODRIVE3D_PLOT.out.genes_plot
-    summary_plot        = ONCODRIVE3D_PLOT.out.logodds_plot
-    volcano_plot        = ONCODRIVE3D_PLOT.out.volcano_plot
-    volcano_plot_gene   = ONCODRIVE3D_PLOT.out.volcano_plot_gene
-    results_pos_annot   = ONCODRIVE3D_PLOT.out.pos_annotated_csv
-    chimerax_defattr    = ONCODRIVE3D_PLOT_CHIMERAX.out.chimerax_defattr
-    chimerax_plot       = ONCODRIVE3D_PLOT_CHIMERAX.out.chimerax_plot
-    log_files           = ONCODRIVE3D_RUN.out.log.mix(ONCODRIVE3D_PLOT.out.log, ONCODRIVE3D_PLOT_CHIMERAX.out.log)
-    
+    // files_mut           = ONCODRIVE3D_RUN.out.mut_processed
+    // files_prob          = ONCODRIVE3D_RUN.out.prob_processed
+    // files_seq           = ONCODRIVE3D_RUN.out.seq_processed
+    // genes_plot          = ONCODRIVE3D_PLOT.out.genes_plot
+    // summary_plot        = ONCODRIVE3D_PLOT.out.logodds_plot
+    // volcano_plot        = ONCODRIVE3D_PLOT.out.volcano_plot
+    // volcano_plot_gene   = ONCODRIVE3D_PLOT.out.volcano_plot_gene
+    // results_pos_annot   = ONCODRIVE3D_PLOT.out.pos_annotated_csv
+    // chimerax_defattr    = ONCODRIVE3D_PLOT_CHIMERAX.out.chimerax_defattr
+    // chimerax_plot       = ONCODRIVE3D_PLOT_CHIMERAX.out.chimerax_plot
+    // log_files           = ONCODRIVE3D_RUN.out.log.mix(ONCODRIVE3D_PLOT.out.log, ONCODRIVE3D_PLOT_CHIMERAX.out.log)
+
 
     versions = ch_versions           // channel: [ versions.yml ]
 
