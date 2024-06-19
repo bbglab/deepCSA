@@ -313,6 +313,54 @@ def add_alternative_format_columns(dataframe):
 
 
 
+def update_indel_info(df):
+    """
+    Update the DataFrame with INDEL_LENGTH and INDEL_INFRAME for indel rows,
+    while setting default values for other rows.
+
+    Parameters:
+    df (pd.DataFrame): Original DataFrame containing the mutation data.
+
+    Returns:
+    pd.DataFrame: Updated DataFrame with INDEL_LENGTH and INDEL_INFRAME columns.
+    """
+
+    # Ensure the DataFrame has the necessary columns
+    required_columns = ["TYPE", "REF", "ALT", "canonical_Consequence_broader"]
+    for col in required_columns:
+        if col not in df.columns:
+            raise ValueError(f"DataFrame is missing required column: {col}")
+
+    # Filter to get indices of rows that are indels (INSERTION or DELETION)
+    indel_positions = df.loc[df["TYPE"].isin(["INSERTION", "DELETION"])].index
+
+    # Initialize new columns with default values
+    df['INDEL_LENGTH'] = 0
+    df['INDEL_INFRAME'] = False
+
+    # Create a DataFrame specifically for indels
+    indel_maf_df = df.loc[indel_positions].copy()
+
+    # Calculate INDEL_LENGTH
+    indel_maf_df["INDEL_LENGTH"] = (indel_maf_df["REF"].str.len() - indel_maf_df["ALT"].str.len()).abs()
+
+    # Determine if the indel is in-frame
+    indel_maf_df["INDEL_INFRAME"] = indel_maf_df["INDEL_LENGTH"] % 3 == 0
+
+    # Apply additional conditions to INDEL_INFRAME
+    indel_maf_df.loc[indel_maf_df["INDEL_LENGTH"] >= 15, "INDEL_INFRAME"] = False
+    indel_maf_df.loc[indel_maf_df["canonical_Consequence_broader"] == 'nonsense', "INDEL_INFRAME"] = False
+    indel_maf_df.loc[indel_maf_df["canonical_Consequence_broader"] == 'essential_splice', "INDEL_INFRAME"] = False
+
+    # Update the original DataFrame with the calculated values for indels
+    df.loc[indel_positions, 'INDEL_LENGTH'] = indel_maf_df['INDEL_LENGTH']
+    df.loc[indel_positions, 'INDEL_INFRAME'] = indel_maf_df['INDEL_INFRAME']
+
+    return df
+
+
+
+
 
 
 # this is the file with the mutations produced by deepUMIcaller
@@ -347,11 +395,17 @@ samp_annotated[annotated_variants_cols] = samp_annotated[annotated_variants_cols
 # format wanted by OncodriveFML
 samp_annotated_ensembl_allelles = add_alternative_format_columns(samp_annotated)
 
+
 # Define mutation type
 # revise that you agree on the criteria
 samp_annotated_ensembl_allelles["TYPE"] = samp_annotated_ensembl_allelles[["REF", "ALT"]].apply(vartype, axis = 1)
 
-samp_annotated_ensembl_allelles.to_csv(f"{sampleid}.{level}.maf.annot.tsv.gz",
+
+# Update indels information
+full_dataframe_indels_updated = update_indel_info(samp_annotated_ensembl_allelles)
+
+
+full_dataframe_indels_updated.to_csv(f"{sampleid}.{level}.maf.annot.tsv.gz",
                                         sep = "\t",
                                         header = True,
                                         index = False)
