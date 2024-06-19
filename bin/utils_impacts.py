@@ -1,8 +1,6 @@
 GROUPING_DICT = {
 
     'transcript_ablation': 'nonsense',
-    'splice_acceptor_variant': 'nonsense',
-    'splice_donor_variant': 'nonsense',
     'stop_gained': 'nonsense',
     'frameshift_variant': 'nonsense',
     'stop_lost': 'nonsense',
@@ -104,7 +102,7 @@ CONSEQUENCES_LIST = [
     'synonymous_variant',
 
     'coding_sequence_variant',
-    
+
     'mature_miRNA_variant',
     '5_prime_UTR_variant',
     '3_prime_UTR_variant',
