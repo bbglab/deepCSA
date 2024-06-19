@@ -22,8 +22,8 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     path(datasets)
 
     output:
-    tuple val(meta), path("chimerax/attributes/**.defattr")       , emit: chimerax_defattr, optional: true
-    tuple val(meta), path("chimerax/plots/**.png")                , emit: chimerax_plot, optional: true
+    tuple val(meta), path("**.chimerax/attributes/**.defattr")       , emit: chimerax_defattr, optional: true
+    tuple val(meta), path("**.chimerax/plots/**.png")                , emit: chimerax_plot, optional: true
     tuple val(meta), path("**.log")                               , emit: log
     path "versions.yml"                                           , emit: versions
 
