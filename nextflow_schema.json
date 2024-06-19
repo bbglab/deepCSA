@@ -117,10 +117,10 @@
             }
         },
         "tool_execution_configs": {
-            "title": "Reference genome options",
+            "title": "Tool selection options",
             "type": "object",
             "fa_icon": "fas fa-dna",
-            "description": "Reference genome related files and options required for the workflow.",
+            "description": "Options to indicate which tools are run.",
             "properties": {
                 "oncodrivefml": {
                     "type": "boolean",
@@ -142,6 +142,27 @@
                     "default": true,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run oncodrive3d?"
+                },
+                "o3d_raw_vep": {
+                    "type": "boolean",
+                    "description": "Do you want to run oncodrive3d with the raw vep output as input?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run oncodrive3d with the raw vep output as input?"
+                },
+                "o3d_plot": {
+                    "type": "boolean",
+                    "description": "Do you want to plot the oncodrive3d results?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to plot the oncodrive3d results?"
+                },
+                "o3d_plot_chimerax": {
+                    "type": "boolean",
+                    "description": "Do you want to plot the structural representation of oncodrive3d results?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to plot the structural representation of oncodrive3d results?"
                 },
                 "omega": {
                     "type": "boolean",
@@ -325,6 +346,12 @@
                     "type": "string",
                     "description": "Path to folder containing the oncodrive3d datasets built.",
                     "help_text": "Path to folder containing the oncodrive3d datasets built.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "annotations3d": {
+                    "type": "string",
+                    "description": "Path to folder containing the oncodrive3d annotation built.",
+                    "help_text": "Path to folder containing the oncodrive3d annotation built.",
                     "fa_icon": "far fa-file-code"
                 },
                 "cadd_scores": {

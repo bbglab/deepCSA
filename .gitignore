@@ -9,3 +9,5 @@ testing*
 *.pyc
 nf-*-reports.tsv
 .nf*
+*.sif
+ste_notes.txt

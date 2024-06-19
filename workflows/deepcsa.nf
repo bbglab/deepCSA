@@ -31,6 +31,7 @@ features_table = params.features_table ? Channel.fromPath( params.features_table
 wgs_trinucs = params.wgs_trinuc_counts ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first() : Channel.empty()
 cosmic_ref = params.cosmic_ref_signatures ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first() : Channel.empty()
 datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() : Channel.empty()
+annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 
 
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
@@ -295,7 +296,8 @@ workflow DEEPCSA{
     if (params.oncodrive3d){
         if (params.profileall){
             // Oncodrive3D
-            ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed, datasets3d)
+            ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
+                        datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
             ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
         }
     }
