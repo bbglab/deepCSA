@@ -192,6 +192,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutationrate?"
                 },
+                "indels": {
+                    "type": "boolean",
+                    "description": "Do you want to run indels?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run indels?"
+                },
                 "mutated_epithelium": {
                     "type": "boolean",
                     "description": "Do you want to run mutated_epithelium?",
