@@ -77,15 +77,17 @@ include { OMEGA_ANALYSIS            as OMEGANONPROT         } from '../subworkfl
 include { OMEGA_ANALYSIS            as OMEGAMULTI           } from '../subworkflows/local/omega/main'
 include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkflows/local/omega/main'
 
+include { INDELS_SELECTION          as INDELSSELECTION      } from '../subworkflows/local/indels/main'
+
 include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/reads/main'
 include { MUTATED_EPITHELIUM_VAF    as MUTATEDEPITHELIUMVAF } from '../subworkflows/local/mutatedepithelium/vaf/main'
-
 
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
+
 
 // Download annotation cache if needed
 include { PREPARE_CACHE                               } from '../subworkflows/local/prepare_cache/main'
@@ -245,6 +247,13 @@ workflow DEEPCSA{
                                 )
             ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
         }
+    }
+
+
+    if (params.indels){
+        INDELSSELECTION(MUT_PREPROCESSING.out.somatic_mafs,
+                        CREATEPANELS.out.all_bed)
+        ch_versions = ch_versions.mix(INDELSSELECTION.out.versions)
     }
 
 
