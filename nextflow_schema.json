@@ -178,6 +178,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutated_epithelium?"
                 },
+                "mutated_epithelium_vaf": {
+                    "type": "boolean",
+                    "description": "Do you want to run mutated_epithelium using the VAFs?",
+                    "default": true,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run mutated_epithelium using the VAFs?"
+                },
                 "plot_depths": {
                     "type": "boolean",
                     "description": "Do you want to run plot_depths?",

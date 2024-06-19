@@ -252,12 +252,12 @@ workflow DEEPCSA{
         .join(meta_vcfs_alone.map{it -> [ ["id" : it[0].id] , it[1] ] })
         .map{it -> [ it[0] , it[1] ]  }
         .set{ sample_mutations_only }
-        sample_mutations_only.view()
-        
+
+
         MUTATEDEPITHELIUMVAF(sample_mutations_only,
                                 CREATEPANELS.out.exons_consensus_bed)
-        ch_versions = ch_versions.mix(MUTATEDEPITHELIUM.out.versions)
-        
+        ch_versions = ch_versions.mix(MUTATEDEPITHELIUMVAF.out.versions)
+
     }
 
     if (params.mutated_epithelium){

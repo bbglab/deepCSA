@@ -21,7 +21,7 @@ def cli(sample, filename):
     '''
 
     maf = load_maf(filename)
-    
+
     res = {
         'SYMBOL': [],    # gene symbol or 'all' for panel-wide
         'LOWER': [],     # lower bound proportion of mutated genomes
@@ -29,19 +29,19 @@ def cli(sample, filename):
         'UPPER': [],     # upper bound proportion of mutated genomes
         'SAMPLE': []     # sample ID
         }
-    
+
     genes = maf['SYMBOL'].unique()
     df = maf.groupby(by=['CHROM', 'POS', 'REF']).agg({'VAF': 'sum', 'VAF_lower': 'sum', 'VAF_upper': 'sum', 'SYMBOL': 'first'}).reset_index()
-    
+
     # proportion by gene
 
     for g in genes:
-    
+
         dh = df[df['SYMBOL'] == g]
         v = dh['VAF'].tolist()
         v_low = dh['VAF_lower'].tolist()
         v_high = dh['VAF_upper'].tolist()
-        
+
         res['SYMBOL'].append(g)
         res['LOWER'].append(pie(v_low) if len(v) > 0 else 0)
         res['EXPECTED'].append(pie(v) if len(v) > 0 else 0)
@@ -64,8 +64,8 @@ def cli(sample, filename):
 
     res = pd.DataFrame(res)
     res.to_csv(f"{sample}.sample.mutated_genomes_from_vaf.tsv",
-               sep="\t", 
-               header=True, 
+               sep="\t",
+               header=True,
                index=False
                )
 
@@ -73,27 +73,13 @@ def cli(sample, filename):
 def load_maf(maf_file):
     '''
     Loads MAF and applies filters
-    TODO: When ready, apply the data filters on the MAF table externally at the pipeline level.
     '''
 
-    maf_raw = pd.read_csv(maf_file, sep='\t', header=0)
-
-    maf = maf_raw[
-    (~maf_raw['FILTER'].str.contains('not_in_panel')) &
-    (~maf_raw['FILTER'].str.contains('n_rich')) &
-    (maf_raw['TYPE'].isin(['SNV'])) &  # select SNVs
-    (maf_raw['VAF'] > 0) & (maf_raw['VAF'] < 0.2)  # make sure to pick somatic mutations
-    ][['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL', 'DEPTH', 'ALT_DEPTH', 'SAMPLE_ID', 'VAF', 'Consequence_broader', 'CONTEXT_MUT']]
+    maf = pd.read_csv(maf_file, sep='\t', header=0)
 
     # Clopper-Pearson 95% CI
     maf.loc[:, 'VAF_lower'] = get_binomial_low(maf['ALT_DEPTH'].astype(float).values, maf['DEPTH'].astype(float).values)
     maf.loc[:, 'VAF_upper'] = get_binomial_high(maf['ALT_DEPTH'].astype(float).values, maf['DEPTH'].astype(float).values)
-
-    # Mutation identity
-    maf['MUTATION'] = maf.apply(lambda r: f'{r["CHROM"]}_{str(r["POS"])}_{r["REF"]}_{r["ALT"]}', axis=1)
-
-    # non-synonoymous subset
-    maf = maf[maf['Consequence_broader'] != 'synonymous']
 
     return maf
 
