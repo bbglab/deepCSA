@@ -10,7 +10,7 @@ include { SUBSET_MAF                    as SUBSET_MUTEPI                } from '
 
 include { COMPUTE_MUTATED_EPITHELIUM    as COMPUTEMUTATEDEPITHELIUM     } from '../../../../modules/local/computemutatedepithelium/main'
 
-include { SAMTOOLS_MPILEUP              as PILEUPBAMALL                 } from '../../../modules/nf-core/samtools/mpileup/main'
+include { SAMTOOLS_MPILEUP              as PILEUPBAMALL                 } from '../../../../modules/nf-core/samtools/mpileup/main'
 
 
 
@@ -33,7 +33,6 @@ workflow MUTATED_EPITHELIUM {
     ch_bamall_bai_bed = pileup_bam_bai.combine(bedfile.map{ it -> [ it[1] ]}  )
     PILEUPBAMALL(ch_bamall_bai_bed, fasta)
     ch_versions = ch_versions.mix(PILEUPBAMALL.out.versions)
-
 
     PILEUPBAMALL.out.mpileup.map{ it -> [it[0], it[1]] }
     .set{ pileup }
