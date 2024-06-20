@@ -31,6 +31,7 @@ features_table = params.features_table ? Channel.fromPath( params.features_table
 wgs_trinucs = params.wgs_trinuc_counts ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first() : Channel.empty()
 cosmic_ref = params.cosmic_ref_signatures ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first() : Channel.empty()
 datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() : Channel.empty()
+annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 
 
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
@@ -76,14 +77,17 @@ include { OMEGA_ANALYSIS            as OMEGANONPROT         } from '../subworkfl
 include { OMEGA_ANALYSIS            as OMEGAMULTI           } from '../subworkflows/local/omega/main'
 include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkflows/local/omega/main'
 
-include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/main'
+include { INDELS_SELECTION          as INDELSSELECTION      } from '../subworkflows/local/indels/main'
 
+include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/reads/main'
+include { MUTATED_EPITHELIUM_VAF    as MUTATEDEPITHELIUMVAF } from '../subworkflows/local/mutatedepithelium/vaf/main'
 
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
+
 
 // Download annotation cache if needed
 include { PREPARE_CACHE                               } from '../subworkflows/local/prepare_cache/main'
@@ -246,6 +250,26 @@ workflow DEEPCSA{
     }
 
 
+    if (params.indels){
+        INDELSSELECTION(MUT_PREPROCESSING.out.somatic_mafs,
+                        CREATEPANELS.out.all_bed)
+        ch_versions = ch_versions.mix(INDELSSELECTION.out.versions)
+    }
+
+
+    if (params.mutated_epithelium_vaf){
+        MUT_PREPROCESSING.out.somatic_mafs
+        .join(meta_vcfs_alone.map{it -> [ ["id" : it[0].id] , it[1] ] })
+        .map{it -> [ it[0] , it[1] ]  }
+        .set{ sample_mutations_only }
+
+
+        MUTATEDEPITHELIUMVAF(sample_mutations_only,
+                                CREATEPANELS.out.exons_consensus_bed)
+        ch_versions = ch_versions.mix(MUTATEDEPITHELIUMVAF.out.versions)
+
+    }
+
     if (params.mutated_epithelium){
         MUTATEDEPITHELIUM(MUT_PREPROCESSING.out.somatic_mafs,
                             CREATEPANELS.out.exons_consensus_bed,
@@ -297,7 +321,8 @@ workflow DEEPCSA{
     if (params.oncodrive3d){
         if (params.profileall){
             // Oncodrive3D
-            ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed, datasets3d)
+            ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
+                        datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
             ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
         }
     }

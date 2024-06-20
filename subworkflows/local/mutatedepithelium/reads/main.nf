@@ -1,14 +1,14 @@
-include { TABIX_BGZIPTABIX_QUERY_INDEX  as SUBSETPILEUP                 } from '../../../modules/nf-core/tabix/bgziptabixqueryindex/main'
+include { TABIX_BGZIPTABIX_QUERY_INDEX  as SUBSETPILEUP                 } from '../../../../modules/nf-core/tabix/bgziptabixqueryindex/main'
 
-include { COMPUTE_FRAGMENT_COORDS       as COMPUTEFRAGMENTSCOORDS       } from '../../../modules/local/fragments_from_bam/main'
+include { COMPUTE_FRAGMENT_COORDS       as COMPUTEFRAGMENTSCOORDS       } from '../../../../modules/local/fragments_from_bam/main'
 
-include { CREATECUSTOMBEDFILE           as READSPOSBED                  } from '../../../modules/local/createpanels/custombedfile/main'
-include { READS_PER_REGION              as READSPERREGION               } from '../../../modules/local/reads_per_region/main'
+include { CREATECUSTOMBEDFILE           as READSPOSBED                  } from '../../../../modules/local/createpanels/custombedfile/main'
+include { READS_PER_REGION              as READSPERREGION               } from '../../../../modules/local/reads_per_region/main'
 
-include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-include { SUBSET_MAF                    as SUBSET_MUTEPI                } from '../../../modules/local/subsetmaf/main'
+include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS              } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { SUBSET_MAF                    as SUBSET_MUTEPI                } from '../../../../modules/local/subsetmaf/main'
 
-include { COMPUTE_MUTATED_EPITHELIUM    as COMPUTEMUTATEDEPITHELIUM     } from '../../../modules/local/computemutatedepithelium/main'
+include { COMPUTE_MUTATED_EPITHELIUM    as COMPUTEMUTATEDEPITHELIUM     } from '../../../../modules/local/computemutatedepithelium/main'
 
 include { SAMTOOLS_MPILEUP              as PILEUPBAMALL                 } from '../../../modules/nf-core/samtools/mpileup/main'
 

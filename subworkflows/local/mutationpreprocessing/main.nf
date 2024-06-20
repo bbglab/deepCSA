@@ -69,7 +69,6 @@ workflow MUTATION_PREPROCESSING {
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
 
-
     SOMATICMUTATIONS(named_mafs)
     ch_versions = ch_versions.mix(SOMATICMUTATIONS.out.versions)
 
@@ -88,9 +87,10 @@ workflow MUTATION_PREPROCESSING {
 
 
     emit:
-    mafs            = named_mafs
-    somatic_mafs    = SOMATICMUTATIONS.out.mutations
-    bedfile_clean   = bedfile_updated
-    versions        = ch_versions
+    mafs                    = named_mafs
+    somatic_mafs            = SOMATICMUTATIONS.out.mutations
+    all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
+    bedfile_clean           = bedfile_updated
+    versions                = ch_versions
 
 }
