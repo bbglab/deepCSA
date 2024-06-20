@@ -33,7 +33,7 @@ workflow MUTATED_EPITHELIUM_VAF {
         SUBSET_MUTEPIVAFAM(SUBSETMUTATIONS.out.subset)
         ch_versions = ch_versions.mix(SUBSET_MUTEPIVAFAM.out.versions)
 
-        MUTATEDGENOMESFROMVAFAM(SUBSET_MUTEPIVAF.out.mutations)
+        MUTATEDGENOMESFROMVAFAM(SUBSET_MUTEPIVAFAM.out.mutations)
         ch_versions = ch_versions.mix(MUTATEDGENOMESFROMVAFAM.out.versions)
     }
 
