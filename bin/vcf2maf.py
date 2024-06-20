@@ -28,7 +28,7 @@ if vaf_all_molecules:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
                         'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', "numNs",
-                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM"]
+                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM", "VAF_AM"]
     print("Using also information on all molecules, duplex and non-duplex.")
 else:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
