@@ -1,3 +1,0 @@
-sample,batch,vcf,bam
-K_5_1_B_1,PROM_03,/workspace/nobackup/prominent/PROMINENT_03/results/deepUMIcaller_011223_asminusxs/filternrich/K_5_1_B_1.high.filtered.vcf,/workspace/nobackup/prominent/PROMINENT_03/results/deepUMIcaller_011223_asminusxs/sortbamduplexconshigh/K_5_1_B_1.sorted.bam
-K_6_1_B_1,PROM_03,/workspace/nobackup/prominent/PROMINENT_03/results/deepUMIcaller_011223_asminusxs/filternrich/K_6_1_B_1.high.filtered.vcf,/workspace/nobackup/prominent/PROMINENT_03/results/deepUMIcaller_011223_asminusxs/sortbamduplexconshigh/K_6_1_B_1.sorted.bam
