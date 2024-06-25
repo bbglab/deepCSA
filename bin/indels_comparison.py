@@ -35,6 +35,15 @@ def cli(sample, filename):
     indels_panel_df.columns = [f"{x}.{y}" for x, y in indels_panel_df.columns]
     indels_panel_df = indels_panel_df[['False.non_protein_affecting', 'True.non_protein_affecting',
                                             'False.protein_affecting', 'True.protein_affecting']].copy().fillna(0).astype(int).reset_index()
+
+    # Define "new gene" as the combination of all genes
+    # This could also be done for certain gene groups
+    indels_panel_df_all = pd.DataFrame(indels_panel_df[['False.non_protein_affecting', 'True.non_protein_affecting',
+                                            'False.protein_affecting', 'True.protein_affecting']].sum()).T
+    indels_panel_df_all["SYMBOL"] = 'ALL_GENES'
+    indels_panel_df = pd.concat((indels_panel_df, indels_panel_df_all), axis = 0)
+
+
     indels_panel_df["Npa_FSH/INF"] = indels_panel_df['False.non_protein_affecting'] / indels_panel_df['True.non_protein_affecting']
     indels_panel_df["pa_FSH/INF"] = indels_panel_df['False.protein_affecting'] / indels_panel_df['True.protein_affecting']
     indels_panel_df["pa/Npa"] = indels_panel_df['pa_FSH/INF'] / indels_panel_df['Npa_FSH/INF']
