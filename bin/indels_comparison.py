@@ -79,6 +79,15 @@ def cli(sample, filename):
 
 def gtest(null_vector, alt_vector):
 
+    """
+    Likelihood-ratio test comparing the proportion point estimate inferred  
+    from the frequencies of observed species (maximum-likelihood) versus 
+    the proportion inferred from a null reference.
+
+    This implementation does not require that the count in the null 
+    reference is the same as in the observed.
+    """
+
     null_prob = null_vector / null_vector.sum()
     expected = sum(alt_vector) * null_prob
 
