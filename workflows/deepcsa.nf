@@ -252,7 +252,8 @@ workflow DEEPCSA{
 
     if (params.indels){
         INDELSSELECTION(MUT_PREPROCESSING.out.somatic_mafs,
-                        CREATEPANELS.out.all_bed)
+                        CREATEPANELS.out.all_consensus_bed
+                        )
         ch_versions = ch_versions.mix(INDELSSELECTION.out.versions)
     }
 

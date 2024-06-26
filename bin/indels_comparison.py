@@ -33,30 +33,41 @@ def cli(sample, filename):
     indels_panel_df = indel_maf_df.groupby(["SYMBOL", "INDEL_INFRAME", 'Protein_affecting'], dropna = False).size().to_frame('number_mutations').reset_index()
     indels_panel_df = indels_panel_df.pivot(index='SYMBOL', columns=["INDEL_INFRAME", "Protein_affecting"], values='number_mutations')
     indels_panel_df.columns = [f"{x}.{y}" for x, y in indels_panel_df.columns]
-    indels_panel_df = indels_panel_df[['False.non_protein_affecting', 'True.non_protein_affecting',
-                                            'False.protein_affecting', 'True.protein_affecting']].copy().fillna(0).astype(int).reset_index()
+
+    # Ensure all expected columns are present
+    expected_columns = ['False.non_protein_affecting', 'True.non_protein_affecting',
+                        'False.protein_affecting', 'True.protein_affecting']
+    for col in expected_columns:
+        if col not in indels_panel_df.columns:
+            indels_panel_df[col] = 0
+
+    indels_panel_df = indels_panel_df[expected_columns].copy().fillna(0).astype(int)
+    indels_panel_df.columns = ['NOT_MULTIPLE_3.non_protein_affecting', 'MULTIPLE_3.non_protein_affecting',
+                        'TRUNCATING.protein_affecting', 'NON_TRUNCATING.protein_affecting']
+    indels_panel_df = indels_panel_df.reset_index()
+
 
     # Define "new gene" as the combination of all genes
     # This could also be done for certain gene groups
-    indels_panel_df_all = pd.DataFrame(indels_panel_df[['False.non_protein_affecting', 'True.non_protein_affecting',
-                                            'False.protein_affecting', 'True.protein_affecting']].sum()).T
+    indels_panel_df_all = pd.DataFrame(indels_panel_df[['NOT_MULTIPLE_3.non_protein_affecting', 'MULTIPLE_3.non_protein_affecting',
+                                            'NON_TRUNCATING.protein_affecting', 'TRUNCATING.protein_affecting']].sum()).T
     indels_panel_df_all["SYMBOL"] = 'ALL_GENES'
     indels_panel_df = pd.concat((indels_panel_df, indels_panel_df_all), axis = 0)
 
 
-    indels_panel_df["Npa_FSH/INF"] = indels_panel_df['False.non_protein_affecting'] / indels_panel_df['True.non_protein_affecting']
-    indels_panel_df["pa_FSH/INF"] = indels_panel_df['False.protein_affecting'] / indels_panel_df['True.protein_affecting']
-    indels_panel_df["pa/Npa"] = indels_panel_df['pa_FSH/INF'] / indels_panel_df['Npa_FSH/INF']
+    indels_panel_df["Npa_NM3/M3"] = indels_panel_df['NOT_MULTIPLE_3.non_protein_affecting'] / indels_panel_df['MULTIPLE_3.non_protein_affecting']
+    indels_panel_df["pa_TRUNC/NOTTRUNC"] = indels_panel_df['TRUNCATING.protein_affecting'] / indels_panel_df['NON_TRUNCATING.protein_affecting']
+    indels_panel_df["pa/Npa"] = indels_panel_df['pa_TRUNC/NOTTRUNC'] / indels_panel_df['Npa_NM3/M3']
 
-    indels_panel_df["Npa_FSH/INF"] = indels_panel_df["Npa_FSH/INF"].fillna(-1)
-    indels_panel_df["pa_FSH/INF"] = indels_panel_df["pa_FSH/INF"].fillna(-1)
+    indels_panel_df["Npa_NM3/M3"] = indels_panel_df["Npa_NM3/M3"].fillna(-1)
+    indels_panel_df["pa_TRUNC/NOTTRUNC"] = indels_panel_df["pa_TRUNC/NOTTRUNC"].fillna(-1)
 
     # if there is anything missing fill the ratio with 1
     indels_panel_df["pa/Npa"] = indels_panel_df["pa/Npa"].fillna(1)
 
 
-    indels_panel_df[["g_test_score", "pvalue"]] = [gtest(np.array([w, x]), np.array([y, z])) for w, x, y, z in indels_panel_df[['True.non_protein_affecting', 'False.non_protein_affecting',
-                                                            'True.protein_affecting', 'False.protein_affecting']].values]
+    indels_panel_df[["g_test_score", "pvalue"]] = [gtest(np.array([w, x]), np.array([y, z])) for w, x, y, z in indels_panel_df[['MULTIPLE_3.non_protein_affecting', 'NOT_MULTIPLE_3.non_protein_affecting',
+                                            'NON_TRUNCATING.protein_affecting', 'TRUNCATING.protein_affecting']].values]
 
     indels_panel_df.to_csv(f"{sample}.sample.indels.tsv",
                             sep="\t",
