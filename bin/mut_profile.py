@@ -133,6 +133,18 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     # normalize
     mut_probability = mut_probability / mut_probability.sum()
 
+    # if there is any channel with 0 probability we need to add a pseudocount
+    if not all(mut_probability[sample_name].values > 0):
+        # find the minimum value greater than 0
+        min_value_non_zero = mut_probability[mut_probability > 0].min()
+        # print(min_value_non_zero)
+
+        # add a dynamic pseudocount of one third of the minimum number greater than 0
+        mut_probability = mut_probability + (min_value_non_zero / 3)
+
+    mut_probability = mut_probability / mut_probability.sum()
+
+
     # reindex to ensure the right order
     mut_probability = mut_probability.reindex(contexts_formatted)
     mut_probability.index.name = "CONTEXT_MUT"
