@@ -27,13 +27,13 @@ print(vaf_all_molecules)
 if vaf_all_molecules:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', "numNs",
+                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs",
                         'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM", "VAF_AM"]
     print("Using also information on all molecules, duplex and non-duplex.")
 else:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', "numNs"]
+                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs"]
     print("Not using information on non-duplex molecules.")
 
 
@@ -147,6 +147,9 @@ def read_from_vardict_VCF_all(sample,
 
     # assign the total depth to the DEPTH column
     dat_full["vd_DEPTH"] = total_depth_max2
+
+    # compute VAF from VarDict counts
+    dat_full["vd_VAF"] = dat_full["vd_ALT_DEPTH"] / dat_full["vd_DEPTH"]
 
 
 
