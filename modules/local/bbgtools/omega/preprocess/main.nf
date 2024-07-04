@@ -30,14 +30,13 @@ process OMEGA_PREPROCESS {
                         --depths-file ${depths} \\
                         --mutations-file ${mutations} \\
                         --input-vep-postprocessed-file ${annotated_panel} \\
-                        --mutabilities-table mutability_per_sample_gene_context.${prefix}.tsv \\
                         --table-observed-muts mutations_per_sample_gene_impact_context.${prefix}.tsv \\
+                        --mutabilities-table mutability_per_sample_gene_context.${prefix}.tsv \\
+                        --synonymous-muts-table syn_muts.${prefix}.tsv \\
                         --mutational-profile ${mutation_profile} \\
                         --single-sample ${sample_name} \\
-                        --syn-muts-table syn_muts.${prefix}.tsv \\
                         ${global_loc}
     # $args -c $task.cpus
-
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         omega: 1.0
