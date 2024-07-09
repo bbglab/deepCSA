@@ -1,6 +1,8 @@
 process FILTER_BATCH {
     tag "$meta.id"
-    label 'process_high'
+
+    label 'process_high_memory'
+    label 'time_low'
 
     conda "pandas:1.5.2"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

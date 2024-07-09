@@ -1,6 +1,9 @@
 process OMEGA_PREPROCESS {
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_single_fixed'
+    label 'time_low'
+    label 'process_high_memory'
+
 
     container 'docker.io/ferriolcalvet/omega:latest'
 

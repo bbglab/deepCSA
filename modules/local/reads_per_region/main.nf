@@ -1,14 +1,11 @@
 process READS_PER_REGION {
-    // TODO revise the impact of this
-    scratch true
 
     tag "$meta.id"
-    label 'process_high'
+    label 'process_high_memory'
+    label 'time_low'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
+
+    // TODO revise if we want a custom container
     container 'docker.io/ferriolcalvet/oncodrivefml:latest'
 
     input:

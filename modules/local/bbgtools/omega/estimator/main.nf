@@ -1,13 +1,10 @@
 process OMEGA_ESTIMATOR {
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_single_fixed'
+    label 'time_low'
+    label 'process_high_memory'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
 
-    // TODO create a container for omega, for both the preprocessing and the estimation
     container 'docker.io/ferriolcalvet/omega:latest'
 
     input:

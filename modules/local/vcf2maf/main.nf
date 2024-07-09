@@ -1,11 +1,10 @@
 process VCF2MAF {
     tag "$meta.id"
-    label 'process_high'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
+    label 'cpu_low'
+    label 'process_high_memory'
+
+
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:

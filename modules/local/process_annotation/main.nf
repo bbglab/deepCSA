@@ -2,7 +2,7 @@ process POSTPROCESS_VEP_ANNOTATION {
 
     tag "${meta.id}"
 
-    label 'cpu_single'
+    label 'cpu_low'
     label 'time_low'
     label 'process_high_memory'
 

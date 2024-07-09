@@ -6,12 +6,11 @@ process MERGE_BATCH {
     // Look at the low mappability or low complexity filtering of the deepUMIcaller pipeline
 
     tag "$meta.id"
-    label 'process_high'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
+    label 'process_high_memory'
+    label 'time_low'
+
+
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
