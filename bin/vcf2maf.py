@@ -28,7 +28,9 @@ if vaf_all_molecules:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
                         'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs",
-                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM", "VAF_AM"]
+                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM", "VAF_AM",
+                        "VAF_distorted", "VAF_distorted_reduced", "VAF_distorted_expanded"
+                        ]
     print("Using also information on all molecules, duplex and non-duplex.")
 else:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
@@ -192,6 +194,19 @@ def read_from_vardict_VCF_all(sample,
 
         # compute VAF
         dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
+
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_AM"] / dat_full["VAF"] > 3
+        dat_full["VAF_distorted_reduced"] = dat_full["VAF"] / dat_full["VAF_AM"] > 3
+
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
+        dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
+
+        dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
+
+    else:
+        dat_full["VAF_distorted"] = False
+        dat_full["VAF_distorted_reduced"] = False
+        dat_full["VAF_distorted_expanded"] = False
 
 
     # subset dataframe to the columns of interest

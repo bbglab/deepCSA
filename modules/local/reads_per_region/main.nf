@@ -1,6 +1,7 @@
 process READS_PER_REGION {
 
     tag "$meta.id"
+    label 'cpu_high'
     label 'process_high_memory'
     label 'time_low'
 

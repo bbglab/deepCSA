@@ -339,7 +339,8 @@ workflow DEEPCSA{
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
-                    params.omega_globalloc
+                    params.omega_globalloc,
+                    params.omega_vaf_distorsioned
                     )
             ch_versions = ch_versions.mix(OMEGA.out.versions)
 
@@ -349,7 +350,8 @@ workflow DEEPCSA{
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
-                        params.omega_globalloc
+                        params.omega_globalloc,
+                        params.omega_vaf_distorsioned
                         )
             ch_versions = ch_versions.mix(OMEGAMULTI.out.versions)
         }
@@ -359,7 +361,8 @@ workflow DEEPCSA{
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
-                            params.omega_globalloc
+                            params.omega_globalloc,
+                            params.omega_vaf_distorsioned
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -368,7 +371,8 @@ workflow DEEPCSA{
                                 MUTPROFILENONPROT.out.profile,
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
-                                params.omega_globalloc
+                                params.omega_globalloc,
+                                params.omega_vaf_distorsioned
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }
