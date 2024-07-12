@@ -178,6 +178,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run omega with the globalloc mode?"
                 },
+                "omega_vaf_distorsioned": {
+                    "type": "boolean",
+                    "description": "Do you want to run omega with the different VAF distorsioned gropus?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run omega with the different VAF distorsioned gropus?"
+                },
                 "signatures": {
                     "type": "boolean",
                     "description": "Do you want to run signatures?",
@@ -280,6 +287,13 @@
                     "default": false,
                     "fa_icon": "fas fa-question-circle",
                     "help_text": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules."
+                },
+                "pileup_all_duplex": {
+                    "type": "boolean",
+                    "description": "Whether the BAM provided for the pileup is the mediumhigh quality BAM file or the whole duplex BAM.",
+                    "default": false,
+                    "fa_icon": "fas fa-question-circle",
+                    "help_text": "Whether the BAM provided for the pileup is the mediumhigh quality BAM file or the whole duplex BAM."
                 },
                 "panel_with_canonical": {
                     "type": "string",
