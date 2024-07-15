@@ -84,6 +84,45 @@ else:
 
 
 
+#######
+###  Filter cohort_n_rich
+#######
+
+max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
+
+if max_samples < 2:
+    print("Not enough samples to identify cohort_n_rich mutations!")
+
+else:
+
+    # work with already filtered df + somatic only to explore potential artifacts
+    # take only variant and sample info from the df
+    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "FILTER"]].reset_index(drop = True)
+
+    n_rich_vars_df = maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")].groupby("MUT_ID").size()
+    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df >= 2].index)
+
+    maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
+
+    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich"], "cohort_n_rich"),
+                                                                        axis = 1
+                                                                    )
+    maf_df = maf_df.drop("cohort_n_rich", axis = 1)
+
+
+
+    # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
+    n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df > 0].index)
+
+    maf_df["cohort_n_rich_uni"] = maf_df["MUT_ID"].isin(n_rich_vars_uni)
+
+    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich_uni"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich_uni"], "cohort_n_rich_uni"),
+                                                                        axis = 1
+                                                                    )
+    maf_df = maf_df.drop("cohort_n_rich_uni", axis = 1)
+
+
+
 
 
 

@@ -264,15 +264,18 @@ workflow DEEPCSA{
         .map{it -> [ it[0] , it[1] ]  }
         .set{ sample_mutations_only }
 
-
         MUTATEDEPITHELIUMVAF(sample_mutations_only,
                                 CREATEPANELS.out.exons_consensus_bed)
         ch_versions = ch_versions.mix(MUTATEDEPITHELIUMVAF.out.versions)
-
     }
 
     if (params.mutated_epithelium){
-        MUTATEDEPITHELIUM(MUT_PREPROCESSING.out.somatic_mafs,
+        MUT_PREPROCESSING.out.somatic_mafs
+        .join(meta_vcfs_alone.map{it -> [ ["id" : it[0].id] , it[1] ] })
+        .map{it -> [ it[0] , it[1] ]  }
+        .set{ sample_mutations_only }
+
+        MUTATEDEPITHELIUM(sample_mutations_only,
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
                             meta_pileupbamindex_alone,
