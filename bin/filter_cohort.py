@@ -155,7 +155,7 @@ maf_df = maf_df.drop("other_sample_SNP", axis = 1)
 
 
 for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
-    maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].str.contains(filt)
+    maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))
 
 
 maf_df.to_csv(f"{samp_name}.cohort.filtered.tsv.gz",
