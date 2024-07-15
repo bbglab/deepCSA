@@ -50,8 +50,9 @@ include { INPUT_CHECK                                       } from '../subworkfl
 include { DEPTH_ANALYSIS            as DEPTHANALYSIS        } from '../subworkflows/local/depthanalysis/main'
 include { CREATE_PANELS             as CREATEPANELS         } from '../subworkflows/local/createpanels/main'
 
-include { PLOT_DEPTHS               as PLOTDEPTHS           } from '../subworkflows/local/plotdepths/main'
+include { PLOT_DEPTHS               as PLOTDEPTHSALLCONS    } from '../subworkflows/local/plotdepths/main'
 include { PLOT_DEPTHS               as PLOTDEPTHSEXONS      } from '../subworkflows/local/plotdepths/main'
+include { PLOT_DEPTHS               as PLOTDEPTHSEXONSCONS  } from '../subworkflows/local/plotdepths/main'
 
 include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkflows/local/mutationpreprocessing/main'
 
@@ -179,8 +180,9 @@ workflow DEEPCSA{
 
 
     if (params.plot_depths){
-        PLOTDEPTHS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
+        PLOTDEPTHSALLCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
         PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
+        PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
     }
 
     // Mutation preprocessing
@@ -211,7 +213,7 @@ workflow DEEPCSA{
 
     // Mutational profile
     if (params.profileall){
-        MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_bed, wgs_trinucs)
+        MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
         ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
     }
     if (params.profilenonprot){

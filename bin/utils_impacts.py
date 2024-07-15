@@ -16,8 +16,8 @@ GROUPING_DICT = {
 
 
     'splice_region_variant': 'splice_region_variant',
-    'splice_donor_region_variant': 'splice_donor_region_variant',
-    'splice_polypyrimidine_tract_variant': 'splice_polypyrimidine_tract_variant',
+    'splice_donor_region_variant': 'splice_region_variant',
+    'splice_polypyrimidine_tract_variant': 'splice_region_variant',
 
     'synonymous_variant': 'synonymous',
     'incomplete_terminal_codon_variant': 'synonymous',
@@ -38,7 +38,7 @@ GROUPING_DICT = {
     'intron_variant': 'intron_variant',
 
     'non_coding_transcript_variant' : 'non_coding_transcript_variant',
-    'mature_miRNA_variant': 'non_coding_transcript_variant', # TODO fix this
+    'mature_miRNA_variant': 'non_coding_transcript_variant',
 
     'upstream_gene_variant': 'non_genic_variant',
     'downstream_gene_variant': 'non_genic_variant',
@@ -60,7 +60,7 @@ PROTEIN_AFFECTING_DICT = {
     'nonsense' : 'protein_affecting',
     'missense' : 'protein_affecting',
     'essential_splice' : 'protein_affecting',
-    'splice_region' : 'ambiguous',
+
     'synonymous' : 'non_protein_affecting',
 
     'protein_altering_variant' : 'protein_affecting',

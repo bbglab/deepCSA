@@ -12,7 +12,7 @@ panel_impact_dict = {
                             "essential_splice",
                             "protein_altering_variant",     # probably not appear
                             "transcript_amplification",     # probably not appear
-                            "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
+                            # "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
                             # "splice_region_variant",
                             # "splice_donor_region_variant",
                             # "splice_polypyrimidine_tract_variant",

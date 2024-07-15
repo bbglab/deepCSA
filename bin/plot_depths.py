@@ -3,32 +3,26 @@
 
 # import click
 import sys
-import json
+# import os
+# import json
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-import pandas as pd
-import seaborn as sns
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-import os
-from copy import deepcopy
+# from copy import deepcopy
+
+# import math
+# from matplotlib.patches import Circle
+# from matplotlib.collections import PatchCollection
+# import matplotlib.patches as Patch, mpatches
 
 
-import math
-import numpy as np
-from matplotlib.patches import Circle
-from matplotlib.collections import PatchCollection
-import matplotlib.patches as mpatches
-
-
-import re
-import glob
-import itertools
+# import re
+# import glob
+# import itertools
 
 
 sample_name  = sys.argv[1]
@@ -89,7 +83,7 @@ bed6_probes_df.columns = ["CHROM", "START", "END", "GENE", "EXON"]
 bed6_probes_df["CHROM"] = 'chr' + bed6_probes_df["CHROM"].astype(str)
 
 # store bed6_probes_df
-bed6_probes_df.to_csv("bed6_probes_df.tsv", sep = '\t', header = True, index = False)
+bed6_probes_df.to_csv(f"{sample_name}.bed6_probes_df.tsv", sep = '\t', header = True, index = False)
 
 
 
@@ -117,7 +111,7 @@ unique_pos_df["fake_pos"] = unique_pos_df["POS"].replace(pos_to_fake_pos)
 
 # fake position means that all positions in the dataframe will be right one
 # after the other according to the fake_pos columns
-unique_pos_df.to_csv("positions_covered.with_fake_pos.tsv", sep = '\t', header = True, index = False)
+unique_pos_df.to_csv(f"{sample_name}.positions_covered.with_fake_pos.tsv", sep = '\t', header = True, index = False)
 del unique_pos_df
 
 
@@ -150,7 +144,7 @@ bed6_probes_df = bed6_probes_df.dropna().reset_index(drop = True)
 # this EXON_DEPTH is not fully correct since we are doing the mean of exons which might not all have the same length
 bed6_probesByGene_df = bed6_probes_df.groupby(["GENE", "SAMPLE_ID"])["EXON_DEPTH"].mean().reset_index()
 
-bed6_probesByGene_df.to_csv("depth_per_gene_per_sample.tsv", sep = '\t', header = True, index = False)
+bed6_probesByGene_df.to_csv(f"{sample_name}.depth_per_gene_per_sample.tsv", sep = '\t', header = True, index = False)
 
 
 
@@ -439,17 +433,17 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
 
 
     ## read again the uniq_pos_df
-    unique_pos_df = pd.read_csv("positions_covered.with_fake_pos.tsv", sep = '\t', header = 0)
+    unique_pos_df = pd.read_csv(f"{sample_name}.positions_covered.with_fake_pos.tsv", sep = '\t', header = 0)
 
     depth_df_melted =  pd.melt(depth_df, id_vars=["CHROM", "POS"], value_vars=samples_list,
                                                 var_name='SAMPLE_ID', value_name='READS')
     depth_df_exonlab = depth_df_melted.merge(unique_pos_df, on = ["CHROM", "POS"]).drop("POS", axis = 'columns')
     depth_df_exonlab.columns = ["CHROM", "SAMPLE_ID", "READS", "EXON", "fake_pos"]
-    depth_df_exonlab.to_csv("depth_df_exonlab.tsv", sep = '\t', header = True, index = False)
+    depth_df_exonlab.to_csv(f"{sample_name}.depth_df_exonlab.tsv", sep = '\t', header = True, index = False)
 
 
     depth_df_exonlab_exondepth = depth_df_exonlab.merge(bed6_probes_df, on = ["SAMPLE_ID", "EXON", "CHROM"]).drop("CHROM", axis = 'columns')
-    depth_df_exonlab_exondepth.to_csv("depth_df_exonlab_exondepth.tsv", sep = '\t', header = True, index = False)
+    depth_df_exonlab_exondepth.to_csv(f"{sample_name}.depth_df_exonlab_exondepth.tsv", sep = '\t', header = True, index = False)
 
 
 
@@ -457,13 +451,15 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     depth_df_exonlab_exondepth_genedepth = depth_df_exonlab_exondepth.merge(bed6_probesByGene_df, on = ["GENE", "SAMPLE_ID"])
     print(depth_df_exonlab_exondepth_genedepth.shape)
     print(depth_df_exonlab_exondepth_genedepth.head())
-    depth_df_exonlab_exondepth_genedepth.to_csv("depth_df_exonlab_exondepth_genedepth.tsv", sep = '\t', header = True, index = False)
+    depth_df_exonlab_exondepth_genedepth.to_csv(f"{sample_name}.depth_df_exonlab_exondepth_genedepth.tsv",
+                                                        sep = '\t', header = True, index = False)
 
 
     depth_df_exonlab_exondepth_genedepth_sample_depth = depth_df_exonlab_exondepth_genedepth.merge(avgdepth_per_sample_names, on = 'SAMPLE_ID')
     print(depth_df_exonlab_exondepth_genedepth_sample_depth.shape)
     print(depth_df_exonlab_exondepth_genedepth_sample_depth.head())
-    depth_df_exonlab_exondepth_genedepth_sample_depth.to_csv("depth_df_exonlab_exondepth_genedepth_sample_depth.tsv", sep = '\t', header = True, index = False)
+    depth_df_exonlab_exondepth_genedepth_sample_depth.to_csv(f"{sample_name}.depth_df_exonlab_exondepth_genedepth_sample_depth.tsv",
+                                                                sep = '\t', header = True, index = False)
     # depth_df_exonlab_exondepth_genedepth_sample_depth
 
     depth_df_exonlab_exondepth_genedepth_sample_depth = depth_df_exonlab_exondepth_genedepth_sample_depth[ (depth_df_exonlab_exondepth_genedepth_sample_depth["EXON_DEPTH"] > 0)
@@ -479,7 +475,8 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     depth_df_exonlab_exondepth_genedepth_sample_depth["cov_norm_sample_depth"] = depth_df_exonlab_exondepth_genedepth_sample_depth["READS"] \
                                                                                     / depth_df_exonlab_exondepth_genedepth_sample_depth["avg_depth_sample"]
 
-    depth_df_exonlab_exondepth_genedepth_sample_depth.to_csv("depth_df_exonlab_exondepth_genedepth_sample_depth_averages.tsv", sep = '\t', header = True, index = False)
+    depth_df_exonlab_exondepth_genedepth_sample_depth.to_csv(f"{sample_name}.depth_df_exonlab_exondepth_genedepth_sample_depth_averages.tsv",
+                                                                sep = '\t', header = True, index = False)
 
     print(depth_df_exonlab_exondepth_genedepth_sample_depth.head())
 
