@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/bbg/deepcsa/master/nextflow_schema.json",
+    "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/dev/nextflow_schema.json",
     "title": "bbg/deepcsa pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
@@ -45,6 +45,7 @@
                 }
             }
         },
+
         "bed_files_options": {
             "title": "BED file options",
             "type": "object",
@@ -67,6 +68,7 @@
                 }
             }
         },
+
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
@@ -85,6 +87,7 @@
                 }
             }
         },
+
         "grouping_configs": {
             "title": "Sample grouping configurations",
             "type": "object",
@@ -116,6 +119,7 @@
                 }
             }
         },
+
         "tool_execution_configs": {
             "title": "Tool selection options",
             "type": "object",
@@ -266,7 +270,6 @@
                 }
             }
         },
-
 
         "filtering_parameters": {
             "title": "Profile computation options",
@@ -451,6 +454,7 @@
                 }
             }
         },
+
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -472,6 +476,7 @@
                 }
             }
         },
+
         "max_job_request_options": {
             "title": "Max job request options",
             "type": "object",
@@ -507,6 +512,7 @@
                 }
             }
         },
+
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -631,7 +637,34 @@
             "$ref": "#/definitions/input_output_options"
         },
         {
+            "$ref": "#/definitions/bed_files_options"
+        },
+        {
             "$ref": "#/definitions/reference_genome_options"
+        },
+        {
+            "$ref": "#/definitions/grouping_configs"
+        },
+        {
+            "$ref": "#/definitions/tool_execution_configs"
+        },
+        {
+            "$ref": "#/definitions/generic_options"
+        },
+        {
+            "$ref": "#/definitions/profile_computation_config"
+        },
+        {
+            "$ref": "#/definitions/filtering_parameters"
+        },
+        {
+            "$ref": "#/definitions/reference_datasets"
+        },
+        {
+            "$ref": "#/definitions/max_multiqc_email_size"
+        },
+        {
+            "$ref": "#/definitions/ensembl_vep_options"
         },
         {
             "$ref": "#/definitions/institutional_config_options"
