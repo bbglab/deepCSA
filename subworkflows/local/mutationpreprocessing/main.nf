@@ -10,6 +10,7 @@ include { FILTER_BATCH              as FILTERBATCH      } from '../../../modules
 include { WRITE_MAFS                as WRITEMAF         } from '../../../modules/local/writemaf/main'
 include { SUBSET_MAF                as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
 include { PLOT_MUTATIONS            as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
+include { PLOT_NEEDLES              as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -20,6 +21,7 @@ workflow MUTATION_PREPROCESSING {
     vep_extra_files
     bedfile
     groups
+    sequence_information_df
 
     main:
 
@@ -71,6 +73,10 @@ workflow MUTATION_PREPROCESSING {
 
     SOMATICMUTATIONS(named_mafs)
     ch_versions = ch_versions.mix(SOMATICMUTATIONS.out.versions)
+
+    PLOTNEEDLES(SOMATICMUTATIONS.out.mutations, sequence_information_df)
+    ch_versions = ch_versions.mix(PLOTNEEDLES.out.versions)
+
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP

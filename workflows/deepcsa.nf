@@ -32,6 +32,7 @@ wgs_trinucs = params.wgs_trinuc_counts ? Channel.fromPath( params.wgs_trinuc_cou
 cosmic_ref = params.cosmic_ref_signatures ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first() : Channel.empty()
 datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() : Channel.empty()
 annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
+seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
 
 
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
@@ -186,7 +187,8 @@ workflow DEEPCSA{
     }
 
     // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed, TABLE2GROUP.out.json_allgroups)
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
+                        TABLE2GROUP.out.json_allgroups, seqinfo_df)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
 
 
