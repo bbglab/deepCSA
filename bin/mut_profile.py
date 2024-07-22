@@ -3,17 +3,15 @@
 
 import sys
 import click
-import json
 import pandas as pd
 import numpy as np
 
 from utils import contexts_formatted, contexts_formatted_sigprofiler
-from utils import filter_maf
 from utils_plot import plot_profile
 
 
-def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method = 'unique', pseudocount = 0,
-                            sigprofiler = False, per_sample = False):
+def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method, pseudocount,
+                            sigprofiler, per_sample):
     """
     Compute mutational profile from the input data
           ***Remember to add some pseudocounts to the computation***
@@ -247,7 +245,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 @click.option('--mut_file', type=click.Path(exists=True), help='Input mutation file')
 @click.option('--out_matrix', type=click.Path(), help='Output mutation matrix file')
 @click.option('--method', type=click.Choice(['unique', 'multiple']), default='unique')
-@click.option('--pseud', type=float, default=0.5)
+@click.option('--pseud', type=float, default=0)
 @click.option('--per_sample', is_flag=True, help='Create a column for each sample in the input')
 
 @click.option('--mutation_matrix', type=click.Path(exists=True), help='Mutation matrix file (for profile mode)')
@@ -262,8 +260,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 
 def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, per_sample, mutation_matrix,
             trinucleotide_counts, out_profile, plot, wgs, wgs_trinucleotide_counts):
-    # TODO
-    # add additional mode to normalize mutation counts for the genomic trinucleotide level
+
     if mode == 'matrix':
         click.echo(f"Running in matrix mode...")
         click.echo(f"Using the method: {method}")
