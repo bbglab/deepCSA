@@ -45,7 +45,6 @@
                 }
             }
         },
-
         "bed_files_options": {
             "title": "BED file options",
             "type": "object",
@@ -68,7 +67,6 @@
                 }
             }
         },
-
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
@@ -87,7 +85,6 @@
                 }
             }
         },
-
         "grouping_configs": {
             "title": "Sample grouping configurations",
             "type": "object",
@@ -119,7 +116,6 @@
                 }
             }
         },
-
         "tool_execution_configs": {
             "title": "Tool selection options",
             "type": "object",
@@ -233,7 +229,6 @@
                 }
             }
         },
-
         "profile_computation_config": {
             "title": "Profile computation options",
             "type": "object",
@@ -270,7 +265,6 @@
                 }
             }
         },
-
         "filtering_parameters": {
             "title": "Profile computation options",
             "type": "object",
@@ -342,7 +336,6 @@
                 }
             }
         },
-
         "reference_datasets": {
             "title": "Reference datasets options",
             "type": "object",
@@ -391,10 +384,8 @@
                     "help_text": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
                     "fa_icon": "far fa-file-code"
                 }
-
             }
         },
-
         "max_multiqc_email_size": {
             "type": "string",
             "description": "File size limit when attaching MultiQC reports to summary emails.",
@@ -403,7 +394,6 @@
             "fa_icon": "fas fa-file-upload",
             "hidden": true
         },
-
         "ensembl_vep_options": {
             "title": "Ensembl VEP options",
             "type": "object",
@@ -454,7 +444,6 @@
                 }
             }
         },
-
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -476,7 +465,6 @@
                 }
             }
         },
-
         "max_job_request_options": {
             "title": "Max job request options",
             "type": "object",
@@ -512,7 +500,6 @@
                 }
             }
         },
-
         "generic_options": {
             "title": "Generic options",
             "type": "object",
