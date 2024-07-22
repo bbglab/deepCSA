@@ -42,8 +42,8 @@ def filter_maf(maf_df, filter_criteria):
         'gt': lambda x, y: x > y,
         'ge': lambda x, y: x >= y,
         'not': lambda x, y: x != y,
-        'notcontains': lambda x, y: ~x.str.contains(y), # (~maf_df["FILTER"].str.contains("not_in_panel"))
-        'contains': lambda x, y: x.str.contains(y)
+        'notcontains': lambda x, y: x.apply(lambda z : y not in z.split(";")), # (~maf_df["FILTER"].str.contains("not_in_panel"))
+        'contains': lambda x, y: x.apply(lambda z : y in z.split(";"))
     }
 
     # Apply filters based on criteria from the JSON file
