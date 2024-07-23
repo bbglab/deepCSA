@@ -39,14 +39,8 @@ WorkflowMain.initialise(workflow, params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { DEEPCSA } from './workflows/deepcsa'
+include { DEEPCSA  as BBG_DEEPCSA} from './workflows/deepcsa'
 
-//
-// WORKFLOW: Run main bbg/deepcsa analysis pipeline
-//
-workflow BBG_DEEPCSA {
-    DEEPCSA ()
-}
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,8 +49,7 @@ workflow BBG_DEEPCSA {
 */
 
 //
-// WORKFLOW: Execute a single named workflow for the pipeline
-// See: https://github.com/nf-core/rnaseq/issues/619
+// WORKFLOW: Run main bbg/deepcsa analysis pipeline
 //
 workflow {
     BBG_DEEPCSA ()
