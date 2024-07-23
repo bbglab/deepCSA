@@ -4,14 +4,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { validateParameters; paramsHelp; paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
 
-def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
-def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
 def summary_params = paramsSummaryMap(workflow)
 
-// Print parameter summary log to screen
-log.info logo + paramsSummaryLog(workflow) + citation
+// def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
+// def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
+
+// // Print parameter summary log to screen
+// log.info logo + paramsSummaryLog(workflow) + citation
 
 WorkflowDeepcsa.initialise(params, log)
 

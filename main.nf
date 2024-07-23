@@ -15,7 +15,7 @@ nextflow.enable.dsl = 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { validateParameters; paramsHelp } from 'plugin/nf-validation'
+include { validateParameters; paramsHelp; paramsSummaryLog } from 'plugin/nf-schema'
 
 // Print help message if needed
 if (params.help) {
@@ -30,6 +30,9 @@ if (params.help) {
 if (params.validate_params) {
     validateParameters()
 }
+
+// Print summary of supplied parameters
+log.info paramsSummaryLog(workflow)
 
 WorkflowMain.initialise(workflow, params, log)
 
