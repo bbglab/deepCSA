@@ -23,7 +23,8 @@ if (params.help) {
     def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
     def String command = "nextflow run ${workflow.manifest.name} --input samplesheet.csv --genome GRCh37 -profile docker"
     log.info logo + paramsHelp(command) + citation + NfcoreTemplate.dashedLine(params.monochrome_logs)
-    System.exit(0)
+    // log.info paramsHelp("nextflow run my_pipeline --input input_file.csv")
+    exit 0
 }
 
 // Validate input parameters

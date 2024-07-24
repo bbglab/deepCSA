@@ -1,10 +1,10 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/dev/nextflow_schema.json",
     "title": "bbg/deepcsa pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
-    "definitions": {
+    "defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
@@ -125,35 +125,35 @@
                 "oncodrivefml": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrivefml?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run oncodrivefml?"
                 },
                 "oncodriveclustl": {
                     "type": "boolean",
                     "description": "Do you want to run oncodriveclustl?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run oncodriveclustl?"
                 },
                 "oncodrive3d": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrive3d?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run oncodrive3d?"
                 },
                 "o3d_raw_vep": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrive3d with the raw vep output as input?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run oncodrive3d with the raw vep output as input?"
                 },
                 "o3d_plot": {
                     "type": "boolean",
                     "description": "Do you want to plot the oncodrive3d results?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to plot the oncodrive3d results?"
                 },
@@ -167,14 +167,14 @@
                 "omega": {
                     "type": "boolean",
                     "description": "Do you want to run omega?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run omega?"
                 },
                 "omega_globalloc": {
                     "type": "boolean",
                     "description": "Do you want to run omega with the globalloc mode?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run omega with the globalloc mode?"
                 },
@@ -188,42 +188,42 @@
                 "signatures": {
                     "type": "boolean",
                     "description": "Do you want to run signatures?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run signatures?"
                 },
                 "mutationrate": {
                     "type": "boolean",
                     "description": "Do you want to run mutationrate?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutationrate?"
                 },
                 "indels": {
                     "type": "boolean",
                     "description": "Do you want to run indels?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run indels?"
                 },
                 "mutated_epithelium": {
                     "type": "boolean",
                     "description": "Do you want to run mutated_epithelium?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutated_epithelium?"
                 },
                 "mutated_epithelium_vaf": {
                     "type": "boolean",
                     "description": "Do you want to run mutated_epithelium using the VAFs?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutated_epithelium using the VAFs?"
                 },
                 "plot_depths": {
                     "type": "boolean",
                     "description": "Do you want to run plot_depths?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run plot_depths?"
                 }
@@ -238,7 +238,7 @@
                 "profileall": {
                     "type": "boolean",
                     "description": "Do you want to run the profile for all mutations?",
-                    "default": true,
+                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run the profile for all mutations?"
                 },
@@ -385,14 +385,6 @@
                     "fa_icon": "far fa-file-code"
                 }
             }
-        },
-        "max_multiqc_email_size": {
-            "type": "string",
-            "description": "File size limit when attaching MultiQC reports to summary emails.",
-            "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-            "default": "25.MB",
-            "fa_icon": "fas fa-file-upload",
-            "hidden": true
         },
         "ensembl_vep_options": {
             "title": "Ensembl VEP options",
@@ -621,46 +613,43 @@
     },
     "allOf": [
         {
-            "$ref": "#/definitions/input_output_options"
+            "$ref": "#/defs/input_output_options"
         },
         {
-            "$ref": "#/definitions/bed_files_options"
+            "$ref": "#/defs/bed_files_options"
         },
         {
-            "$ref": "#/definitions/reference_genome_options"
+            "$ref": "#/defs/reference_genome_options"
         },
         {
-            "$ref": "#/definitions/grouping_configs"
+            "$ref": "#/defs/grouping_configs"
         },
         {
-            "$ref": "#/definitions/tool_execution_configs"
+            "$ref": "#/defs/tool_execution_configs"
         },
         {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/defs/generic_options"
         },
         {
-            "$ref": "#/definitions/profile_computation_config"
+            "$ref": "#/defs/profile_computation_config"
         },
         {
-            "$ref": "#/definitions/filtering_parameters"
+            "$ref": "#/defs/filtering_parameters"
         },
         {
-            "$ref": "#/definitions/reference_datasets"
+            "$ref": "#/defs/reference_datasets"
         },
         {
-            "$ref": "#/definitions/max_multiqc_email_size"
+            "$ref": "#/defs/ensembl_vep_options"
         },
         {
-            "$ref": "#/definitions/ensembl_vep_options"
+            "$ref": "#/defs/institutional_config_options"
         },
         {
-            "$ref": "#/definitions/institutional_config_options"
+            "$ref": "#/defs/max_job_request_options"
         },
         {
-            "$ref": "#/definitions/max_job_request_options"
-        },
-        {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/defs/generic_options"
         }
     ]
 }
