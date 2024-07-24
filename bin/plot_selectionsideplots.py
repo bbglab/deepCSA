@@ -1,126 +1,17 @@
-#!/usr/local/bin/python
+#!/opt/conda/bin/python
 
 
 import sys, os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-def plot_single_needle(gene, snvs_maf_obs,
-                        seq_info_df,
-                        sample = ''
-                        ):
-
-    snvs_maf_obs_gene = snvs_maf_obs[(snvs_maf_obs["canonical_SYMBOL"] == gene)
-                                        & (snvs_maf_obs["TYPE"] == "SNV")]
-
-    # Subset gene
-    seq_info_df_gene = seq_info_df[seq_info_df["Gene"] == gene]
-    gene_len = len(seq_info_df_gene.Seq.values[0])
-    pos_gene = pd.DataFrame({"Pos": range(1, gene_len + 1)})
-
-    # Get per-position SNV mutations count
-    obs_snv_count_gene = snvs_maf_obs_gene.groupby("canonical_Protein_position").size().reset_index(name='Count').astype(int)
-    obs_snv_count_gene.columns = ["Pos", "Count"]
-    obs_snv_count_gene = pos_gene.merge(obs_snv_count_gene, how="left", on="Pos")
-
-
-    # Determine the maximum y-value for this gene
-    max_y_gene = obs_snv_count_gene["Count"].max()
-
-
-    # Create a single figure with two subplots
-    fig, axs = plt.subplots(1, 1, figsize=(10, 3), sharex=True)
-
-
-    # Plot the data for observed and randomized mutations in separate subplots
-    plotting_needle_from_counts(obs_snv_count_gene, axs, max_y=max_y_gene)
-
-    # Set titles for each subplot
-    axs.set_title(f'{gene} {sample} - {int(obs_snv_count_gene["Count"].sum()):,} observed SNVs')
-
-    # Adjust layout to prevent overlap
-    plt.tight_layout()
-
-    return fig
-
-
-def plotting_needle_from_counts(data_gene,
-                                ax = None,
-                                max_y=None,
-                                col_pos_track='#003366',
-                                label_pos_track='observed',
-                                col_hv_lines='grey'):
-
-    # Determine max_y if not provided
-    if max_y is None:
-        max_y = data_gene["Count"].max()
-
-    # Calculate the precise margin to add to the y-axis
-    marker_size = 60
-    marker_radius = np.sqrt(marker_size / np.pi)
-    marker_margin = marker_radius * 0.5  # Convert marker radius to a suitable margin
-
-    # Add the margin to max_y
-    max_y += marker_margin
-
-
-    # If ax is not provided, create a new figure and axis
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 3))
-    else:
-        fig = None  # No need to create a figure if ax is provided
-
-
-    ax.vlines(data_gene["Pos"], ymin=0, ymax=data_gene["Count"], color=col_hv_lines, lw=1, zorder=1, alpha=0.5)
-    ax.scatter(data_gene["Pos"], data_gene["Count"], color='white', zorder=3, lw=1, ec="white")  # To cover the overlapping needle top part
-    ax.scatter(data_gene["Pos"].values, data_gene["Count"].values, color=col_pos_track, zorder=4,
-                alpha=0.7, lw=0.1, ec="black", s=30, label=label_pos_track)
-
-    # Remove the right and top spines
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    # Set the y-axis limit
-    ax.set_ylim(0, max_y)
-
-    # Add labels
-    ax.set_xlabel('Position')
-    ax.set_ylabel('Count')
-
-    # If a new figure was created, show it
-    if fig is not None:
-        plt.show()
-
-    return fig
-
-
-def manager(mutations_file, o3d_seq_file, sample_name, sample_name_out):
-    # Load your MAF DataFrame (raw_annotated_maf)
-    maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
-    o3d_seq_df = pd.read_csv(o3d_seq_file, sep = "\t", header = 0)
-
-    maf_f = maf[maf["canonical_Protein_position"] != '-'].reset_index(drop = True)
-    del maf
-
-    gene_order = sorted(pd.unique(maf_f["canonical_SYMBOL"]))
-
-
-    os.makedirs(f"{sample_name_out}")
-
-    # Loop over each gene to plot
-    for geneeee in gene_order:
-        print(geneeee)
-        fig_needles = plot_single_needle(geneeee, maf_f,
-                                        o3d_seq_df,
-                                        sample=sample_name
-                                        )
-
-        fig_needles.savefig(f"{sample_name_out}/{geneeee}.needles.pdf", bbox_inches='tight')
-        plt.close()
-
-
+import seaborn as sns
+from scipy.stats import linregress,norm
+# import tabix
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 
 # @click.command()
@@ -142,92 +33,93 @@ def manager(mutations_file, o3d_seq_file, sample_name, sample_name_out):
 sample_name_  = sys.argv[1]
 mut_file     = sys.argv[2]
 o3d_seq_file_ = sys.argv[3]
-sample_name_out_ = sys.argv[4]
+# sample_name_out_ = sys.argv[4]
 # out_maf      = sys.argv[3]
 # json_filters = sys.argv[4]
 # req_plots    = sys.argv[5]
 
 
 
-if __name__ == '__main__':
-    # maf = subset_mutation_dataframe(mut_file, json_filters)
-    # plot_manager(sample_name, maf, req_plots)
-    manager(mut_file, o3d_seq_file_, sample_name_, sample_name_out_)
-
-
-
 def generate_all_side_figures(sample,
-                              run_dir,
-                              gene_list = None,
-                              store_plots_dir = None,
-                              tools = ["oncodrivefml", "oncodrive3d", "omega_trunc", "omega_mis", "excess_indels"]):
+                                gene_list = None,
+                                tools = ["oncodrivefml", "oncodrive3d", "omega_trunc", "omega_mis", "excess_indels"]
+                                ):
+
+    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv")
+
     possible_genes = []
     if "oncodrivefml" in tools:
-        oncodrivefml_data = pd.read_table(f"{run_dir}/oncodrivefmlsnvs/{sample}.all/{sample}-oncodrivefml.tsv.gz")
+        oncodrivefml_data = pd.read_table(f"{sample}-oncodrivefml.tsv.gz")
         oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
         oncodrivefml_data.columns = ["GENE", "OncodriveFML", "pvalue", "OBSERVED_MEAN", "BACKGROUND_MEAN", "BACKGROUND_STD"]
-        possible_genes += list(pd.unique(oncodrivefml_data["GENE"]))
+        oncodrivefml_genes = list(pd.unique(oncodrivefml_data["GENE"]))
+        possible_genes += oncodrivefml_genes
 
 
     if "omega_trunc" in tools or "omega_mis" in tools:
-        omega_data = pd.read_table(f"{run_dir}/omega/output_mle.{sample}.tsv")
+        omega_data = pd.read_table(f"output_mle.{sample}.tsv")
         omega_data = omega_data[omega_data["impact"].isin(['missense', 'truncating'])]
         if "omega_trunc" in tools :
             omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
             omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
-            possible_genes += list(pd.unique(omega_truncating["GENE"]))
+            omega_truncating_genes = list(pd.unique(omega_truncating["GENE"]))
+            possible_genes += omega_truncating_genes
 
         if "omega_mis" in tools :
             omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
             omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
-            possible_genes += list(pd.unique(omega_missense["GENE"]))
+            omega_missense_genes = list(pd.unique(omega_truncating["GENE"]))
+            possible_genes += omega_missense_genes
 
 
     if "excess_indels" in tools:
-        indels_data = pd.read_table(f"/workspace/nobackup/bladder_ts/results/2024-06-26_deepCSA_only_indels_filtered/indels/{sample}.sample.indels.tsv",
-                           sep = '\t',
-                           header = 0)
+        indels_data = pd.read_table(f"{sample}.sample.indels.tsv",
+                                        sep = '\t',
+                                        header = 0)
+        indels_genes = list(pd.unique(indels_data["SYMBOL"]))
+        possible_genes += indels_genes
 
-    if gene_list is not None:
-        gene_list = list(set(possible_genes))
-    else:
-        gene_list = list(pd.unique(oncodrivefml_data["GENE"]))
+    gene_list = list(set(possible_genes))
 
+
+    os.makedirs(f"{sample}.plots")
 
     for genee in gene_list:
         print(genee)
+        try :
 
-        # Select the specific gene data
-        oncodrivefml_gene_data = oncodrivefml_data[oncodrivefml_data["GENE"] == genee].to_dict(orient='records')[0]
+            if "oncodrivefml" in tools:
+                # there is no run of oncodrivefml with ALL_GENES
+                if genee in oncodrivefml_genes:
+                    oncodrivefml_gene_data = oncodrivefml_data[oncodrivefml_data["GENE"] == genee].to_dict(orient='records')[0]
 
-        fig_gene_fml = plot_oncodrivefml_side(oncodrivefml_gene_data)
+                    fig_gene_fml = plot_oncodrivefml_side(oncodrivefml_gene_data)
 
-        if store_plots_dir is not None:
-            fig_gene_fml.savefig(f"{store_plots_dir}/{genee}.oncodrivefml_side.v2.pdf", bbox_inches='tight')
-        plt.show()
-        plt.close()
+                    fig_gene_fml.savefig(f"{sample}.plots/{genee}.{sample}.oncodrivefml_side.pdf", bbox_inches='tight')
+                    plt.show()
+                    plt.close()
 
+            if "omega_trunc" in tools:
+                if genee in omega_truncating_genes and genee in omega_missense_genes:
+                    omega_df = build_counts_from_df_complete(genee, snvs_maf, omega_truncating, omega_missense)
 
-        omega_df = build_counts_from_df_complete(genee, snvs_maf, omega_truncating, omega_missense)
-
-        fig_gene_omega = plot_omega_side_complete(omega_df)
-        if store_plots_dir is not None:
-            fig_gene_omega.savefig(f"{store_plots_dir}/{genee}.omega_side.pdf", bbox_inches='tight')
-        plt.show()
-        plt.close()
-
-
-
-        indel_data_gene = indels_data[indels_data["SYMBOL"] == genee].to_dict(orient='records')[0]
-        fig_gene_indel = plotting_indels_side(indel_data_gene)
-        if store_plots_dir is not None:
-            fig_gene_indel.savefig(f"{store_plots_dir}/{genee}.indels_side.pdf", bbox_inches='tight')
-        plt.show()
-        plt.close()
+                    fig_gene_omega = plot_omega_side_complete(omega_df)
+                    fig_gene_omega.savefig(f"{sample}.plots/{genee}.{sample}.omega_side.pdf", bbox_inches='tight')
+                    plt.show()
+                    plt.close()
 
 
-        print("\n\n\n")
-        # break
+            if "excess_indels" in tools:
+                if genee in indels_genes:
+                    indel_data_gene = indels_data[indels_data["SYMBOL"] == genee].to_dict(orient='records')[0]
+                    fig_gene_indel = plotting_indels_side(indel_data_gene)
+                    fig_gene_indel.savefig(f"{sample}.plots/{genee}.{sample}.indels_side.pdf", bbox_inches='tight')
+                    plt.show()
+                    plt.close()
+
+        except Exception as exe:
+            print(genee)
+            print(exe)
 
 
 
@@ -443,7 +335,7 @@ def plot_oncodrivefml_side(geneee_data):
 
     # Legend
     legend_handles = [Patch(facecolor=background_color_line, alpha=0.2, edgecolor='none', label='Randomized means'),
-                      Line2D([0], [0], color="black", linestyle='--', label='Observed mean')]
+                        Line2D([0], [0], color="black", linestyle='--', label='Observed mean')]
     legend = ax.legend(handles=legend_handles, frameon=False, loc='upper right', bbox_to_anchor=(1.6, 1.1), fontsize=legend_fontsize)
 
     # Adjust the color of the text labels in the legend
@@ -483,8 +375,6 @@ def plot_oncodrivefml_side(geneee_data):
     # Display the plot
     plt.show()
 
-
-
 #     # Annotate the Z-score, formula and p-value with LaTeX
 #     formula = (f'$Z = \\frac{{{observed_mean:.2f} - {background_mean:.2f}}}{{{background_std:.2f}}} = {z_score:.2f}$\n'
 #                f'$p$-value = {p_value:.2g}')
@@ -501,7 +391,7 @@ def plotting_indels_side(data_gene):
 
     # Bar labels and values
     labels = ['MULTIPLE_3.non_protein_affecting', 'NOT_MULTIPLE_3.non_protein_affecting',
-              'NON_TRUNCATING.protein_affecting', 'TRUNCATING.protein_affecting']
+                'NON_TRUNCATING.protein_affecting', 'TRUNCATING.protein_affecting']
     values = [ data_gene[x] for x in labels ]
 
     # Colors:
@@ -588,9 +478,9 @@ def plotting_indels_side(data_gene):
 
 
 
-generate_all_side_figures("all_samples", deepcsa_run_dir,
-                          # store_plots_dir = "Fig3/plots/2024-07-08_side"
-                         )
+# generate_all_side_figures("all_samples", deepcsa_run_dir,
+#                           # store_plots_dir = "Fig3/plots/2024-07-08_side"
+#                          )
 
 
 
@@ -608,18 +498,9 @@ colors_dictionary = {"ofml"        : "viridis_r",
                     }
 
 
-import pandas as pd
-import os, sys
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from scipy.stats import linregress,norm
-import tabix
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
-from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
 
-
-
-
+if __name__ == '__main__':
+    # maf = subset_mutation_dataframe(mut_file, json_filters)
+    # plot_manager(sample_name, maf, req_plots)
+    # manager(mut_file, o3d_seq_file_, sample_name_, sample_name_out_)
+    generate_all_side_figures(sample_name_)

@@ -112,13 +112,18 @@ def manager(mutations_file, o3d_seq_file, sample_name, sample_name_out):
     # Loop over each gene to plot
     for geneeee in gene_order:
         print(geneeee)
-        fig_needles = plot_single_needle(geneeee, maf_f,
-                                        o3d_seq_df,
-                                        sample=sample_name
-                                        )
+        try :
+            fig_needles = plot_single_needle(geneeee, maf_f,
+                                            o3d_seq_df,
+                                            sample=sample_name
+                                            )
+            fig_needles.savefig(f"{sample_name_out}/{geneeee}.needles.pdf", bbox_inches='tight')
+            plt.close()
 
-        fig_needles.savefig(f"{sample_name_out}/{geneeee}.needles.pdf", bbox_inches='tight')
-        plt.close()
+        except Exception as exe:
+            print(geneeee)
+            print(exe)
+
 
 
 
