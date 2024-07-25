@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/bbg/deepcsa/master/nextflow_schema.json",
+    "$id": "https://raw.githubusercontent.com/nf-core/fastquorum/master/nextflow_schema.json",
     "title": "bbg/deepcsa pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
