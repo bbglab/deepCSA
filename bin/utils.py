@@ -26,11 +26,13 @@ def to_int_if_possible(string):
 
 def filter_maf(maf_df, filter_criteria):
     '''
-    Filter a MAF dataframe with filtering information coming from a JSON file.
-    {
-    'FILTER' : 'notcontains n_rich', 'VAF' : 'le 0.35', 'TYPE' : 'SNV'
-    }
-
+    Filter a MAF dataframe with filtering information coming from a list of tuples.
+    This can be either a dictionary transformed to list with the .items() method or by directly creating a list of tuples.
+    [('VAF', 'le 0.3'), ('VAF_AM', 'le 0.3'), ('vd_VAF', 'le 0.3'),
+    ('DEPTH', 'ge 40'), ('FILTER', 'notcontains n_rich'),
+    ('FILTER', 'notcontains cohort_n_rich_uni'), ('FILTER', 'notcontains NM20'),
+    ('FILTER', 'notcontains no_pileup_support'), ('FILTER', 'notcontains other_sample_SNP'),
+    ('FILTER', 'notcontains low_mappability')]
     '''
 
     # Define mappings for operators used in criteria
@@ -47,7 +49,7 @@ def filter_maf(maf_df, filter_criteria):
     }
 
     # Apply filters based on criteria from the JSON file
-    for col, criterion in filter_criteria.items():
+    for col, criterion in filter_criteria:
 
         if isinstance(criterion, bool):
             pref_len = maf_df.shape[0]

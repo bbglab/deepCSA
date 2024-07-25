@@ -65,11 +65,11 @@ print(depth_df.head())
 samples_list = depth_df.columns[~depth_df.columns.isin(["CHROM","POS"])]
 
 stats_per_sample = pd.DataFrame(depth_df[samples_list].describe())
-stats_per_sample.to_csv("depth_per_sample.stats.tsv", sep = '\t', header = True, index = True)
+stats_per_sample.to_csv(f"{sample_name}.depth_per_sample.stats.tsv", sep = '\t', header = True, index = True)
 
 avgdepth_per_sample = pd.DataFrame(depth_df[samples_list].mean().T)
 avgdepth_per_sample.columns = ["avg_depth_sample"]
-avgdepth_per_sample.to_csv("avgdepth_per_sample.tsv", sep = '\t', header = True, index = True)
+avgdepth_per_sample.to_csv(f"{sample_name}.avgdepth_per_sample.tsv", sep = '\t', header = True, index = True)
 avgdepth_per_sample_names = avgdepth_per_sample.reset_index()
 avgdepth_per_sample_names.columns = ["SAMPLE_ID", "avg_depth_sample"]
 
