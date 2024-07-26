@@ -29,13 +29,16 @@ if vaf_all_molecules:
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
                         'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs",
                         'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM", "VAF_AM",
-                        "VAF_distorted", "VAF_distorted_reduced", "VAF_distorted_expanded"
+                        "VAF_distorted", "VAF_distorted_reduced", "VAF_distorted_expanded",
+                        "VAF_distortion",
                         ]
     print("Using also information on all molecules, duplex and non-duplex.")
 else:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs"]
+                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs",
+                        "VAF_distorted", "VAF_distorted_reduced", "VAF_distorted_expanded",
+                        "VAF_distortion"]
     print("Not using information on non-duplex molecules.")
 
 
@@ -194,9 +197,10 @@ def read_from_vardict_VCF_all(sample,
 
         # compute VAF
         dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
+        dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
 
-        dat_full["VAF_distorted_expanded"] = dat_full["VAF_AM"] / dat_full["VAF"] > 3
-        dat_full["VAF_distorted_reduced"] = dat_full["VAF"] / dat_full["VAF_AM"] > 3
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
+        dat_full["VAF_distorted_reduced"] = (1 / dat_full["VAF_distortion"]) > 3
 
         dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
         dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
@@ -204,6 +208,7 @@ def read_from_vardict_VCF_all(sample,
         dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
 
     else:
+        dat_full["VAF_distortion"] = 1
         dat_full["VAF_distorted"] = False
         dat_full["VAF_distorted_reduced"] = False
         dat_full["VAF_distorted_expanded"] = False
@@ -355,6 +360,7 @@ def update_indel_info(df):
     # Initialize new columns with default values
     df['INDEL_LENGTH'] = 0
     df['INDEL_INFRAME'] = False
+    df['INDEL_MULTIPLE3'] = False
 
     # Create a DataFrame specifically for indels
     indel_maf_df = df.loc[indel_positions].copy()
@@ -363,6 +369,7 @@ def update_indel_info(df):
     indel_maf_df["INDEL_LENGTH"] = (indel_maf_df["REF"].str.len() - indel_maf_df["ALT"].str.len()).abs()
 
     # Determine if the indel is in-frame
+    indel_maf_df["INDEL_MULTIPLE3"] = indel_maf_df["INDEL_LENGTH"] % 3 == 0
     indel_maf_df["INDEL_INFRAME"] = indel_maf_df["INDEL_LENGTH"] % 3 == 0
 
     # Apply additional conditions to INDEL_INFRAME
