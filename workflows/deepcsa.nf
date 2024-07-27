@@ -458,8 +458,10 @@ workflow DEEPCSA{
 
     }
 
-    positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-    PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
+    if ( params.indels & params.oncodrivefml & params.omega ){
+        positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+        PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
+    }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')

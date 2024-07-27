@@ -6,7 +6,7 @@ import numpy as np
 import sys
 
 from itertools import product
-from bgreference import hg38, hg19, mm10
+from bgreference import hg38, hg19, mm10, mm39
 
 from utils import vartype
 from utils_context import canonical_channels, transform_context
@@ -14,7 +14,9 @@ from utils_impacts import *
 
 assembly_name2function = {"hg38": hg38,
                             "hg19": hg19,
-                            "mm10": mm10}
+                            "mm10": mm10,
+                            "mm39": mm39
+                            }
 
 
 def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
