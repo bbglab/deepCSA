@@ -35,6 +35,7 @@ def subset_mutation_dataframe(mutations_file, json_filters):
                 data_tuples.append((key, value))
         print(data_tuples)
 
+
     if len(data_tuples) > 0:
         # Filter the annotated maf using the described filters
         print("MAF subset")
