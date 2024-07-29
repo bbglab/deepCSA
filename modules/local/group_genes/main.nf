@@ -1,5 +1,4 @@
 process GROUP_GENES {
-
     tag "groups"
     label 'process_low'
 
@@ -11,7 +10,7 @@ process GROUP_GENES {
 
     input:
     tuple val(meta), path(mutations_table)
-    // path(features_table)
+    path(features_table)
 
     output:
     path("genes2group_out.json")                        , emit: json_genes
@@ -24,19 +23,12 @@ process GROUP_GENES {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "groups"
-    def separator = task.ext.separator ?: "comma"
-    def features = task.ext.features ?: ""
+    def separator = task.ext.separator ?: "tab"
+    def cmd_custom = task.ext.custom ? "${features_table} ${separator} pathway_groups_out.json" : ""
     """
-    cat > features_table_information.json << EOF
-    {
-        ${features}
-    }
-    EOF
-
     awk 'NR>1 {print \$1}' ${mutations_table} | sort -u  > gene_list.txt
 
-    features_2group_genes.py gene_list.txt genes2group_out.json
-    # ReactomePathways.gmt tab pathway_groups_out.json
+    features_2group_genes.py gene_list.txt genes2group_out.json ${cmd_custom}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -48,7 +40,7 @@ process GROUP_GENES {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "groups"
     """
-    touch all_samples.cohort.tsv.gz
+    touch genes2group_out.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

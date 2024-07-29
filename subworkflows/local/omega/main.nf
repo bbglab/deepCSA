@@ -36,6 +36,7 @@ workflow OMEGA_ANALYSIS{
     profile
     bedfile
     panel
+    custom_gene_groups
 
 
     main:
@@ -69,7 +70,7 @@ workflow OMEGA_ANALYSIS{
     .join( PREPROCESSING.out.syn_muts_tsv )
     .set{ all_samples_muts }
 
-    GROUPGENES(all_samples_muts)
+    GROUPGENES(all_samples_muts, custom_gene_groups)
     ch_versions = ch_versions.mix(GROUPGENES.out.versions)
 
     ESTIMATOR( preprocess_n_depths, panel, GROUPGENES.out.json_genes.first())
