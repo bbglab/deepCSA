@@ -4,14 +4,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { validateParameters; paramsHelp; paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
 
-def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
-def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
 def summary_params = paramsSummaryMap(workflow)
 
-// Print parameter summary log to screen
-log.info logo + paramsSummaryLog(workflow) + citation
+// def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
+// def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
+
+// // Print parameter summary log to screen
+// log.info logo + paramsSummaryLog(workflow) + citation
 
 WorkflowDeepcsa.initialise(params, log)
 
@@ -89,6 +90,9 @@ include { SIGNATURES                as SIGNATURESALL        } from '../subworkfl
 include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
+
+include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
+
 
 
 // Download annotation cache if needed
@@ -190,6 +194,7 @@ workflow DEEPCSA{
     MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
                         TABLE2GROUP.out.json_allgroups, seqinfo_df)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
+    positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
 
     if (params.mutationrate){
@@ -258,6 +263,7 @@ workflow DEEPCSA{
         INDELSSELECTION(MUT_PREPROCESSING.out.somatic_mafs,
                         CREATEPANELS.out.all_consensus_bed
                         )
+        positive_selection_results = positive_selection_results.join(INDELSSELECTION.out.indels, remainder: true)
         ch_versions = ch_versions.mix(INDELSSELECTION.out.versions)
     }
 
@@ -340,6 +346,8 @@ workflow DEEPCSA{
         if (params.profileall){
             ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
             ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
+            // positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results, remainder: true)
+            positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
         }
         if (params.profilenonprot){
             ONCODRIVEFMLNONPROT(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYNONPROT.out.mutability, CREATEPANELS.out.exons_consensus_panel)
@@ -370,6 +378,8 @@ workflow DEEPCSA{
                     params.omega_globalloc,
                     params.omega_vaf_distorsioned
                     )
+            positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
+            positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             ch_versions = ch_versions.mix(OMEGA.out.versions)
 
             // Omega multi
@@ -381,6 +391,8 @@ workflow DEEPCSA{
                         params.omega_globalloc,
                         params.omega_vaf_distorsioned
                         )
+            positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
+            positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
             ch_versions = ch_versions.mix(OMEGAMULTI.out.versions)
         }
         if (params.profilenonprot){
@@ -443,11 +455,12 @@ workflow DEEPCSA{
             SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
             ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
         }
-
-
     }
 
-
+    if ( params.indels & params.oncodrivefml & params.omega ){
+        positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+        PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
+    }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')

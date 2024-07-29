@@ -15,7 +15,7 @@ nextflow.enable.dsl = 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { validateParameters; paramsHelp } from 'plugin/nf-validation'
+include { validateParameters; paramsHelp; paramsSummaryLog } from 'plugin/nf-schema'
 
 // Print help message if needed
 if (params.help) {
@@ -23,13 +23,17 @@ if (params.help) {
     def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
     def String command = "nextflow run ${workflow.manifest.name} --input samplesheet.csv --genome GRCh37 -profile docker"
     log.info logo + paramsHelp(command) + citation + NfcoreTemplate.dashedLine(params.monochrome_logs)
-    System.exit(0)
+    // log.info paramsHelp("nextflow run my_pipeline --input input_file.csv")
+    exit 0
 }
 
 // Validate input parameters
 if (params.validate_params) {
     validateParameters()
 }
+
+// Print summary of supplied parameters
+log.info paramsSummaryLog(workflow)
 
 WorkflowMain.initialise(workflow, params, log)
 
@@ -39,14 +43,8 @@ WorkflowMain.initialise(workflow, params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { DEEPCSA } from './workflows/deepcsa'
+include { DEEPCSA  as BBG_DEEPCSA} from './workflows/deepcsa'
 
-//
-// WORKFLOW: Run main bbg/deepcsa analysis pipeline
-//
-workflow BBG_DEEPCSA {
-    DEEPCSA ()
-}
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,8 +53,7 @@ workflow BBG_DEEPCSA {
 */
 
 //
-// WORKFLOW: Execute a single named workflow for the pipeline
-// See: https://github.com/nf-core/rnaseq/issues/619
+// WORKFLOW: Run main bbg/deepcsa analysis pipeline
 //
 workflow {
     BBG_DEEPCSA ()

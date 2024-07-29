@@ -20,15 +20,25 @@ def subset_mutation_dataframe(mutations_file, json_filters):
     # Load your MAF DataFrame (raw_annotated_maf)
     raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
 
+    data_tuples = []
 
     # Load the filter criteria from the JSON file
     with open(json_filters, 'r') as file:
         filter_criteria = json.load(file)
 
-    if len(filter_criteria) > 0:
+        # Convert the dictionary into a list of tuples
+        for key, value in filter_criteria.items():
+            if isinstance(value, list):
+                for item in value:
+                    data_tuples.append((key, item))
+            else:
+                data_tuples.append((key, value))
+        print(data_tuples)
+
+    if len(data_tuples) > 0:
         # Filter the annotated maf using the described filters
         print("MAF subset")
-        return filter_maf(raw_annotated_maf, filter_criteria)
+        return filter_maf(raw_annotated_maf, data_tuples)
 
     return raw_annotated_maf
 

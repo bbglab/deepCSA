@@ -35,12 +35,12 @@ workflow SIGNATURES {
     // matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ all_matrices }
     // MATRIXCONCAT(all_matrices, samples)
     // MATRIXCONCAT.out.wgs_tsv.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_matrices }
-    MSIGHDP(matrix)
-    ch_versions = ch_versions.mix(MSIGHDP.out.versions)
+    // MSIGHDP(matrix)
+    // ch_versions = ch_versions.mix(MSIGHDP.out.versions)
 
     emit:
     plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]
-    plots_extraction    = MSIGHDP.out.plots                     // channel: [ val(meta), file(depths) ]
+    // plots_extraction    = MSIGHDP.out.plots                     // channel: [ val(meta), file(depths) ]
     mutation_probs      = signature_probs_samples
     versions            = ch_versions                           // channel: [ versions.yml ]
 }
