@@ -374,9 +374,7 @@ workflow DEEPCSA{
                     annotated_depths,
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
-                    CREATEPANELS.out.exons_consensus_panel,
-                    params.omega_globalloc,
-                    params.omega_vaf_distorsioned
+                    CREATEPANELS.out.exons_consensus_panel
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -387,9 +385,7 @@ workflow DEEPCSA{
                         annotated_depths,
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_bed,
-                        CREATEPANELS.out.exons_consensus_panel,
-                        params.omega_globalloc,
-                        params.omega_vaf_distorsioned
+                        CREATEPANELS.out.exons_consensus_panel
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -400,9 +396,7 @@ workflow DEEPCSA{
                             annotated_depths,
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed,
-                            CREATEPANELS.out.exons_consensus_panel,
-                            params.omega_globalloc,
-                            params.omega_vaf_distorsioned
+                            CREATEPANELS.out.exons_consensus_panel
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -410,9 +404,7 @@ workflow DEEPCSA{
                                 annotated_depths,
                                 MUTPROFILENONPROT.out.profile,
                                 CREATEPANELS.out.exons_consensus_bed,
-                                CREATEPANELS.out.exons_consensus_panel,
-                                params.omega_globalloc,
-                                params.omega_vaf_distorsioned
+                                CREATEPANELS.out.exons_consensus_panel
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }

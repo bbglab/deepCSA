@@ -4,23 +4,28 @@ include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../..
 
 include { SUBSET_MAF                as SUBSET_OMEGA             } from '../../../modules/local/subsetmaf/main'
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
 include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../../modules/local/bbgtools/omega/estimator/main'
 
-include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
 
-include { SUBSET_MAF                as SUBSET_OMEGA_EXPANDED    } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGEXP         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOREXP             } from '../../../modules/local/bbgtools/omega/estimator/main'
+if (params.omega_globalloc){
+    include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
+    include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
+}
 
-include { SUBSET_MAF                as SUBSET_OMEGA_OK          } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGOK          } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOROK              } from '../../../modules/local/bbgtools/omega/estimator/main'
+if (params.omega_vaf_distorsioned){
+    include { SUBSET_MAF                as SUBSET_OMEGA_EXPANDED    } from '../../../modules/local/subsetmaf/main'
+    include { OMEGA_PREPROCESS          as PREPROCESSINGEXP         } from '../../../modules/local/bbgtools/omega/preprocess/main'
+    include { OMEGA_ESTIMATOR           as ESTIMATOREXP             } from '../../../modules/local/bbgtools/omega/estimator/main'
 
-include { SUBSET_MAF                as SUBSET_OMEGA_REDUCED     } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
+    include { SUBSET_MAF                as SUBSET_OMEGA_OK          } from '../../../modules/local/subsetmaf/main'
+    include { OMEGA_PREPROCESS          as PREPROCESSINGOK          } from '../../../modules/local/bbgtools/omega/preprocess/main'
+    include { OMEGA_ESTIMATOR           as ESTIMATOROK              } from '../../../modules/local/bbgtools/omega/estimator/main'
 
+    include { SUBSET_MAF                as SUBSET_OMEGA_REDUCED     } from '../../../modules/local/subsetmaf/main'
+    include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
+    include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
+}
 
 
 workflow OMEGA_ANALYSIS{
@@ -31,8 +36,7 @@ workflow OMEGA_ANALYSIS{
     profile
     bedfile
     panel
-    globalloc
-    vaf_distorsioned
+
 
     main:
     ch_versions = Channel.empty()
@@ -61,11 +65,18 @@ workflow OMEGA_ANALYSIS{
     .join( SUBSETDEPTHS.out.subset )
     .set{ preprocess_n_depths }
 
-    ESTIMATOR( preprocess_n_depths, panel)
+    Channel.of([ [ id: "all_samples" ] ])
+    .join( PREPROCESSING.out.syn_muts_tsv )
+    .set{ all_samples_muts }
+
+    GROUPGENES(all_samples_muts)
+    ch_versions = ch_versions.mix(GROUPGENES.out.versions)
+
+    ESTIMATOR( preprocess_n_depths, panel, GROUPGENES.out.json_genes.first())
     ch_versions = ch_versions.mix(ESTIMATOR.out.versions)
 
 
-    if (globalloc) {
+    if (params.omega_globalloc) {
         Channel.of([ [ id: "all_samples" ] ])
         .join( PREPROCESSING.out.syn_muts_tsv )
         .set{ all_samples_syn_muts }
@@ -78,7 +89,7 @@ workflow OMEGA_ANALYSIS{
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_globalloc_n_depths }
 
-        ESTIMATORGLOBALLOC( preprocess_globalloc_n_depths, panel)
+        ESTIMATORGLOBALLOC( preprocess_globalloc_n_depths, panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATORGLOBALLOC.out.versions)
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
@@ -88,7 +99,7 @@ workflow OMEGA_ANALYSIS{
 
 
 
-    if (vaf_distorsioned) {
+    if (params.omega_vaf_distorsioned) {
 
         Channel.of([ [ id: "all_samples" ] ])
         .join( SUBSETMUTATIONS.out.subset )
@@ -110,7 +121,7 @@ workflow OMEGA_ANALYSIS{
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_n_depths_exp }
 
-        ESTIMATOREXP( preprocess_n_depths_exp, panel)
+        ESTIMATOREXP( preprocess_n_depths_exp, panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATOREXP.out.versions)
 
 
@@ -132,7 +143,7 @@ workflow OMEGA_ANALYSIS{
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_n_depths_ok }
 
-        ESTIMATOROK( preprocess_n_depths_ok, panel)
+        ESTIMATOROK( preprocess_n_depths_ok, panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATOROK.out.versions)
 
 
@@ -153,11 +164,8 @@ workflow OMEGA_ANALYSIS{
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_n_depths_red }
 
-        ESTIMATORRED( preprocess_n_depths_red, panel)
+        ESTIMATORRED( preprocess_n_depths_red, panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATORRED.out.versions)
-
-
-
 
         expanded_results = ESTIMATOREXP.out.results
         concording_results = ESTIMATOROK.out.results
