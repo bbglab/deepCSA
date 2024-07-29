@@ -35,6 +35,12 @@ datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExi
 annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
 
+// if the user wants to use custom gene groups, import the gene groups table
+// otherwise I am using the input csv as a dummy value channel
+custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() : Channel.fromPath(params.input)
+
+
+
 
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
 
@@ -375,8 +381,7 @@ workflow DEEPCSA{
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
-                    params.omega_globalloc,
-                    params.omega_vaf_distorsioned
+                    custom_groups_table
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -388,8 +393,7 @@ workflow DEEPCSA{
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
-                        params.omega_globalloc,
-                        params.omega_vaf_distorsioned
+                        custom_groups_table
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -401,8 +405,7 @@ workflow DEEPCSA{
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
-                            params.omega_globalloc,
-                            params.omega_vaf_distorsioned
+                            custom_groups_table
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -411,8 +414,7 @@ workflow DEEPCSA{
                                 MUTPROFILENONPROT.out.profile,
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
-                                params.omega_globalloc,
-                                params.omega_vaf_distorsioned
+                                custom_groups_table
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }
