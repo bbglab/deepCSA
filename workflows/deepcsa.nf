@@ -39,6 +39,11 @@ seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for
 // otherwise I am using the input csv as a dummy value channel
 custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() : Channel.fromPath(params.input)
 
+// if the user wants to use custom gene groups, import the gene groups table
+// otherwise I am using the input csv as a dummy value channel
+custom_bed_file = params.custom_bedfile ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
+    use_custom_bedfile          = false
+    custom_bedfile              = null
 
 
 
@@ -178,7 +183,7 @@ workflow DEEPCSA{
 
 
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(meta_bams_alone)
+    DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
     ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
     // Panels generation: all modalities
