@@ -455,11 +455,12 @@ workflow DEEPCSA{
             SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
             ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
         }
-
     }
 
-    positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-    PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
+    if ( params.indels & params.oncodrivefml & params.omega ){
+        positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+        PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
+    }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
