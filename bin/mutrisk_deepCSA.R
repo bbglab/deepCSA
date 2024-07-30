@@ -1,29 +1,30 @@
+#!/opt/conda/bin/Rscript --vanilla
+
 # standalone version of deepCSA depth script, to be used in the deepCSA pipeline
 library(data.table)
 library(tidyverse)
 library(abind)
 library(BSgenome.Hsapiens.UCSC.hg38)
-library(dndscv)
 options(dplyr.summarise.inform = FALSE)
 
 # load dndscv substmodel
-data(list = sprintf("submod_%s", "192r_3w"), package = "dndscv") # load dndscv substmodel
+substmodel = read.delim("/dndscv_table/submod_192r_3w.tsv")
 # match dnds mutation types with the canonical mutation types
 mut_types = rownames(substmodel)
 
 args = commandArgs(trailingOnly = TRUE)
-
-deepcsa_folder = args[1]
-output_folder = args[2]
-
 # define output list elements
 output_list = plot_list = list()
 
-# Uncomment following line for use 
-deepcsa_folder = "/workspace/nobackup/bladder_ts/results/2024-07-16_deepCSA/" 
-consensus_file = paste0(deepcsa_folder, "createpanels/consensuspanels/consensus.exons_splice_sites.tsv")
-input_muts_file = paste0(deepcsa_folder, "somaticmutations/all_samples.somatic.mutations.tsv")
-sample_depths_file = paste0(deepcsa_folder, "annotatedepths/all_samples_indv.depths.tsv.gz")
+# Uncomment following line for testing/checking 
+# consensus_file = paste0(deepcsa_folder, "createpanels/consensuspanels/consensus.exons_splice_sites.tsv")
+# input_muts_file = paste0(deepcsa_folder, "somaticmutations/all_samples.somatic.mutations.tsv")
+# sample_depths_file = paste0(deepcsa_folder, "annotatedepths/all_samples_indv.depths.tsv.gz")
+
+consensus_file = args[1]
+input_muts_file = args[2]
+sample_depths_file = args[3]
+output_folder = args[4]
 
 # define functions: 
 get_dnds_mut_context = function(muts) {
@@ -259,8 +260,6 @@ dndsloc = function(genemuts, RefCDS, constrain_wnon_wspl = TRUE, onesided = FALS
 
 # estimate the mutation rates for bladder: 
 estimate_rates = function(mle_submodel, genemuts, RefCDS, relative_rates) {
-  # load dndscv substitution model
-  data(list = sprintf("submod_%s", "192r_3w"), package = "dndscv")
   
   results_list = list()
   for (column in c("mle", "cilow", "cihigh")) {
