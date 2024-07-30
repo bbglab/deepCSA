@@ -28,7 +28,8 @@ process EXP_MUTRATE {
             $regions \\
             $mutations \\
             $depths \\
-            expected_mutrate
+            expected_mutrate \\
+            /workspace/datasets/transfer/ferriol_deepcsa/Biomart_Bladder_genes.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

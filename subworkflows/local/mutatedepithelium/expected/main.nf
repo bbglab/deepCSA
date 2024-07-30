@@ -1,5 +1,5 @@
 
-include { TABIX_BGZIPTABIX_QUERY        as SUBSETDEPTHS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY        as SUBSETDEPTHS      } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS   } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                    as SUBSET_MUTEPIVAF  } from '../../../../modules/local/subsetmaf/main'
 include { EXP_MUTRATE                   as EXPMUTRATE        } from '../../../../modules/local/expected_mutrate/main'
