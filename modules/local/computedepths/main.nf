@@ -22,6 +22,12 @@ process COMPUTEDEPTHS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def restrict_to_region = task.ext.restrict_panel ? "-b ${custombed}" : ""
+
+
+    // this variable is used for subsetting the output depths table to only
+    // positions with a mean depth above a given value
+    // if the provided value is 0 this is not used
+    def minimum_depth = task.ext.minimum_depth ? "| awk '{sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
     """
     ls -1 *.bam > bam_files_list.txt;
     samtools \\
@@ -31,6 +37,7 @@ process COMPUTEDEPTHS {
         -@ $task.cpus \\
         -f bam_files_list.txt \\
         | tail -c +2 \\
+        ${minimum_depth} \\
         | gzip -c > ${prefix}.depths.tsv.gz;
 
     cat <<-END_VERSIONS > versions.yml
