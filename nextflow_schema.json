@@ -148,6 +148,38 @@
                 }
             }
         },
+        "custom_bedfile_configs": {
+            "title": "Custom BED file configurations",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED file dependent on the sequencing panel or minimum depth of the regions where to focus tha analysis.",
+            "properties": {
+                "use_custom_bedfile": {
+                    "type": "boolean",
+                    "description": "Do you want to use a custom BED file?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to use a custom BED file?"
+                },
+                "custom_bedfile": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to BED file to use.",
+                    "help_text": "Path to BED file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "use_custom_minimum_depth": {
+                    "type": "integer",
+                    "description": "Minimum average depth of a position across all samples for it to be included in the analysis",
+                    "default": 0,
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
         "tool_execution_configs": {
             "title": "Tool selection options",
             "type": "object",
@@ -658,6 +690,9 @@
         },
         {
             "$ref": "#/defs/gene_grouping_configs"
+        },
+        {
+            "$ref": "#/defs/custom_bedfile_configs"
         },
         {
             "$ref": "#/defs/tool_execution_configs"
