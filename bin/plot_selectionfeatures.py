@@ -127,7 +127,7 @@ def plotting_needle_from_counts(data_gene,
 
 def manager(mutations_file, o3d_seq_file, sample_name, sample_name_out):
     # Load your MAF DataFrame (raw_annotated_maf)
-    maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_filter = False)
     o3d_seq_df = pd.read_csv(o3d_seq_file, sep = "\t", header = 0)
 
     maf_f = maf[maf["canonical_Protein_position"] != '-'].reset_index(drop = True)
@@ -214,7 +214,7 @@ o3d_score = pd.read_csv(o3d_score)[["Gene", "Pos", "Score", "Score_obs_sim", "pv
 
 # MAF
 
-maf_df = pd.read_csv(maf_file, sep = "\t")
+maf_df = pd.read_csv(maf_file, sep = "\t", na_filter = False)
 maf_df_f, snv_df, trunc_df, synon_df, miss_df = preprocess_maf(maf_df)
 
 
@@ -796,7 +796,7 @@ def get_maf_pos_count(gene, maf_df, gene_pos):
 
 def get_ofml_score_gene(gene, fig3_data_path):
 
-    mutations_in_gene = pd.read_table(f"{fig3_data_path}/mutations_scored.{gene}.tsv")
+    mutations_in_gene = pd.read_table(f"{fig3_data_path}/mutations_scored.{gene}.tsv", na_filter = False)
     ofml_muts_score_gene = mutations_in_gene.groupby(by = "canonical_Protein_position").agg( { "MUT_ID" : 'count',
                                                                                                "CADDscore" : 'mean'}).reset_index()
     ofml_muts_score_gene.columns = "Pos", "Count", "CADD_score"

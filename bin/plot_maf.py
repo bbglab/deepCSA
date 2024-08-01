@@ -18,7 +18,7 @@ def subset_mutation_dataframe(mutations_file, json_filters):
     INFO
     """
     # Load your MAF DataFrame (raw_annotated_maf)
-    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_filter = False)
 
     data_tuples = []
 

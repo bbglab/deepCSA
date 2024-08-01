@@ -10,7 +10,7 @@ def combine_mutations_n_signatures(mutations_file, signature_probabilities_files
     INFO
     """
 
-    mutations = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    mutations = pd.read_csv(mutations_file, sep = "\t", header = 0, na_filter = False)
 
     sig_probs_matrix = pd.read_csv(signature_probabilities_files, sep = "\t", header = 0)
 

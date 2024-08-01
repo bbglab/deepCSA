@@ -9,8 +9,8 @@ vep_output_all = sys.argv[2]
 sample = sys.argv[3]
 
 
-vep_data = pd.read_table(vep_output_all)
-mutationsdata = pd.read_table(maf_df_file)
+vep_data = pd.read_table(vep_output_all, na_filter = False)
+mutationsdata = pd.read_table(maf_df_file, na_filter = False)
 
 if "Tumor_Sample_Barcode" in mutationsdata.columns:
     reduced_mutationsdata = mutationsdata[["Tumor_Sample_Barcode", "MUT_ID"]]

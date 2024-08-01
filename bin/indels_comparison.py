@@ -80,11 +80,11 @@ def cli(sample, filename):
 def gtest(null_vector, alt_vector):
 
     """
-    Likelihood-ratio test comparing the proportion point estimate inferred  
-    from the frequencies of observed species (maximum-likelihood) versus 
+    Likelihood-ratio test comparing the proportion point estimate inferred
+    from the frequencies of observed species (maximum-likelihood) versus
     the proportion inferred from a null reference.
 
-    This implementation does not require that the count in the null 
+    This implementation does not require that the count in the null
     reference is the same as in the observed.
     """
 
@@ -113,7 +113,7 @@ def load_maf(maf_file):
     Loads MAF and applies filters
     '''
 
-    maf = pd.read_csv(maf_file, sep='\t', header=0)
+    maf = pd.read_csv(maf_file, sep='\t', header=0, na_filter = False)
 
     return maf
 

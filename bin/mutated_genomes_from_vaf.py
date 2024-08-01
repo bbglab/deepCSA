@@ -75,7 +75,7 @@ def load_maf(maf_file):
     Loads MAF and applies filters
     '''
 
-    maf = pd.read_csv(maf_file, sep='\t', header=0)
+    maf = pd.read_csv(maf_file, sep='\t', header=0, na_filter = False)
 
     # Clopper-Pearson 95% CI
     maf.loc[:, 'VAF_lower'] = get_binomial_low(maf['ALT_DEPTH'].astype(float).values, maf['DEPTH'].astype(float).values)

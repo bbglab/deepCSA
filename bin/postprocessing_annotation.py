@@ -131,7 +131,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     explain what this function does
     """
 
-    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0)
+    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0, na_filter = False)
 
     if all_ :
         all_possible_sites[["CHROM", "POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)

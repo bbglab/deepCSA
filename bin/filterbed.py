@@ -118,7 +118,7 @@ bedfile = sys.argv[2]
 filtername = sys.argv[3]
 positive = False
 
-sample_maf = pd.read_csv(sample_maf_file, sep = '\t', header = 0)
+sample_maf = pd.read_csv(sample_maf_file, sep = '\t', header = 0, na_filter = False)
 
 current_filters = pd.unique(sample_maf["FILTER"].astype(str).str.split(";").explode())
 

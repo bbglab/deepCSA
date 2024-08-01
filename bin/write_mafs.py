@@ -6,7 +6,7 @@ import json
 
 maf_df_file = sys.argv[1]
 
-maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t')  # Read gzipped TSV
+maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t', na_filter = False)  # Read gzipped TSV
 maf_df["SAMPLE_ID"] = maf_df["SAMPLE_ID"].astype(str)
 
 if len(sys.argv) > 2:

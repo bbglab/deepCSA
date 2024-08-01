@@ -45,7 +45,7 @@ def generate_all_side_figures(sample,
                                 tools = ["oncodrivefml", "oncodrive3d", "omega_trunc", "omega_mis", "excess_indels"]
                                 ):
 
-    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv")
+    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv", na_filter = False)
 
     possible_genes = []
     if "oncodrivefml" in tools:

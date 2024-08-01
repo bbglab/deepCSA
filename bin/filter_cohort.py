@@ -9,7 +9,7 @@ samp_name = sys.argv[2]
 repetitive_variant_treshold = int(sys.argv[3])
 somatic_vaf_boundary = float(sys.argv[4])
 
-maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t')  # Read gzipped TSV
+maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t', na_filter = False)  # Read gzipped TSV
 
 sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
 

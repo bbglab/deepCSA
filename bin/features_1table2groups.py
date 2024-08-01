@@ -19,7 +19,7 @@ def reformatnames(name):
 
 separator = separator2character.get(separator_input, separator_input)
 
-features_table = pd.read_table(table_filename, header = 0, sep=separator)
+features_table = pd.read_table(table_filename, header = 0, sep=separator, na_filter = False)
 
 
 with open(json_information, 'r') as file:

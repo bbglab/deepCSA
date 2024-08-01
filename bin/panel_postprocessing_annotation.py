@@ -142,7 +142,7 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     explain what this function does
     """
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
-                                        header = None)
+                                        header = None, na_filter = False)
     print("all possible sites loaded")
     all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'SYMBOL', 'CANONICAL']
 

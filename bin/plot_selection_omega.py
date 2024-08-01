@@ -45,7 +45,7 @@ def generate_all_side_figures(sample,
                                 tools = ["omega_trunc", "omega_mis"]
                                 ):
 
-    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv")
+    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv", na_filter = False)
 
     possible_genes = []
 

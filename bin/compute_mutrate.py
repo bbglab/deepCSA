@@ -109,10 +109,10 @@ def mutrate_gene(maf_df, depths_df, depths_adj_df, sample_name, type_list = Fals
 def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_v):
 
     # File loading
-    maf_df = pd.read_csv(maf_path, sep = "\t")
+    maf_df = pd.read_csv(maf_path, sep = "\t", na_filter = False)
     depths_df = pd.read_csv(depths_path, sep = "\t")
     depths_df = depths_df.drop("CONTEXT", axis = 1)
-    annot_panel_df = pd.read_csv(annot_panel_path, sep = "\t")
+    annot_panel_df = pd.read_csv(annot_panel_path, sep = "\t", na_filter = False)
 
     # Subset depths with panel
     ## mode 1: each position counts one

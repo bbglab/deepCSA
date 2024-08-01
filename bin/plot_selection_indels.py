@@ -45,7 +45,7 @@ def generate_all_side_figures(sample,
     possible_genes = []
     indels_data = pd.read_table(f"{sample}.sample.indels.tsv",
                                     sep = '\t',
-                                    header = 0)
+                                    header = 0, na_filter = False)
     indels_genes = list(pd.unique(indels_data["SYMBOL"]))
     possible_genes += indels_genes
 

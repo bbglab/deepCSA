@@ -79,7 +79,7 @@ def read_from_vardict_VCF_all(sample,
     print(f"Processing {sample}")
 
     dat = pd.read_csv(name,
-                    sep = '\t', header = None, comment= '#')
+                    sep = '\t', header = None, comment= '#', na_filter = False)
     dat.columns = ["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", "SAMPLE"]
     print("Total mutations:", dat.shape[0])
 
@@ -391,7 +391,7 @@ def update_indel_info(df):
 # this is the file with the mutations produced by deepUMIcaller
 file_muts = vcf
 
-annotated_variants = pd.read_csv(annotation_file, header = 0, sep = "\t")
+annotated_variants = pd.read_csv(annotation_file, header = 0, sep = "\t", na_filter = False)
 
 ## read all mutations
 # recompute the VAF since it might not have enough resolution

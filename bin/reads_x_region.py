@@ -245,7 +245,7 @@ sample = sys.argv[4]
 # mpileup_data.drop(["STATUS", "QUAL", "QNAME"], axis = 1, inplace = True)
 # print("reads splitted")
 
-regions_df = pd.read_csv(regions_file, sep ='\t', header = 0).iloc[:,:4]
+regions_df = pd.read_csv(regions_file, sep ='\t', header = 0, na_filter = False).iloc[:,:4]
 regions_df.columns = ["CHROM", "START", "END", "GENE"]
 print("regions loaded")
 

@@ -98,7 +98,7 @@ def plotting_needle_from_counts(data_gene,
 
 def manager(mutations_file, o3d_seq_file, sample_name, sample_name_out):
     # Load your MAF DataFrame (raw_annotated_maf)
-    maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_filter = False)
     o3d_seq_df = pd.read_csv(o3d_seq_file, sep = "\t", header = 0)
 
     maf_f = maf[maf["canonical_Protein_position"] != '-'].reset_index(drop = True)
