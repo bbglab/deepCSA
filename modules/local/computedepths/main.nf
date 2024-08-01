@@ -27,7 +27,7 @@ process COMPUTEDEPTHS {
     // this variable is used for subsetting the output depths table to only
     // positions with a mean depth above a given value
     // if the provided value is 0 this is not used
-    def minimum_depth = task.ext.minimum_depth ? "| awk '{sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
+    def minimum_depth = task.ext.minimum_depth ? "| awk 'NR == 1 {print; next}  {sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
     """
     ls -1 *.bam > bam_files_list.txt;
     samtools \\
