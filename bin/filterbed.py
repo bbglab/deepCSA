@@ -7,6 +7,8 @@
 import sys
 import pandas as pd
 from utils import add_filter, to_int_if_possible
+from read_utils import custom_na_values
+
 # import seaborn as sns
 # import matplotlib.pyplot as plt
 
@@ -118,7 +120,7 @@ bedfile = sys.argv[2]
 filtername = sys.argv[3]
 positive = False
 
-sample_maf = pd.read_csv(sample_maf_file, sep = '\t', header = 0, na_filter = False)
+sample_maf = pd.read_csv(sample_maf_file, sep = '\t', header = 0, na_values = custom_na_values)
 
 current_filters = pd.unique(sample_maf["FILTER"].astype(str).str.split(";").explode())
 

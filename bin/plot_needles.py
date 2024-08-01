@@ -5,6 +5,7 @@ import sys, os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from read_utils import custom_na_values
 
 
 def plot_single_needle(gene, snvs_maf_obs,
@@ -98,7 +99,7 @@ def plotting_needle_from_counts(data_gene,
 
 def manager(mutations_file, o3d_seq_file, sample_name, sample_name_out):
     # Load your MAF DataFrame (raw_annotated_maf)
-    maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_filter = False)
+    maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
     o3d_seq_df = pd.read_csv(o3d_seq_file, sep = "\t", header = 0)
 
     maf_f = maf[maf["canonical_Protein_position"] != '-'].reset_index(drop = True)

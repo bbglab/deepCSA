@@ -3,6 +3,7 @@
 import sys
 import pandas as pd
 import json
+from read_utils import custom_na_values
 
 table_filename = sys.argv[1]
 separator_input = sys.argv[2] # either tab or comma
@@ -19,7 +20,7 @@ def reformatnames(name):
 
 separator = separator2character.get(separator_input, separator_input)
 
-features_table = pd.read_table(table_filename, header = 0, sep=separator, na_filter = False)
+features_table = pd.read_table(table_filename, header = 0, sep=separator, na_values = custom_na_values)
 
 
 with open(json_information, 'r') as file:

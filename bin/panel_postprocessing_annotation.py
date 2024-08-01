@@ -11,6 +11,7 @@ from bgreference import hg38, hg19, mm10
 from utils import vartype
 from utils_context import canonical_channels, transform_context
 from utils_impacts import *
+from read_utils import custom_na_values
 
 assembly_name2function = {"hg38": hg38,
                             "hg19": hg19,
@@ -142,7 +143,7 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     explain what this function does
     """
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
-                                        header = None, na_filter = False)
+                                        header = None, na_values = custom_na_values)
     print("all possible sites loaded")
     all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'SYMBOL', 'CANONICAL']
 

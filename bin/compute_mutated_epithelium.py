@@ -2,6 +2,7 @@
 
 import sys
 import pandas as pd
+from read_utils import custom_na_values
 
 
 # -- Main function -- #
@@ -12,8 +13,8 @@ def compute_mutepithelium_exon(sample_n, mutations_file, denominator_file):
     '''
 
     # File loading
-    denominator_data = pd.read_csv(denominator_file, sep = "\t", header = 0, na_filter = False)
-    mutations = pd.read_csv(mutations_file, sep = "\t", header = 0, na_filter = False)
+    denominator_data = pd.read_csv(denominator_file, sep = "\t", header = 0, na_values = custom_na_values)
+    mutations = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
 
     mutations_list = []
     mutated_reads_list = []

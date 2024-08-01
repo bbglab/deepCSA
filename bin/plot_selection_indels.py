@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 # import matplotlib.colors as mcolors
 # from matplotlib.patches import Patch
 # from matplotlib.lines import Line2D
+from read_utils import custom_na_values
 
 
 # @click.command()
@@ -45,7 +46,7 @@ def generate_all_side_figures(sample,
     possible_genes = []
     indels_data = pd.read_table(f"{sample}.sample.indels.tsv",
                                     sep = '\t',
-                                    header = 0, na_filter = False)
+                                    header = 0, na_values = custom_na_values)
     indels_genes = list(pd.unique(indels_data["SYMBOL"]))
     possible_genes += indels_genes
 

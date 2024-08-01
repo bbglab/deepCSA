@@ -9,6 +9,8 @@ import pandas as pd
 # import seaborn as sns
 # import matplotlib.pyplot as plt
 from utils import vartype
+from read_utils import custom_na_values
+
 
 vcf = sys.argv[1]
 
@@ -391,7 +393,7 @@ def update_indel_info(df):
 # this is the file with the mutations produced by deepUMIcaller
 file_muts = vcf
 
-annotated_variants = pd.read_csv(annotation_file, header = 0, sep = "\t", na_filter = False)
+annotated_variants = pd.read_csv(annotation_file, header = 0, sep = "\t", na_values = custom_na_values)
 
 ## read all mutations
 # recompute the VAF since it might not have enough resolution

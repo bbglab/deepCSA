@@ -2,6 +2,7 @@
 
 import os, sys
 import pandas as pd
+from read_utils import custom_na_values
 
 
 samp_name = sys.argv[1]
@@ -18,7 +19,7 @@ dfs = []
 # Read each .tsv.gz file into a DataFrame and append to the list
 for file_name in file_names:
     file_path = os.path.join(directory, file_name)
-    df = pd.read_csv(file_path, compression='gzip', header = 0, sep='\t', na_filter = False)  # Read gzipped TSV
+    df = pd.read_csv(file_path, compression='gzip', header = 0, sep='\t', na_values = custom_na_values)  # Read gzipped TSV
     dfs.append(df)
 
 # Concatenate the list of DataFrames into a single DataFrame

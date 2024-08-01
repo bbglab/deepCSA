@@ -3,6 +3,7 @@
 
 import click
 import pandas as pd
+from read_utils import custom_na_values
 
 
 def combine_mutations_n_signatures(mutations_file, signature_probabilities_files, output_file):
@@ -10,7 +11,7 @@ def combine_mutations_n_signatures(mutations_file, signature_probabilities_files
     INFO
     """
 
-    mutations = pd.read_csv(mutations_file, sep = "\t", header = 0, na_filter = False)
+    mutations = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
 
     sig_probs_matrix = pd.read_csv(signature_probabilities_files, sep = "\t", header = 0)
 

@@ -2,6 +2,7 @@
 
 import sys
 import pandas as pd
+from read_utils import custom_na_values
 
 
 maf_df_file = sys.argv[1]
@@ -9,8 +10,8 @@ vep_output_all = sys.argv[2]
 sample = sys.argv[3]
 
 
-vep_data = pd.read_table(vep_output_all, na_filter = False)
-mutationsdata = pd.read_table(maf_df_file, na_filter = False)
+vep_data = pd.read_table(vep_output_all, na_values = custom_na_values)
+mutationsdata = pd.read_table(maf_df_file, na_values = custom_na_values)
 
 if "Tumor_Sample_Barcode" in mutationsdata.columns:
     reduced_mutationsdata = mutationsdata[["Tumor_Sample_Barcode", "MUT_ID"]]
