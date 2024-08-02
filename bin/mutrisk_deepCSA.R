@@ -1,7 +1,5 @@
 #!/opt/conda/bin/Rscript --vanilla
 
-
-
 # standalone version of deepCSA depth script, to be used in the deepCSA pipeline
 library(data.table)
 library(tidyverse)
@@ -10,7 +8,7 @@ library(BSgenome.Hsapiens.UCSC.hg38)
 options(dplyr.summarise.inform = FALSE)
 
 # load dndscv substmodel
-substmodel = read.delim("/dndscv_table/submod_192r_3w.tsv")
+substmodel = read.delim("/dndscv_table/submod_192r_3w.tsv") |> as.matrix()
 # match dnds mutation types with the canonical mutation types
 mut_types = rownames(substmodel)
 
