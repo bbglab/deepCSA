@@ -98,7 +98,8 @@ generate_tables = function(tab) {
 generate_tables_depth = function(tab_depths, sample) {
 
   # initialize empty matrix
-  mat = matrix(0, 192, 4, dimnames = list(mut_types, c("synonymous", "missense", "nonsense", "spl")))
+  mat = matrix(0, 192, 4, dimnames = list(mut_types,
+   c("synonymous", "missense", "nonsense", "spl")))
 
   # initialize empty gene mutation list
   gene_tabs = list()
@@ -109,7 +110,9 @@ generate_tables_depth = function(tab_depths, sample) {
   # correct for the depth of the sequenced sample. If no sample is selected, select all patient columns
   if (missing(sample)) {
     site_depths = rowSums(tab_depths |>
-                            select(starts_with("P19")))
+                            select(-c("chr", "pos", "ref", "alt",
+                             "MUT_ID", "GENE", "IMPACT", "CONTEXT_MUT", "CONTEXT", 
+                              "Strand", "genestrand", "ctx", "refstrand", "altstrand", "mutation", "impact")))
   }   else {
     site_depths = tab_depths |>
       pull(all_of(sample))
@@ -123,7 +126,7 @@ generate_tables_depth = function(tab_depths, sample) {
     pivot_wider(names_from = impact, values_from = n, values_fill = 0) |>
     ungroup()
 
-  gene_tables = split(gene_tables |> select(-GENE), gene_tables$GENE)
+  gene_tables = split(gene_tables |> dplyr::select(-GENE), gene_tables$GENE)
   gene_tables = lapply(gene_tables, column_to_rownames, "mutation")
 
   for (gene in names(gene_tables)) {
@@ -327,6 +330,7 @@ input_muts = fread(input_muts_file) |>
 # read in the depth file table for all samples:
 sample_depths = fread(sample_depths_file)
 sample_depths =  sample_depths |>
+  dplyr::select(-CONTEXT) |>
   dplyr::rename(chr = CHROM, pos = POS)
 
 consensus_depths = left_join(consensus, sample_depths, by = c("chr", "pos"))
