@@ -7,6 +7,11 @@ include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../..
 include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
 include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../../modules/local/bbgtools/omega/estimator/main'
 
+if (params.omega_hotspots){
+    include { EXPAND_REGIONS           as EXPANDREGIONS                } from '../../../modules/local/expand_regions/main'
+}
+
+
 
 if (params.omega_globalloc){
     include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
@@ -58,8 +63,16 @@ workflow OMEGA_ANALYSIS{
     .set{ muts_n_depths_n_profile }
 
 
+    if (params.omega_hotspots){
+        EXPANDREGIONS(panel, params.omega_hotspots_bedfile)
+        ch_versions = ch_versions.mix(EXPANDREGIONS.out.versions)
+        expanded_panel = EXPANDREGIONS.out.panel
+    } else {
+        expanded_panel = panel
+    }
+
     // FIXME: here I am using bedfile as a dummy value channel
-    PREPROCESSING( muts_n_depths_n_profile, panel, bedfile)
+    PREPROCESSING( muts_n_depths_n_profile, expanded_panel, bedfile)
     ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
 
     PREPROCESSING.out.mutabs_n_mutations_tsv
@@ -73,7 +86,7 @@ workflow OMEGA_ANALYSIS{
     GROUPGENES(all_samples_muts, custom_gene_groups)
     ch_versions = ch_versions.mix(GROUPGENES.out.versions)
 
-    ESTIMATOR( preprocess_n_depths, panel, GROUPGENES.out.json_genes.first())
+    ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
     ch_versions = ch_versions.mix(ESTIMATOR.out.versions)
 
 
@@ -83,14 +96,14 @@ workflow OMEGA_ANALYSIS{
         .set{ all_samples_syn_muts }
 
 
-        PREPROCESSINGGLOBALLOC( muts_n_depths_n_profile, panel, all_samples_syn_muts.first() )
+        PREPROCESSINGGLOBALLOC( muts_n_depths_n_profile, expanded_panel, all_samples_syn_muts.first() )
         ch_versions = ch_versions.mix(PREPROCESSINGGLOBALLOC.out.versions)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_globalloc_n_depths }
 
-        ESTIMATORGLOBALLOC( preprocess_globalloc_n_depths, panel, GROUPGENES.out.json_genes.first())
+        ESTIMATORGLOBALLOC( preprocess_globalloc_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATORGLOBALLOC.out.versions)
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
@@ -115,14 +128,14 @@ workflow OMEGA_ANALYSIS{
         .set{ muts_n_depths_n_profile_exp }
 
         // FIXME: here I am using bedfile as a dummy value channel
-        PREPROCESSINGEXP( muts_n_depths_n_profile_exp, panel, bedfile)
+        PREPROCESSINGEXP( muts_n_depths_n_profile_exp, expanded_panel, bedfile)
         ch_versions = ch_versions.mix(PREPROCESSINGEXP.out.versions)
 
         PREPROCESSINGEXP.out.mutabs_n_mutations_tsv
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_n_depths_exp }
 
-        ESTIMATOREXP( preprocess_n_depths_exp, panel, GROUPGENES.out.json_genes.first())
+        ESTIMATOREXP( preprocess_n_depths_exp, expanded_panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATOREXP.out.versions)
 
 
@@ -137,14 +150,14 @@ workflow OMEGA_ANALYSIS{
         .set{ muts_n_depths_n_profile_ok }
 
         // FIXME: here I am using bedfile as a dummy value channel
-        PREPROCESSINGOK( muts_n_depths_n_profile_ok, panel, bedfile)
+        PREPROCESSINGOK( muts_n_depths_n_profile_ok, expanded_panel, bedfile)
         ch_versions = ch_versions.mix(PREPROCESSINGEXP.out.versions)
 
         PREPROCESSINGOK.out.mutabs_n_mutations_tsv
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_n_depths_ok }
 
-        ESTIMATOROK( preprocess_n_depths_ok, panel, GROUPGENES.out.json_genes.first())
+        ESTIMATOROK( preprocess_n_depths_ok, expanded_panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATOROK.out.versions)
 
 
@@ -158,14 +171,14 @@ workflow OMEGA_ANALYSIS{
         .set{ muts_n_depths_n_profile_red }
 
         // FIXME: here I am using bedfile as a dummy value channel
-        PREPROCESSINGRED( muts_n_depths_n_profile_red, panel, bedfile)
+        PREPROCESSINGRED( muts_n_depths_n_profile_red, expanded_panel, bedfile)
         ch_versions = ch_versions.mix(PREPROCESSINGRED.out.versions)
 
         PREPROCESSINGRED.out.mutabs_n_mutations_tsv
         .join( SUBSETDEPTHS.out.subset )
         .set{ preprocess_n_depths_red }
 
-        ESTIMATORRED( preprocess_n_depths_red, panel, GROUPGENES.out.json_genes.first())
+        ESTIMATORRED( preprocess_n_depths_red, expanded_panel, GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATORRED.out.versions)
 
         expanded_results = ESTIMATOREXP.out.results
