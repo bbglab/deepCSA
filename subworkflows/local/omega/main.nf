@@ -42,6 +42,7 @@ workflow OMEGA_ANALYSIS{
     bedfile
     panel
     custom_gene_groups
+    hotspots_file
 
 
     main:
@@ -64,9 +65,9 @@ workflow OMEGA_ANALYSIS{
 
 
     if (params.omega_hotspots){
-        EXPANDREGIONS(panel, params.omega_hotspots_bedfile)
+        EXPANDREGIONS(panel, hotspots_file)
         ch_versions = ch_versions.mix(EXPANDREGIONS.out.versions)
-        expanded_panel = EXPANDREGIONS.out.panel
+        expanded_panel = EXPANDREGIONS.out.panel_increased
     } else {
         expanded_panel = panel
     }
@@ -83,7 +84,7 @@ workflow OMEGA_ANALYSIS{
     .join( PREPROCESSING.out.syn_muts_tsv )
     .set{ all_samples_muts }
 
-    GROUPGENES(all_samples_muts, custom_gene_groups)
+    GROUPGENES(all_samples_muts, custom_gene_groups, EXPANDREGIONS.out.new_regions_json)
     ch_versions = ch_versions.mix(GROUPGENES.out.versions)
 
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
