@@ -17,7 +17,7 @@ from read_utils import custom_na_values
 
 panel_file = sys.argv[1]
 bedfile = sys.argv[2]
-expand = int(sys.argv[3]) # 30
+expand = int(sys.argv[3])
 
 
 panel_data = pd.read_table(panel_file)

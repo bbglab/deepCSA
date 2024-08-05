@@ -25,7 +25,7 @@ process GROUP_GENES {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "groups"
     def separator = task.ext.separator ?: "tab"
-    def hotspots = task.ext.hotspots ? "True" : "False"
+    def hotspots = task.ext.hotspots ? 1 : 0
     def cmd_custom = task.ext.custom ? "${features_table} ${separator} pathway_groups_out.json" : ""
     """
     awk 'NR>1 {print \$1}' ${mutations_table} | sort -u  > gene_list.txt
