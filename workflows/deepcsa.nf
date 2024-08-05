@@ -103,6 +103,7 @@ include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkfl
 
 include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
 
+include { REGRESSIONS               as REGRESSIONS          } from '../subworkflows/local/regressions/main'
 
 
 // Download annotation cache if needed
@@ -182,16 +183,16 @@ workflow DEEPCSA{
 
 
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
-    ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+    // DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
+    // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
     // Panels generation: all modalities
-    CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
-    ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
+    // CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
+    // ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
-    ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
-    ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
+    // ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
+    // ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
+    // ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
 
     if (params.plot_depths){
@@ -201,10 +202,10 @@ workflow DEEPCSA{
     }
 
     // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
-                        TABLE2GROUP.out.json_allgroups, seqinfo_df)
-    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
-    positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
+    // MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
+                        // TABLE2GROUP.out.json_allgroups, seqinfo_df)
+    // ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
+    // positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
 
     if (params.mutationrate){
@@ -472,6 +473,8 @@ workflow DEEPCSA{
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
 
+    REGRESSIONS(features_table)
+    ch_versions = ch_versions.mix(REGRESSIONS.out.versions)
 
     //
     // MODULE: MultiQC
