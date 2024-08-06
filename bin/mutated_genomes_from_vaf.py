@@ -4,6 +4,7 @@ import sys
 import click
 from scipy.stats import beta
 import pandas as pd
+from read_utils import custom_na_values
 
 
 @click.command()
@@ -75,7 +76,7 @@ def load_maf(maf_file):
     Loads MAF and applies filters
     '''
 
-    maf = pd.read_csv(maf_file, sep='\t', header=0)
+    maf = pd.read_csv(maf_file, sep='\t', header=0, na_values = custom_na_values)
 
     # Clopper-Pearson 95% CI
     maf.loc[:, 'VAF_lower'] = get_binomial_low(maf['ALT_DEPTH'].astype(float).values, maf['DEPTH'].astype(float).values)

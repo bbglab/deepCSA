@@ -35,6 +35,19 @@ datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExi
 annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
 
+// if the user wants to use custom gene groups, import the gene groups table
+// otherwise I am using the input csv as a dummy value channel
+custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() : Channel.fromPath(params.input)
+
+// if the user wants to use custom BED file for computing the depths, import the BED file
+// otherwise I am using the input csv as a dummy value channel
+custom_bed_file = params.custom_bedfile ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
+
+// if the user wants to define hotspots for omega, import the hotspots definition BED file
+// otherwise I am using the input csv as a dummy value channel
+hotspots_bed_file = params.omega_hotspots_bedfile ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
+
+
 
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
 
@@ -172,7 +185,7 @@ workflow DEEPCSA{
 
 
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(meta_bams_alone)
+    DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
     ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
     // Panels generation: all modalities
@@ -375,8 +388,8 @@ workflow DEEPCSA{
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
-                    params.omega_globalloc,
-                    params.omega_vaf_distorsioned
+                    custom_groups_table,
+                    hotspots_bed_file
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -388,8 +401,8 @@ workflow DEEPCSA{
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
-                        params.omega_globalloc,
-                        params.omega_vaf_distorsioned
+                        custom_groups_table,
+                        hotspots_bed_file
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -401,8 +414,8 @@ workflow DEEPCSA{
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
-                            params.omega_globalloc,
-                            params.omega_vaf_distorsioned
+                            custom_groups_table,
+                            hotspots_bed_file
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -411,8 +424,8 @@ workflow DEEPCSA{
                                 MUTPROFILENONPROT.out.profile,
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
-                                params.omega_globalloc,
-                                params.omega_vaf_distorsioned
+                                custom_groups_table,
+                                hotspots_bed_file
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }
@@ -455,7 +468,6 @@ workflow DEEPCSA{
             SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
             ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
         }
-
     }
 
     if ( params.indels & params.oncodrivefml & params.omega ){

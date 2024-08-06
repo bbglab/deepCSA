@@ -6,6 +6,7 @@ import tabix
 import multiprocessing
 import pandas as pd
 import numpy as np
+from read_utils import custom_na_values
 
 # Define a function to generate exon number
 def generate_exon_number(group):
@@ -245,7 +246,7 @@ sample = sys.argv[4]
 # mpileup_data.drop(["STATUS", "QUAL", "QNAME"], axis = 1, inplace = True)
 # print("reads splitted")
 
-regions_df = pd.read_csv(regions_file, sep ='\t', header = 0).iloc[:,:4]
+regions_df = pd.read_csv(regions_file, sep ='\t', header = 0, na_values = custom_na_values).iloc[:,:4]
 regions_df.columns = ["CHROM", "START", "END", "GENE"]
 print("regions loaded")
 

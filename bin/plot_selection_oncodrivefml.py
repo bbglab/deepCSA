@@ -76,7 +76,7 @@ def generate_all_side_figures(sample,
     if "excess_indels" in tools:
         indels_data = pd.read_table(f"{sample}.sample.indels.tsv",
                                         sep = '\t',
-                                        header = 0)
+                                        header = 0, na_values = custom_na_values)
         indels_genes = list(pd.unique(indels_data["SYMBOL"]))
         possible_genes += indels_genes
 

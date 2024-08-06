@@ -11,6 +11,7 @@ import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
 from utils import filter_maf
+from read_utils import custom_na_values
 
 
 def subset_mutation_dataframe(mutations_file, json_filters):
@@ -18,7 +19,7 @@ def subset_mutation_dataframe(mutations_file, json_filters):
     INFO
     """
     # Load your MAF DataFrame (raw_annotated_maf)
-    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
 
     data_tuples = []
 
@@ -34,6 +35,7 @@ def subset_mutation_dataframe(mutations_file, json_filters):
             else:
                 data_tuples.append((key, value))
         print(data_tuples)
+
 
     if len(data_tuples) > 0:
         # Filter the annotated maf using the described filters
