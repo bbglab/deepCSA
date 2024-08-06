@@ -2,12 +2,12 @@ include { RUNREGRESSIONS    as RUNREGRESSIONS             } from '../../../modul
 
 workflow REGRESSIONS{
     take:
-    features_table
+    regressions_config
 
     main:
     ch_versions = Channel.empty()
 
-    RUNREGRESSIONS(features_table)
+    RUNREGRESSIONS(regressions_config)
     ch_versions = ch_versions.mix(RUNREGRESSIONS.out.versions)
 
     emit:

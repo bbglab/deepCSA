@@ -6,10 +6,10 @@ process RUNREGRESSIONS {
     container 'docker.io/rblancomi/statsmodels:test'
 
     input:
-    path(features_table)
+    path(regressions_config)
 
     output:
-    path("regressions.pdf")             , emit: regressions
+    path  "regressions.pdf"             , emit: regressions
     path  "versions.yml"                , emit: versions
 
 
@@ -21,14 +21,8 @@ process RUNREGRESSIONS {
     def prefix = task.ext.prefix ?: "regressions"
 
     """
-    echo "Starting regression analysis..."
-    echo "Current directory: \$(pwd)"
-    echo "Listing files in current directory:"
-    ls -l
-    ls ../../../bin/regression_analysis.py
-
     regression_analysis.py \\
-                -config /workspace/datasets/transfer/ferriol_deepcsa/regressions/config.ini \\
+                -config ${regressions_config} \\
                 -pdf regressions.pdf \\
                 --response_subplots \\
                 --no-total_plot \\

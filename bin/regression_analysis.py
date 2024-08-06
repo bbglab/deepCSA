@@ -7,7 +7,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 import os
 import configparser
 import json
-print("hhdhd")
 import re
 import click
 

@@ -290,9 +290,25 @@
                     "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run plot_depths?"
-                }
+                },
+                "regressions": {
+                    "type": "boolean",
+                    "description": "Do you want to run regression analysis?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run regression analysis?"
+                },
+                "regressions_config": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to config.ini file with the needed information to perform custom regressions",
+                    "help_text": "Path to config.ini file with the needed information to perform custom regressions",
+                    "fa_icon": "far fa-file-code"
             }
-        },
+        }},
         "profile_computation_config": {
             "title": "Profile computation options",
             "type": "object",

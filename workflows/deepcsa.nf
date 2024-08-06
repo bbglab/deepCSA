@@ -43,7 +43,7 @@ custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custo
 // otherwise I am using the input csv as a dummy value channel
 custom_bed_file = params.custom_bedfile ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
 
-
+regressions_config = params.regressions_config ? Channel.fromPath( params.regressions_config, checkIfExists: true) : Channel.fromPath(params.input)
 
 
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
@@ -473,8 +473,11 @@ workflow DEEPCSA{
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
 
-    REGRESSIONS(features_table)
-    ch_versions = ch_versions.mix(REGRESSIONS.out.versions)
+    if (params.regressions){
+        REGRESSIONS(regressions_config)
+        ch_versions = ch_versions.mix(REGRESSIONS.out.versions)
+    }
+
 
     //
     // MODULE: MultiQC
