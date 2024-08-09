@@ -69,10 +69,8 @@ workflow MUTATION_PREPROCESSING {
     SOMATICMUTATIONS(named_mafs)
     ch_versions = ch_versions.mix(SOMATICMUTATIONS.out.versions)
 
-    if (params.vep_species == 'homo_sapiens'){
-        PLOTNEEDLES(SOMATICMUTATIONS.out.mutations, sequence_information_df)
-        ch_versions = ch_versions.mix(PLOTNEEDLES.out.versions)
-    }
+    PLOTNEEDLES(SOMATICMUTATIONS.out.mutations, sequence_information_df)
+    ch_versions = ch_versions.mix(PLOTNEEDLES.out.versions)
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
