@@ -10,7 +10,7 @@ process GROUP_GENES {
 
     input:
     tuple val(meta), path(mutations_table)
-    path(features_table)
+    path (features_table)
     tuple val(meta2), path(hotspots_file)
 
     output:

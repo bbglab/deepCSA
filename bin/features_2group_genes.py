@@ -88,7 +88,8 @@ if __name__ == '__main__':
     output_json_groups_2_names = sys.argv[4]
 
     custom_groups = False
-    add_hotspots = bool(hotspot_genes)
+
+    add_hotspots = hotspot_genes == "1"
 
 
     if len(sys.argv) > 5:
