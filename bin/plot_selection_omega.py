@@ -31,26 +31,21 @@ from read_utils import custom_na_values
 #     main()
 
 
-sample_name_  = sys.argv[1]
-# mut_file     = sys.argv[2]
-# o3d_seq_file_ = sys.argv[3]
-# sample_name_out_ = sys.argv[4]
-# out_maf      = sys.argv[3]
-# json_filters = sys.argv[4]
-# req_plots    = sys.argv[5]
-
 
 
 def generate_all_side_figures(sample,
+                                mut_file,
+                                omega_file,
                                 # gene_list = None,
                                 tools = ["omega_trunc", "omega_mis"]
                                 ):
 
-    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv", na_values = custom_na_values)
+    snvs_maf = pd.read_table(mut_file, na_values = custom_na_values)
+    snvs_maf = snvs_maf[snvs_maf["TYPE"] == "SNV"].reset_index(drop = True)
 
     possible_genes = []
 
-    omega_data = pd.read_table(f"output_mle.{sample}.tsv")
+    omega_data = pd.read_table(omega_file)
     omega_data = omega_data[omega_data["impact"].isin(['missense', 'truncating'])]
     if "omega_trunc" in tools :
         omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
@@ -99,7 +94,7 @@ def build_counts_from_df_complete(genee, snvs_maf, omega_truncating, omega_misse
 
     miss_omega = float(omega_missense[omega_missense["GENE"] == genee]["omega_mis"].values[0])
     miss_pvalue = float(omega_missense[omega_missense["GENE"] == genee]["pvalue"].values[0])
-    snvs_gene = snvs_maf[snvs_maf["SYMBOL"] == genee].reset_index(drop = True)
+    snvs_gene = snvs_maf[snvs_maf["canonical_SYMBOL"] == genee].reset_index(drop = True)
 
 
     # Calculate counts based on canonical consequences
@@ -196,8 +191,8 @@ def plot_omega_side_complete(df):
     deviation_for_centering = text_separation * 12
 
     # text_of_line_separation = line_separation / 3
-    text_pos1 = max(df[df['type'].isin(consequence_order[:2])]['number_obs']) + text_separation + deviation_for_centering
-    text_pos2 = max(df[df['type'].isin(consequence_order[1:])]['number_obs']) + text_separation + deviation_for_centering
+    text_pos1 = df[df['type'].isin(consequence_order[:2])][['number_obs', 'expected']].max().max() + text_separation + deviation_for_centering
+    text_pos2 = df[df['type'].isin(consequence_order[1:])][['number_obs', 'expected']].max().max() + text_separation + deviation_for_centering
     # print(text_pos1, text_pos2)
 
     ax.text(text_pos1, 0.05, r'$\omega_{trunc}$ = ' + f"{t_omega:.2f}",
@@ -248,4 +243,16 @@ colors_dictionary = {"ofml"        : "viridis_r",
 
 
 if __name__ == '__main__':
-    generate_all_side_figures(sample_name_)
+
+    sample_name_    = sys.argv[1]
+    mut_filee        = sys.argv[2]
+    omega_filee      = sys.argv[3]
+    # o3d_seq_file_ = sys.argv[3]
+    # sample_name_out_ = sys.argv[4]
+    # out_maf      = sys.argv[3]
+    # json_filters = sys.argv[4]
+    # req_plots    = sys.argv[5]
+
+    generate_all_side_figures(sample_name_,
+                                mut_filee,
+                                omega_filee)

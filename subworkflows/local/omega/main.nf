@@ -12,10 +12,16 @@ if (params.omega_hotspots){
 }
 
 
+if (params.omega_plot){
+    include { PLOT_OMEGA           as PLOTOMEGA                     } from '../../../modules/local/plot/omega/main'
+}
 
 if (params.omega_globalloc){
     include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
     include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
+    if (params.omega_plot){
+        include { PLOT_OMEGA           as PLOTOMEGAGLOBALLOC            } from '../../../modules/local/plot/omega/main'
+    }
 }
 
 if (params.omega_vaf_distorsioned){
@@ -31,6 +37,9 @@ if (params.omega_vaf_distorsioned){
     include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
     include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
 }
+
+
+
 
 
 workflow OMEGA_ANALYSIS{
@@ -92,6 +101,15 @@ workflow OMEGA_ANALYSIS{
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
     ch_versions = ch_versions.mix(ESTIMATOR.out.versions)
 
+    if (params.omega_plot){
+        SUBSETMUTATIONS.out.subset
+        .join(ESTIMATOR.out.results)
+        .set{mutations_n_omega}
+
+        PLOTOMEGA(mutations_n_omega)
+        ch_versions = ch_versions.mix(PLOTOMEGA.out.versions)
+    }
+
 
     if (params.omega_globalloc) {
         Channel.of([ [ id: "all_samples" ] ])
@@ -110,6 +128,16 @@ workflow OMEGA_ANALYSIS{
         ch_versions = ch_versions.mix(ESTIMATORGLOBALLOC.out.versions)
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
+
+        if (params.omega_plot){
+            SUBSETMUTATIONS.out.subset
+            .join(ESTIMATORGLOBALLOC.out.results)
+            .set{mutations_n_omegagloloc}
+
+            PLOTOMEGAGLOBALLOC(mutations_n_omegagloloc)
+            ch_versions = ch_versions.mix(PLOTOMEGAGLOBALLOC.out.versions)
+        }
+
     } else {
         global_loc_results = Channel.empty()
     }
@@ -190,6 +218,7 @@ workflow OMEGA_ANALYSIS{
     } else {
         expanded_results = Channel.empty()
     }
+
 
 
 
