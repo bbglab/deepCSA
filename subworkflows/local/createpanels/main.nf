@@ -103,27 +103,27 @@ workflow CREATE_PANELS {
 
     emit:
 
-    all_panel               = all_panel
-    all_bed                 = all_bed
-    prot_panel              = prot_panel
-    prot_bed                = prot_bed
-    nonprot_panel           = nonprot_panel
-    nonprot_bed             = nonprot_bed
-    exons_panel             = exons_panel
-    exons_bed               = exons_bed
-    introns_panel           = introns_panel
-    introns_bed             = introns_bed
+    all_panel               = all_panel.first()
+    all_bed                 = all_bed.first()
+    prot_panel              = prot_panel.first()
+    prot_bed                = prot_bed.first()
+    nonprot_panel           = nonprot_panel.first()
+    nonprot_bed             = nonprot_bed.first()
+    exons_panel             = exons_panel.first()
+    exons_bed               = exons_bed.first()
+    introns_panel           = introns_panel.first()
+    introns_bed             = introns_bed.first()
 
-    all_consensus_panel     = CREATECONSENSUSPANELSALL.out.consensus_panel
-    all_consensus_bed       = CREATECONSENSUSPANELSALL.out.consensus_panel_bed
-    prot_consensus_panel    = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel
-    prot_consensus_bed      = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel_bed
-    nonprot_consensus_panel = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel
-    nonprot_consensus_bed   = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel_bed
-    exons_consensus_panel   = CREATECONSENSUSPANELSEXONS.out.consensus_panel
-    exons_consensus_bed     = CREATECONSENSUSPANELSEXONS.out.consensus_panel_bed
-    introns_consensus_panel = CREATECONSENSUSPANELSINTRONS.out.consensus_panel
-    introns_consensus_bed   = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed
+    all_consensus_panel     = CREATECONSENSUSPANELSALL.out.consensus_panel.first()
+    all_consensus_bed       = CREATECONSENSUSPANELSALL.out.consensus_panel_bed.first()
+    prot_consensus_panel    = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel.first()
+    prot_consensus_bed      = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel_bed.first()
+    nonprot_consensus_panel = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel.first()
+    nonprot_consensus_bed   = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel_bed.first()
+    exons_consensus_panel   = CREATECONSENSUSPANELSEXONS.out.consensus_panel.first()
+    exons_consensus_bed     = CREATECONSENSUSPANELSEXONS.out.consensus_panel_bed.first()
+    introns_consensus_panel = CREATECONSENSUSPANELSINTRONS.out.consensus_panel.first()
+    introns_consensus_bed   = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed.first()
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())

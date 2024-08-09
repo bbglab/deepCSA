@@ -12,6 +12,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+from read_utils import custom_na_values
 
 
 # @click.command()
@@ -45,7 +46,7 @@ def generate_all_side_figures(sample,
                                 tools = ["oncodrivefml", "oncodrive3d", "omega_trunc", "omega_mis", "excess_indels"]
                                 ):
 
-    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv")
+    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv", na_values = custom_na_values)
 
     possible_genes = []
     if "oncodrivefml" in tools:
@@ -75,7 +76,7 @@ def generate_all_side_figures(sample,
     if "excess_indels" in tools:
         indels_data = pd.read_table(f"{sample}.sample.indels.tsv",
                                         sep = '\t',
-                                        header = 0)
+                                        header = 0, na_values = custom_na_values)
         indels_genes = list(pd.unique(indels_data["SYMBOL"]))
         possible_genes += indels_genes
 

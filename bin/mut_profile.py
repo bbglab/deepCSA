@@ -8,6 +8,7 @@ import numpy as np
 
 from utils import contexts_formatted, contexts_formatted_sigprofiler
 from utils_plot import plot_profile
+from read_utils import custom_na_values
 
 
 def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method, pseudocount,
@@ -27,7 +28,7 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method
         exit(1)
 
     # Load your MAF DataFrame (raw_annotated_maf)
-    annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
 
     # create the matrix in the desired order
     empty_matrix = pd.DataFrame(index = contexts_formatted)

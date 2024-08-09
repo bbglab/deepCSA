@@ -97,8 +97,8 @@
                     "exists": true,
                     "mimetype": "text/plain",
                     "default": null,
-                    "description": "Path to FASTA genome file.",
-                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
+                    "description": "Path to table file with cohort samples information.",
+                    "help_text": "Path to table file with cohort samples information.",
                     "fa_icon": "far fa-file-code"
                 },
                 "features_table_separator": {
@@ -112,6 +112,102 @@
                     "type": "string",
                     "description": "String in JSON-like format defining the groups of samples.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "gene_grouping_configs": {
+            "title": "Gene grouping configurations",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Sequencing panel related files that indicate which custom groups of genes you want to analyze.",
+            "properties": {
+                "custom_groups": {
+                    "type": "boolean",
+                    "description": "Do you want to use custom gene groups?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to use custom gene groups?"
+                },
+                "custom_groups_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to table file with gene groups information.",
+                    "help_text": "Path to table file with gene groups information.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "custom_groups_separator": {
+                    "type": "string",
+                    "description": "Separator of the features table file",
+                    "default": "comma",
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "custom_bedfile_configs": {
+            "title": "Custom BED file configurations",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED file dependent on the sequencing panel or minimum depth of the regions where to focus tha analysis.",
+            "properties": {
+                "use_custom_bedfile": {
+                    "type": "boolean",
+                    "description": "Do you want to use a custom BED file?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to use a custom BED file?"
+                },
+                "custom_bedfile": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to BED file to use.",
+                    "help_text": "Path to BED file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "use_custom_minimum_depth": {
+                    "type": "integer",
+                    "description": "Minimum average depth of a position across all samples for it to be included in the analysis",
+                    "default": 0,
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "hotspot_bedfile_configs": {
+            "title": "Definition of hotspot regions configuration",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
+            "properties": {
+                "omega_hotspots": {
+                    "type": "boolean",
+                    "description": "Do you want to analyze omega hotspots independently?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to analyze omega hotspots independently?"
+                },
+                "omega_hotspots_bedfile": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to BED file to use.",
+                    "help_text": "Path to BED file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "hotspot_expansion": {
+                    "type": "integer",
+                    "description": "Size (in bp) of how much you want to expand the region around the hotspot (same in both directions)",
+                    "default": 30,
+                    "help_text": "",
                     "fa_icon": "far fa-file-code"
                 }
             }
@@ -623,6 +719,15 @@
         },
         {
             "$ref": "#/defs/grouping_configs"
+        },
+        {
+            "$ref": "#/defs/gene_grouping_configs"
+        },
+        {
+            "$ref": "#/defs/custom_bedfile_configs"
+        },
+        {
+            "$ref": "#/defs/hotspot_bedfile_configs"
         },
         {
             "$ref": "#/defs/tool_execution_configs"

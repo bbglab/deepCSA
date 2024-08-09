@@ -6,15 +6,17 @@ import numpy as np
 import sys
 
 from itertools import product
-from bgreference import hg38, hg19, mm10
+from bgreference import hg38, hg19, mm10, mm39
 
 from utils import vartype
 from utils_context import canonical_channels, transform_context
 from utils_impacts import *
+from read_utils import custom_na_values
 
 assembly_name2function = {"hg38": hg38,
                             "hg19": hg19,
-                            "mm10": mm10}
+                            "mm10": mm10,
+                            "mm39": mm39}
 
 
 
@@ -131,7 +133,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     explain what this function does
     """
 
-    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0)
+    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t", header = 0, na_values = custom_na_values)
 
     if all_ :
         all_possible_sites[["CHROM", "POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
@@ -201,7 +203,7 @@ if __name__ == '__main__':
 
     try:
         assembly_name = sys.argv[3]
-        if assembly_name not in ["hg38", "hg19", "mm10"]:
+        if assembly_name not in ["hg38", "hg19", "mm10", "mm39"]:
             print("invalid assembly name")
             exit(1)
     except:
