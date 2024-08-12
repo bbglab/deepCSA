@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import concurrent.futures
 
-from bgreference import hg38, hg19, mm10
+from bgreference import hg38, hg19, mm10, mm39
 
 from utils import contexts_no_change
 

@@ -180,6 +180,38 @@
                 }
             }
         },
+        "hotspot_bedfile_configs": {
+            "title": "Definition of hotspot regions configuration",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
+            "properties": {
+                "omega_hotspots": {
+                    "type": "boolean",
+                    "description": "Do you want to analyze omega hotspots independently?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to analyze omega hotspots independently?"
+                },
+                "omega_hotspots_bedfile": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to BED file to use.",
+                    "help_text": "Path to BED file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "hotspot_expansion": {
+                    "type": "integer",
+                    "description": "Size (in bp) of how much you want to expand the region around the hotspot (same in both directions)",
+                    "default": 30,
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
         "tool_execution_configs": {
             "title": "Tool selection options",
             "type": "object",
@@ -248,6 +280,13 @@
                     "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run omega with the different VAF distorsioned gropus?"
+                },
+                "omega_plot": {
+                    "type": "boolean",
+                    "description": "Do you want to plot omega results?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to plot omega results?"
                 },
                 "signatures": {
                     "type": "boolean",
@@ -693,6 +732,9 @@
         },
         {
             "$ref": "#/defs/custom_bedfile_configs"
+        },
+        {
+            "$ref": "#/defs/hotspot_bedfile_configs"
         },
         {
             "$ref": "#/defs/tool_execution_configs"

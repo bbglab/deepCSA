@@ -39,10 +39,13 @@ seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for
 // otherwise I am using the input csv as a dummy value channel
 custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() : Channel.fromPath(params.input)
 
-// if the user wants to use custom gene groups, import the gene groups table
+// if the user wants to use custom BED file for computing the depths, import the BED file
 // otherwise I am using the input csv as a dummy value channel
 custom_bed_file = params.custom_bedfile ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
 
+// if the user wants to define hotspots for omega, import the hotspots definition BED file
+// otherwise I am using the input csv as a dummy value channel
+hotspots_bed_file = params.omega_hotspots_bedfile ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
 
 
 
@@ -385,7 +388,8 @@ workflow DEEPCSA{
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
-                    custom_groups_table
+                    custom_groups_table,
+                    hotspots_bed_file
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -397,7 +401,8 @@ workflow DEEPCSA{
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
-                        custom_groups_table
+                        custom_groups_table,
+                        hotspots_bed_file
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -409,7 +414,8 @@ workflow DEEPCSA{
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
-                            custom_groups_table
+                            custom_groups_table,
+                            hotspots_bed_file
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -418,7 +424,8 @@ workflow DEEPCSA{
                                 MUTPROFILENONPROT.out.profile,
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
-                                custom_groups_table
+                                custom_groups_table,
+                                hotspots_bed_file
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }
