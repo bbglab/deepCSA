@@ -48,14 +48,14 @@ def generate_all_side_figures(sample,
     omega_data = pd.read_table(omega_file)
     omega_data = omega_data[omega_data["impact"].isin(['missense', 'truncating'])]
     if "omega_trunc" in tools :
-        omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-        omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
+        omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+        omega_truncating.columns = ["GENE", "mutations_trunc", "omega_trunc", "pvalue", "lower", "upper"]
         omega_truncating_genes = list(pd.unique(omega_truncating["GENE"]))
         possible_genes += omega_truncating_genes
 
     if "omega_mis" in tools :
-        omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-        omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
+        omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+        omega_missense.columns = ["GENE", "mutations_mis", "omega_mis", "pvalue", "lower", "upper"]
         omega_missense_genes = list(pd.unique(omega_truncating["GENE"]))
         possible_genes += omega_missense_genes
 
@@ -98,8 +98,8 @@ def build_counts_from_df_complete(genee, snvs_maf, omega_truncating, omega_misse
 
 
     # Calculate counts based on canonical consequences
-    truncating_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(['nonsense', "essential_splice"])].shape[0]
-    missense_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(['missense'])].shape[0]
+    truncating_count = float(omega_truncating[omega_truncating["GENE"] == genee]["mutations_trunc"].values[0])
+    missense_count = float(omega_missense[omega_missense["GENE"] == genee]["mutations_mis"].values[0])
     synonymous_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(["synonymous"])].shape[0]
 
     # Compute
@@ -153,7 +153,6 @@ def plot_omega_side_complete(df):
 #         obs_value = df[df['type'] == cons]['number_obs'].values[0]
 #         ax.barh(y_positions[i], obs_value, color=colors[cons], label=cons)
 
-    # Plot the observed values as filled bars
     sns.barplot(data=df, y='type', x='number_obs',
                 hue = 'type', legend = False,
                 hue_order = consequence_order,
