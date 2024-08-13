@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/bbg/deepcsa/master/assets/schema_input.json",
-    "title": "bbg/deepcsa pipeline - params.input schema",
+    "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/dev/nextflow_schema.json",
+    "title": "bbglab/deepCSA pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
     "type": "array",
     "items": {
