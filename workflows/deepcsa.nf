@@ -354,15 +354,24 @@ workflow DEEPCSA{
 
     // OncodriveFML
     if (params.oncodrivefml){
+        oncodrivefml_regressions = Channel.empty()
         if (params.profileall){
             ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
             ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
             // positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
+
+            if (params.regressions & 'all' in params.oncodrivefml_regressions.split(',')){
+                oncodrivefml_regressions_files = oncodrivefml_regressions_files.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
+            }
         }
         if (params.profilenonprot){
             ONCODRIVEFMLNONPROT(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYNONPROT.out.mutability, CREATEPANELS.out.exons_consensus_panel)
             ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
+
+            if (params.regressions & 'nonprotaffprof' in params.oncodrivefml_regressions.split(',')){
+                oncodrivefml_regressions_files = oncodrivefml_regressions_files.join(ONCODRIVEFMLNONPROT.out.results_snvs, remainder: true)
+            }
         }
     }
 
@@ -378,6 +387,7 @@ workflow DEEPCSA{
 
 
     if (params.omega){
+        omega_regressions_files = Channel.empty()
 
         // Omega
         if (params.profileall){
@@ -391,6 +401,10 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             ch_versions = ch_versions.mix(OMEGA.out.versions)
+            if (params.regressions & 'all' in params.omega_regressions.split(',') & 'uniquemuts' in params.omega_regressions.split(',')){
+                omega_regressions_files = omega_regressions_files.join(OMEGA.out.results, remainder: true)
+                omega_regressions_files = omega_regressions_files.join(OMEGA.out.results_global, remainder: true)
+            }
 
             // Omega multi
             OMEGAMULTI(MUT_PREPROCESSING.out.somatic_mafs,
@@ -403,6 +417,10 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
             ch_versions = ch_versions.mix(OMEGAMULTI.out.versions)
+            if (params.regressions & 'all' in params.omega_regressions.split(',') & 'multimuts' in params.omega_regressions.split(',')){
+                omega_regressions_files = omega_regressions_files.join(OMEGAMULTI.out.results, remainder: true)
+                omega_regressions_files = omega_regressions_files.join(OMEGAMULTI.out.results_global, remainder: true)
+            }
         }
         if (params.profilenonprot){
             OMEGANONPROT(MUT_PREPROCESSING.out.somatic_mafs,
@@ -413,6 +431,10 @@ workflow DEEPCSA{
                             custom_groups_table
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
+            if (params.regressions & 'nonprotaffprof' in params.omega_regressions.split(',') & 'uniquemuts' in params.omega_regressions.split(',')){
+                omega_regressions_files = omega_regressions_files.join(OMEGANONPROT.out.results, remainder: true)
+                omega_regressions_files = omega_regressions_files.join(OMEGANONPROT.out.results_global, remainder: true)
+            }
 
             OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
                                 annotated_depths,
@@ -422,6 +444,10 @@ workflow DEEPCSA{
                                 custom_groups_table
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
+            if (params.regressions & 'nonprotaffprof' in params.omega_regressions.split(',') & 'multimuts' in params.omega_regressions.split(',')){
+                omega_regressions_files = omega_regressions_files.join(OMEGANONPROTMULTI.out.results, remainder: true)
+                omega_regressions_files = omega_regressions_files.join(OMEGANONPROTMULTI.out.results_global, remainder: true)
+            }
         }
 
     }
@@ -469,14 +495,25 @@ workflow DEEPCSA{
         PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
     }
 
+    // Regressions
+    if (params.regressions){
+
+        REGRESSIONS(all_mutrates, oncodrivefml_regressions_files, omega_regressions_files,
+        params.mutrate_regressions, params.omega_regressions,
+        params.oncodrivefml_regressions, params.responses_subset_regressions,
+        params.samples_subset_regressions, params.predictors_file_regressions,
+        params.predictors_plot_config_regressions, params.random_effects_vars_regressions,
+        params.multipletesting_join_regressions, params.multivariate_rules_regressions,
+        params.response_subplots, params.total_plot,
+        params.response_and_total_subplots, params.make2,
+        params.correct_pvals, params.sign_threshold)
+        ch_versions = ch_versions.mix(REGRESSIONS.out.versions)
+
+    }
+
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
-
-    if (params.regressions){
-        REGRESSIONS(regressions_config)
-        ch_versions = ch_versions.mix(REGRESSIONS.out.versions)
-    }
 
 
     //
