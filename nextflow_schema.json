@@ -297,18 +297,140 @@
                     "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run regression analysis?"
-                },
-                "regressions_config": {
+                }
+        }},
+        "regressions_config": {
+            "title": "Parameters needed to run the regressions",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Provides all the parameters needed to run the regression module",
+            "properties": {
+                "mutrate_regressions": {
                     "type": "string",
-                    "format": "file-path",
-                    "exists": true,
                     "mimetype": "text/plain",
                     "default": null,
-                    "description": "Path to config.ini file with the needed information to perform custom regressions",
-                    "help_text": "Path to config.ini file with the needed information to perform custom regressions",
+                    "description": "Modality attributes for regression analysis with the mutation rate",
+                    "help_text": "If you want to run regressions with the mutation rate, include the modality attributes separated by a comma. Allowed values: mutrate,all,nonproteinaffecting,proteinaffecting,alltypes,snv,complex-deletion-insertion-mnv",
                     "fa_icon": "far fa-file-code"
+                },
+                "omega_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Modality attributes for regression analysis with omega",
+                    "help_text": "If you want to run regressions with omega values, include the modality attributes separated by a comma. Allowed values: omega,meandnds,dnds,allprof,nonprotaffprof,uniquemuts,multimuts,significant,nosignificant,bayes,mle",
+                    "fa_icon": "far fa-file-code"
+                },
+                "oncodrivefml_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Modality attributes for regression analysis with oncodrivefml",
+                    "help_text": "If you want to run regressions with oncodrivefml, include the modality attributes separated by a comma. Allowed values: oncodrivefml,zscore,diffobsvsexp,allprof,nonprotaffprof,significant,nosignificant",
+                    "fa_icon": "far fa-file-code"
+                },
+                "responses_subset_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Set of responses for which to run the analysis",
+                    "help_text": "If you want to run the analysis only for a set of responses, include them separated by a comma",
+                    "fa_icon": "far fa-file-code"
+                },
+                "samples_subset_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Set of samples for which to run the analysis",
+                    "help_text": "If you want to run the analysis only for a set of samples, include them separated by a comma",
+                    "fa_icon": "far fa-file-code"
+                },
+                "predictors_file_regressions": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "File with the predictors and a value per sample. Predictors for categorical variables should be binary codified as (0: baseline condition; 1: alternative condition).",
+                    "help_text": "Provide here the path to the file containing the samples' values for each predictor. Categorical predictors should be binary codified (0: baseline condition; 1: alternative condition).",
+                    "fa_icon": "far fa-file-code"
+                },
+                "predictors_plot_config_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Dictionary containing the plot configuration for each predictor variable. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
+                    "help_text": "Provide here the configuration to display the results in the plot. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
+                    "fa_icon": "far fa-file-code"
+                },
+                "random_effects_vars_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Variable to be used as random effect in all the models",
+                    "help_text": "If you want to run a mixed-effects linear model, provide here the variable to use as random effect",
+                    "fa_icon": "far fa-file-code"
+                },
+                "multipletesting_join_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Rules to join metrics tables for its p-values to be corrected together after multiple testing",
+                    "help_text": "If you need to correct for multiple testing metrics coming in independent tables, include the multiple testing rules here. Format: {multipletest_rule#: []}",
+                    "fa_icon": "far fa-file-code"
+                },
+                "multivariate_rules_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "User rules to choose which variables to run together in the multivariate regressions",
+                    "help_text": "Provide here any rules you would like to additionally apply to test variables together in the multivariate model. Otherwise, only significant variables in the univariate analysis will be included. Format: {multirule#: 'variable1, variable2'}",
+                    "fa_icon": "far fa-file-code"
+                },
+                "response_subplots": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to create a grid in which each subplot contains the results per response and, if make2=True, another one with the results per predictor",
+                    "help_text": "Do you want to create one subplot per response/predictor variable?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "total_plot": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to create a grid in which the only subplot contains the results of the total response variable",
+                    "help_text": "Do you want to create a single subplot with the total response variable?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "response_and_total_subplots": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to create a grid in which each subplot contains the results per response (including the total response variable) and, if make2=True, another one with the results per predictor",
+                    "help_text": "Do you want to create one subplot per response/predictor variable, including one for the total response?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "make2": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to generate a second grid in which each subplot contains the results of each predictor variable",
+                    "help_text": "Do you want to create an additional grid to plot the results by predictor variable?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "correct_pvals": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to apply multiple testing correction of the p-values. Does the correction with the false discovery rate (FDR)",
+                    "help_text": "Do you want to correct the p-values for multiple testing?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "sign_threshold": {
+                    "type": "number",
+                    "default": 0.05,
+                    "description": "FDR threshold to consider a value statistically significant.",
+                    "help_text": "Which should be the FDR threshold to consider a value significant?",
+                    "fa_icon": "far fa-file-code"
+                },
             }
-        }},
+
+        },
         "profile_computation_config": {
             "title": "Profile computation options",
             "type": "object",
@@ -712,6 +834,9 @@
         },
         {
             "$ref": "#/defs/tool_execution_configs"
+        },
+        {
+            "$ref": "#/defs/regressions_config"
         },
         {
             "$ref": "#/defs/generic_options"

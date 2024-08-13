@@ -453,7 +453,8 @@ def do_regression_analysis(info_row, pdf,
 
 @click.option('--config_file',
 	 		  '-config',
-			  required = True,
+			  required = False,
+              default = "",
 			  help = "path to the config.ini file")
 
 @click.option('--pdf_path',
@@ -461,20 +462,97 @@ def do_regression_analysis(info_row, pdf,
 			  required = True,
 			  help = "path to the pdf file where the regression plots will be stored")
 
-@click.option('--response_subplots/--no-response_subplots',
-			  required = True,
+@click.option('--mutrate_file',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--oncodrivefml_regressions_dir',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--omega_regressions_dir',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--mutrate_params',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--omega_params',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--oncodrivefml_params',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--responses_subset',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--samples_subset',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--predictors_file',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--predictors_plot_config',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--random_effects_vars',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--multipletesting_join',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--multivariate_rules',
+			  required = False,
+              default = "",
+			  help = "")
+
+@click.option('--response_subplots',
+              type = click.BOOL,
+              default = False,
+              show_default = True,
+			  required = False,
 			  help = "whether to generate per response and/or per predictor subplots")
 
-@click.option('--total_plot/--no-total_plot',
-			  required = True,
+@click.option('--total_plot',
+              type = click.BOOL,
+              default = False,
+              show_default = True,
+			  required = False,
 			  help = "whether to generate a single total subplot")
 
-@click.option('--response_and_total_subplots/--no-response_and_total_subplots',
-			  required = True,
+@click.option('--response_and_total_subplots',
+              type = click.BOOL,
+              default = True,
+              show_default = True,
+			  required = False,
 			  help = "whether to generate per response and/or per predictor subplots including a total subplot")
 
-@click.option('--make2/--no-make2',
-			  required = True,
+@click.option('--make2',
+              type = click.BOOL,
+              default = True,
+              show_default = True,
+			  required = False,
 			  help = "whether to generate a second grid in which each subplot contains the results of each predictor variable")
 
 @click.option('--save_tables_dir',
@@ -482,24 +560,29 @@ def do_regression_analysis(info_row, pdf,
 			  required = False,
 			  help = "path to the directory where to store the results of the linear models")
 
-@click.option('--correct_pvals/--no-correct_pvals',
-			  required = True,
+@click.option('--correct_pvals',
+              type = click.BOOL,
+              default = True,
+              show_default = True,
+			  required = False,
 			  help = "whether to apply multiple testing correction of the p-values")
 
 @click.option('--sign_threshold',
-			  required = True,
+			  required = False,
+              show_default = True,
               default = 0.05,
 			  help = "FDR threshold to consider a value statistically significant")
 
 # -- Main function  -- #
 
-def main(config_file, pdf_path,
-        response_subplots = True,
-        total_plot = True,
-        response_and_total_subplots = True,
-        make2 = True,
-        save_tables_dir = None,
-        correct_pvals = True, sign_threshold = 0.05):
+def main(config_file, pdf_path, mutrate_file,
+        oncodrivefml_regressions_dir, omega_regressions_dir,
+        mutrate_params, omega_params,
+        oncodrivefml_params, responses_subset, samples_subset,
+        predictors_file, predictors_plot_config, random_effects_vars,
+        multipletesting_join, multivariate_rules, response_subplots,
+        total_plot, response_and_total_subplots, make2, save_tables_dir,
+        correct_pvals, sign_threshold):
     """
     Generates the input dataframe for do_regression_analysis
     based on the information provided in config.ini. Opens
@@ -541,15 +624,43 @@ def main(config_file, pdf_path,
     -------
     """
     print("Starting association analysis...")
-    print("1. Creating config dataframe according to the rules in config.ini")
+    print("1. Creating config dataframe according to the rules in config.ini or those provided as command line arguments")
     # Create config dataframe from config file
     config_df = pd.DataFrame(columns = ["method", "metric", "metric_file_path"])
     new_row = {} # initialize
 
     ## read the config file
-    config = configparser.ConfigParser()
-    print("Loading config.ini")
-    config.read(config_file)
+    if config_file:
+        config = configparser.ConfigParser()
+        print("Loading config.ini")
+        config.read(config_file)
+    ## or create config dictionary from command line arguments
+    else:
+        print("Creating config dictionary: parameters provided in the command line instead of a config file")
+        config = {
+            "metrics.dirpaths": # TODO: instead of providing the pivoted tables, we provide the path to the method's folder
+            {"mutrate": mutrate_file,
+             "oncodrivefml": oncodrivefml_regressions_dir,
+             "omega": omega_regressions_dir,
+            },
+            "metrics.config":
+            {"mutrate": mutrate_params,
+             "oncodrivefml": oncodrivefml_params,
+             "omega": omega_params,
+            },
+            "variables":
+            {"responses_subset": responses_subset,
+             "samples_subset": samples_subset,
+             "predictors_file": predictors_file,
+             "predictors": predictors_plot_config,
+             "random_effects": random_effects_vars
+            },
+            "advance":
+            {"multipletesting_join": multipletesting_join,
+             "multivariate_rules": multivariate_rules
+            }
+
+            }
 
     ## iterate through all the possible metrics
     print("Getting files to be analyzed")
