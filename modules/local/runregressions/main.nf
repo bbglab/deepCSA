@@ -6,7 +6,7 @@ process RUNREGRESSIONS {
     container 'docker.io/rblancomi/statsmodels:test'
 
     input:
-    all_mutrates
+    all_mutrates_file
     path oncodrivefml_regressions_files_dir from oncodrivefml_regressions_files.collect()
     path omega_regressions_files_dir from omega_regressions_files.collect()
     mutrate_regressions

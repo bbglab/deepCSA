@@ -663,12 +663,38 @@ def main(config_file, pdf_path, mutrate_file,
             }
 
     ## iterate through all the possible metrics
+    #TODO: simplify this so that the code is less repetitive
+    samples = [var.strip() for var in config["variables"]["samples_subset"].split(",")]
+    genes = [var.strip() for var in config["variables"]["responses_subset"].split(",")]
+    os.makedirs = "input_files/"
     print("Getting files to be analyzed")
-    for method in config["metrics.dirpaths"]:
-        method_directory = config["metrics.dirpaths"][method]
-        ### follow only those for which there is a directory in the config file
-        if method_directory:
-            method_config = [conf.strip() for conf in config["metrics.config"][method].split(",")]
+    for method in config["metrics.config"]:
+        method_config = [conf.strip() for conf in config["metrics.config"][method].split(",")]
+        ### follow only those for which there is info in the config
+        if method_config:
+
+            method_directory = f"input/{method}"
+            os.makedirs(method_directory)
+
+            if method == "mutrate":
+                process_mutrate(config["metrics.dirpaths"]["mutrate"],
+                                method_config,
+                                rows_names = genes,
+                                cols_names = samples,
+                                save_files_dir = method_directory, metric = "mutrate")
+            elif method == "oncodrivefml":
+                process_oncodrivefml(config["metrics.dirpaths"]["oncodrivefml"],
+                                    method_config, total_cols_by = "mean",
+                                    rows_names = genes,
+                                    cols_names = samples,
+                                    save_files_dir = method_directory)
+            elif method == "omega":
+                process_omega_mle(config["metrics.dirpaths"]["omega"],
+                                method_config, total_cols_by = "mean",
+                                rows_names = genes,
+                                cols_names = samples,
+                                save_files_dir = method_directory,
+                                omega_modality = "mle")
 
             ## for each metric, there are several calculations; take only those specify in the config file
             ### if method_config=[""] because no value was submitted, all the calculation modalities will be loaded

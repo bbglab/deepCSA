@@ -2,7 +2,7 @@ include { RUNREGRESSIONS    as RUNREGRESSIONS             } from '../../../modul
 
 workflow REGRESSIONS{
     take:
-    all_mutrates
+    all_mutrates_file
     oncodrivefml_regressions_files
     omega_regressions_files
     mutrate_regressions
@@ -25,7 +25,7 @@ workflow REGRESSIONS{
     main:
     ch_versions = Channel.empty()
 
-    RUNREGRESSIONS(all_mutrates, oncodrivefml_regressions_files,
+    RUNREGRESSIONS(all_mutrates_file, oncodrivefml_regressions_files,
     omega_regressions_files, mutrate_regressions,
     omega_regressions, oncodrivefml_regressions,
     responses_subset_regressions, samples_subset_regressions,

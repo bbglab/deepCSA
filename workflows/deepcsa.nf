@@ -43,9 +43,6 @@ custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custo
 // otherwise I am using the input csv as a dummy value channel
 custom_bed_file = params.custom_bedfile ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
 
-regressions_config = params.regressions_config ? Channel.fromPath( params.regressions_config, checkIfExists: true) : Channel.fromPath(params.input)
-
-
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
 
 
@@ -183,16 +180,16 @@ workflow DEEPCSA{
 
 
     // Depth analysis: compute and plots
-    // DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
-    // ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
+    DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
+    ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
     // Panels generation: all modalities
-    // CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
-    // ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
+    CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
+    ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
-    // ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
-    // ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
-    // ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
+    ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
+    ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
 
     if (params.plot_depths){
@@ -202,10 +199,10 @@ workflow DEEPCSA{
     }
 
     // Mutation preprocessing
-    // MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
-                        // TABLE2GROUP.out.json_allgroups, seqinfo_df)
-    // ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
-    // positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
+                        TABLE2GROUP.out.json_allgroups, seqinfo_df)
+    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
+    positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
 
     if (params.mutationrate){
@@ -219,7 +216,7 @@ workflow DEEPCSA{
 
         // Concatenate all outputs into a single file
         mutrate_empty = Channel.empty()
-        mutrate_empty
+        all_mutrates_file = mutrate_empty
         .concat(MUTRATEALL.out.mutrates.map{ it -> it[1]}.flatten())
         .concat(MUTRATEPROT.out.mutrates.map{ it -> it[1]}.flatten())
         .concat(MUTRATENONPROT.out.mutrates.map{ it -> it[1]}.flatten())
@@ -354,14 +351,14 @@ workflow DEEPCSA{
 
     // OncodriveFML
     if (params.oncodrivefml){
-        oncodrivefml_regressions = Channel.empty()
+        oncodrivefml_regressions_files = Channel.empty()
         if (params.profileall){
             ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
             ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
             // positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
 
-            if (params.regressions & 'all' in params.oncodrivefml_regressions.split(',')){
+            if (params.regressions & 'allprof' in params.oncodrivefml_regressions.split(',')){
                 oncodrivefml_regressions_files = oncodrivefml_regressions_files.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
             }
         }
@@ -401,7 +398,7 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             ch_versions = ch_versions.mix(OMEGA.out.versions)
-            if (params.regressions & 'all' in params.omega_regressions.split(',') & 'uniquemuts' in params.omega_regressions.split(',')){
+            if (params.regressions & 'allprof' in params.omega_regressions.split(',') & 'uniquemuts' in params.omega_regressions.split(',')){
                 omega_regressions_files = omega_regressions_files.join(OMEGA.out.results, remainder: true)
                 omega_regressions_files = omega_regressions_files.join(OMEGA.out.results_global, remainder: true)
             }
@@ -417,7 +414,7 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
             ch_versions = ch_versions.mix(OMEGAMULTI.out.versions)
-            if (params.regressions & 'all' in params.omega_regressions.split(',') & 'multimuts' in params.omega_regressions.split(',')){
+            if (params.regressions & 'allprof' in params.omega_regressions.split(',') & 'multimuts' in params.omega_regressions.split(',')){
                 omega_regressions_files = omega_regressions_files.join(OMEGAMULTI.out.results, remainder: true)
                 omega_regressions_files = omega_regressions_files.join(OMEGAMULTI.out.results_global, remainder: true)
             }
@@ -498,7 +495,7 @@ workflow DEEPCSA{
     // Regressions
     if (params.regressions){
 
-        REGRESSIONS(all_mutrates, oncodrivefml_regressions_files, omega_regressions_files,
+        REGRESSIONS(all_mutrates_file, oncodrivefml_regressions_files, omega_regressions_files,
         params.mutrate_regressions, params.omega_regressions,
         params.oncodrivefml_regressions, params.responses_subset_regressions,
         params.samples_subset_regressions, params.predictors_file_regressions,
