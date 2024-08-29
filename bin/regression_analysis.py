@@ -17,7 +17,8 @@ from utils_regressions import *
 
 def linreg_analysis(data_df,
                     response_vars, predictors,
-                    predictors4plot_dict, responses4plot_dict, predictors2plot,
+                    predictors4plot_dict, responses4plot_dict, 
+                    # predictors2plot,
                     plot_config_dict,
                     pdf,
                     random_effects = None, make2 = True, regression_type = "univariate", save_tables_file = None,
@@ -115,10 +116,11 @@ def linreg_analysis(data_df,
 
 
     # Plot results
-    if isinstance(predictors2plot, list):
-        predictors4plot_dict_f = {pred:predictors4plot_dict[pred] for pred in predictors4plot_dict if pred in predictors2plot}
-    else:
-        predictors4plot_dict_f = predictors4plot_dict
+    # if isinstance(predictors2plot, list):
+    #     predictors4plot_dict_f = {pred:predictors4plot_dict[pred] for pred in predictors4plot_dict if pred in predictors2plot}
+    # else:
+        # predictors4plot_dict_f = predictors4plot_dict
+    predictors4plot_dict_f = predictors4plot_dict
     ## mode 1: one subplot per response variable
     plot_linreg_coeffs(coeffs_df, lowi_df, highi_df, pvals_df,
                     ncols = plot_config_dict["plot_responses_ncols"],
@@ -330,7 +332,7 @@ def do_regression_analysis(info_row, pdf,
                                                                 response_vars = plotting_info_dict[mode][0],
                                                                 predictors = info_row["predictors"],
                                                                 predictors4plot_dict = info_row["predictors4plot"],
-                                                                predictors2plot = info_row["predictors2plot"],
+                                                                # predictors2plot = info_row["predictors2plot"],
                                                                 responses4plot_dict = plotting_info_dict[mode][1],
                                                                 plot_config_dict = plot_config,
                                                                 pdf = pdf,
@@ -415,10 +417,10 @@ def do_regression_analysis(info_row, pdf,
                 del multi_tests[test]
 
             predictors_multi = list(set([val for vals in multi_tests.values() for val in vals]))
-            if isinstance(info_row["predictors2plot"], list):
-                predictors2plot_multi = [pred for pred in info_row["predictors2plot"] if pred in predictors_multi]
-            else:
-                predictors2plot_multi = predictors_multi
+            # if isinstance(info_row["predictors2plot"], list):
+            #     predictors2plot_multi = [pred for pred in info_row["predictors2plot"] if pred in predictors_multi]
+            # else:
+            #     predictors2plot_multi = predictors_multi
             responses_multi =  multi_tests.keys()
             predictors4plot_multi = {pred: info_row["predictors4plot"][pred] for pred in info_row["predictors4plot"] if pred in predictors_multi}
             responses4plot_multi = {resp: plotting_info_dict[mode][1][resp] for resp in plotting_info_dict[mode][1] if resp in multi_tests}
@@ -428,7 +430,7 @@ def do_regression_analysis(info_row, pdf,
                             predictors = predictors_multi,
                             predictors4plot_dict = predictors4plot_multi,
                             responses4plot_dict = responses4plot_multi,
-                            predictors2plot = predictors2plot_multi,
+                            # predictors2plot = predictors2plot_multi,
                             plot_config_dict = plot_config,
                             pdf = pdf,
                             random_effects = info_row["random_effects"],
@@ -462,17 +464,17 @@ def do_regression_analysis(info_row, pdf,
 			  required = True,
 			  help = "path to the pdf file where the regression plots will be stored")
 
-@click.option('--mutrate_file',
+@click.option('--mutrate_data',
 			  required = False,
               default = "",
 			  help = "")
 
-@click.option('--oncodrivefml_regressions_dir',
+@click.option('--oncodrivefml_data',
 			  required = False,
               default = "",
 			  help = "")
 
-@click.option('--omega_regressions_dir',
+@click.option('--omega_data',
 			  required = False,
               default = "",
 			  help = "")
@@ -575,8 +577,8 @@ def do_regression_analysis(info_row, pdf,
 
 # -- Main function  -- #
 
-def main(config_file, pdf_path, mutrate_file,
-        oncodrivefml_regressions_dir, omega_regressions_dir,
+def main(config_file, pdf_path, mutrate_data,
+        oncodrivefml_data, omega_data,
         mutrate_params, omega_params,
         oncodrivefml_params, responses_subset, samples_subset,
         predictors_file, predictors_plot_config, random_effects_vars,
@@ -584,6 +586,7 @@ def main(config_file, pdf_path, mutrate_file,
         total_plot, response_and_total_subplots, make2, save_tables_dir,
         correct_pvals, sign_threshold):
     """
+
     Generates the input dataframe for do_regression_analysis
     based on the information provided in config.ini. Opens
     a pdf to save the results.
@@ -623,25 +626,31 @@ def main(config_file, pdf_path, mutrate_file,
     Returns
     -------
     """
-    print("Starting association analysis...")
-    print("1. Creating config dataframe according to the rules in config.ini or those provided as command line arguments")
-    # Create config dataframe from config file
-    config_df = pd.DataFrame(columns = ["method", "metric", "metric_file_path"])
-    new_row = {} # initialize
 
-    ## read the config file
+    print("Starting association's analysis...\n")
+    print("### 1. PREPARE ANALYSIS INFORMATION ###\n")
+
+    # Initialize config dataframe
+    config_df = pd.DataFrame(columns = ["method", "metric", "metric_file_path"])
+    new_row = {} # initialize dict (needed to add lists as part of a dataframe in pandas)
+
+    # Load configuration data from config file or command line arguments and create a dictionary with the information
+    ## A. If a config file is submitted, read it and create a dictionary # TODO: document better how the input per field should go in the config file
     if config_file:
+        print("\tGenerating config dataframe with analysis information according to the rules provided in config.ini...")
+        print("\tLoading config.ini...")
         config = configparser.ConfigParser()
-        print("Loading config.ini")
         config.read(config_file)
-    ## or create config dictionary from command line arguments
+        print("\tConfig dictionary created\n")
+        
+    ## B. If a config file is not submitted, read the information from the command line arguments # TODO: document better the format of each input, should be the same as in config.ini
     else:
-        print("Creating config dictionary: parameters provided in the command line instead of a config file")
+        print("\tGenerating config dataframe with analysis information according to the rules provided as command line arguments...")
         config = {
-            "metrics.dirpaths": # TODO: instead of providing the pivoted tables, we provide the path to the method's folder
-            {"mutrate": mutrate_file,
-             "oncodrivefml": oncodrivefml_regressions_dir,
-             "omega": omega_regressions_dir,
+            "metrics.data": 
+            {"mutrate": mutrate_data, # always a single file
+             "oncodrivefml": oncodrivefml_data, # always a directory or a string with file names
+             "omega": omega_data, # always a directory or a string with file names
             },
             "metrics.config":
             {"mutrate": mutrate_params,
@@ -659,39 +668,58 @@ def main(config_file, pdf_path, mutrate_file,
             {"multipletesting_join": multipletesting_join,
              "multivariate_rules": multivariate_rules
             }
-
             }
+        print("\tConfig dictionary created\n")
 
-    ## iterate through all the possible metrics
-    #TODO: simplify this so that the code is less repetitive
+    # Iterate through all metrics to be analyzed and create one row per analysis modality
+    print("\tStart populating config dataframe. Input files for each method will be generated applying subsetting rules for samples and responses")
+    
+    ## Create directory to store input files
+    os.mkdir("inputs")
+
+    ## Load subsetting rules
     samples = [var.strip() for var in config["variables"]["samples_subset"].split(",")]
-    genes = [var.strip() for var in config["variables"]["responses_subset"].split(",")]
-    os.makedirs = "input_files/"
-    print("Getting files to be analyzed")
+    if not samples:
+        predictors_df = pd.read_csv(config["variables"]["predictors_file"], sep = "\t", index_col = "SAMPLE_ID")  #TODO: not ideal this df is loaded here and also in the function that executes the analysis
+        samples = predictors_df.index.unique()
+    responses = [var.strip() for var in config["variables"]["responses_subset"].split(",")]
+    print(samples)
+    print(responses)
+
+    ## Go through each method
     for method in config["metrics.config"]:
         method_config = [conf.strip() for conf in config["metrics.config"][method].split(",")]
-        ### follow only those for which there is info in the config
-        if method_config:
+        method_data = config["metrics.data"][method]
+        ### follow only those for which there is data source and params in the config dict
+        if not method_config or not method_data:
+            print(f"\tMETHOD {method}: data source and/or method parameters not submitted. Analysis will not be done for this method.")
+        else:
+            print(f"\tMETHOD {method}: data source and method parameters were submitted. Input files will be generated and analysis performed for this method.")
+            
+            ### create subdirectory to store input files for this method
+            method_directory = f"inputs/{method}"
+            os.mkdir(method_directory)
 
-            method_directory = f"input/{method}"
-            os.makedirs(method_directory)
-
+            ### create input file diferently depending on the method
             if method == "mutrate":
-                process_mutrate(config["metrics.dirpaths"]["mutrate"],
+                process_mutrate(config["metrics.data"]["mutrate"],
                                 method_config,
-                                rows_names = genes,
+                                rows_names = responses,
                                 cols_names = samples,
-                                save_files_dir = method_directory, metric = "mutrate")
+                                save_files_dir = method_directory,
+                                metric = "mutrate")
             elif method == "oncodrivefml":
-                process_oncodrivefml(config["metrics.dirpaths"]["oncodrivefml"],
-                                    method_config, total_cols_by = "mean",
-                                    rows_names = genes,
+                process_oncodrivefml(config["metrics.data"]["oncodrivefml"],
+                                    method_config,
+                                    total_cols_by = "mean",
+                                    rows_names = responses,
                                     cols_names = samples,
                                     save_files_dir = method_directory)
             elif method == "omega":
-                process_omega_mle(config["metrics.dirpaths"]["omega"],
-                                method_config, total_cols_by = "mean",
-                                rows_names = genes,
+                process_omega_mle(config["metrics.data"]["omega"],
+                                method_config, 
+                                total_cols_by = "mean",
+                                rows_names = responses,
                                 cols_names = samples,
                                 save_files_dir = method_directory,
                                 omega_modality = "mle")
@@ -718,7 +746,7 @@ def main(config_file, pdf_path, mutrate_file,
                         new_row["predictors4plot"] = json.loads(config["variables"]["predictors"])
                         new_row["random_effects"] = config["variables"]["random_effects"] # a single random effect can be provided
                         new_row["multivariate_rules"] = json.loads(config["advance"]["multivariate_rules"])
-                        new_row["predictors2plot"] = [var.strip() for var in config["advance"]["predictors2plot"].split(",")]
+                        # new_row["predictors2plot"] = [var.strip() for var in config["advance"]["predictors2plot"].split(",")]
 
                         config_df = pd.concat([config_df, pd.DataFrame([new_row])], ignore_index = True)
 
@@ -742,7 +770,9 @@ def main(config_file, pdf_path, mutrate_file,
                                                         'predictors4plot': lambda x: x.iloc[0] if not x.isnull().all() else np.nan,
                                                         'random_effects': lambda x: x.iloc[0] if not x.isnull().all() else np.nan,
                                                         'multivariate_rules': lambda x: x.iloc[0] if not x.isnull().all() else np.nan,
-                                                        'predictors2plot': lambda x: x.iloc[0] if not x.isnull().all() else np.nan}).reset_index()
+                                                        # 'predictors2plot': lambda x: x.iloc[0] if not x.isnull().all() else np.nan
+                                                        }
+                                                        ).reset_index()
         config_df.loc[config_df["joining_rule"].str.contains("norule_"), "joining_rule"] = np.nan
 
     ### change to NA any empty string, list or dictionary

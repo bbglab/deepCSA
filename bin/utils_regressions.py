@@ -203,8 +203,9 @@ def process_mutrate(mutrate_file, mutrate_config,
             mutrate_df_f = mutrate_df.loc[(mutrate_df["REGIONS"] == region)
                                             & (mutrate_df["MUTTYPES"] == muttype)]
             mutrate_df_f = mutrate_df_f.rename({"GENE": "gene", "SAMPLE_ID": "sample"}, axis = 1)
+            if rows_names == ['']: #empty list means no subset was indicated in config
+                rows_names = [gene for gene in list(mutrate_df_f["gene"].unique()) if gene != "ALL_GENES"]
 
-            print(f'{metric.split("_")[0]}.{"".join(region.split("_"))}_{muttype.lower().replace("_", "")}')
             create_metric_table(metric_df = mutrate_df_f,
                         metric_var = metric,
                         rows_var = "gene", cols_var = "sample",
@@ -217,7 +218,7 @@ def process_mutrate(mutrate_file, mutrate_config,
 
     return None
 
-def process_oncodrivefml(oncodrivefml_dir, oncodrivefml_config, total_cols_by,
+def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
                          rows_names, cols_names,
                          save_files_dir):
     """
@@ -258,11 +259,19 @@ def process_oncodrivefml(oncodrivefml_dir, oncodrivefml_config, total_cols_by,
 
     # load OncodriveFML results in a df
     oncodrivefml_df = pd.DataFrame()
-    for file in os.listdir(oncodrivefml_dir):
-        sample_df = pd.read_csv(f"{oncodrivefml_dir}/{file}/{file.split('.')[0]}-oncodrivefml.tsv.gz",
-                                sep = "\t", header = 0)
-        sample_df["sample"] = file
-        oncodrivefml_df = pd.concat((oncodrivefml_df, sample_df)).reset_index(drop = True)
+    oncodrivefml_data = [item.strip() for item in oncodrivefml_data.split(",")]
+    if len(oncodrivefml_data) == 1:
+        oncodrivefml_dir = oncodrivefml_data[0]
+        oncodrivefml_data = [f"{oncodrivefml_dir}/{file}/{file.split('.')[0]}-oncodrivefml.tsv.gz" for file in os.listdir(oncodrivefml_dir)]
+        for file in oncodrivefml_data:
+            sample_df = pd.read_csv(file, sep = "\t", header = 0)
+            sample_df["sample"] = file.split("/")[-2]
+            oncodrivefml_df = pd.concat((oncodrivefml_df, sample_df)).reset_index(drop = True)
+    else:
+        for file in oncodrivefml_data:
+            sample_df = pd.read_csv(file, sep = "\t", header = 0)
+            sample_df["sample"] = os.path.realpath(file).split("/")[-2]
+            oncodrivefml_df = pd.concat((oncodrivefml_df, sample_df)).reset_index(drop = True)
 
     # set table settings
     ## main metric
@@ -289,6 +298,8 @@ def process_oncodrivefml(oncodrivefml_dir, oncodrivefml_config, total_cols_by,
             oncodrivefml_df_f["sample"] = oncodrivefml_df_f.apply(
                 lambda row: row["sample"].split(".")[0], axis = 1)    # after use, remove profile info to every sample id
             oncodrivefml_df_f = oncodrivefml_df_f.rename({"GENE_ID": "gene"}, axis = 1)
+            if rows_names == ['']: #empty list means no subset was indicated in config
+                rows_names = [gene for gene in list(oncodrivefml_df_f["gene"].unique()) if gene != "ALL_GENES"]
 
             ## all oncodrivefml values, regardless of significance
             if "nosignificant" in oncodrivefml_config:
@@ -322,7 +333,7 @@ def process_oncodrivefml(oncodrivefml_dir, oncodrivefml_config, total_cols_by,
 
     return None
 
-def process_omega_mle(omega_dir, omega_config,
+def process_omega_mle(omega_data, omega_config,
                       total_cols_by,
                       rows_names, cols_names,
                       save_files_dir,
@@ -366,10 +377,14 @@ def process_omega_mle(omega_dir, omega_config,
 
     # load omega results in a df
     omega_df = pd.DataFrame()
-    files = [file for file in os.listdir(omega_dir) if omega_modality in file]
-    for file in files:
-        sample_df = pd.read_csv(f"{omega_dir}/{file}", sep = "\t", header = 0)
-        sample_df["sample"] = file
+    omega_data = [item.strip() for item in omega_data.split(",")]
+    if len(omega_data) == 1:
+        omega_dir = omega_data[0]
+        files = [file for file in os.listdir(omega_dir) if omega_modality in file]
+        omega_data = [f"{omega_dir}/{file}" for file in files]
+    for file in omega_data:
+        sample_df = pd.read_csv(file, sep = "\t", header = 0)
+        sample_df["sample"] = file.split("/")[-1]
         omega_df = pd.concat((omega_df, sample_df)).reset_index(drop = True)
 
     # set table settings
@@ -418,7 +433,9 @@ def process_omega_mle(omega_dir, omega_config,
                                             (omega_df["impact"] == impact)]
                 omega_df_f["sample"] = omega_df_f.apply(lambda row: row["sample"].split(".")[1], axis = 1)   # after use, remove analysis info to every sample id
                 omega_df_f = omega_df_f.rename({"GENE_ID": "gene"}, axis = 1)
-
+                if rows_names == ['']: #empty list means no subset was indicated in config
+                    rows_names = [gene for gene in list(omega_df_f["gene"].unique()) if gene != "ALL_GENES"]
+            
                 ## all omega values, regardless of significance
                 if "nosignificant" in omega_config:
                     metric_var4file = f"omega.{metric_var}_{omega_modality}_{impact.replace('_', '')}_{omega2regressions_profile[profile]}_{omega2regressions_muts[uniqormulti]}_nosignificant"
@@ -855,7 +872,7 @@ keyword2title = {
 
     # omega: mutations used
     'essentialsplice': 'essential splice',
-    'essentialspliceplus': 'essential splice extended'
+    'essentialspliceplus': 'essential splice extended',
     'missense': 'missense',
     'nonsense': 'nonsense',
     'nonsynonymoussplice': 'nonsynonymous and splice',

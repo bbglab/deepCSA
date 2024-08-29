@@ -308,7 +308,7 @@
                 "mutrate_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Modality attributes for regression analysis with the mutation rate",
                     "help_text": "If you want to run regressions with the mutation rate, include the modality attributes separated by a comma. Allowed values: mutrate,all,nonproteinaffecting,proteinaffecting,alltypes,snv,complex-deletion-insertion-mnv",
                     "fa_icon": "far fa-file-code"
@@ -316,7 +316,7 @@
                 "omega_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Modality attributes for regression analysis with omega",
                     "help_text": "If you want to run regressions with omega values, include the modality attributes separated by a comma. Allowed values: omega,meandnds,dnds,allprof,nonprotaffprof,uniquemuts,multimuts,significant,nosignificant,bayes,mle",
                     "fa_icon": "far fa-file-code"
@@ -324,7 +324,7 @@
                 "oncodrivefml_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Modality attributes for regression analysis with oncodrivefml",
                     "help_text": "If you want to run regressions with oncodrivefml, include the modality attributes separated by a comma. Allowed values: oncodrivefml,zscore,diffobsvsexp,allprof,nonprotaffprof,significant,nosignificant",
                     "fa_icon": "far fa-file-code"
@@ -332,7 +332,7 @@
                 "responses_subset_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Set of responses for which to run the analysis",
                     "help_text": "If you want to run the analysis only for a set of responses, include them separated by a comma",
                     "fa_icon": "far fa-file-code"
@@ -340,7 +340,7 @@
                 "samples_subset_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Set of samples for which to run the analysis",
                     "help_text": "If you want to run the analysis only for a set of samples, include them separated by a comma",
                     "fa_icon": "far fa-file-code"
@@ -349,7 +349,7 @@
                     "type": "string",
                     "format": "file-path",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "File with the predictors and a value per sample. Predictors for categorical variables should be binary codified as (0: baseline condition; 1: alternative condition).",
                     "help_text": "Provide here the path to the file containing the samples' values for each predictor. Categorical predictors should be binary codified (0: baseline condition; 1: alternative condition).",
                     "fa_icon": "far fa-file-code"
@@ -357,7 +357,7 @@
                 "predictors_plot_config_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Dictionary containing the plot configuration for each predictor variable. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
                     "help_text": "Provide here the configuration to display the results in the plot. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
                     "fa_icon": "far fa-file-code"
@@ -365,7 +365,7 @@
                 "random_effects_vars_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Variable to be used as random effect in all the models",
                     "help_text": "If you want to run a mixed-effects linear model, provide here the variable to use as random effect",
                     "fa_icon": "far fa-file-code"
@@ -373,7 +373,7 @@
                 "multipletesting_join_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "Rules to join metrics tables for its p-values to be corrected together after multiple testing",
                     "help_text": "If you need to correct for multiple testing metrics coming in independent tables, include the multiple testing rules here. Format: {multipletest_rule#: []}",
                     "fa_icon": "far fa-file-code"
@@ -381,7 +381,7 @@
                 "multivariate_rules_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": null,
+                    "default": "",
                     "description": "User rules to choose which variables to run together in the multivariate regressions",
                     "help_text": "Provide here any rules you would like to additionally apply to test variables together in the multivariate model. Otherwise, only significant variables in the univariate analysis will be included. Format: {multirule#: 'variable1, variable2'}",
                     "fa_icon": "far fa-file-code"

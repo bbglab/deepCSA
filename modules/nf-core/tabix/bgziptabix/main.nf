@@ -1,5 +1,5 @@
 process TABIX_BGZIPTABIX {
-    cache false
+    cache true
 
     tag "$meta.id"
     label 'process_single'
