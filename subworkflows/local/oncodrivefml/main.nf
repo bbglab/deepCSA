@@ -13,6 +13,7 @@ workflow ONCODRIVEFML_ANALYSIS{
     mutations
     mutabilities
     panel_file
+    mode
 
     main:
     ch_versions = Channel.empty()
@@ -27,12 +28,14 @@ workflow ONCODRIVEFML_ANALYSIS{
     .join( mutabilities )
     .set{ muts_n_mutability }
 
-    ONCODRIVEFML(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
-    ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
+    ONCODRIVEFML(muts_n_mutability,  ONCODRIVEFMLBED.out.bed, mode)
+    ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed, mode)
     ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     emit:
-    results         = ONCODRIVEFML.out.tsv          // channel: [ val(meta), file(results) ]
-    results_snvs    = ONCODRIVEFMLSNVS.out.tsv      // channel: [ val(meta), file(results) ]
-    versions        = ch_versions                   // channel: [ versions.yml ]
+    results                = ONCODRIVEFML.out.tsv             // channel: [ val(meta), file(results) ]
+    results_snvs           = ONCODRIVEFMLSNVS.out.tsv         // channel: [ val(meta), file(results) ]
+    results_folder         = ONCODRIVEFML.out.folder          // channel: [ val(meta), file(results) ]
+    results_snvs_folder    = ONCODRIVEFMLSNVS.out.folder      // channel: [ val(meta), file(results) ]
+    versions               = ch_versions                      // channel: [ versions.yml ]
 }

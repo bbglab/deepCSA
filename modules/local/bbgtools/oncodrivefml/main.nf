@@ -11,11 +11,13 @@ process ONCODRIVEFML {
     input:
     tuple val(meta) , path(mutations), path(mutabilities), path(mutabilities_ind)
     tuple val(meta2), path (bed_file)
+    val(mode)
 
     output:
     tuple val(meta), path("**.tsv.gz")  , emit: tsv
     tuple val(meta), path("**.png")     , emit: png
     tuple val(meta), path("**.html")    , emit: html
+    tuple val(meta), path("${meta.id}.${mode}/")         , emit: folder
     path "versions.yml"                 , emit: versions
 
     when:
