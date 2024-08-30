@@ -632,7 +632,7 @@ def main(config_file, pdf_path, mutrate_data,
 
     # Initialize config dataframe
     config_df = pd.DataFrame(columns = ["method", "metric", "metric_file_path"])
-    new_row = {} # initialize dict (needed to add lists as part of a dataframe in pandas)
+    new_row = {} # initialize dict (needed to add lists as part of pandas dataframe)
 
     # Load configuration data from config file or command line arguments and create a dictionary with the information
     ## A. If a config file is submitted, read it and create a dictionary # TODO: document better how the input per field should go in the config file
@@ -678,23 +678,30 @@ def main(config_file, pdf_path, mutrate_data,
     os.mkdir("inputs")
 
     ## Load subsetting rules
+    print("\tThis subsetting rules will be applied when creating the input files:")
     samples = [var.strip() for var in config["variables"]["samples_subset"].split(",")]
-    if not samples:
+    if samples == ['']:
         predictors_df = pd.read_csv(config["variables"]["predictors_file"], sep = "\t", index_col = "SAMPLE_ID")  #TODO: not ideal this df is loaded here and also in the function that executes the analysis
         samples = predictors_df.index.unique()
+        print(f'\t\tSubset of samples: NA (all samples in {config["variables"]["predictors_file"]} will be used)')
+    else:
+        print(f"\t\tSubset of samples: {samples}")
+
     responses = [var.strip() for var in config["variables"]["responses_subset"].split(",")]
-    print(samples)
-    print(responses)
+    if responses == ['']:
+        print("\t\tSubset of responses: NA (all responses calculated in each method will be used)")
+    else:
+        print(f"\t\tSubset of responses: {responses}")
 
     ## Go through each method
     for method in config["metrics.config"]:
         method_config = [conf.strip() for conf in config["metrics.config"][method].split(",")]
         method_data = config["metrics.data"][method]
         ### follow only those for which there is data source and params in the config dict
-        if not method_config or not method_data:
-            print(f"\tMETHOD {method}: data source and/or method parameters not submitted. Analysis will not be done for this method.")
+        if method_config == [""] or method_data == "":
+            print(f"\tMETHOD -> {method}: data source and/or method parameters not submitted. Analysis will not be done for this method.")
         else:
-            print(f"\tMETHOD {method}: data source and method parameters were submitted. Input files will be generated and analysis performed for this method.")
+            print(f"\tMETHOD -> {method}: data source and method parameters were submitted. Input files will be generated and analysis performed for this method.")
             
             ### create subdirectory to store input files for this method
             method_directory = f"inputs/{method}"
@@ -702,33 +709,33 @@ def main(config_file, pdf_path, mutrate_data,
 
             ### create input file diferently depending on the method
             if method == "mutrate":
-                process_mutrate(config["metrics.data"]["mutrate"],
-                                method_config,
+                process_mutrate(mutrate_file = config["metrics.data"]["mutrate"],
+                                mutrate_config = method_config,
                                 rows_names = responses,
                                 cols_names = samples,
                                 save_files_dir = method_directory,
                                 metric = "mutrate")
             elif method == "oncodrivefml":
-                process_oncodrivefml(config["metrics.data"]["oncodrivefml"],
-                                    method_config,
+                process_oncodrivefml(oncodrivefml_data = config["metrics.data"]["oncodrivefml"],
+                                    oncodrivefml_config = method_config,
                                     total_cols_by = "mean",
                                     rows_names = responses,
                                     cols_names = samples,
                                     save_files_dir = method_directory)
             elif method == "omega":
-                process_omega_mle(config["metrics.data"]["omega"],
-                                method_config, 
-                                total_cols_by = "mean",
-                                rows_names = responses,
-                                cols_names = samples,
-                                save_files_dir = method_directory,
-                                omega_modality = "mle")
+                process_omega(omega_data = config["metrics.data"]["omega"],
+                            omega_config = method_config, 
+                            total_cols_by = "mean",
+                            rows_names = responses,
+                            cols_names = samples,
+                            save_files_dir = method_directory,
+                            omega_modality = "mle")
 
             ## for each metric, there are several calculations; take only those specify in the config file
             ### if method_config=[""] because no value was submitted, all the calculation modalities will be loaded
             for file in os.listdir(method_directory):
                 if all(
-                    any(sub_conf in file for sub_conf in conf.split("|"))
+                    any(sub_conf in file for sub_conf in conf.split("-"))
                     for conf in method_config
                     ):
                     if "total_gene" not in file and "total_sample" not in file: # keep a single file per metric
@@ -792,6 +799,7 @@ def main(config_file, pdf_path, mutrate_data,
     print("DONE!")
 
     print("2. Performing analysis per config group of settings...")
+    print(config_df["metric"].unique())
     # Open pdf and do the analysis
     with PdfPages(pdf_path) as pdf:
         config_df.apply(lambda row: do_regression_analysis(info_row = row,
