@@ -1,6 +1,8 @@
 #!/opt/conda/bin/Rscript --vanilla
 
 # standalone version of deepCSA depth script, to be used in the deepCSA pipeline
+# dndscv-functions dndsloc and fit_substmodel taken from dNdScv package: https://github.com/im3sanger/dndscv
+
 library(data.table)
 library(tidyverse)
 library(abind)
@@ -25,21 +27,13 @@ consensus_file = args[1]
 input_muts_file = args[2]
 sample_depths_file = args[3]
 output_folder = args[4]
-strands_info = args[5]
 
 # define functions:
 get_dnds_mut_context = function(muts) {
 
-  gene_strands = fread(strands_info) |>
-    select(`Gene name`, Strand) |>
-    distinct() |> filter(`Gene name` %in% muts$GENE)  |>
-    dplyr::rename(GENE = "Gene name")
-
-  muts_strand = left_join(muts, gene_strands) |>
-    mutate(genestrand = ifelse(Strand == 1, "+", "-")) |>
+  muts_strand = muts |>
+    mutate(genestrand = ifelse(strand == 1, "+", "-")) |>
     filter(!GENE %in% c("PIK3CA", "TERT", "FGFR4"))
-
-  muts_strand$GENE |> table()
 
   muts_gr = GRanges(seqnames = muts_strand$chr, IRanges(muts_strand$pos, end = muts_strand$pos)) + 1
   strand(muts_gr) = Rle(muts_strand$genestrand)
@@ -112,7 +106,7 @@ generate_tables_depth = function(tab_depths, sample) {
     site_depths = rowSums(tab_depths |>
                             select(-c("chr", "pos", "ref", "alt",
                              "MUT_ID", "GENE", "IMPACT", "CONTEXT_MUT", "CONTEXT", 
-                              "Strand", "genestrand", "ctx", "refstrand", "altstrand", "mutation", "impact")))
+                              "strand", "genestrand", "ctx", "refstrand", "altstrand", "mutation", "impact")))
   }   else {
     site_depths = tab_depths |>
       pull(all_of(sample))
@@ -262,7 +256,7 @@ dndsloc = function(genemuts, RefCDS, constrain_wnon_wspl = TRUE, onesided = FALS
   return(sel_loc)
 }
 
-# estimate the mutation rates for bladder:
+# estimate the mutation rates:
 estimate_rates = function(mle_submodel, genemuts, RefCDS, relative_rates) {
 
   results_list = list()
@@ -321,11 +315,11 @@ consensus = fread(consensus_file) |>
   dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT)
 
 input_muts = fread(input_muts_file) |>
-  select(CHROM, POS, REF, ALT, INFO) |>
+  select(CHROM, POS, REF, ALT, INFO, SYMBOL, STRAND) |>
   mutate(sampleID = gsub("SAMPLE=", "", str_split_i(INFO, pattern = ";", i = 1))) |>
   select(-INFO) |>
-  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT) |>
-  select(sampleID, chr, pos, ref, alt)
+  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT, strand = STRAND, GENE = SYMBOL) |>
+  select(sampleID, chr, pos, ref, alt, strand, GENE)
 
 # read in the depth file table for all samples:
 sample_depths = fread(sample_depths_file)
@@ -334,6 +328,10 @@ sample_depths =  sample_depths |>
   dplyr::rename(chr = CHROM, pos = POS)
 
 consensus_depths = left_join(consensus, sample_depths, by = c("chr", "pos"))
+gene_strands = input_muts |> select(GENE, strand) |> distinct()
+consensus_depths = left_join(consensus_depths,gene_strands) |>
+  filter(!is.na(strand))
+consensus_depths[is.na(consensus_depths)] = 0
 
 # join mutations with consensus information
 muts = inner_join(input_muts, consensus)
@@ -407,13 +405,13 @@ output_list$sel_loc_trunc = sel_loc_trunc
 output_list$sel_loc_all = sel_loc_all
 rownames(sel_loc_trunc) = sel_loc_trunc$gene_name
 
-dndstrunc_heatmap = pheatmap::pheatmap(sel_loc_trunc[,10:14], angle_col = 45, display_numbers = TRUE, main = "P-values dNdSloc bladder data\ngene regions matched to consensus area duplex capture")
+dndstrunc_heatmap = pheatmap::pheatmap(sel_loc_trunc[,10:14], angle_col = 45, display_numbers = TRUE, main = "P-values dNdSloc \ngene regions matched to consensus area duplex capture")
 png(paste0(output_folder, "/dndstrunc_heatmap.png"), width = 1800, height = 1800, res = 250)
 dndstrunc_heatmap
 dev.off()
 
 rownames(sel_loc_all) = sel_loc_all$gene_name
-dndsall_heatmap = pheatmap::pheatmap(sel_loc_all[,10:14], angle_col = 45, display_numbers = TRUE, main = "P-values dNdSloc bladder data\ngene regions matched to consensus area duplex capture")
+dndsall_heatmap = pheatmap::pheatmap(sel_loc_all[,10:14], angle_col = 45, display_numbers = TRUE, main = "P-values dNdSloc \ngene regions matched to consensus area duplex capture")
 png(paste0(output_folder, "/dndsall_heatmap.png"), width = 1800, height = 1800, res = 250)
 dndsall_heatmap
 dev.off()
@@ -440,13 +438,6 @@ dNdS_bar_all = sel_loc_all |>
   theme_bw() +
   ggsci::scale_fill_nejm()
 ggsave(paste0(output_folder, "/dnds_bar_all.png"), dNdS_bar_all, width = 11, height = 4)
-
-# Next step for the samples:
-# For now simple mutation rate model.
-# 1. no signatures, the mutational proifle of the samples is the profile which is being used
-# 2. Adjust the mutation rate estimates by the ratio n_syn/exp_syn. This will give the relative 'ratio' to whihc the estimates can be multiplied.
-# 3. Divide the obtained rates by the depth of the genes
-# multiply the obtained rates by the number of cells (/2 as the data is obtained from single stranded dna)
 
 # make sure the RefCDS does contain a genome length of '1' genome, instead of the depth correction:
 Llist = consensus_depths |>  get_dnds_mut_context() |> generate_tables()
@@ -506,8 +497,7 @@ sample_syn = muts_context |>
 samples_syn_rel = sample_syn |>
   mutate(across(-mutation, ~ . /
                   total_syn$n))
-# conclusion: The data is very sparse at the moment, leading to many zero's. It is not possible to use dNdSloc in this data. dNdScv is also not applicable due to the low number of genes present.
-# Next steps: Determine the expected mutation rate using the dNdScv mutation rate model:
+
 # Using all mutations in the model, we are better at handling sparse data (zero's)
 consensus_depths_ctx = consensus_depths |>  get_dnds_mut_context()
 
@@ -578,7 +568,7 @@ dnds_by_sample = ggplot(globaldnds_all, aes(x = reorder(sample, mle), y = mle)) 
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   labs(x = NULL)
-ggsave(paste0(output_folder, "/dnds_by_sample.png"), dnds_by_sample, width = 12, height = 5)
+ggsave(paste0(output_folder, "/dnds_by_sample.png"), dnds_by_sample, width = 3 + (length(rate_depths)/4), height = 5)
 
 # plot with the mutation rate by percentage
 mutation_rate_percent = rate_depths |>
@@ -593,7 +583,7 @@ percent_plot = ggplot(mutation_rate_percent,
   theme_bw() +
   labs(x = NULL, y = "% of cells presenting with mutation") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave(paste0(output_folder, "/percent_mutated_cells.png"), percent_plot, width = 12, height = 5)
+ggsave(paste0(output_folder, "/percent_mutated_cells.png"), percent_plot, width = 3 + (length(rate_depths)/4), height = 5)
 
 output_list$indv_sample_mutation_rate_percent = mutation_rate_percent
 
