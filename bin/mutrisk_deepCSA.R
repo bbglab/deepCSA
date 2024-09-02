@@ -25,18 +25,12 @@ consensus_file = args[1]
 input_muts_file = args[2]
 sample_depths_file = args[3]
 output_folder = args[4]
-strands_info = args[5]
 
 # define functions:
 get_dnds_mut_context = function(muts) {
 
-  gene_strands = fread(strands_info) |>
-    select(`Gene name`, Strand) |>
-    distinct() |> filter(`Gene name` %in% muts$GENE)  |>
-    dplyr::rename(GENE = "Gene name")
-
-  muts_strand = left_join(muts, gene_strands) |>
-    mutate(genestrand = ifelse(Strand == 1, "+", "-")) |>
+  muts_strand = muts |>
+    mutate(genestrand = ifelse(strand == 1, "+", "-")) |>
     filter(!GENE %in% c("PIK3CA", "TERT", "FGFR4"))
 
   muts_strand$GENE |> table()
@@ -112,7 +106,7 @@ generate_tables_depth = function(tab_depths, sample) {
     site_depths = rowSums(tab_depths |>
                             select(-c("chr", "pos", "ref", "alt",
                              "MUT_ID", "GENE", "IMPACT", "CONTEXT_MUT", "CONTEXT", 
-                              "Strand", "genestrand", "ctx", "refstrand", "altstrand", "mutation", "impact")))
+                              "strand", "genestrand", "ctx", "refstrand", "altstrand", "mutation", "impact")))
   }   else {
     site_depths = tab_depths |>
       pull(all_of(sample))
@@ -321,11 +315,11 @@ consensus = fread(consensus_file) |>
   dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT)
 
 input_muts = fread(input_muts_file) |>
-  select(CHROM, POS, REF, ALT, INFO) |>
+  select(CHROM, POS, REF, ALT, INFO, SYMBOL, STRAND) |>
   mutate(sampleID = gsub("SAMPLE=", "", str_split_i(INFO, pattern = ";", i = 1))) |>
   select(-INFO) |>
-  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT) |>
-  select(sampleID, chr, pos, ref, alt)
+  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT, strand = STRAND, GENE = SYMBOL) |>
+  select(sampleID, chr, pos, ref, alt, strand, GENE)
 
 # read in the depth file table for all samples:
 sample_depths = fread(sample_depths_file)
@@ -334,6 +328,10 @@ sample_depths =  sample_depths |>
   dplyr::rename(chr = CHROM, pos = POS)
 
 consensus_depths = left_join(consensus, sample_depths, by = c("chr", "pos"))
+gene_strands = input_muts |> select(GENE, strand) |> distinct()
+consensus_depths = left_join(consensus_depths,gene_strands) |>
+  filter(!is.na(strand))
+consensus_depths[is.na(consensus_depths)] = 0
 
 # join mutations with consensus information
 muts = inner_join(input_muts, consensus)
