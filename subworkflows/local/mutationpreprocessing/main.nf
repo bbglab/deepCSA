@@ -39,14 +39,11 @@ workflow MUTATION_PREPROCESSING {
     // Join all annotated samples and put them in a channel to be summarized together
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
 
-
     SUMANNOTATION(annotated_samples)
     ch_versions = ch_versions.mix(SUMANNOTATION.out.versions)
 
-
     VCF2MAF(vcfs, SUMANNOTATION.out.tab)
     ch_versions = ch_versions.mix(VCF2MAF.out.versions.first())
-
 
     FILTERPANEL(VCF2MAF.out.maf, bedfile)
     ch_versions = ch_versions.mix(FILTERPANEL.out.versions.first())
@@ -54,10 +51,8 @@ workflow MUTATION_PREPROCESSING {
     // Join all samples' MAFs and put them in a channel to be merged
     FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
 
-
     MERGEBATCH(samples_maf)
     ch_versions = ch_versions.mix(MERGEBATCH.out.versions)
-
 
     FILTERBATCH(MERGEBATCH.out.cohort_maf)
     ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
@@ -76,7 +71,6 @@ workflow MUTATION_PREPROCESSING {
 
     PLOTNEEDLES(SOMATICMUTATIONS.out.mutations, sequence_information_df)
     ch_versions = ch_versions.mix(PLOTNEEDLES.out.versions)
-
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP

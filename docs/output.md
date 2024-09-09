@@ -1,4 +1,4 @@
-# bbg/deepcsa: Output
+# bbglab/deepCSA: Output
 
 ## Introduction
 

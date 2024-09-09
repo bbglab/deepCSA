@@ -3,13 +3,14 @@
 import sys
 import pandas as pd
 from utils import add_filter
+from read_utils import custom_na_values
 
 maf_df_file = sys.argv[1]
 samp_name = sys.argv[2]
 repetitive_variant_treshold = int(sys.argv[3])
 somatic_vaf_boundary = float(sys.argv[4])
 
-maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t')  # Read gzipped TSV
+maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t', na_values = custom_na_values)
 
 sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
 

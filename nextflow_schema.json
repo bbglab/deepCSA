@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/dev/nextflow_schema.json",
-    "title": "bbg/deepcsa pipeline parameters",
+    "title": "bbglab/deepCSA pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
     "defs": {
@@ -148,6 +148,70 @@
                 }
             }
         },
+        "custom_bedfile_configs": {
+            "title": "Custom BED file configurations",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED file dependent on the sequencing panel or minimum depth of the regions where to focus tha analysis.",
+            "properties": {
+                "use_custom_bedfile": {
+                    "type": "boolean",
+                    "description": "Do you want to use a custom BED file?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to use a custom BED file?"
+                },
+                "custom_bedfile": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to BED file to use.",
+                    "help_text": "Path to BED file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "use_custom_minimum_depth": {
+                    "type": "integer",
+                    "description": "Minimum average depth of a position across all samples for it to be included in the analysis",
+                    "default": 0,
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "hotspot_bedfile_configs": {
+            "title": "Definition of hotspot regions configuration",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
+            "properties": {
+                "omega_hotspots": {
+                    "type": "boolean",
+                    "description": "Do you want to analyze omega hotspots independently?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to analyze omega hotspots independently?"
+                },
+                "omega_hotspots_bedfile": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to BED file to use.",
+                    "help_text": "Path to BED file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "hotspot_expansion": {
+                    "type": "integer",
+                    "description": "Size (in bp) of how much you want to expand the region around the hotspot (same in both directions)",
+                    "default": 30,
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
         "tool_execution_configs": {
             "title": "Tool selection options",
             "type": "object",
@@ -216,6 +280,13 @@
                     "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run omega with the different VAF distorsioned gropus?"
+                },
+                "omega_plot": {
+                    "type": "boolean",
+                    "description": "Do you want to plot omega results?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to plot omega results?"
                 },
                 "signatures": {
                     "type": "boolean",
@@ -665,6 +736,12 @@
         },
         {
             "$ref": "#/defs/gene_grouping_configs"
+        },
+        {
+            "$ref": "#/defs/custom_bedfile_configs"
+        },
+        {
+            "$ref": "#/defs/hotspot_bedfile_configs"
         },
         {
             "$ref": "#/defs/tool_execution_configs"

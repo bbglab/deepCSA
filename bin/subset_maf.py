@@ -6,6 +6,7 @@ import json
 import pandas as pd
 
 from utils import filter_maf
+from read_utils import custom_na_values
 
 
 def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, json_filters, requested_fields):
@@ -13,7 +14,7 @@ def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, j
     INFO
     """
     # Load your MAF DataFrame (raw_annotated_maf)
-    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
 
     data_tuples = []
 

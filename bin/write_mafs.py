@@ -3,10 +3,11 @@
 import sys
 import pandas as pd
 import json
+from read_utils import custom_na_values
 
 maf_df_file = sys.argv[1]
 
-maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t')  # Read gzipped TSV
+maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t', na_values = custom_na_values)  # Read gzipped TSV
 maf_df["SAMPLE_ID"] = maf_df["SAMPLE_ID"].astype(str)
 
 if len(sys.argv) > 2:

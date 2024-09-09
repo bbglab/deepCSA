@@ -1,6 +1,6 @@
 ## Introduction
 
-**bbg/deepcsa** is a bioinformatics pipeline that can be used for analyzing targeted DNA sequencing data. It was designed for duplex sequencing data of normal tissues.
+**bbglab/deepCSA** is a bioinformatics pipeline that can be used for analyzing targeted DNA sequencing data. It was designed for duplex sequencing data of normal tissues.
 
 <!-- TODO nf-core:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
@@ -68,7 +68,7 @@ see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
 
 ## Credits
 
-bbg/deepcsa was originally written by Ferriol Calvet.
+bbglab/deepCSA was originally written by Ferriol Calvet.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
@@ -81,7 +81,7 @@ If you would like to contribute to this pipeline, please see the [contributing g
 ## Citations
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use  bbg/deepcsa for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+<!-- If you use  bbglab/deepCSA for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 <!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 

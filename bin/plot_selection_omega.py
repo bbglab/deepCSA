@@ -12,6 +12,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+from read_utils import custom_na_values
 
 
 # @click.command()
@@ -30,36 +31,31 @@ from matplotlib.lines import Line2D
 #     main()
 
 
-sample_name_  = sys.argv[1]
-# mut_file     = sys.argv[2]
-# o3d_seq_file_ = sys.argv[3]
-# sample_name_out_ = sys.argv[4]
-# out_maf      = sys.argv[3]
-# json_filters = sys.argv[4]
-# req_plots    = sys.argv[5]
-
 
 
 def generate_all_side_figures(sample,
+                                mut_file,
+                                omega_file,
                                 # gene_list = None,
                                 tools = ["omega_trunc", "omega_mis"]
                                 ):
 
-    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv")
+    snvs_maf = pd.read_table(mut_file, na_values = custom_na_values)
+    snvs_maf = snvs_maf[snvs_maf["TYPE"] == "SNV"].reset_index(drop = True)
 
     possible_genes = []
 
-    omega_data = pd.read_table(f"output_mle.{sample}.tsv")
+    omega_data = pd.read_table(omega_file)
     omega_data = omega_data[omega_data["impact"].isin(['missense', 'truncating'])]
     if "omega_trunc" in tools :
-        omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-        omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
+        omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+        omega_truncating.columns = ["GENE", "mutations_trunc", "omega_trunc", "pvalue", "lower", "upper"]
         omega_truncating_genes = list(pd.unique(omega_truncating["GENE"]))
         possible_genes += omega_truncating_genes
 
     if "omega_mis" in tools :
-        omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-        omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
+        omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+        omega_missense.columns = ["GENE", "mutations_mis", "omega_mis", "pvalue", "lower", "upper"]
         omega_missense_genes = list(pd.unique(omega_truncating["GENE"]))
         possible_genes += omega_missense_genes
 
@@ -98,12 +94,12 @@ def build_counts_from_df_complete(genee, snvs_maf, omega_truncating, omega_misse
 
     miss_omega = float(omega_missense[omega_missense["GENE"] == genee]["omega_mis"].values[0])
     miss_pvalue = float(omega_missense[omega_missense["GENE"] == genee]["pvalue"].values[0])
-    snvs_gene = snvs_maf[snvs_maf["SYMBOL"] == genee].reset_index(drop = True)
+    snvs_gene = snvs_maf[snvs_maf["canonical_SYMBOL"] == genee].reset_index(drop = True)
 
 
     # Calculate counts based on canonical consequences
-    truncating_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(['nonsense', "essential_splice"])].shape[0]
-    missense_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(['missense'])].shape[0]
+    truncating_count = float(omega_truncating[omega_truncating["GENE"] == genee]["mutations_trunc"].values[0])
+    missense_count = float(omega_missense[omega_missense["GENE"] == genee]["mutations_mis"].values[0])
     synonymous_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(["synonymous"])].shape[0]
 
     # Compute
@@ -157,7 +153,6 @@ def plot_omega_side_complete(df):
 #         obs_value = df[df['type'] == cons]['number_obs'].values[0]
 #         ax.barh(y_positions[i], obs_value, color=colors[cons], label=cons)
 
-    # Plot the observed values as filled bars
     sns.barplot(data=df, y='type', x='number_obs',
                 hue = 'type', legend = False,
                 hue_order = consequence_order,
@@ -195,8 +190,8 @@ def plot_omega_side_complete(df):
     deviation_for_centering = text_separation * 12
 
     # text_of_line_separation = line_separation / 3
-    text_pos1 = max(df[df['type'].isin(consequence_order[:2])]['number_obs']) + text_separation + deviation_for_centering
-    text_pos2 = max(df[df['type'].isin(consequence_order[1:])]['number_obs']) + text_separation + deviation_for_centering
+    text_pos1 = df[df['type'].isin(consequence_order[:2])][['number_obs', 'expected']].max().max() + text_separation + deviation_for_centering
+    text_pos2 = df[df['type'].isin(consequence_order[1:])][['number_obs', 'expected']].max().max() + text_separation + deviation_for_centering
     # print(text_pos1, text_pos2)
 
     ax.text(text_pos1, 0.05, r'$\omega_{trunc}$ = ' + f"{t_omega:.2f}",
@@ -247,4 +242,16 @@ colors_dictionary = {"ofml"        : "viridis_r",
 
 
 if __name__ == '__main__':
-    generate_all_side_figures(sample_name_)
+
+    sample_name_    = sys.argv[1]
+    mut_filee        = sys.argv[2]
+    omega_filee      = sys.argv[3]
+    # o3d_seq_file_ = sys.argv[3]
+    # sample_name_out_ = sys.argv[4]
+    # out_maf      = sys.argv[3]
+    # json_filters = sys.argv[4]
+    # req_plots    = sys.argv[5]
+
+    generate_all_side_figures(sample_name_,
+                                mut_filee,
+                                omega_filee)
