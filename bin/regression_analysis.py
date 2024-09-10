@@ -280,7 +280,7 @@ def do_regression_analysis(info_row, pdf,
     attributes_list = list(set(attributes_list))
 
     ## -- DO UNIVARIATE REGRESSIONS -- ##
-    if isinstance(info_row["joining_rule"], str):
+    if isinstance(info_row["random_effects"], str):
         regression_modality = "univariateME"
     else:
         regression_modality = "univariate"
