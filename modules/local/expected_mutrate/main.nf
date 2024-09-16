@@ -13,6 +13,8 @@ process EXP_MUTRATE {
     output:
     tuple val(meta), path("**.png")     , emit: plots
     tuple val(meta), path("**.tsv")     , emit: stats
+    tuple val(meta), path("**.rds")     , emit: rds_file
+
     path "versions.yml"                 , emit: versions
 
     when:

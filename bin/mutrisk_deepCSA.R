@@ -18,7 +18,9 @@ args = commandArgs(trailingOnly = TRUE)
 # define output list elements
 output_list = plot_list = list()
 
-# Uncomment following line for testing/checking
+# Uncomment following lines for testing/checking
+# data("submod_192r_3w", package = "dndscv")
+# deepcsa_folder = "/workspace/nobackup/bladder_ts/results/2024-09-09_deepCSA_test_expected/"
 # consensus_file = paste0(deepcsa_folder, "createpanels/consensuspanels/consensus.exons_splice_sites.tsv")
 # input_muts_file = paste0(deepcsa_folder, "somaticmutations/all_samples.somatic.mutations.tsv")
 # sample_depths_file = paste0(deepcsa_folder, "annotatedepths/all_samples_indv.depths.tsv.gz")
@@ -266,10 +268,10 @@ estimate_rates = function(mle_submodel, genemuts, RefCDS, relative_rates) {
     parmle = setNames(par[,column], par[,1])
 
     # how does the expected mutation load work:
-    mutrates = sapply(substmodel[,1], function(x) prod(parmle[base::strsplit(x,split="\\*")[[1]]]))
-    genemuts_expected = t(sapply(RefCDS, function(x) colSums(x$L*mutrates)))
+    mutrates = sapply(substmodel[,1], \(x) prod(parmle[base::strsplit(x,split="\\*")[[1]]]))
+    genemuts_expected = t(sapply(RefCDS, \(x) colSums(x$L*mutrates)))
     colnames(genemuts_expected) = c("exp_syn", "exp_mis", "exp_non", "exp_spl")
-    df = data.frame(gene_name = sapply(RefCDS, function(x) x$gene_name),
+    df = data.frame(gene_name = sapply(RefCDS, \(x) x$gene_name),
                     genemuts_expected) |>
       column_to_rownames("gene_name")
     results_list[[column]] = df
@@ -277,39 +279,31 @@ estimate_rates = function(mle_submodel, genemuts, RefCDS, relative_rates) {
 
   # if covariates are used, used the "exp_syn_cv" value to correct the mutation loads
   if (min(genemuts$n_syn) > 10) {
-
     message("local mutation rate is sufficiently high across all studied mutations, local synonymous rates will be used (dNdSloc)")
     ratio = genemuts$n_syn / genemuts$exp_syn
-
   } else if ("exp_syn_cv" %in% colnames(genemuts)) {
-
     message("covariate-based adjustment of the mutation rates will be used (dNdScv)")
     ratio = genemuts$exp_syn_cv / results_list$mle$exp_syn
-
   } else if (!missing(relative_rates)) {
     message("user supplied relative rates will be used")
     ratio = relative_rates
   }
-
   else {
     message("no covariates / not enough synonymous mutations -> switching to dNdSglobal mutation rate")
     ratio = 1 # do not convert the rates
   }
-
+  
   results_list_cv = lapply(results_list, \(x) x*ratio)
   results_list_cv = lapply(results_list_cv, \(x) rownames_to_column(.data = x,var =  "gene_name"))
 
-  # if no covariates are used & enough local synonymous mutations are present, use the actual mutation loads
-  mutlist = rbindlist(results_list_cv, idcol = "type") |>
-    mutate(total_muts = exp_syn + exp_mis + exp_non + exp_spl)
-  mutation_estimates = mutlist |>
+  mutation_estimates = rbindlist(results_list_cv, idcol = "type") |> 
     pivot_longer(c(-type, -gene_name), names_to = "consequence") |>
     pivot_wider(names_from = "type", values_from = "value") |>
     dplyr::rename(mutrate = "mle")
-
   return(mutation_estimates)
 }
 
+##### LOAD DATA #######
 # Read in consensus file and mutations file:
 consensus = fread(consensus_file) |>
   dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT)
@@ -327,6 +321,7 @@ sample_depths =  sample_depths |>
   dplyr::select(-CONTEXT) |>
   dplyr::rename(chr = CHROM, pos = POS)
 
+### ANALYSIS ####
 consensus_depths = left_join(consensus, sample_depths, by = c("chr", "pos"))
 gene_strands = input_muts |> select(GENE, strand) |> distinct()
 consensus_depths = left_join(consensus_depths,gene_strands) |>
@@ -439,6 +434,7 @@ dNdS_bar_all = sel_loc_all |>
   ggsci::scale_fill_nejm()
 ggsave(paste0(output_folder, "/dnds_bar_all.png"), dNdS_bar_all, width = 11, height = 4)
 
+### Model the mutation rate for 1 single genome:
 # make sure the RefCDS does contain a genome length of '1' genome, instead of the depth correction:
 Llist = consensus_depths |>  get_dnds_mut_context() |> generate_tables()
 Lall = abind::abind(Llist, along = 3)
@@ -450,12 +446,14 @@ for (i in 1:length(Llist)) {
   RefCDS_1_genome[[i]] = list(L = Llist[[i]], N = Nlist[[i]], gene_name = names(Llist)[i] )
 }
 
-# mutation rates
-mutation_rates = estimate_rates(mle_submodel,genemuts = genemuts, RefCDS = RefCDS_1_genome)
+# calculate the total expected number of mutations
+mutation_rates_all_depth = estimate_rates(mle_submodel, genemuts = genemuts, RefCDS = RefCDS)
+write.table(mutation_rates_all_depth, paste0(output_folder, "mutation_rates_all_depth.tsv"), sep = "\t", quote = FALSE)
 
+# mutation rates for a depth of 1 genome
+mutation_rates_1_genome = estimate_rates(mle_submodel, genemuts = genemuts, RefCDS = RefCDS_1_genome)
 # format the mutation rates for the plot:
-mutation_rate_depths = mutation_rates |>
-  filter(consequence != "total_muts") |>
+mutation_rate_depths = mutation_rates_1_genome |>
   mutate(`expected mutations` = case_match(consequence,
                                            "exp_syn" ~ "synonymous",
                                            "exp_non" ~ "nonsense",
@@ -479,7 +477,6 @@ percent_mutated_plot =
   theme_bw()
 percent_mutated_plot
 ggsave(paste0(output_folder, "/percent_of_mutated_cells.png"), percent_mutated_plot, width = 6, height = 6)
-
 
 # Estimation of the mutated fraction in all the mutated samples individually
 # multiply all the samples to the mutation rate, mutational profile and the depth of each of the samples.
@@ -543,9 +540,8 @@ for (sample_name in unique(muts$sampleID)) {
   genemuts_sample[,6:9] = t(sapply(Llist, function(x) colSums(x*mutrates)))
 
   # estimate the mutation rates
-  mutation_rates = estimate_rates(mle_submodel,genemuts = genemuts_sample, RefCDS = RefCDS_1_genome, relative_rates = ratios_all_samples)
-  mutation_rate_depths = mutation_rates |>
-    filter(consequence != "total_muts") |>
+  mutation_rates_1_genome = estimate_rates(mle_submodel,genemuts = genemuts_sample, RefCDS = RefCDS_1_genome, relative_rates = ratios_all_samples)
+  mutation_rate_depths = mutation_rates_1_genome |>
     mutate(`expected mutations` = case_match(consequence,
                                              "exp_syn" ~ "synonymous",
                                              "exp_non" ~ "nonsense",
@@ -594,3 +590,6 @@ if (exists("output_folder")) {
     fwrite(output_list[[i]], paste0(output_folder, "/", i, ".tsv"), sep = "\t")
   }
 }
+
+# save RefCDS object
+saveRDS(RefCDS_1_genome, paste0(output_folder, "RefCDS.rds"))
