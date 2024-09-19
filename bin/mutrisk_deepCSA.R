@@ -448,7 +448,7 @@ for (i in 1:length(Llist)) {
 
 # calculate the total expected number of mutations
 mutation_rates_all_depth = estimate_rates(mle_submodel, genemuts = genemuts, RefCDS = RefCDS)
-write.table(mutation_rates_all_depth, paste0(output_folder, "mutation_rates_all_depth.tsv"), sep = "\t", quote = FALSE)
+write.table(mutation_rates_all_depth, paste0(output_folder, "/mutation_rates_all_depth.tsv"), sep = "\t", quote = FALS, row.names = FALSE)
 
 # mutation rates for a depth of 1 genome
 mutation_rates_1_genome = estimate_rates(mle_submodel, genemuts = genemuts, RefCDS = RefCDS_1_genome)
@@ -592,4 +592,4 @@ if (exists("output_folder")) {
 }
 
 # save RefCDS object
-saveRDS(RefCDS_1_genome, paste0(output_folder, "RefCDS.rds"))
+saveRDS(RefCDS_1_genome, paste0(output_folder, "/RefCDS.rds"))
