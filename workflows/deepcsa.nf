@@ -98,6 +98,7 @@ include { INDELS_SELECTION          as INDELSSELECTION      } from '../subworkfl
 include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/reads/main'
 include { MUTATED_EPITHELIUM_VAF    as MUTATEDEPITHELIUMVAF } from '../subworkflows/local/mutatedepithelium/vaf/main'
 
+include { EXPECTED_MUTRATE          as EXPECTEDMUTRATE      } from '../subworkflows/local/mutatedepithelium/expected/main'
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
@@ -279,6 +280,18 @@ workflow DEEPCSA{
         positive_selection_results = positive_selection_results.join(INDELSSELECTION.out.indels, remainder: true)
         ch_versions = ch_versions.mix(INDELSSELECTION.out.versions)
     }
+
+    if (params.expected_mutation_rate){
+        Channel.of([["id": "all_samples"]])
+        .join(MUT_PREPROCESSING.out.somatic_mafs)
+        .set{mutations_all}
+
+        EXPECTEDMUTRATE(mutations_all,
+                        CREATEPANELS.out.exons_consensus_bed,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        ANNOTATEDEPTHS.out.all_samples_depths)
+    }
+
 
 
     if (params.mutated_epithelium_vaf){

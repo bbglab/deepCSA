@@ -323,6 +323,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutated_epithelium using the VAFs?"
                 },
+                "expected_mutation_rate": {
+                    "type": "boolean",
+                    "description": "Do you want to run expected_mutation_rate?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run expected_mutation_rate?"
+                },
                 "plot_depths": {
                     "type": "boolean",
                     "description": "Do you want to run plot_depths?",
