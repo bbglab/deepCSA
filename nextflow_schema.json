@@ -493,6 +493,12 @@
                     "description": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
                     "fa_icon": "far fa-file-code"
+                },
+                "cadd_scores_ind": {
+                    "type": "string",
+                    "description": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io",
+                    "help_text": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
+                    "fa_icon": "far fa-file-code"
                 }
             }
         },

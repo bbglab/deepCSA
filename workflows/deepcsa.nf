@@ -34,6 +34,7 @@ cosmic_ref = params.cosmic_ref_signatures ? Channel.fromPath( params.cosmic_ref_
 datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() : Channel.empty()
 annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
+cadd_scores = params.cadd_scores ? Channel.of([ file(params.cadd_scores, checkIfExists : true), file(params.cadd_scores_ind, checkIfExists : true) ]).first() : Channel.empty()
 
 // if the user wants to use custom gene groups, import the gene groups table
 // otherwise I am using the input csv as a dummy value channel
@@ -370,13 +371,19 @@ workflow DEEPCSA{
     // OncodriveFML
     if (params.oncodrivefml){
         if (params.profileall){
-            ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
+            ONCODRIVEFMLALL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability,
+                                CREATEPANELS.out.exons_consensus_panel,
+                                cadd_scores
+                            )
             ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
             // positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
         }
         if (params.profilenonprot){
-            ONCODRIVEFMLNONPROT(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYNONPROT.out.mutability, CREATEPANELS.out.exons_consensus_panel)
+            ONCODRIVEFMLNONPROT(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYNONPROT.out.mutability,
+                                    CREATEPANELS.out.exons_consensus_panel,
+                                    cadd_scores
+                                )
             ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
         }
     }
