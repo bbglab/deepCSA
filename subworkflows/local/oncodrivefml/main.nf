@@ -13,6 +13,7 @@ workflow ONCODRIVEFML_ANALYSIS{
     mutations
     mutabilities
     panel_file
+    cadd_scores
 
     main:
     ch_versions = Channel.empty()
@@ -27,8 +28,8 @@ workflow ONCODRIVEFML_ANALYSIS{
     .join( mutabilities )
     .set{ muts_n_mutability }
 
-    ONCODRIVEFML(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
-    ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
+    ONCODRIVEFML(muts_n_mutability,  ONCODRIVEFMLBED.out.bed, cadd_scores)
+    ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed, cadd_scores)
     ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     emit:
