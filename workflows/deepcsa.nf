@@ -75,6 +75,7 @@ include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkfl
 include { MUTATION_RATE             as MUTRATEALL           } from '../subworkflows/local/mutationrate/main'
 include { MUTATION_RATE             as MUTRATEPROT          } from '../subworkflows/local/mutationrate/main'
 include { MUTATION_RATE             as MUTRATENONPROT       } from '../subworkflows/local/mutationrate/main'
+include { MUTATION_RATE             as MUTRATESYNONYMOUS    } from '../subworkflows/local/mutationrate/main'
 
 include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
@@ -217,9 +218,11 @@ workflow DEEPCSA{
         MUTRATEALL(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
         MUTRATEPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
         MUTRATENONPROT(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
+        MUTRATESYNONYMOUS(MUT_PREPROCESSING.out.somatic_mafs, annotated_depths, CREATEPANELS.out.synonymous_consensus_bed, CREATEPANELS.out.synonymous_consensus_panel)
         ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
         ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
         ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
+        ch_versions = ch_versions.mix(MUTRATESYNONYMOUS.out.versions)
 
         // Concatenate all outputs into a single file
         mutrate_empty = Channel.empty()
@@ -227,6 +230,7 @@ workflow DEEPCSA{
         .concat(MUTRATEALL.out.mutrates.map{ it -> it[1]}.flatten())
         .concat(MUTRATEPROT.out.mutrates.map{ it -> it[1]}.flatten())
         .concat(MUTRATENONPROT.out.mutrates.map{ it -> it[1]}.flatten())
+        .concat(MUTRATESYNONYMOUS.out.mutrates.map{ it -> it[1]}.flatten())
         .set{ all_mutrates }
         all_mutrates.collectFile(name: "all_mutrates.tsv", storeDir:"${params.outdir}/mutrate", skip: 1, keepHeader: true)
 

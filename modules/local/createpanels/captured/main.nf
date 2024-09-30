@@ -18,11 +18,13 @@ process CREATECAPTUREDPANELS {
     path("*.non_protein_affecting.tsv")    , emit: captured_panel_non_protein_affecting
     path("*.exons_splice_sites.tsv")       , emit: captured_panel_exons_splice_sites
     path("*.introns_intergenic.tsv")       , emit: captured_panel_introns_intergenic
+    path("*.synonymous.tsv")                , emit: captured_panel_synonymous
     path("*.all.bed")                      , emit: captured_panel_all_bed
     path("*.protein_affecting.bed")        , emit: captured_panel_protein_affecting_bed
     path("*.non_protein_affecting.bed")    , emit: captured_panel_non_protein_affecting_bed
     path("*.exons_splice_sites.bed")       , emit: captured_panel_exons_splice_sites_bed
     path("*.introns_intergenic.bed")       , emit: captured_panel_introns_intergenic_bed
+    path("*.synonymous.bed")                , emit: captured_panel_synonymous_bed
     path "versions.yml"                    , emit: versions
 
     when:

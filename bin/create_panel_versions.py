@@ -43,7 +43,9 @@ panel_impact_dict = {
                             "non_genic_variant",
                             # "splice_donor_region_variant",
                             # "splice_polypyrimidine_tract_variant",
-                            ]
+                            ],
+
+    "synonymous": ["synonymous"]
 
 ## CONTENT of the kidney regions
 #       1 IMPACT
