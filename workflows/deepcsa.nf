@@ -35,7 +35,8 @@ datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExi
 annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
 cadd_scores = params.cadd_scores ? Channel.of([ file(params.cadd_scores, checkIfExists : true), file(params.cadd_scores_ind, checkIfExists : true) ]).first() : Channel.empty()
-// covariates = params.dndscv_covariates
+covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
+ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
 
 
 
@@ -409,8 +410,9 @@ workflow DEEPCSA{
                     annotated_depths,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
-                    EXPECTEDMUTRATE.out.refcds_object
-                    // covariates
+                    EXPECTEDMUTRATE.out.refcds_object,
+                    covariates,
+                    ref_transcripts
                     )
     }
     if (params.omega){

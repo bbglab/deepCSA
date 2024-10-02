@@ -10,6 +10,8 @@ process RUN_DNDS {
     input:
     tuple val(meta) , path(mutations_table), path(depths)
     tuple val(meta2), path(ref_cds)
+    path (covariates)
+    path (ref_transcripts)
 
     output:
     tuple val(meta), path("*.out.tsv*") , emit: results
@@ -22,8 +24,6 @@ process RUN_DNDS {
     def args = task.ext.args ?: ""
     def option = task.ext.option ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def ref_transcripts = params.dnds_ref_transcripts
-    def covariates = params.dnds_covariates
     """
     dNdS_run.R --inputfile ${mutations_table} \\
                 --outputfile ${prefix}.out.tsv \\

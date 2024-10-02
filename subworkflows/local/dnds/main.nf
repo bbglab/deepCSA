@@ -14,7 +14,8 @@ workflow DNDS {
     bedfile
     panel
     refcds_object
-    // covariates
+    covariates
+    ref_trans
 
     main:
     ch_versions = Channel.empty()
@@ -36,7 +37,7 @@ workflow DNDS {
     .join(PREPROCESSDEPTHS.out.depths)
     .set{ mutations_n_depth }
 
-    DNDSRUN(mutations_n_depth, refcds_object)
+    DNDSRUN(mutations_n_depth, refcds_object, covariates, ref_trans)
     ch_versions = ch_versions.mix(DNDSRUN.out.versions)
 
     // PLOTMUTRATE()
