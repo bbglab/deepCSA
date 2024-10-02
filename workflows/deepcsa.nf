@@ -35,6 +35,9 @@ datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExi
 annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
 cadd_scores = params.cadd_scores ? Channel.of([ file(params.cadd_scores, checkIfExists : true), file(params.cadd_scores_ind, checkIfExists : true) ]).first() : Channel.empty()
+// covariates = params.dndscv_covariates
+
+
 
 // if the user wants to use custom gene groups, import the gene groups table
 // otherwise I am using the input csv as a dummy value channel
@@ -108,7 +111,7 @@ include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkfl
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
 include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
-
+include { DNDS                as DNDS    } from '../subworkflows/local/dnds/main'
 
 
 // Download annotation cache if needed
@@ -401,8 +404,15 @@ workflow DEEPCSA{
         }
     }
 
-
-
+    if (params.expected_mutation_rate & params.dnds){
+        DNDS(MUT_PREPROCESSING.out.somatic_mafs,
+                    annotated_depths,
+                    CREATEPANELS.out.exons_consensus_bed,
+                    CREATEPANELS.out.exons_consensus_panel,
+                    EXPECTEDMUTRATE.out.refcds_object
+                    // covariates
+                    )
+    }
     if (params.omega){
 
         // Omega

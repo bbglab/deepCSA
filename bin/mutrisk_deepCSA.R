@@ -107,7 +107,7 @@ generate_tables_depth = function(tab_depths, sample) {
   if (missing(sample)) {
     site_depths = rowSums(tab_depths |>
                             select(-c("chr", "pos", "ref", "alt",
-                             "MUT_ID", "GENE", "IMPACT", "CONTEXT_MUT", "CONTEXT", 
+                             "MUT_ID", "GENE", "IMPACT", "CONTEXT_MUT", "CONTEXT",
                               "strand", "genestrand", "ctx", "refstrand", "altstrand", "mutation", "impact")))
   }   else {
     site_depths = tab_depths |>
@@ -292,11 +292,11 @@ estimate_rates = function(mle_submodel, genemuts, RefCDS, relative_rates) {
     message("no covariates / not enough synonymous mutations -> switching to dNdSglobal mutation rate")
     ratio = 1 # do not convert the rates
   }
-  
+
   results_list_cv = lapply(results_list, \(x) x*ratio)
   results_list_cv = lapply(results_list_cv, \(x) rownames_to_column(.data = x,var =  "gene_name"))
 
-  mutation_estimates = rbindlist(results_list_cv, idcol = "type") |> 
+  mutation_estimates = rbindlist(results_list_cv, idcol = "type") |>
     pivot_longer(c(-type, -gene_name), names_to = "consequence") |>
     pivot_wider(names_from = "type", values_from = "value") |>
     dplyr::rename(mutrate = "mle")
@@ -593,3 +593,11 @@ if (exists("output_folder")) {
 
 # save RefCDS object
 saveRDS(RefCDS_1_genome, paste0(output_folder, "/RefCDS.rds"))
+
+
+# Create a new object named RefCDS
+RefCDS <- RefCDS_1_genome
+
+# Save it as RefCDS in the .rda file
+save(RefCDS, file = file.path(output_folder, "RefCDS.rda"))
+
