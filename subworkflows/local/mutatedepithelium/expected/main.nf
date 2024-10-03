@@ -34,7 +34,8 @@ workflow EXPECTED_MUTRATE {
     emit:
     // TODO add some other output
     // mut_epi_sample  = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_sample
-    refcds_object   = EXPMUTRATE.out.rds_file.first()
-    versions        = ch_versions                // channel: [ versions.yml ]
+    refcds_object       = EXPMUTRATE.out.rds_file.first()
+    refcds_object_rda   = EXPMUTRATE.out.rda_file.first()
+    versions            = ch_versions                // channel: [ versions.yml ]
 
 }

@@ -29,7 +29,7 @@ process RUN_DNDS {
                 --outputfile ${prefix}.out.tsv \\
                 --samplename ${prefix} \\
                 --covariates ${covariates} \\
-                --referencetranscripts ${ref_transcripts} \\
+                --referencetranscripts ${ref_cds} \\
                 --genedepth ${depths}
     # --referencetranscripts ${ref_cds} \\
     # --referencetranscripts /workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda \\

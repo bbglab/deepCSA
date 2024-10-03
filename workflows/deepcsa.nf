@@ -410,7 +410,7 @@ workflow DEEPCSA{
                     annotated_depths,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
-                    EXPECTEDMUTRATE.out.refcds_object,
+                    EXPECTEDMUTRATE.out.refcds_object_rda,
                     covariates,
                     ref_transcripts
                     )
