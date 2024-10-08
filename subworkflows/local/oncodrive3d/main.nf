@@ -1,6 +1,6 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSET_ONCODRIVE3D   } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETONCODRIVE3D   } from '../../../modules/local/subsetmaf/main'
 
 include { ONCODRIVE3D_PREPROCESSING                         } from '../../../modules/local/bbgtools/oncodrive3d/preprocessing/main'
 include { ONCODRIVE3D_RUN                                   } from '../../../modules/local/bbgtools/oncodrive3d/run/main'
@@ -27,19 +27,19 @@ workflow ONCODRIVE3D_ANALYSIS{
     SUBSETMUTATIONS(mutations, bedfile)
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-    SUBSET_ONCODRIVE3D(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSET_ONCODRIVE3D.out.versions)
+    SUBSETONCODRIVE3D(SUBSETMUTATIONS.out.subset)
+    ch_versions = ch_versions.mix(SUBSETONCODRIVE3D.out.versions)
 
 
     // mutations preprocessing
     if (params.o3d_raw_vep){
-        ONCODRIVE3D_PREPROCESSING(SUBSET_ONCODRIVE3D.out.mutations, raw_vep)
+        ONCODRIVE3D_PREPROCESSING(SUBSETONCODRIVE3D.out.mutations, raw_vep)
         ONCODRIVE3D_PREPROCESSING.out.vep_output4o3d
         .join(mutabilities)
         .set{ muts_n_mutability }
 
     } else {
-        SUBSET_ONCODRIVE3D.out.mutations
+        SUBSETONCODRIVE3D.out.mutations
         .join(mutabilities)
         .set{ muts_n_mutability }
 

@@ -1,6 +1,6 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSET_MUTRATE           } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETMUTRATE           } from '../../../modules/local/subsetmaf/main'
 
 include { MUTRATE as MUTRATE } from '../../../modules/local/computemutrate/main'
 
@@ -19,10 +19,10 @@ workflow MUTATION_RATE{
     SUBSETMUTATIONS(mutations, bedfile)
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-    SUBSET_MUTRATE(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSET_MUTRATE.out.versions)
+    SUBSETMUTRATE(SUBSETMUTATIONS.out.subset)
+    ch_versions = ch_versions.mix(SUBSETMUTRATE.out.versions)
 
-    SUBSET_MUTRATE.out.mutations
+    SUBSETMUTRATE.out.mutations
     .join(depth)
     .set{ mutations_n_depth }
 

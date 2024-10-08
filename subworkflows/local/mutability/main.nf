@@ -1,7 +1,7 @@
 
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSET_MUTABILITY        } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETMUTABILITY        } from '../../../modules/local/subsetmaf/main'
 
 include { COMPUTE_MUTABILITY        as COMPUTEMUTABILITY        } from '../../../modules/local/compute_mutability/main'
 
@@ -30,8 +30,8 @@ workflow MUTABILITY {
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
 
-    SUBSET_MUTABILITY(SUBSETMUTATIONS.out.subset)
-    SUBSET_MUTABILITY.out.mutations
+    SUBSETMUTABILITY(SUBSETMUTATIONS.out.subset)
+    SUBSETMUTABILITY.out.mutations
     .join(profile)
     .join(depth)
     .set{ mutations_n_profile_n_depth }
