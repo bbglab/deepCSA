@@ -1,4 +1,3 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSET_MUTRATE           } from '../../../modules/local/subsetmaf/main'
@@ -17,9 +16,6 @@ workflow MUTATION_RATE{
     ch_versions = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETDEPTHS(depth, bedfile)
-    ch_versions = ch_versions.mix(SUBSETDEPTHS.out.versions)
-
     SUBSETMUTATIONS(mutations, bedfile)
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
@@ -27,7 +23,7 @@ workflow MUTATION_RATE{
     ch_versions = ch_versions.mix(SUBSET_MUTRATE.out.versions)
 
     SUBSET_MUTRATE.out.mutations
-    .join(SUBSETDEPTHS.out.subset)
+    .join(depth)
     .set{ mutations_n_depth }
 
     MUTRATE(mutations_n_depth, panel)

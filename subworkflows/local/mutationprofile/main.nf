@@ -1,5 +1,4 @@
 
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSET_MUTPROFILE        } from '../../../modules/local/subsetmaf/main'
@@ -24,7 +23,6 @@ workflow MUTATIONAL_PROFILE {
     ch_versions = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETDEPTHS(depth, bedfile)
     SUBSETMUTATIONS(mutations, bedfile)
 
     SUBSET_MUTPROFILE(SUBSETMUTATIONS.out.subset)
@@ -36,7 +34,7 @@ workflow MUTATIONAL_PROFILE {
     .map{ it -> [ it[0], it[1]]  }
     .set{ sigprofiler_matrix }
 
-    COMPUTETRINUC(SUBSETDEPTHS.out.subset)
+    COMPUTETRINUC(depth)
 
     COMPUTEMATRIX.out.matrix
     .join(COMPUTETRINUC.out.trinucleotides)
