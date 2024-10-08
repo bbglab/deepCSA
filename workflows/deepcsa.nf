@@ -231,10 +231,10 @@ workflow DEEPCSA{
 
     if (params.mutationrate){
         // Mutation Rate
-        MUTRATEALL(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSALLCONS, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
-        MUTRATEPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSPROTCONS, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
-        MUTRATENONPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSNONPROTCONS, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
-        MUTRATESYNONYMOUS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSSYNONYMOUSCONS, CREATEPANELS.out.synonymous_consensus_bed, CREATEPANELS.out.synonymous_consensus_panel)
+        MUTRATEALL(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
+        MUTRATEPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
+        MUTRATENONPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
+        MUTRATESYNONYMOUS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, CREATEPANELS.out.synonymous_consensus_panel)
         ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
         ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
         ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
@@ -255,19 +255,19 @@ workflow DEEPCSA{
 
     // Mutational profile
     if (params.profileall){
-        MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSALLCONS, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
+        MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
         ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
     }
     if (params.profilenonprot){
-        MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSNONPROTCONS, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
+        MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
         ch_versions = ch_versions.mix(MUTPROFILENONPROT.out.versions)
     }
     if (params.profileexons){
-        MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSEXONSCONS, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs)
+        MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSEXONSCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs)
         ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
     }
     if (params.profileintrons){
-        MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSINTRONSCONS, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
+        MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
         ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
     }
 
@@ -424,7 +424,7 @@ workflow DEEPCSA{
         // Omega
         if (params.profileall){
             OMEGA(MUT_PREPROCESSING.out.somatic_mafs,
-                    DEPTHSEXONSCONS,
+                    DEPTHSEXONSCONS.out.subset,
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
@@ -437,7 +437,7 @@ workflow DEEPCSA{
 
             // Omega multi
             OMEGAMULTI(MUT_PREPROCESSING.out.somatic_mafs,
-                        DEPTHSEXONSCONS,
+                        DEPTHSEXONSCONS.out.subset,
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
@@ -450,7 +450,7 @@ workflow DEEPCSA{
         }
         if (params.profilenonprot){
             OMEGANONPROT(MUT_PREPROCESSING.out.somatic_mafs,
-                            DEPTHSEXONSCONS,
+                            DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
@@ -460,7 +460,7 @@ workflow DEEPCSA{
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
             OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
-                                DEPTHSEXONSCONS,
+                                DEPTHSEXONSCONS.out.subset,
                                 MUTPROFILENONPROT.out.profile,
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
