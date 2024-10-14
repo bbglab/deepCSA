@@ -33,8 +33,8 @@ def mutrate_sample(maf_df, depths_df, depths_adj_df, sample_name, type_list = Fa
     # mutation rate metrics
     sample_features = {"N_MUTS" : n_muts,
                         "N_MUTATED" : n_mutated_reads,
-                        "DEPTH" : depths_df[f"{sample_name}"].sum(),
-                        "DEPTH_ADJUSTED": depths_adj_df[f"{sample_name}"].sum()
+                        "DEPTH" : depths_df.drop_duplicates(subset = ["CHROM", "POS"])[f"{sample_name}"].sum(),
+                        "DEPTH_ADJUSTED": depths_df.drop_duplicates(subset = ["CHROM", "POS"])[f"{sample_name}"].sum() # here they are the same
                         }
     sample_features["MUTRATE_MB"] = ( sample_features["N_MUTS"] / sample_features["DEPTH"] * 1000000 ).astype(float)
     sample_features["MUTRATE_MB_ADJUSTED"] = ( sample_features["N_MUTS"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
@@ -116,7 +116,7 @@ def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_
     annot_panel_df = pd.read_csv(annot_panel_path, sep = "\t", na_values = custom_na_values)
 
     # Subset depths with panel
-    ## mode 1: each position counts one
+    ## mode 1: each position counts one (once per gene, be careful that it might be duplicated in different genes)
     depths_subset_df = depths_df.merge(annot_panel_df[["CHROM", "POS", "GENE"]].drop_duplicates(),
                                         on = ["CHROM", "POS"], how = "inner")
     ## mode 2 (adjusted): each position counts as many times it contributes to the panel
