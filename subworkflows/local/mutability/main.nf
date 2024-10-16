@@ -1,12 +1,7 @@
 
-// include { INTERSECT_BED     as BED_INTERSECTALL      } from '../../modules/local/bedtools/intersect/main'
-// include { INTERSECT_BED     as BED_INTERSECTPA       } from '../../modules/local/bedtools/intersect/main'
-// include { INTERSECT_BED     as BED_INTERSECTNONPA    } from '../../modules/local/bedtools/intersect/main'
-
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSET_MUTABILITY        } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETMUTABILITY        } from '../../../modules/local/subsetmaf/main'
 
 include { COMPUTE_MUTABILITY        as COMPUTEMUTABILITY        } from '../../../modules/local/compute_mutability/main'
 
@@ -27,28 +22,16 @@ workflow MUTABILITY {
     // actual code
     ch_versions = Channel.empty()
 
-    // // Intersect BED of all sites with BED of sample filtered sites
-    // BED_INTERSECTALL(bedfiles.all_sites, bedfiles.sample_discarded)
-
-    // BED_INTERSECTPA(bedfiles.pa_sites, bedfiles.sample_discarded)
-
-    // BED_INTERSECTNONPA(bedfiles.nonpa_sites, bedfiles.sample_discarded)
-
-    // BED_INTERSECTALL.out.bed
-    // .join( BED_INTERSECTPA.out.bed )
-    // .join( BED_INTERSECTNONPA.out.bed )
-    // .set { all_beds }
-
-    // bedfiles.all_sites
-    // .join( bedfiles.pa_sites )
-    // .join( bedfiles.nonpa_sites )
-    // .set { all_beds }
-    
-    SUBSETDEPTHS(depth, bedfiles)
+    // this line was not needed nor used in the computation of mutabilities,
+    // since there is an additional left_join merge in the compute mutabilities code,
+    // the depths can be the full ones
+    // SUBSETDEPTHS(depth, bedfiles)
     SUBSETMUTATIONS(mutations, bedfiles)
+    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-    SUBSET_MUTABILITY(SUBSETMUTATIONS.out.subset)
-    SUBSET_MUTABILITY.out.mutations
+
+    SUBSETMUTABILITY(SUBSETMUTATIONS.out.subset)
+    SUBSETMUTABILITY.out.mutations
     .join(profile)
     .join(depth)
     .set{ mutations_n_profile_n_depth }

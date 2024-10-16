@@ -1,7 +1,7 @@
 
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETDEPTHS      } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS   } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
-include { SUBSET_MAF                    as SUBSET_MUTEPIVAF  } from '../../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                    as SUBSETMUTEPIVAF  } from '../../../../modules/local/subsetmaf/main'
 include { EXP_MUTRATE                   as EXPMUTRATE        } from '../../../../modules/local/expected_mutrate/main'
 
 
@@ -25,8 +25,8 @@ workflow EXPECTED_MUTRATE {
     SUBSETDEPTHS(depth, bedfile)
     ch_versions = ch_versions.mix(SUBSETDEPTHS.out.versions)
 
-    // SUBSET_MUTEPIVAF(SUBSETMUTATIONS.out.subset)
-    // ch_versions = ch_versions.mix(SUBSET_MUTEPIVAF.out.versions)
+    // SUBSETMUTEPIVAF(SUBSETMUTATIONS.out.subset)
+    // ch_versions = ch_versions.mix(SUBSETMUTEPIVAF.out.versions)
 
     EXPMUTRATE(panel, SUBSETMUTATIONS.out.subset, SUBSETDEPTHS.out.subset)
     ch_versions = ch_versions.mix(EXPMUTRATE.out.versions)

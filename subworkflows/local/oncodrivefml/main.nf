@@ -1,6 +1,6 @@
 include { CREATECUSTOMBEDFILE    as ONCODRIVEFMLBED     } from '../../../modules/local/createpanels/custombedfile/main'
 
-include { SUBSET_MAF             as SUBSET_ONCODRIVEFML } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF             as SUBSETONCODRIVEFML } from '../../../modules/local/subsetmaf/main'
 
 include { ONCODRIVEFML                                  } from '../../../modules/local/bbgtools/oncodrivefml/main'
 include { ONCODRIVEFML           as ONCODRIVEFMLSNVS    } from '../../../modules/local/bbgtools/oncodrivefml/main'
@@ -21,10 +21,10 @@ workflow ONCODRIVEFML_ANALYSIS{
     ONCODRIVEFMLBED(panel_file)
     ch_versions = ch_versions.mix(ONCODRIVEFMLBED.out.versions)
 
-    SUBSET_ONCODRIVEFML(mutations)
-    ch_versions = ch_versions.mix(SUBSET_ONCODRIVEFML.out.versions)
+    SUBSETONCODRIVEFML(mutations)
+    ch_versions = ch_versions.mix(SUBSETONCODRIVEFML.out.versions)
 
-    SUBSET_ONCODRIVEFML.out.mutations
+    SUBSETONCODRIVEFML.out.mutations
     .join( mutabilities )
     .set{ muts_n_mutability }
 
