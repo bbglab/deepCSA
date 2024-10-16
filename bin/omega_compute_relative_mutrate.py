@@ -15,8 +15,8 @@ def compute_relative_mutrate(mutrate_file, output_file):
 
     synonymous_mutrates_all_samples = mutrate_df[(mutrate_df["MUTTYPES"] == "SNV")].reset_index(drop = True)
 
-    relative_synonymous_mutrates_all_samples = synonymous_mutrates_all_samples[['GENE', 'N_MUTS']].set_index(['GENE']) \
-                                                    / synonymous_mutrates_all_samples["N_MUTS"].sum()
+    relative_synonymous_mutrates_all_samples = synonymous_mutrates_all_samples[['GENE', 'MUTRATE_MB_ADJUSTED']].set_index(['GENE']) \
+                                                    / synonymous_mutrates_all_samples["MUTRATE_MB_ADJUSTED"].sum()
     relative_synonymous_mutrates_all_samples.columns = ["REL_MUTRATE"]
 
     relative_synonymous_mutrates_all_samples.reset_index()[["GENE", "REL_MUTRATE"]].to_csv(f"{output_file}",
@@ -26,10 +26,8 @@ def compute_relative_mutrate(mutrate_file, output_file):
 
 
 @click.command()
-@click.option('--mutations', type=click.Path(exists=True), help='Input muttations file')
-@click.option('--signature-probabilities', type=click.Path(exists=True), help='File listing decomposed mutation probability files.')
-@click.option('--output', type=click.Path(), help='Output annotated mutations file')
-# @click.option('--all-groups', type=click.Path(exists=True), help='JSON groups file')
+@click.option('--mutrates', type=click.Path(exists=True), help='Input mutation rate file')
+@click.option('--output', type=click.Path(), help='Output file')
 
 
 def main(mutrates, output):
