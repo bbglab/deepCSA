@@ -298,7 +298,9 @@ workflow DEEPCSA{
         EXPECTEDMUTRATE(mutations_all,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
-                        ANNOTATEDEPTHS.out.all_samples_depths)
+                        ANNOTATEDEPTHS.out.all_samples_depths,
+                        CREATEPANELS.out.full_panel_annotated
+                        )
     }
 
 

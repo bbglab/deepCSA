@@ -43,8 +43,9 @@ output_folder = args[5]
 get_dnds_mut_context = function(muts) {
 
   muts_strand = muts |>
-    mutate(genestrand = ifelse(strand == 1, "+", "-")) |>
-    filter(!GENE %in% c("PIK3CA", "TERT", "FGFR4"))
+    mutate(genestrand = ifelse(strand == 1, "+", "-"))
+#     |>
+#    filter(!GENE %in% c("PIK3CA", "TERT", "FGFR4"))
 
   muts_gr = GRanges(seqnames = muts_strand$chr, IRanges(muts_strand$pos, end = muts_strand$pos)) + 1
   strand(muts_gr) = Rle(muts_strand$genestrand)

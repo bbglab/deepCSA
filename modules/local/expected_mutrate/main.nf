@@ -25,7 +25,6 @@ process EXP_MUTRATE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def k_guess = task.ext.k_guess ?: "12"
     """
     mkdir expected_mutrate
     mutrisk_deepCSA.R \\
