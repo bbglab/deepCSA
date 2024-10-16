@@ -8,6 +8,7 @@ process EXP_MUTRATE {
     tuple val(meta), path(regions)
     tuple val(meta2), path(mutations)
     tuple val(meta3), path(depths)
+    tuple val(meta4), path(annotated_panel)
 
 
     output:
@@ -31,6 +32,7 @@ process EXP_MUTRATE {
             $regions \\
             $mutations \\
             $depths \\
+            $annotated_panel \\
             expected_mutrate
 
     cat <<-END_VERSIONS > versions.yml

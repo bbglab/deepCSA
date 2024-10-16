@@ -20,15 +20,24 @@ output_list = plot_list = list()
 
 # Uncomment following lines for testing/checking
 # data("submod_192r_3w", package = "dndscv")
-# deepcsa_folder = "/workspace/nobackup/bladder_ts/results/2024-09-09_deepCSA_test_expected/"
-# consensus_file = paste0(deepcsa_folder, "createpanels/consensuspanels/consensus.exons_splice_sites.tsv")
-# input_muts_file = paste0(deepcsa_folder, "somaticmutations/all_samples.somatic.mutations.tsv")
-# sample_depths_file = paste0(deepcsa_folder, "annotatedepths/all_samples_indv.depths.tsv.gz")
+# consensus_file = "/workspace/datasets/transfer/ferriol_deepcsa/test/expected_mutrate/consensus.exons_splice_sites.tsv"
+# deepcsa_folder = "/workspace/datasets/transfer/ferriol_deepcsa/test/expected_mutrate/axel_test/"
+# input_muts_file = "/workspace/datasets/transfer/ferriol_deepcsa/test/expected_mutrate/all_samples.subset_mutations.tsv.gz"
+# sample_depths_file = "/workspace/datasets/transfer/ferriol_deepcsa/test/expected_mutrate/all_samples.subset_depths.tsv.gz"
+# annotated_panelfile = "/workspace/datasets/transfer/ferriol_deepcsa/test/expected_mutrate/axel_test/captured_panel.tab.gz"
+
+
+
+gene_names = sapply(RefCDS, \(x) x$gene_name)
+
+# testing files 
+
 
 consensus_file = args[1]
 input_muts_file = args[2]
 sample_depths_file = args[3]
-output_folder = args[4]
+annotated_panelfile = args[4]
+output_folder = args[5]
 
 # define functions:
 get_dnds_mut_context = function(muts) {
@@ -323,7 +332,11 @@ sample_depths =  sample_depths |>
 
 ### ANALYSIS ####
 consensus_depths = left_join(consensus, sample_depths, by = c("chr", "pos"))
-gene_strands = input_muts |> select(GENE, strand) |> distinct()
+
+# alternative gene strands approach: 
+command = sprintf("zcat % s | cut -f16,18 | grep -v '##' | grep -v 'SYMBOL' | sort | uniq", annotated_panelfile)
+gene_strands = read.table(text = system(command, intern = TRUE), col.names = c("strand", "GENE"))
+
 consensus_depths = left_join(consensus_depths,gene_strands) |>
   filter(!is.na(strand))
 consensus_depths[is.na(consensus_depths)] = 0
@@ -593,7 +606,6 @@ if (exists("output_folder")) {
 
 # save RefCDS object
 saveRDS(RefCDS_1_genome, paste0(output_folder, "/RefCDS.rds"))
-
 
 # Create a new object named RefCDS
 RefCDS <- RefCDS_1_genome

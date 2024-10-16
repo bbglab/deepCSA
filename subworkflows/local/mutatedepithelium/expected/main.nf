@@ -3,9 +3,7 @@ include { TABIX_BGZIPTABIX_QUERY        as SUBSETDEPTHS      } from '../../../..
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS   } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                    as SUBSET_MUTEPIVAF  } from '../../../../modules/local/subsetmaf/main'
 include { EXP_MUTRATE                   as EXPMUTRATE        } from '../../../../modules/local/expected_mutrate/main'
-
-
-
+include { ENSEMBLVEP                    as ENSEMBLVEP_VEP    } from '../../../../modules/nf-core/ensemblvep/vep/main'
 
 workflow EXPECTED_MUTRATE {
 
@@ -28,7 +26,7 @@ workflow EXPECTED_MUTRATE {
     // SUBSET_MUTEPIVAF(SUBSETMUTATIONS.out.subset)
     // ch_versions = ch_versions.mix(SUBSET_MUTEPIVAF.out.versions)
 
-    EXPMUTRATE(panel, SUBSETMUTATIONS.out.subset, SUBSETDEPTHS.out.subset)
+    EXPMUTRATE(panel, SUBSETMUTATIONS.out.subset, SUBSETDEPTHS.out.subset, ENSEMBLVEP.out.tab)
     ch_versions = ch_versions.mix(EXPMUTRATE.out.versions)
 
     emit:
