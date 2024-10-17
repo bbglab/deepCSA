@@ -51,6 +51,7 @@ workflow OMEGA_ANALYSIS{
     panel
     custom_gene_groups
     hotspots_file
+    relative_mutationrates
 
 
     main:
@@ -108,12 +109,8 @@ workflow OMEGA_ANALYSIS{
 
 
     if (params.omega_globalloc) {
-        Channel.of([ [ id: "all_samples" ] ])
-        .join( PREPROCESSING.out.syn_muts_tsv )
-        .set{ all_samples_syn_muts }
 
-
-        PREPROCESSINGGLOBALLOC( muts_n_depths_n_profile, expanded_panel, all_samples_syn_muts.first() )
+        PREPROCESSINGGLOBALLOC( muts_n_depths_n_profile, expanded_panel, relative_mutationrates.first() )
         ch_versions = ch_versions.mix(PREPROCESSINGGLOBALLOC.out.versions)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
