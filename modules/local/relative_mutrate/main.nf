@@ -24,7 +24,7 @@ process RELATIVE_MUTRATE {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     omega_compute_relative_mutrate.py \\
-                --mutrates ${mutations} \\
+                --mutrates ${mutation_rates} \\
                 --output ${prefix}.rel_mutrates.tsv;
 
     cat <<-END_VERSIONS > versions.yml

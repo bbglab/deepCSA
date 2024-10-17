@@ -13,7 +13,8 @@ def compute_relative_mutrate(mutrate_file, output_file):
 
     mutrate_df = pd.read_csv(mutrate_file, sep = "\t", header = 0, na_values = custom_na_values)
 
-    synonymous_mutrates_all_samples = mutrate_df[(mutrate_df["MUTTYPES"] == "SNV")].reset_index(drop = True)
+    synonymous_mutrates_all_samples = mutrate_df[(mutrate_df["MUTTYPES"] == "SNV") & 
+                                                  (mutrate_df["GENE"] != "ALL_GENES")].reset_index(drop = True)
 
     relative_synonymous_mutrates_all_samples = synonymous_mutrates_all_samples[['GENE', 'MUTRATE_MB_ADJUSTED']].set_index(['GENE']) \
                                                     / synonymous_mutrates_all_samples["MUTRATE_MB_ADJUSTED"].sum()
