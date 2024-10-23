@@ -1,165 +1,256 @@
 #!/usr/local/bin/python
 
-import sys
+import argparse
+import numpy as np
 import pandas as pd
-from utils import add_filter
 from read_utils import custom_na_values
+from utils import add_filter
+import logging
 
-maf_df_file = sys.argv[1]
-samp_name = sys.argv[2]
-repetitive_variant_treshold = int(sys.argv[3])
-somatic_vaf_boundary = float(sys.argv[4])
-
-maf_df = pd.read_csv(maf_df_file, compression='gzip', header = 0, sep='\t', na_values = custom_na_values)
-
-sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
-
+# Logging
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
+)
+LOG = logging.getLogger("filter_cohort")
 
 
-# def correct_vaf(maf):
+def correct_vaf(maf):
+    """
+    Computes ``VAF_CORRECTED`` for the subset of variants satisfying 0 < VAF < 0.2.
+    !!!!! THIS FUNCTION IS NOT USED IN THE FINAL PIPELINE !!!!!
 
-#     """
-#     Computes VAF_CORRECTED for the subset of variants satisfying 0 < VAF < 0.2
-#     Returns the input MAF with two new columns:
-#         VAF_CORRECTED with new corrected VAF else it copies the VAF
-#         IS_VAF_CORRECTED with a boolean that indicates whether the VAF has been corrected
-#     """
+    Parameters
+    ----------
+    maf : pandas.DataFrame
+        Input MAF dataframe
 
-#     # TODO revise the 0.2 VAF threshold to see if it can be kept across datasets
-#     df = maf[(0 < maf['VAF']) & (maf['VAF'] < 0.2)][['SAMPLE_ID', 'MUT_ID', 'VAF', 'DEPTH']]
-#     df = df.sort_values('DEPTH')
-#     N  = df.shape[0]
-#     df['VAF_ROLLING_MEAN'] = df['VAF'].rolling(N // 25).mean()
-#     df['VAF_ROLLING_STD'] = df['VAF'].rolling(N // 25).std()
-#     stable_mean = df['VAF_ROLLING_MEAN'].values[-1]
-#     stable_std  = df['VAF_ROLLING_STD'].values[-1]
-#     df['VAF_CORRECTED'] = df.apply(lambda r: (r['VAF'] - r['VAF_ROLLING_MEAN']) * (stable_std / r['VAF_ROLLING_STD']) + stable_mean, axis=1)
-#     df = maf.merge(df[['VAF_CORRECTED', 'MUT_ID', 'SAMPLE_ID']],
-#                                     on=['MUT_ID', 'SAMPLE_ID'],
-#                                     how='outer')
-#     df['IS_VAF_CORRECTED'] = ~df['VAF_CORRECTED'].isnull()
-#     df.loc[~df['IS_VAF_CORRECTED'], 'VAF_CORRECTED'] = df[~df['IS_VAF_CORRECTED']]['VAF'].values
-#     return df
+    Returns
+    -------
+    pandas.DataFrame
+
+    Notes
+    -----
+    The output is a copy of the input MAF dataframe with two new columns:
+
+    - ``VAF_CORRECTED``: Corrected VAF for the subset of variants satisfying 0 < VAF < 0.2
+    - ``IS_VAF_CORRECTED``: Boolean indicating whether the VAF has been corrected
+    """
+
+    # TODO revise the 0.2 VAF threshold to see if it can be kept across datasets
+    df = maf[(0 < maf["VAF"]) & (maf["VAF"] < 0.2)][["SAMPLE_ID", "MUT_ID", "VAF", "DEPTH"]].sort_values("DEPTH").copy()
+    N = df.shape[0]
+
+    df["VAF_ROLLING_MEAN"] = df["VAF"].rolling(N // 25).mean()
+    df["VAF_ROLLING_STD"] = df["VAF"].rolling(N // 25).std()
+
+    stable_mean = df["VAF_ROLLING_MEAN"].values[-1]
+    stable_std = df["VAF_ROLLING_STD"].values[-1]
+
+    df["VAF_CORRECTED"] = df.apply(
+        lambda r: (r["VAF"] - r["VAF_ROLLING_MEAN"]) * (stable_std / r["VAF_ROLLING_STD"]) + stable_mean, axis=1
+    )
+    df = maf.merge(df[["VAF_CORRECTED", "MUT_ID", "SAMPLE_ID"]], on=["MUT_ID", "SAMPLE_ID"], how="outer")
+    df["IS_VAF_CORRECTED"] = ~df["VAF_CORRECTED"].isnull()
+    df.loc[~df["IS_VAF_CORRECTED"], "VAF_CORRECTED"] = df[~df["IS_VAF_CORRECTED"]]["VAF"].values
+    return df
 
 
+def filter_repetitive_variants(maf_df, repetitive_variant_treshold, somatic_vaf_boundary):
+    """
+    Filters out repetitive variants from the MAF dataframe. A variant is considered repetitive if it appears in at least
+    ``repetitive_variant_treshold`` samples
 
-# #######
-# ###  Add a corrected VAF column
-# #######
-# maf_df = correct_vaf(maf_df)
-# print("VAF corrected")
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
+    repetitive_variant_treshold : int
+        Minimum number of samples a variant must appear in to be considered repetitive
 
+    Returns
+    -------
+    pandas.DataFrame
+        MAF dataframe with a new column 'repetitive_variant' that flags repetitive variants
+    """
 
+    # TODO revise these numbers, the repetitive_variant_treshold is the boundary at which we start considering a mutation as "repetitive"
+    max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
 
-
-#######
-###  Filter repetitive variants
-#######
-
-# TODO revise these numbers, the repetitive_variant_treshold is the boundary at which we start considering a mutation as "repetitive"
-max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
-
-n_samples = list(range(repetitive_variant_treshold, max_samples + 1))
-if len(n_samples) == 0:
-    print("Not enough samples to identify potential repetitive variants!")
-
-else:
+    if max_samples < repetitive_variant_treshold:
+        LOG.warning("Not enough samples to identify potential repetitive variants!")
+        return maf_df
 
     # work with already filtered df + somatic only to explore potential artifacts
-    # take only variant and sample info from the df
-    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID"]].reset_index(drop = True)
+    # Filter somatic variants with VAF <= somatic_vaf_boundary
+    maf_df_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID", "SAMPLE_ID"]].reset_index(drop=True)
 
-    # add counter column
-    maf_df_f_somatic["count"] = 1
-    maf_df_f_somatic_pivot = maf_df_f_somatic.groupby("MUT_ID")["count"].sum().reset_index()
+    # Group by 'MUT_ID' and count occurrences
+    maf_df_somatic_pivot = maf_df_somatic.groupby("MUT_ID").size().reset_index(name="count")
 
-    repetitive_variants = maf_df_f_somatic_pivot[maf_df_f_somatic_pivot["count"] >= repetitive_variant_treshold]["MUT_ID"]
+    # Store repetitive variants
+    repetitive_variants = maf_df_somatic_pivot[maf_df_somatic_pivot["count"] >= repetitive_variant_treshold]["MUT_ID"]
 
     maf_df["repetitive_variant"] = maf_df["MUT_ID"].isin(repetitive_variants)
 
-    maf_df["FILTER"] = maf_df[["FILTER","repetitive_variant"]].apply(lambda x: add_filter(x["FILTER"], x["repetitive_variant"], "repetitive_variant"),
-                                                                        axis = 1
-                                                                    )
-    maf_df = maf_df.drop("repetitive_variant", axis = 1)
+    maf_df["FILTER"] = maf_df[["FILTER", "repetitive_variant"]].apply(
+        lambda x: add_filter(x["FILTER"], x["repetitive_variant"], "repetitive_variant"), axis=1
+    )
+    maf_df = maf_df.drop("repetitive_variant", axis=1)
+
+    return maf_df
 
 
+def filter_cohort_n_rich(maf_df, somatic_vaf_boundary):
+    """
+    Filters out cohort_n_rich variants from the MAF dataframe
 
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
+    somatic_vaf_boundary : float
+        VAF boundary to consider a variant as somatic
+    """
 
-#######
-###  Filter cohort_n_rich
-#######
+    max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
 
-max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
-
-if max_samples < 2:
-    print("Not enough samples to identify cohort_n_rich mutations!")
-
-else:
+    if max_samples < 2:
+        # TODO add basic logger instead of print
+        LOG.warning("Not enough samples to identify cohort_n_rich mutations!")
+        return maf_df
 
     # work with already filtered df + somatic only to explore potential artifacts
-    # take only variant and sample info from the df
-    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "FILTER"]].reset_index(drop = True)
+    # Filter somatic variants with VAF <= somatic_vaf_boundary
+    maf_df_f_somatic = maf_df[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID", "SAMPLE_ID", "FILTER"]].reset_index(
+        drop=True
+    )
 
     n_rich_vars_df = maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")].groupby("MUT_ID").size()
-    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df >= 2].index)
+    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df > 1].index)
 
     maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
 
-    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich"], "cohort_n_rich"),
-                                                                        axis = 1
-                                                                    )
-    maf_df = maf_df.drop("cohort_n_rich", axis = 1)
-
-
+    maf_df["FILTER"] = maf_df[["FILTER", "cohort_n_rich"]].apply(
+        lambda x: add_filter(x["FILTER"], x["cohort_n_rich"], "cohort_n_rich"), axis=1
+    )
+    maf_df = maf_df.drop("cohort_n_rich", axis=1)
 
     # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
     n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df > 0].index)
 
     maf_df["cohort_n_rich_uni"] = maf_df["MUT_ID"].isin(n_rich_vars_uni)
 
-    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich_uni"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich_uni"], "cohort_n_rich_uni"),
-                                                                        axis = 1
-                                                                    )
-    maf_df = maf_df.drop("cohort_n_rich_uni", axis = 1)
+    maf_df["FILTER"] = maf_df[["FILTER", "cohort_n_rich_uni"]].apply(
+        lambda x: add_filter(x["FILTER"], x["cohort_n_rich_uni"], "cohort_n_rich_uni"), axis=1
+    )
+
+    maf_df = maf_df.drop("cohort_n_rich_uni", axis=1)
+
+    return maf_df
 
 
+def filter_other_samples_snp(maf_df, somatic_vaf_boundary):
+    """
+    Filters out SNPs from other samples from the MAF dataframe
+
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
+    somatic_vaf_boundary : float
+        VAF boundary to consider a variant as somatic
+    """
+
+    # this is if we were to consider both unique and no-unique variants
+    germline_vars_all_samples = maf_df.loc[maf_df["VAF"] > somatic_vaf_boundary, "MUT_ID"].unique()
+    LOG.info(f"{len(germline_vars_all_samples)} using all germline variants of all samples")
+
+    # this is if we were to consider only unique germline
+    unique_germline_vars = (
+        maf_df.loc[maf_df["VAF"] > somatic_vaf_boundary][["MUT_ID", "SAMPLE_ID"]]
+        .groupby("MUT_ID")
+        .size()
+        .sort_values(ascending=False)
+        .to_frame("n_samples")
+        .reset_index()
+    )
+    LOG.info(f"{len(unique_germline_vars)} using only germline variants unique to a single sample")
+
+    maf_df["other_sample_SNP"] = np.where(
+        (maf_df["MUT_ID"].isin(germline_vars_all_samples)) & (maf_df["VAF"] <= somatic_vaf_boundary), True, False
+    )
+
+    maf_df["FILTER"] = maf_df[["FILTER", "other_sample_SNP"]].apply(
+        lambda x: add_filter(x["FILTER"], x["other_sample_SNP"], "other_sample_SNP"), axis=1
+    )
+    maf_df = maf_df.drop("other_sample_SNP", axis=1)
+
+    return maf_df
 
 
+def explode_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Expands the FILTER column, creating new columns for each unique filter.
+    """
+    for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
+        maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))
+
+    return maf_df
+
+def main(maf_path: str, samp_name: str, repetitive_variant_thr: int, somatic_vaf_boundary: float):
+    """
+    Script to process a MAF (Mutation Annotation Format) file.
+    It filters out repetitive variants, cohort_n_rich variants, and SNPs from other samples.
+
+    Parameters
+    ----------
+    maf_df_file : str
+        Path to the input MAF file (gzipped)
+    samp_name : str
+        Name for the output sample
+    repetitive_variant_threshold : int
+        Minimum number of occurrences to mark a variant as repetitive
+    somatic_vaf_boundary : float
+        VAF threshold to distinguish somatic mutations
+    """
+
+    # Load data
+    maf = pd.read_csv(maf_path, compression="gzip", header=0, sep="\t", na_values=custom_na_values)
+
+    # Correct VAF -- NOT USED
+    # maf_df = correct_vaf(maf_df)
+    # print("VAF corrected")
+
+    # Filter repetitive variants
+    maf = filter_repetitive_variants(maf, repetitive_variant_thr, somatic_vaf_boundary)
+
+    # Filter cohort_n_rich variants
+    maf = filter_cohort_n_rich(maf, somatic_vaf_boundary)
+
+    # Filter SNPs from other samples
+    maf = filter_other_samples_snp(maf, somatic_vaf_boundary)
+
+    # Expand FILTER column
+    maf = explode_filter_column(maf)
+
+    maf.name = samp_name
+
+    # Save the final DataFrame
+    maf.to_csv(f"{samp_name}.cohort.filtered.tsv.gz", sep="\t", header=True, index=False)
+    # TODO add basic logger instead of print
+    LOG.info("Filtering complete!")
 
 
-#######
-###  Filter other sample's SNP
-#######
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process a MAF (Mutation Annotation Format) file.")
 
-# this is if we were to consider both unique and no-unique variants
-germline_vars_all_samples = maf_df.loc[maf_df["VAF"] > somatic_vaf_boundary, "MUT_ID"].unique()
+    parser.add_argument("maf_path", type=str, help="Path to the input MAF file (gzipped)")
+    parser.add_argument("samp_name", type=str, help="Name for the output sample")
+    parser.add_argument("repetitive_variant_thr", type=int, help="Threshold for repetitive variants")
+    parser.add_argument("somatic_vaf_boundary", type=float, help="VAF threshold to distinguish somatic mutations")
 
-# this is if we were to consider only unique germline
-germline_vars = maf_df.loc[maf_df["VAF"] > somatic_vaf_boundary][["MUT_ID", "SAMPLE_ID"]].groupby(
-                                                            "MUT_ID").size().sort_values(ascending = False).to_frame("n_samples").reset_index()
-unique_germline_vars = germline_vars.loc[germline_vars["n_samples"] == 1]["MUT_ID"].unique()
+    # Parse the arguments
+    args = parser.parse_args()
 
-
-
-print(len(germline_vars_all_samples), "using all germline variants of all samples")
-# print(len(unique_germline_vars), "using only germline variants unique to a single sample")
-
-maf_df["other_sample_SNP"] = False
-maf_df.loc[(maf_df["MUT_ID"].isin(germline_vars_all_samples)) &
-            (maf_df["VAF"] <= somatic_vaf_boundary), "other_sample_SNP"] = True
-
-maf_df["FILTER"] = maf_df[["FILTER","other_sample_SNP"]].apply(
-                                                lambda x: add_filter(x["FILTER"], x["other_sample_SNP"], "other_sample_SNP"),
-                                                axis = 1
-                                            )
-maf_df = maf_df.drop("other_sample_SNP", axis = 1)
-
-
-for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
-    maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))
-
-
-maf_df.to_csv(f"{samp_name}.cohort.filtered.tsv.gz",
-                        sep = "\t",
-                        header = True,
-                        index = False)
+    # Call main function with parsed arguments
+    main(args.maf_path, args.samp_name, args.repetitive_variant_thr, args.somatic_vaf_boundary)
