@@ -13,6 +13,8 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("filter_cohort")
 
+# Globals
+FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP", "repetitive_variant"]
 
 def correct_vaf(maf):
     """
@@ -54,7 +56,7 @@ def correct_vaf(maf):
     df.loc[~df["IS_VAF_CORRECTED"], "VAF_CORRECTED"] = df[~df["IS_VAF_CORRECTED"]]["VAF"].values
     return df
 
-
+# Functions
 def filter_repetitive_variants(maf_df, repetitive_variant_treshold, somatic_vaf_boundary):
     """
     Filters out repetitive variants from the MAF dataframe. A variant is considered repetitive if it appears in at least
@@ -78,6 +80,7 @@ def filter_repetitive_variants(maf_df, repetitive_variant_treshold, somatic_vaf_
 
     if max_samples < repetitive_variant_treshold:
         LOG.warning("Not enough samples to identify potential repetitive variants!")
+
         return maf_df
 
     # work with already filtered df + somatic only to explore potential artifacts
@@ -89,6 +92,7 @@ def filter_repetitive_variants(maf_df, repetitive_variant_treshold, somatic_vaf_
 
     # Store repetitive variants
     repetitive_variants = maf_df_somatic_pivot[maf_df_somatic_pivot["count"] >= repetitive_variant_treshold]["MUT_ID"]
+    LOG.info(f"{len(repetitive_variants)} repetitive_variants")
 
     maf_df["repetitive_variant"] = maf_df["MUT_ID"].isin(repetitive_variants)
 
@@ -129,6 +133,7 @@ def filter_cohort_n_rich(maf_df, somatic_vaf_boundary):
     n_rich_vars = list(n_rich_vars_df[n_rich_vars_df > 1].index)
 
     maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
+    LOG.info(f"{maf_df['cohort_n_rich'].sum()} muts flagged as cohort_n_rich") # output the number of mutations flagged as cohort_n_rich
 
     maf_df["FILTER"] = maf_df[["FILTER", "cohort_n_rich"]].apply(
         lambda x: add_filter(x["FILTER"], x["cohort_n_rich"], "cohort_n_rich"), axis=1
@@ -139,6 +144,7 @@ def filter_cohort_n_rich(maf_df, somatic_vaf_boundary):
     n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df > 0].index)
 
     maf_df["cohort_n_rich_uni"] = maf_df["MUT_ID"].isin(n_rich_vars_uni)
+    LOG.info(f"{maf_df['cohort_n_rich_uni'].sum()} muts flagged as cohort_n_rich_uni")
 
     maf_df["FILTER"] = maf_df[["FILTER", "cohort_n_rich_uni"]].apply(
         lambda x: add_filter(x["FILTER"], x["cohort_n_rich_uni"], "cohort_n_rich_uni"), axis=1
@@ -163,7 +169,7 @@ def filter_other_samples_snp(maf_df, somatic_vaf_boundary):
 
     # this is if we were to consider both unique and no-unique variants
     germline_vars_all_samples = maf_df.loc[maf_df["VAF"] > somatic_vaf_boundary, "MUT_ID"].unique()
-    LOG.info(f"{len(germline_vars_all_samples)} using all germline variants of all samples")
+    LOG.debug(f"{len(germline_vars_all_samples)} using all germline variants of all samples")
 
     # this is if we were to consider only unique germline
     unique_germline_vars = (
@@ -174,11 +180,13 @@ def filter_other_samples_snp(maf_df, somatic_vaf_boundary):
         .to_frame("n_samples")
         .reset_index()
     )
-    LOG.info(f"{len(unique_germline_vars)} using only germline variants unique to a single sample")
+    LOG.debug(f"{len(unique_germline_vars)} using only germline variants unique to a single sample")
 
     maf_df["other_sample_SNP"] = np.where(
         (maf_df["MUT_ID"].isin(germline_vars_all_samples)) & (maf_df["VAF"] <= somatic_vaf_boundary), True, False
     )
+
+    LOG.info(f"{maf_df['other_sample_SNP'].sum()} other_sample_SNP")
 
     maf_df["FILTER"] = maf_df[["FILTER", "other_sample_SNP"]].apply(
         lambda x: add_filter(x["FILTER"], x["other_sample_SNP"], "other_sample_SNP"), axis=1
@@ -197,6 +205,63 @@ def explode_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
 
     return maf_df
 
+
+def get_discarded_regions(
+    maf_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
+
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Input MAF dataframe with filter columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        A BED dataframe with discarded mutations and filters applied to each region.
+    """
+
+    # List of filter columns you want to check for
+    filter_columns = [f"FILTER.{f}" for f in FILTERS if f in ','.join(list(maf_df.columns))]
+
+    LOG.info(f"Filters applied: {filter_columns}")
+    
+    maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)]
+    
+    if maf_df_filters.empty:
+        LOG.warning("No mutations were discarded based on the applied filters.")
+        return
+
+    # Output only CHROM, START, and END columns to a BED file
+    bed_df = maf_df_filters[["CHROM", "POS"] + filter_columns]
+
+    _bed_melt = (pd.melt(bed_df, 
+                        id_vars=["CHROM", "POS"], 
+                        value_vars=filter_columns, 
+                        var_name="FILTERS")
+                .query("value == True")
+                )
+    LOG.info(f"Discarded mutations: {_bed_melt.shape[0]}")
+
+    bed_annotated = (
+                _bed_melt
+                .drop_duplicates()
+                .groupby(["CHROM","POS"])["FILTERS"]
+                .apply(lambda x: ','.join(x))
+                .reset_index()
+                .rename(columns={"POS": "START"})
+    )
+
+    bed_annotated["END"] = bed_annotated["START"]
+
+    LOG.info(f"Discarded unique regions: {bed_annotated.shape[0]}")
+
+    # Write the BED file without headers or index
+    bed_annotated[["CHROM", "START", "END", "FILTERS"]].to_csv(f"{maf_df.name}_discarded.bed", sep="\t", header=False, index=False)
+
+
 def main(maf_path: str, samp_name: str, repetitive_variant_thr: int, somatic_vaf_boundary: float):
     """
     Script to process a MAF (Mutation Annotation Format) file.
@@ -213,6 +278,7 @@ def main(maf_path: str, samp_name: str, repetitive_variant_thr: int, somatic_vaf
     somatic_vaf_boundary : float
         VAF threshold to distinguish somatic mutations
     """
+    LOG.info("Starting filtering cohort...")
 
     # Load data
     maf = pd.read_csv(maf_path, compression="gzip", header=0, sep="\t", na_values=custom_na_values)
@@ -237,6 +303,10 @@ def main(maf_path: str, samp_name: str, repetitive_variant_thr: int, somatic_vaf
 
     # Save the final DataFrame
     maf.to_csv(f"{samp_name}.cohort.filtered.tsv.gz", sep="\t", header=True, index=False)
+
+    # Get discarded mutations
+    get_discarded_regions(maf)
+
     # TODO add basic logger instead of print
     LOG.info("Filtering complete!")
 
