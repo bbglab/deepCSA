@@ -13,6 +13,7 @@ process ANNOTATE_DEPTHS {
     tuple val(meta) , path(depths)
     tuple val(meta2), path(panel_all)
     path (json_groups)
+    tuple val(meta3), path(flagged_muts)
 
     output:
     // tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
@@ -32,7 +33,8 @@ process ANNOTATE_DEPTHS {
     merge_annotation_depths.py \\
         --annotation ${panel_all}.contexts \\
         --depths ${depths} \\
-        --json_file ${json_groups}
+        --json_file ${json_groups} \\
+        --regions-to-filter ${flagged_muts}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

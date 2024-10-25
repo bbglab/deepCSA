@@ -201,7 +201,13 @@ workflow DEEPCSA{
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
+    // Mutation preprocessing
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
+                        TABLE2GROUP.out.json_allgroups, seqinfo_df)
+    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
+    positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
+
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, MUT_PREPROCESSING.out.flagged_bed)
     ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
@@ -211,13 +217,6 @@ workflow DEEPCSA{
         PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
         PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
     }
-
-    // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
-                        TABLE2GROUP.out.json_allgroups, seqinfo_df)
-    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
-    positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
-
 
     // Intersect BED of desired sites with samples' depths
     DEPTHSALLCONS(annotated_depths, CREATEPANELS.out.all_consensus_bed)
