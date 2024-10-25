@@ -88,6 +88,7 @@ workflow MUTATION_PREPROCESSING {
 
     emit:
     mafs                    = named_mafs
+    flagged_bed             = FILTERBATCH.out.flagged_muts
     somatic_mafs            = SOMATICMUTATIONS.out.mutations
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
     bedfile_clean           = bedfile_updated
