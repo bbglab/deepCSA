@@ -1,5 +1,36 @@
 #!/usr/local/bin/python
+"""
+Filter Cohort - MAF Processing and Flagging Script
 
+This script processes a Mutation Annotation Format (MAF) file to filter variants by specific criteria and 
+generates a final filtered MAF along with an output of flagged regions in BED format.
+
+Command-line Arguments
+----------------------
+maf_path : str
+    Path to the gzipped input MAF file.
+samp_name : str
+    Output sample name.
+repetitive_variant_thr : int
+    Minimum occurrences threshold to flag a repetitive variant.
+somatic_vaf_boundary : float
+    VAF threshold to classify somatic mutations.
+
+Authors
+-------
+Author  : Ferriol Calvet (@FerriolCalvet)
+Email   : ferriol.calvet@irbbarcelona.org
+
+Contributors
+------------
+- Raquel Blanco - @rblancomi (raquel.blanco@irbbarcelona.org)
+- Federica Brando - @FedericaBrando (federica.brando@irbbarcelona.org)
+
+Usage
+-----
+>>> python filter_cohort.py path/to/input.maf.gz output_sample_name 10 0.05
+
+"""
 import argparse
 import logging
 

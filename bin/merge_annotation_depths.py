@@ -1,5 +1,35 @@
 #!/usr/local/bin/python
+"""
+Merge Annotation and Depth Files
 
+This module provides functionalities to merge mutation annotation files with depth files. Additionally, It masks 
+flagged genomic regions, and generating output depth files for individual samples or sample groups as specified.
+
+Command-line Options
+--------------------
+--annotation : str
+    Path to the input annotation file.
+--depths : str
+    Path to the input depths file.
+--json_file : str, optional
+    JSON file specifying sample groups for output generation.
+--regions-to-filter : str
+    Path to the BED file containing regions to filter by setting their depths to zero.
+
+Authors
+-------
+Author  : Ferriol Calvet (@FerriolCalvet)
+Email   : ferriol.calvet@irbbarcelona.org
+
+Contributors
+------------
+- Raquel Blanco - @rblancomi (raquel.blanco@irbbarcelona.org)
+- Federica Brando - @FedericaBrando (federica.brando@irbbarcelona.org)
+
+Usage
+-----
+>>> python merge_annotation_depths.py --annotation path/to/annotation.tsv --depths path/to/depths.tsv --regions-to-filter path/to/regions.bed
+"""
 
 import click
 import json
@@ -47,7 +77,7 @@ def mask_panel_regions(annotated_depths, regions_to_filter):
     annotated_depths.loc[mask, annotated_depths.columns.difference(COLS)] = 0
     
     LOG.info("Regions masked in depths file: %s", mask.sum())
-    
+    print(regions_to_mask[~regions_to_mask.set_index(["CHROM", "POS"]).index.isin(annotated_depths.set_index(["CHROM", "POS"]).index)])
 
     return annotated_depths
 
