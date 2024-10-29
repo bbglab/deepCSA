@@ -1,7 +1,29 @@
 # from itertools import product
 import json
+import logging
+from functools import wraps
+
 import pandas as pd
 
+#  Logging
+FORMAT = "%(asctime)s | %(levelname)s | %(name)s - %(message)s"
+
+def setup_logging(func):
+    """
+    Decorator to setup logging for the function
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        level = logging.DEBUG
+
+        # logging setup
+        logging.basicConfig(
+            format="%(asctime)s | %(levelname)s | %(name)s - %(message)s",
+            level=level, datefmt="%m/%d/%Y %I:%M:%S %p"
+        )
+        return func(*args, **kwargs)
+
+    return wrapper
 
 def add_filter(old_filt, add_filt, filt_name):
     """

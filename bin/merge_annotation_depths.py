@@ -28,22 +28,21 @@ Contributors
 
 Usage
 -----
->>> python merge_annotation_depths.py --annotation path/to/annotation.tsv --depths path/to/depths.tsv --regions-to-filter path/to/regions.bed
+>>> python merge_annotation_depths.py --annotation path/to/annotation.tsv \\
+                                      --depths path/to/depths.tsv \\
+                                      --regions-to-filter path/to/regions.bed
 """
 
-import click
 import json
-import pandas as pd
 import logging
 
-# Logging
-logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
-)
-LOG = logging.getLogger("merge_annotation_depths")
+import click
+import pandas as pd
+from utils import setup_logging
 
 # Globals
 COLS = ["CHROM", "POS", "CONTEXT"]
+LOG = logging.getLogger("merge_annotation_depths")
 
 # Functions
 def preprocess(annots, depths):
@@ -75,9 +74,10 @@ def mask_panel_regions(annotated_depths, regions_to_filter):
     LOG.debug("Regions to mask: %s", regions_to_mask.drop_duplicates().shape[0])
     mask = (annotated_depths.set_index(["CHROM", "POS"]).index.isin(regions_to_mask.set_index(["CHROM", "POS"]).index))
     annotated_depths.loc[mask, annotated_depths.columns.difference(COLS)] = 0
-    
+
     LOG.info("Regions masked in depths file: %s", mask.sum())
-    print(regions_to_mask[~regions_to_mask.set_index(["CHROM", "POS"]).index.isin(annotated_depths.set_index(["CHROM", "POS"]).index)])
+    print(regions_to_mask[~regions_to_mask.set_index(["CHROM", "POS"]).index
+                    .isin(annotated_depths.set_index(["CHROM", "POS"]).index)])
 
     return annotated_depths
 
@@ -107,13 +107,13 @@ def output_annotate_dephts(annotated_depths, json_f, samples):
         with open(json_f, 'r') as file:
             groups_info = json.load(file)
             LOG.info("JSON file found. Outputting annotated depths file for each group.")
-        
+
         for group_name, samples in groups_info.items():
             annotated_depths[group_name] = annotated_depths.loc[:,samples].sum(axis=1)
             annotated_depths[COLS + [group_name]].to_csv(f"{group_name}.depths.annotated.tsv.gz",
                                                                                 sep = "\t",
                                                                                 header = True,
-                                                                                index = False)   
+                                                                                index = False)
     except (TypeError, FileNotFoundError):
         LOG.warning("JSON file not found. Outputting annotated depths file for each sample.")
         for sample in samples:
@@ -136,7 +136,11 @@ def output_annotate_dephts(annotated_depths, json_f, samples):
 @click.option('--json_file', type=click.Path(exists=True), help='JSON groups file')
 @click.option('--regions-to-filter', type=click.Path(), help='BED file with regions to filter')
 # @click.option('--output', type=click.Path(), help='Output annotated depths file')
+@setup_logging
 def main(annotation, depths, json_file, regions_to_filter):
+    """
+    Merge annotation and depth files.
+    """
     LOG.info("Annotating depths file...")
 
     # Preprocess annotation and depths files
@@ -152,5 +156,4 @@ def main(annotation, depths, json_file, regions_to_filter):
     LOG.info("Done!")
 
 if __name__ == '__main__':
-    main()
-
+    main() # pylint: disable=no-value-for-parameter
