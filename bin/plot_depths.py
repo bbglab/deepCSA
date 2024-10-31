@@ -125,34 +125,38 @@ def annotate_avgdepth_region(row, dp_df):
     # annotate mean EXON_DEPTH per SAMPLE_ID
     samples = dp_df_f.columns[~dp_df_f.columns.isin(["CHROM","POS"])]
     depths = []
+    size = []
     for s in samples:
         depths.append(dp_df_f.loc[:,s].mean())
+        size.append(dp_df_f.loc[:,s].count())
 
     row["EXON_DEPTH"] = depths
     row["SAMPLE_ID"] = list(samples)
+    row["EXON_SIZE"] = size
+
 
     return row
 
 
 bed6_probes_df = bed6_probes_df.apply(lambda row: annotate_avgdepth_region(row, depth_df), axis = 1)
-bed6_probes_df = bed6_probes_df.drop(["START", "END"], axis = 'columns').explode(["EXON_DEPTH", "SAMPLE_ID"])
+bed6_probes_df = bed6_probes_df.drop(["START", "END"], axis = 'columns').explode(["EXON_DEPTH", "SAMPLE_ID", "EXON_SIZE"])
 bed6_probes_df = bed6_probes_df.dropna().reset_index(drop = True)
 
 
 
 # TODO FIXME
 # this EXON_DEPTH is not fully correct since we are doing the mean of exons which might not all have the same length
-bed6_probesByGene_df = bed6_probes_df.groupby(["GENE", "SAMPLE_ID"])["EXON_DEPTH"].mean().reset_index()
-
+bed6_probes_df["EXON_SEQ"] = bed6_probes_df["EXON_DEPTH"] * bed6_probes_df["EXON_SIZE"]
+bed6_probesByGene_df = bed6_probes_df.groupby(["GENE", "SAMPLE_ID"]).agg({"EXON_SEQ" : 'sum', "EXON_DEPTH" : 'mean',  "EXON_SIZE" : 'sum'}).reset_index()
+bed6_probesByGene_df["MEAN_GENE_DEPTH"] = bed6_probesByGene_df["EXON_SEQ"] / bed6_probesByGene_df["EXON_SIZE"]
 bed6_probesByGene_df.to_csv(f"{sample_name}.depth_per_gene_per_sample.tsv", sep = '\t', header = True, index = False)
 
+bed6_probesByGene_df = bed6_probesByGene_df.drop(["EXON_DEPTH", "EXON_SEQ", "EXON_SIZE"], axis = 'columns')
 
-
-
-# annotate EXON_DEPTH normalized by average EXON_DEPTH per GENE and SAMPLE_ID
+# annotate MEAN_GENE_DEPTH normalized by average MEAN_GENE_DEPTH per GENE and SAMPLE_ID
 bed6_probes_df["exon_cov_norm_gene_depth"] = bed6_probes_df.apply(
     lambda row: row.EXON_DEPTH / bed6_probesByGene_df.loc[(bed6_probesByGene_df["SAMPLE_ID"] == row["SAMPLE_ID"]) &
-                                                        (bed6_probesByGene_df.GENE == row.GENE), "EXON_DEPTH"].values[0], axis = 1)
+                                                        (bed6_probesByGene_df.GENE == row.GENE), "MEAN_GENE_DEPTH"].values[0], axis = 1)
 
 
 
@@ -166,7 +170,7 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     g = sns.FacetGrid(data = bed6_probes_df, col = "SAMPLE_ID", col_wrap = 4, height = 4, col_order = samples_list)
     g.map(sns.lineplot, "EXON", "EXON_DEPTH", alpha = .7)
     g.set_xticklabels("", "")
-    g.add_legend()
+    # g.add_legend()
     plt.tight_layout()
     plt.show()
 
@@ -180,14 +184,15 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
         ax = sns.lineplot(data = data, x = "EXON", y = "EXON_DEPTH", alpha = .7,
                         #   hue = "PROJECT_NAME",
                             hue = "SAMPLE_ID", hue_order = samples_list,
-                        # palette = sample_colors
+                        # palette = sample_colors,
+                        legend = False
                         )
         ax.axhline(data.EXON_DEPTH.mean(), linestyle = "--", linewidth = 2, color = "black", alpha = 0.5)
         ax.axhspan(data.EXON_DEPTH.mean(), data.EXON_DEPTH.mean()+2*data.EXON_DEPTH.std(), facecolor = '0.8')
-        ax.axhspan(data.EXON_DEPTH.mean(), data.EXON_DEPTH.mean()-2*data.EXON_DEPTH.std(), facecolor = '0.8')
+        ax.axhspan(data.EXON_DEPTH.mean(), max(0, data.EXON_DEPTH.mean()-2*data.EXON_DEPTH.std()), facecolor = '0.8')
         ax.set_title(g)
         ax.set_xticks([])
-        ax.legend(fontsize = 8, bbox_to_anchor= (1.05,1))
+        # ax.legend(fontsize = 8, bbox_to_anchor= (1.05,1))
         plt.tight_layout()
         plt.show()
 
@@ -214,10 +219,10 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
 
     sns.set_theme(style='white')
     g = sns.FacetGrid(data = bed6_probes_df, col = "SAMPLE_ID", col_wrap = 4, height = 4, col_order = samples_list)
-    g.map(sns.boxplot, "GENE", "EXON_DEPTH")
+    g.map(sns.boxplot, "GENE", "EXON_DEPTH", showfliers = False)
     g.map(sns.stripplot, "GENE", "EXON_DEPTH", jitter = True, alpha = 0.5)
     g.tick_params('x', labelrotation = 90)
-    g.add_legend()
+    # g.add_legend()
     plt.tight_layout()
     plt.show()
     pdf.savefig()
@@ -226,19 +231,28 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
 
 
     ######
-    ## Depth per sample and per gene
+    ## Depth per sample
     ######
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.set_size_inches(20, 5)
-    sns.boxplot(data = bed6_probes_df, x = "SAMPLE_ID", y = "EXON_DEPTH", ax = ax1, order = samples_list)
-    sns.stripplot(data = bed6_probes_df, x = "SAMPLE_ID", y = "EXON_DEPTH", ax = ax1, order = samples_list, jitter = True,
+    fig, ax1 = plt.subplots(1, 1)
+    fig.set_size_inches(10, 5)
+    sns.boxplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", ax = ax1, order = samples_list, showfliers = False)
+    sns.stripplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", ax = ax1, order = samples_list, jitter = True,
                 alpha = 0.5, size = 4)
     ax1.set_title("Depth per SAMPLE_ID")
     ax1.tick_params(axis = 'x', labelrotation = 90)
-    sns.boxplot(data = bed6_probes_df, x = "GENE", y = "EXON_DEPTH", ax = ax2,
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    ######
+    ## Depth per gene
+    ######
+    fig, ax2 = plt.subplots(1, 1)
+    fig.set_size_inches(10, 5)
+    sns.boxplot(data = bed6_probesByGene_df, x = "GENE", y = "EXON_DEPTH", ax = ax2, showfliers = False,
                 # order = panel, palette = colors
             )
-    sns.stripplot(data = bed6_probes_df, x = "GENE", y = "EXON_DEPTH", ax = ax2,
+    sns.stripplot(data = bed6_probesByGene_df, x = "GENE", y = "EXON_DEPTH", ax = ax2,
                     # order = panel, palette = colors
                 # hue = "PROJECT_NAME",
                 # palette = colors,
@@ -279,8 +293,8 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
             subset_df = bed6_probesByGene_df[bed6_probesByGene_df['SAMPLE_ID'].isin(sample_chunk)]
 
             # Plot the boxplot and stripplot for the current SAMPLE_ID values
-            sns.boxplot(data=subset_df, x="SAMPLE_ID", y="EXON_DEPTH", ax=ax, order=sample_chunk)
-            sns.stripplot(data=subset_df, x="SAMPLE_ID", y="EXON_DEPTH", ax=ax, order=sample_chunk,
+            sns.boxplot(data=subset_df, x="SAMPLE_ID", y="MEAN_GENE_DEPTH", ax=ax, order=sample_chunk, showfliers = False)
+            sns.stripplot(data=subset_df, x="SAMPLE_ID", y="MEAN_GENE_DEPTH", ax=ax, order=sample_chunk,
                         jitter=True, alpha=0.5, size=4)
 
             # Set plot title and rotate x-axis labels
@@ -294,8 +308,8 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     else:
         # If the number of SAMPLE_ID values does not exceed the maximum, plot all SAMPLE_ID values in a single plot
         fig, ax = plt.subplots(figsize=(10, 5))
-        sns.boxplot(data=bed6_probesByGene_df, x="SAMPLE_ID", y="EXON_DEPTH", ax=ax, order=samples_list)
-        sns.stripplot(data=bed6_probesByGene_df, x="SAMPLE_ID", y="EXON_DEPTH", ax=ax, order=samples_list,
+        sns.boxplot(data=bed6_probesByGene_df, x="SAMPLE_ID", y="MEAN_GENE_DEPTH", ax=ax, order=samples_list)
+        sns.stripplot(data=bed6_probesByGene_df, x="SAMPLE_ID", y="MEAN_GENE_DEPTH", ax=ax, order=samples_list,
                     jitter=True, alpha=0.5, size=4)
         ax.set_title("Depth per SAMPLE_ID")
         ax.tick_params(axis='x', labelrotation=90)
@@ -337,8 +351,8 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
             subset_df = bed6_probesByGene_df[bed6_probesByGene_df['GENE'].isin(gene_chunk)]
 
             # Plot the boxplot and stripplot for the current genes
-            sns.boxplot(data=subset_df, x="GENE", y="EXON_DEPTH", ax=ax, order = gene_chunk)
-            sns.stripplot(data=subset_df, x="GENE", y="EXON_DEPTH", ax=ax, order = gene_chunk,
+            sns.boxplot(data=subset_df, x="GENE", y="MEAN_GENE_DEPTH", ax=ax, order = gene_chunk, showfliers = False)
+            sns.stripplot(data=subset_df, x="GENE", y="MEAN_GENE_DEPTH", ax=ax, order = gene_chunk,
                         jitter=True, alpha=0.5, size=4)
 
             # Set plot title and rotate x-axis labels
@@ -353,8 +367,8 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     else:
         # If the number of genes does not exceed the maximum, plot all genes in a single plot
         fig, ax = plt.subplots(figsize=(15, 6))
-        sns.boxplot(data=bed6_probesByGene_df, x="GENE", y="EXON_DEPTH", ax=ax, order = unique_genes)
-        sns.stripplot(data=bed6_probesByGene_df, x="GENE", y="EXON_DEPTH", ax=ax, order = unique_genes,
+        sns.boxplot(data=bed6_probesByGene_df, x="GENE", y="MEAN_GENE_DEPTH", ax=ax, order = unique_genes, showfliers = False)
+        sns.stripplot(data=bed6_probesByGene_df, x="GENE", y="MEAN_GENE_DEPTH", ax=ax, order = unique_genes,
                     jitter=True, alpha=0.5, size=4)
         ax.set_title("Depth per GENE")
         ax.tick_params(axis='x', labelrotation=90)
@@ -368,11 +382,12 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     ## Mean depth per gene
     ######
     plt.figure(figsize = (14,6))
-    ax = sns.lineplot(data = bed6_probesByGene_df, x = "GENE", y = "EXON_DEPTH", alpha = .7,
+    ax = sns.lineplot(data = bed6_probesByGene_df, x = "GENE", y = "MEAN_GENE_DEPTH", alpha = .7,
                     hue = "SAMPLE_ID",
-                    hue_order = samples_list)
-    ax.set_title("Mean EXON_DEPTH per GENE")
-    ax.legend(fontsize = 8, bbox_to_anchor= (1,1))
+                    hue_order = samples_list,
+                    legend = False)
+    ax.set_title("Mean DEPTH per GENE")
+    # ax.legend(fontsize = 8, bbox_to_anchor= (1,1))
     ax.tick_params(axis = 'x', labelrotation = 90)
     plt.tight_layout()
     plt.show()
@@ -385,13 +400,14 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     ## Mean depth per sample
     ######
     plt.figure(figsize = (14,6))
-    ax = sns.lineplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "EXON_DEPTH", alpha = .7,
+    ax = sns.lineplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", alpha = .7,
                     hue = "GENE",
                     hue_order = unique_genes,
-                    # hue_order = panel, palette = colors
+                    # hue_order = panel, palette = colors,
+                    legend = False
                     )
-    ax.set_title("Mean EXON_DEPTH per SAMPLE_ID")
-    ax.legend(fontsize = 8, bbox_to_anchor= (1,1))
+    ax.set_title("Mean DEPTH per SAMPLE_ID")
+    # ax.legend(fontsize = 8, bbox_to_anchor= (1,1))
     ax.tick_params(axis = 'x', labelrotation = 90)
     plt.tight_layout()
     plt.show()
@@ -415,11 +431,12 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
         ax1.set_title(g)
         ax1.set_xticks([])
 
-        sns.lineplot(data = data, x = "EXON", y = "exon_cov_norm_gene_depth", alpha = .7, hue = "SAMPLE_ID", hue_order = samples_list, ax = ax2)
+        sns.lineplot(data = data, x = "EXON", y = "exon_cov_norm_gene_depth", alpha = .7, hue = "SAMPLE_ID", hue_order = samples_list, ax = ax2,
+                    legend = False)
         ax2.axhline(1, linestyle = "--", linewidth = 2, color = "black", alpha = 0.5)
         ax2.set_title(f"{g} (normalized by GENE's mean EXON_DEPTH)")
         ax2.set_xticks([])
-        ax2.legend(fontsize = 8, bbox_to_anchor= (1.25,1))
+        # ax2.legend(fontsize = 8, bbox_to_anchor= (1.25,1))
         plt.tight_layout()
         plt.show()
         pdf.savefig()
@@ -514,13 +531,14 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
         ax1.set_xticks([])
 
         # Plot cov_norm_exon_depth vs. fake_pos
-        sns.lineplot(data=data, x="fake_pos", y="cov_norm_exon_depth", alpha=.7, hue="SAMPLE_ID", hue_order=samples_list, ax=ax2)
+        sns.lineplot(data=data, x="fake_pos", y="cov_norm_exon_depth", alpha=.7, hue="SAMPLE_ID", hue_order=samples_list, ax=ax2,
+                    legend = False)
         ax2.axhline(1, linestyle="--", linewidth=2, color="black", alpha=0.5)
         for ver_pos in exon_boundary_pos:
             ax2.axvline(x=ver_pos, linestyle="--", color="black", alpha=0.3)
         ax2.set_title(f"{g} positions (normalized by exons's mean DEPTH)")
         ax2.set_xticks([])
-        ax2.legend(fontsize=8, bbox_to_anchor=(1.25, 1))
+#        ax2.legend(fontsize=8, bbox_to_anchor=(1.25, 1))
 
 
         # Plot cov_norm_gene_depth vs. fake_pos
