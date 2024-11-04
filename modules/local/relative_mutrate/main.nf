@@ -1,33 +1,31 @@
-process MUTATIONS_2_SIGNATURES {
+process RELATIVE_MUTRATE {
+    tag "$meta.id"
+    label 'process_single'
 
-    tag "${meta.id}"
-    label 'process_low'
-
-    // conda "pandas:1.5.2"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
     //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
     //     'biocontainers/pandas:1.5.2' }"
-
     container 'docker.io/ferriolcalvet/bgreference'
 
 
     input:
-    tuple val(meta), path (maf), path (signature_probabilities)
+    tuple val(meta), path(mutation_rates)
 
     output:
-    tuple val(meta), path ("*.sigs.annotated.tsv.gz")   , emit: mafs_sigs_info
-    path "versions.yml"                                 , emit: versions
+    tuple val(meta), path("*.rel_mutrates.tsv") , emit: mutrate
+    path  "versions.yml"                        , emit: versions
+
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    signatures_mutations_n_sbs.py --mutations ${maf} \\
-                            --signature-probabilities ${signature_probabilities} \\
-                            --output ${prefix}.sigs.annotated.tsv.gz
+    omega_compute_relative_mutrate.py \\
+                --mutrates ${mutation_rates} \\
+                --output ${prefix}.rel_mutrates.tsv;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -36,14 +34,15 @@ process MUTATIONS_2_SIGNATURES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "all_samples"
+    def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    touch ${prefix}.sigs.annotated.tsv.gz
+    touch ${prefix}.rel_mutrates.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
+
 }

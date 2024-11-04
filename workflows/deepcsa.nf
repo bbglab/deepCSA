@@ -51,6 +51,7 @@ hotspots_bed_file = params.omega_hotspots_bedfile ? Channel.fromPath( params.ome
 
 
 def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
+def run_mutrate = (params.mutationrate || params.omega)
 
 
 /*
@@ -115,6 +116,9 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSPROTCONS       } from '../modules/n
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSNONPROTCONS    } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSINTRONSCONS    } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/nf-core/tabix/bgziptabixquery/main'
+
+include { RELATIVE_MUTRATE          as RELMUTRATE           } from '../modules/local/relative_mutrate/main'
+
 
 
 // Download annotation cache if needed
@@ -224,12 +228,11 @@ workflow DEEPCSA{
     DEPTHSEXONSCONS(annotated_depths, CREATEPANELS.out.exons_consensus_bed)
     DEPTHSPROTCONS(annotated_depths, CREATEPANELS.out.prot_consensus_bed)
     DEPTHSNONPROTCONS(annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
-    DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
     DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
     ch_versions = ch_versions.mix(DEPTHSEXONSCONS.out.versions)
 
 
-    if (params.mutationrate){
+    if (run_mutrate){
         // Mutation Rate
         MUTRATEALL(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
         MUTRATEPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
@@ -239,6 +242,14 @@ workflow DEEPCSA{
         ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
         ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
         ch_versions = ch_versions.mix(MUTRATESYNONYMOUS.out.versions)
+
+        Channel.of([ [ id: "all_samples" ] ])
+        .join( MUTRATESYNONYMOUS.out.mutrates )
+        .set{ all_samples_syn_mutrate }
+
+        RELMUTRATE(all_samples_syn_mutrate)
+        ch_versions = ch_versions.mix(RELMUTRATE.out.versions)
+
 
         // Concatenate all outputs into a single file
         mutrate_empty = Channel.empty()
@@ -267,6 +278,7 @@ workflow DEEPCSA{
         ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
     }
     if (params.profileintrons){
+        DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
         MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
         ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
     }
@@ -429,7 +441,8 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
-                    hotspots_bed_file
+                    hotspots_bed_file,
+                    RELMUTRATE.out.mutrate
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -442,7 +455,8 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
                         custom_groups_table,
-                        hotspots_bed_file
+                        hotspots_bed_file,
+                        RELMUTRATE.out.mutrate
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -455,7 +469,8 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
-                            hotspots_bed_file
+                            hotspots_bed_file,
+                            RELMUTRATE.out.mutrate
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -465,7 +480,8 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
                                 custom_groups_table,
-                                hotspots_bed_file
+                                hotspots_bed_file,
+                                RELMUTRATE.out.mutrate
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }
