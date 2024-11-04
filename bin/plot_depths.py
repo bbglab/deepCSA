@@ -249,10 +249,10 @@ with PdfPages(f'{sample_name}.depths.pdf') as pdf:
     ######
     fig, ax2 = plt.subplots(1, 1)
     fig.set_size_inches(10, 5)
-    sns.boxplot(data = bed6_probesByGene_df, x = "GENE", y = "EXON_DEPTH", ax = ax2, showfliers = False,
+    sns.boxplot(data = bed6_probesByGene_df, x = "GENE", y = "MEAN_GENE_DEPTH", ax = ax2, showfliers = False,
                 # order = panel, palette = colors
             )
-    sns.stripplot(data = bed6_probesByGene_df, x = "GENE", y = "EXON_DEPTH", ax = ax2,
+    sns.stripplot(data = bed6_probesByGene_df, x = "GENE", y = "MEAN_GENE_DEPTH", ax = ax2,
                     # order = panel, palette = colors
                 # hue = "PROJECT_NAME",
                 # palette = colors,
