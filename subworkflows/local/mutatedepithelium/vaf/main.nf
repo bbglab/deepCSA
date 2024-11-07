@@ -1,13 +1,11 @@
 
-include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS              } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
-include { SUBSET_MAF                    as SUBSETMUTEPIVAF             } from '../../../../modules/local/subsetmaf/main'
-include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAF        } from '../../../../modules/local/mutatedgenomesfromvaf/main'
+include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS          } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { SUBSET_MAF                    as SUBSETMUTEPIVAF          } from '../../../../modules/local/subsetmaf/main'
+include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAF    } from '../../../../modules/local/mutatedgenomesfromvaf/main'
 
 
-if (params.all_duplex_counts){
-    include { SUBSET_MAF                    as SUBSETMUTEPIVAFAM       } from '../../../../modules/local/subsetmaf/main'
-    include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAFAM  } from '../../../../modules/local/mutatedgenomesfromvaf/main'
-}
+include { SUBSET_MAF                    as SUBSETMUTEPIVAFAM        } from '../../../../modules/local/subsetmaf/main'
+include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAFAM  } from '../../../../modules/local/mutatedgenomesfromvaf/main'
 
 
 workflow MUTATED_EPITHELIUM_VAF {

@@ -1,41 +1,29 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 
-include { SUBSET_MAF                as SUBSETOMEGA                 } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSING                } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { GROUP_GENES               as GROUPGENES                   } from '../../../modules/local/group_genes/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOR                    } from '../../../modules/local/bbgtools/omega/estimator/main'
+include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
+include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
+include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../../modules/local/bbgtools/omega/estimator/main'
 
-if (params.omega_hotspots){
-    include { EXPAND_REGIONS           as EXPANDREGIONS             } from '../../../modules/local/expand_regions/main'
-}
+include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
+include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
 
+include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
+include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
 
-if (params.omega_plot){
-    include { PLOT_OMEGA           as PLOTOMEGA                     } from '../../../modules/local/plot/omega/main'
-}
+include { SUBSET_MAF                as SUBSETOMEGA_EXPANDED     } from '../../../modules/local/subsetmaf/main'
+include { OMEGA_PREPROCESS          as PREPROCESSINGEXP         } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { OMEGA_ESTIMATOR           as ESTIMATOREXP             } from '../../../modules/local/bbgtools/omega/estimator/main'
 
-if (params.omega_globalloc){
-    include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
-    include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
-    if (params.omega_plot){
-        include { PLOT_OMEGA           as PLOTOMEGAGLOBALLOC        } from '../../../modules/local/plot/omega/main'
-    }
-}
+include { SUBSET_MAF                as SUBSETOMEGA_OK           } from '../../../modules/local/subsetmaf/main'
+include { OMEGA_PREPROCESS          as PREPROCESSINGOK          } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { OMEGA_ESTIMATOR           as ESTIMATOROK              } from '../../../modules/local/bbgtools/omega/estimator/main'
 
-if (params.omega_vaf_distorsioned){
-    include { SUBSET_MAF                as SUBSETOMEGA_EXPANDED    } from '../../../modules/local/subsetmaf/main'
-    include { OMEGA_PREPROCESS          as PREPROCESSINGEXP         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-    include { OMEGA_ESTIMATOR           as ESTIMATOREXP             } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-    include { SUBSET_MAF                as SUBSETOMEGA_OK          } from '../../../modules/local/subsetmaf/main'
-    include { OMEGA_PREPROCESS          as PREPROCESSINGOK          } from '../../../modules/local/bbgtools/omega/preprocess/main'
-    include { OMEGA_ESTIMATOR           as ESTIMATOROK              } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-    include { SUBSET_MAF                as SUBSETOMEGA_REDUCED     } from '../../../modules/local/subsetmaf/main'
-    include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-    include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
-}
+include { SUBSET_MAF                as SUBSETOMEGA_REDUCED      } from '../../../modules/local/subsetmaf/main'
+include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
 
 
 
