@@ -78,6 +78,29 @@ def filter_maf(maf_df, filter_criteria):
             maf_df = maf_df[mask]
             print(f"Applying multi-column filter {col}:{criterion} implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
 
+        elif ' or ' in col:
+            columns_to_filter = col.split(' or ')
+            conditions_to_filter = criterion.split(' or ')
+            pref_len = maf_df.shape[0]
+            mask = pd.Series(False, index=maf_df.index)
+
+            for column, condition in zip(columns_to_filter, conditions_to_filter):
+                operator, value = condition.split(maxsplit=1)
+
+                if len(operator) == 2 and operator in operators:
+                    mask |= operators[operator](maf_df[column], float(value))
+
+                elif operator in operators:
+                    mask |= operators[operator](maf_df[column], value)
+
+                else:
+                    print(f"We have no filtering criteria defined for {column}:{condition} filter.")
+
+            maf_df = maf_df[mask]
+            print(f"Applying multi-column filter {col}:{criterion} implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+
+
+
         # Handle single column conditions
         elif ' ' in criterion:
             operator, value = criterion.split(maxsplit=1)
