@@ -337,6 +337,14 @@
                     "help_text": "If you want to run the analysis only for a set of responses, include them separated by a comma",
                     "fa_icon": "far fa-file-code"
                 },
+                "responses_excluded_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "default": "",
+                    "description": "Set of responses for which not to run the analysis in a specific method-metric combination",
+                    "help_text": "If you want to exclude from the analysis a subset of responses, add in a dictionary format the method-metric and the responses separated by comma",
+                    "fa_icon": "far fa-file-code"
+                },
                 "samples_subset_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
@@ -427,7 +435,7 @@
                     "description": "FDR threshold to consider a value statistically significant.",
                     "help_text": "Which should be the FDR threshold to consider a value significant?",
                     "fa_icon": "far fa-file-code"
-                },
+                }
             }
 
         },

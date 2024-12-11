@@ -469,10 +469,10 @@ def do_regression_analysis(info_row, pdf,
               default = "",
 			  help = "")
 
-@click.option('--oncodrivefml_data',
-			  required = False,
-              default = "",
-			  help = "")
+# @click.option('--oncodrivefml_data',
+# 			  required = False,
+#               default = "",
+# 			  help = "")
 
 @click.option('--omega_data',
 			  required = False,
@@ -489,12 +489,17 @@ def do_regression_analysis(info_row, pdf,
               default = "",
 			  help = "")
 
-@click.option('--oncodrivefml_params',
+# @click.option('--oncodrivefml_params',
+# 			  required = False,
+#               default = "",
+# 			  help = "")
+
+@click.option('--responses_subset',
 			  required = False,
               default = "",
 			  help = "")
 
-@click.option('--responses_subset',
+@click.option('--responses_excluded',
 			  required = False,
               default = "",
 			  help = "")
@@ -578,9 +583,11 @@ def do_regression_analysis(info_row, pdf,
 # -- Main function  -- #
 
 def main(config_file, pdf_path, mutrate_data,
-        oncodrivefml_data, omega_data,
+        # oncodrivefml_data,
+        omega_data,
         mutrate_params, omega_params,
-        oncodrivefml_params, responses_subset, samples_subset,
+        # oncodrivefml_params,
+        responses_subset, responses_excluded, samples_subset,
         predictors_file, predictors_plot_config, random_effects_vars,
         multipletesting_join, multivariate_rules, response_subplots,
         total_plot, response_and_total_subplots, make2, save_tables_dir,
@@ -649,16 +656,17 @@ def main(config_file, pdf_path, mutrate_data,
         config = {
             "metrics.data": 
             {"mutrate": mutrate_data, # always a single file
-             "oncodrivefml": oncodrivefml_data, # always a directory or a string with file names
+            #  "oncodrivefml": oncodrivefml_data, # always a directory or a string with file names
              "omega": omega_data, # always a directory or a string with file names
             },
             "metrics.config":
             {"mutrate": mutrate_params,
-             "oncodrivefml": oncodrivefml_params,
+            #  "oncodrivefml": oncodrivefml_params,
              "omega": omega_params,
             },
             "variables":
             {"responses_subset": responses_subset,
+             "responses_excluded": responses_excluded,
              "samples_subset": samples_subset,
              "predictors_file": predictors_file,
              "predictors": predictors_plot_config,
@@ -692,6 +700,8 @@ def main(config_file, pdf_path, mutrate_data,
         print("\t\tSubset of responses: NA (all responses calculated in each method will be used)")
     else:
         print(f"\t\tSubset of responses: {responses}")
+
+    responses_excluded = json.loads(config["variables"]["responses_excluded"])
 
     ## Go through each method
     for method in config["metrics.config"]:
@@ -729,20 +739,35 @@ def main(config_file, pdf_path, mutrate_data,
                             rows_names = responses,
                             cols_names = samples,
                             save_files_dir = method_directory,
-                            omega_modality = "mle")
+                            omega_modality = "mle",
+                            global_loc = False)
 
             ## for each metric, there are several calculations; take only those specify in the config file
             ### if method_config=[""] because no value was submitted, all the calculation modalities will be loaded
+            print(os.listdir(method_directory))
             for file in os.listdir(method_directory):
+                print(file)
                 if all(
                     any(sub_conf in file for sub_conf in conf.split("-"))
                     for conf in method_config
                     ):
                     if "total_gene" not in file and "total_sample" not in file: # keep a single file per metric
-
+                        print(file)
                         new_row["method"] = file.split(".")[0]
                         new_row["metric"] = file.split(".")[1]
                         new_row["metric_file_path"] = os.path.join(method_directory, file)
+                        for k in responses_excluded:
+                            k_elems = k.split(".") # should contain only two elements: method.keyword-for-metric
+                            if k_elems[0] == new_row["method"]:
+                                metric_elems = new_row["metric"].split("_")
+                                for elem in metric_elems:
+                                    if elem == k_elems[1]:
+                                        metric_df2edit = pd.read_csv(new_row["metric_file_path"], sep = "\t") 
+                                        genes2exclude = responses_excluded[k]
+                                        metric_df2edit = metric_df2edit.loc[~metric_df2edit["gene"].isin(genes2exclude)]
+                                        os.remove(new_row["metric_file_path"])
+                                        metric_df2edit.to_csv(new_row["metric_file_path"], sep = "\t")
+
                         print(f'Method: {new_row["method"]}, metric: {new_row["metric"]}')
                         print("Loading general config...")
                         ## add general configuration to all rows (needs to be done per row because it is not possible to assign lists to full columns in pandas)
@@ -765,7 +790,7 @@ def main(config_file, pdf_path, mutrate_data,
         for rule in joining_rules:
             mask = pd.Series([True] * len(config_df))
             for subrule in joining_rules[rule]:
-                mask &= config_df["metric_file_path"].str.contains(subrule) # format: ["subrule1|subrule2|subrule3", "subrule4"]
+                mask = config_df["metric_file_path"].str.contains(subrule) # format: ["subrule1|subrule2|subrule3", "subrule4"]
             config_df.loc[mask, "joining_rule"] = rule
         config_df = config_df.groupby("joining_rule", dropna = False).agg({'method': lambda x: x.iloc[0] if not x.isnull().all() else np.nan, # choose first instance, as it is always the same
                                                         'metric': ','.join,

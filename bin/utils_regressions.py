@@ -180,6 +180,14 @@ def process_mutrate(mutrate_file, mutrate_config,
     # load master mutrate file
     mutrate_df = pd.read_csv(mutrate_file, sep = "\t")
 
+    # set table settings
+    mutrate_config_fixed = []
+    for val in mutrate_config:
+        vals = val.split("-")
+        mutrate_config_fixed.extend(vals)
+
+    print(mutrate_config_fixed)
+
     # set version settings
     ## main metric
     if metric == "mutrate":
@@ -190,10 +198,10 @@ def process_mutrate(mutrate_file, mutrate_config,
     ## region
     regressions2mutrate_regions = {"all": "all",
                                    "nonproteinaffecting": "non_protein_affecting",
-                                   "proteinaffecting": "protein"}
+                                   "proteinaffecting": "protein_affecting"}
     regions = []
     for region in regressions2mutrate_regions:
-        if region in mutrate_config:
+        if region in mutrate_config_fixed:
             regions.append(regressions2mutrate_regions[region])
 
     ## muts used
@@ -203,7 +211,7 @@ def process_mutrate(mutrate_file, mutrate_config,
                                 "indel": "DELETION-INSERTION"}
     muttypes = []
     for muttype in regressions2mutrate_muts:
-        if muttype in mutrate_config:
+        if muttype in mutrate_config_fixed:
             muttypes.append(regressions2mutrate_muts[muttype])
 
     # create tables
