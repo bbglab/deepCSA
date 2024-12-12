@@ -551,6 +551,10 @@ def univar_linear_regression(response_vars_df, name_response_vars, name_predicto
     lowi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     highi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     pvals_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
+    intercepts_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
+    
+    # list of variables that need intercept passing through zero
+    vars_zero_intercep = ["age_decades"]
 
     # compute linear regressions for each response variable
     for response_var in name_response_vars:
@@ -558,6 +562,12 @@ def univar_linear_regression(response_vars_df, name_response_vars, name_predicto
         # access each covariate
         for pred_var in name_predictor_vars:
 
+            if pred_var in vars_zero_intercep:
+                interc = "- 1"
+            else:
+                interc = "+ 1"
+            
+            print(f"MODEL formula (univariable): {response_var} ~ {pred_var} {interc}")
             mod = smf.ols(formula = f'{response_var} ~ {pred_var}', data = response_vars_df, missing = "drop")
             res = mod.fit()
 
@@ -566,6 +576,12 @@ def univar_linear_regression(response_vars_df, name_response_vars, name_predicto
             lowi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][0]
             highi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][1]
             pvals_df.loc[response_var, pred_var] = res.pvalues[pred_var]
+            # new! extract also the intercept
+            if pred_var in vars_zero_intercep:
+                intercept = 0
+            else:
+                intercept = res.params["Intercept"]
+            intercepts_df.loc[response_var, pred_var] = intercept
 
     # correct p values for false discovery rate
     if correct_pvals:
@@ -574,7 +590,7 @@ def univar_linear_regression(response_vars_df, name_response_vars, name_predicto
     else:
         corr_pvals_df = pvals_df
 
-    return coeffs_df, lowi_df, highi_df, corr_pvals_df
+    return coeffs_df, lowi_df, highi_df, corr_pvals_df, intercepts_df
 
 def univar_mixedeffects_linear_regression(response_vars_df, name_response_vars, name_predictor_vars, name_random_effects, correct_pvals = True):
     """
@@ -614,6 +630,10 @@ def univar_mixedeffects_linear_regression(response_vars_df, name_response_vars, 
     lowi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     highi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     pvals_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
+    intercepts_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
+
+    # list of variables that need intercept passing through zero
+    vars_zero_intercep = ["age_decades"]
 
     # compute linear regressions for each response variable
     for response_var in name_response_vars:
@@ -621,8 +641,14 @@ def univar_mixedeffects_linear_regression(response_vars_df, name_response_vars, 
             # access each covariate
             for pred_var in name_predictor_vars:
 
-                mod = smf.mixedlm(formula = f'{response_var} ~ {pred_var}', data = response_vars_df,
-                                  groups = response_vars_df[name_random_effects], missing = "drop") #raises error if NA otherwise
+                if pred_var in vars_zero_intercep:
+                    interc = "- 1"
+                else:
+                    interc = "+ 1"
+                
+                print(f"MODEL formula (univariable): {response_var} ~ {pred_var} {interc}")
+                mod = smf.mixedlm(formula = f'{response_var} ~ {pred_var} {interc}', data = response_vars_df,
+                                groups = response_vars_df[name_random_effects], missing = "drop") #raises error if NA otherwise
                 res = mod.fit()
 
                 # extract predictor variable coefficient, intervals, and p-value
@@ -630,6 +656,13 @@ def univar_mixedeffects_linear_regression(response_vars_df, name_response_vars, 
                 lowi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][0]
                 highi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][1]
                 pvals_df.loc[response_var, pred_var] = res.pvalues[pred_var]
+                # new! extract also the intercept
+                if pred_var in vars_zero_intercep:
+                    intercept = 0
+                else:
+                    intercept = res.params["Intercept"]
+                intercepts_df.loc[response_var, pred_var] = intercept
+
 
     # correct p values for false discovery rate
     if correct_pvals:
@@ -638,7 +671,7 @@ def univar_mixedeffects_linear_regression(response_vars_df, name_response_vars, 
     else:
         corr_pvals_df = pvals_df
 
-    return coeffs_df, lowi_df, highi_df, corr_pvals_df
+    return coeffs_df, lowi_df, highi_df, corr_pvals_df, intercepts_df
 
 def multivar_linear_regression(response_vars_df, name_response_vars, name_predictor_vars, correct_pvals = True, rules = None):
     """
@@ -676,17 +709,32 @@ def multivar_linear_regression(response_vars_df, name_response_vars, name_predic
     lowi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     highi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     pvals_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
+    intercepts_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
+    
+    # list of variables that need intercept passing through zero
+    vars_zero_intercep = ["age_decades"]
 
     # compute a multivariate linear regressions for each response variable
     for response_var in name_response_vars:
 
         # generate formula
         formula = f'{response_var} ~ '
-        for pred_var in name_predictor_vars:
-            formula = f'{formula} + {pred_var}'
+        if rules == None:
+            for pred_var in name_predictor_vars:
+                formula = f'{formula} + {pred_var}'
+                
+        else:
+            name_predictor_vars = rules[response_var]
+            for pred_var in name_predictor_vars:
+                formula = f'{formula} + {pred_var}'
+
         formula = formula.replace("+", "", 1)
 
+        if any(pred_var in vars_zero_intercep for pred_var in name_predictor_vars):
+            formula = f"{formula} -1"
+
         # compute model
+        print(f"MODEL formula (multivariable): {formula}")
         mod = smf.ols(formula = formula, data = response_vars_df, missing = "drop")
         res = mod.fit()
 
@@ -696,6 +744,12 @@ def multivar_linear_regression(response_vars_df, name_response_vars, name_predic
             lowi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][0]
             highi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][1]
             pvals_df.loc[response_var, pred_var] = res.pvalues[pred_var]
+            # new! extract also the intercept
+            if any(pred_var in vars_zero_intercep for pred_var in name_predictor_vars):
+                    intercept = 0
+            else:
+                intercept = res.params["Intercept"]
+            intercepts_df.loc[response_var, pred_var] = intercept
 
     # correct p values for false discovery rate
     if correct_pvals:
@@ -704,7 +758,7 @@ def multivar_linear_regression(response_vars_df, name_response_vars, name_predic
     else:
         corr_pvals_df = pvals_df
 
-    return coeffs_df, lowi_df, highi_df, corr_pvals_df
+    return coeffs_df, lowi_df, highi_df, corr_pvals_df, intercepts_df
 
 def multivar_mixedeffects_linear_regression(response_vars_df, name_response_vars,
                                             name_predictor_vars, name_random_effects,
@@ -747,8 +801,12 @@ def multivar_mixedeffects_linear_regression(response_vars_df, name_response_vars
     lowi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     highi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     pvals_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
+    intercepts_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
 
-   # compute a multivariate linear regressions for each response variable
+    # list of variables that need intercept passing through zero
+    vars_zero_intercep = ["age_decades"]
+
+    # compute a multivariate linear regressions for each response variable
     for response_var in name_response_vars:
 
         # generate formula
@@ -756,6 +814,7 @@ def multivar_mixedeffects_linear_regression(response_vars_df, name_response_vars
         if rules == None:
             for pred_var in name_predictor_vars:
                 formula = f'{formula} + {pred_var}'
+
         else:
             name_predictor_vars = rules[response_var]
             for pred_var in name_predictor_vars:
@@ -763,7 +822,11 @@ def multivar_mixedeffects_linear_regression(response_vars_df, name_response_vars
 
         formula = formula.replace("+", "", 1)
 
+        if any(pred_var in vars_zero_intercep for pred_var in name_predictor_vars):
+            formula = f"{formula} -1"
+
         # compute model
+        print(f"MODEL formula (multivariable): {formula}")
         mod = smf.mixedlm(formula = formula, data = response_vars_df, groups = response_vars_df[name_random_effects], missing = "drop")
         res = mod.fit()
 
@@ -773,6 +836,12 @@ def multivar_mixedeffects_linear_regression(response_vars_df, name_response_vars
             lowi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][0]
             highi_df.loc[response_var, pred_var] = res.conf_int().loc[pred_var][1]
             pvals_df.loc[response_var, pred_var] = res.pvalues[pred_var]
+            # new! extract also the intercept
+            if any(pred_var in vars_zero_intercep for pred_var in name_predictor_vars):
+                    intercept = 0
+            else:
+                intercept = res.params["Intercept"]
+            intercepts_df.loc[response_var, pred_var] = intercept
 
     # correct p values for false discovery rate
     if correct_pvals:
@@ -781,7 +850,7 @@ def multivar_mixedeffects_linear_regression(response_vars_df, name_response_vars
     else:
         corr_pvals_df = pvals_df
 
-    return coeffs_df, lowi_df, highi_df, corr_pvals_df
+    return coeffs_df, lowi_df, highi_df, corr_pvals_df, intercepts_df
 
 def plot_linreg_coeffs(coeffs_df, lowi_df, highi_df, pvals_df,
                     ncols, nrows, title, fig_width, fig_height,
@@ -891,6 +960,7 @@ keyword2title = {
     'mutreadsrate': "Mutated reads rate",
     'oncodrivefml': "OncodriveFML",
     'omega': "Omega",
+    'omegagloballoc': "Omega global",
     'proportionmutepithelium': "Proportion mutated epithelium",
 
     # metrics

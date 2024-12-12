@@ -6,16 +6,13 @@ process RUNREGRESSIONS {
     container 'docker.io/rblancomi/statsmodels:test'
 
     input:
-    path(all_mutrates_file)
-    // path(oncodrivefml_regressions_files)
-    path(omega_regressions_files)
-    val(mutrate_regressions)
-    val(omega_regressions)
-    // val(oncodrivefml_regressions)
+    val(metric_name)
+    path(metric_data)
+    val(metric_params)
     val(responses_subset_regressions)
     val(responses_excluded_regressions)
     val(samples_subset_regressions)
-    val(predictors_file_regressions)
+    path(predictors_file_regressions)
     val(predictors_plot_config_regressions)
     val(random_effects_vars_regressions)
     val(multipletesting_join_regressions)
@@ -28,8 +25,9 @@ process RUNREGRESSIONS {
     val(sign_threshold)
 
     output:
-    path("regressions.pdf")            , emit: regressions
-    path  "versions.yml"               , emit: versions
+    path(metric_name)        , emit: res_tables
+    path("*.pdf")            , emit: res_pdf
+    path  "versions.yml"     , emit: versions
 
 
     when:
@@ -42,16 +40,14 @@ process RUNREGRESSIONS {
     def predictors_plot_config = "\'${groovy.json.JsonOutput.toJson(predictors_plot_config_regressions)}\'"
     def multipletesting_join = "\'${groovy.json.JsonOutput.toJson(multipletesting_join_regressions)}\'"
     def multivariate_rules = "\'${groovy.json.JsonOutput.toJson(multivariate_rules_regressions)}\'"
-    // def oncodrivefml_regressions_files_str = oncodrivefml_regressions_files.join(',')
-    def omega_regressions_files_str = omega_regressions_files.join(',')
+    def metric_data_str = metric_data.join(',')
 
     """
     regression_analysis.py \\
-                -pdf regressions.pdf \\
-                --mutrate_data ${all_mutrates_file} \\
-                --omega_data ${omega_regressions_files_str} \\
-                --mutrate_params ${mutrate_regressions} \\
-                --omega_params ${omega_regressions} \\
+                -pdf ${metric_name}.pdf \\
+                --metric ${metric_name} \\
+                --data ${metric_data_str} \\
+                --metric_params ${metric_params} \\
                 --responses_subset ${responses_subset_regressions} \\
                 --responses_excluded ${responses_excluded} \\
                 --samples_subset ${samples_subset_regressions} \\
@@ -65,7 +61,8 @@ process RUNREGRESSIONS {
                 --response_and_total_subplots ${response_and_total_subplots} \\
                 --make2 ${make2} \\
                 --correct_pvals ${correct_pvals} \\
-                --sign_threshold ${sign_threshold};
+                --sign_threshold ${sign_threshold} \\
+                --save_tables_dir ${metric_name};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -100,7 +100,10 @@ include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkfl
 
 include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
 
-include { REGRESSIONS               as REGRESSIONS          } from '../subworkflows/local/regressions/main'
+include { REGRESSIONS               as REGRESSIONSMUTRATE          } from '../subworkflows/local/regressions/main'
+include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
+include { REGRESSIONS               as REGRESSIONSOMEGA            } from '../subworkflows/local/regressions/main'
+include { REGRESSIONS               as REGRESSIONSOMEGAGLOB        } from '../subworkflows/local/regressions/main'
 
 
 // Download annotation cache if needed
@@ -494,9 +497,25 @@ workflow DEEPCSA{
     // Regressions
     if (params.regressions){
 
-        // REGRESSIONS(all_mutrates_file, oncodrivefml_regressions_files.toList(), omega_regressions_files.toList())
-        REGRESSIONS(all_mutrates_file, omega_regressions_files.toList())
-        ch_versions = ch_versions.mix(REGRESSIONS.out.versions)
+        if (params.mutationrate && params.mutrate_regressions){
+            REGRESSIONSMUTRATE("mutrate", all_mutrates_file, params.mutrate_regressions)
+            ch_versions = ch_versions.mix(REGRESSIONSMUTRATE.out.versions)
+        }
+
+        if (params.oncodrivefml && params.oncodrivefml_regressions){
+            REGRESSIONSONCODRIVEFML("oncodrivefml", oncodrivefml_regressions_files.toList(), params.oncodrivefml_regressions)
+            ch_versions = ch_versions.mix(REGRESSIONSONCODRIVEFML.out.versions)
+        }
+
+        if (params.omega && params.omega_regressions){
+            REGRESSIONSOMEGA("omega", omega_regressions_files.toList(), params.omega_regressions)
+            ch_versions = ch_versions.mix(REGRESSIONSOMEGA.out.versions)
+        }
+
+        if (params.omega_globalloc && params.omega_regressions){
+            REGRESSIONSOMEGAGLOB("omegagloballoc", omega_regressions_files.toList(), params.omega_regressions)
+            ch_versions = ch_versions.mix(REGRESSIONSOMEGAGLOB.out.versions)
+        }
 
     }
 

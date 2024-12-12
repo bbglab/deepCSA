@@ -3,18 +3,15 @@ include { RUNREGRESSIONS    as RUNREGRESSIONS             } from '../../../modul
 workflow REGRESSIONS{
 
     take:
-    all_mutrates_file
-    // oncodrivefml_regressions_files
-    omega_regressions_files
+    metric_name
+    metric_data
+    metric_params
 
     main:
     ch_versions = Channel.empty()
 
-    RUNREGRESSIONS(all_mutrates_file,
-    // oncodrivefml_regressions_files,
-    omega_regressions_files, params.mutrate_regressions,
-    params.omega_regressions, 
-    // params.oncodrivefml_regressions,
+    RUNREGRESSIONS(metric_name,
+    metric_data, metric_params,
     params.responses_subset_regressions, params.responses_excluded_regressions,
     params.samples_subset_regressions,
     params.predictors_file_regressions, params.predictors_plot_config_regressions,
@@ -25,6 +22,7 @@ workflow REGRESSIONS{
     ch_versions = ch_versions.mix(RUNREGRESSIONS.out.versions)
 
     emit:
-    regressions = RUNREGRESSIONS.out.regressions
+    res_pdf = RUNREGRESSIONS.out.res_pdf
+    res_tables = RUNREGRESSIONS.out.res_tables
     versions = ch_versions                // channel: [ versions.yml ]
 }
