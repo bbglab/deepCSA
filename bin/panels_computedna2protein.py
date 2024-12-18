@@ -39,7 +39,7 @@ def get_normal_maf(path_maf):
         "canonical_SYMBOL", "canonical_Feature"
     ]
     maf_df_filtered = maf_df_filtered[cols].rename(columns={
-        "canonical_SYMBOL": "Gene",
+        "canonical_SYMBOL": "GENE",
         "canonical_Feature": "Ens_transcript_ID"
     })
     return maf_df_filtered
@@ -125,8 +125,8 @@ def get_dna_map_to_protein(coord_df):
     exons_ix = np.concatenate([get_exon_ix(i, exon, strand) for i, exon in enumerate(exons_range)])
 
     df = pd.DataFrame({
-        "GENE": coord_df.Gene.unique()[0],
-        "CHR": f'chr{coord_df.Chr.unique()[0]}',
+        "GENE": coord_df["GENE"].unique()[0],
+        "CHR": f'chr{coord_df["Chr"].unique()[0]}',
         "DNA_POS": exons,
         "PROT_POS": np.arange(len(exons)) // 3 + 1,
         "REVERSE_STRAND": strand,
@@ -174,8 +174,8 @@ def generate_dna_protein_mapping(maf_file, consensus_file_unique, output_file):
     """
     # Load and prepare data
     dna_sites = pd.read_table(consensus_file_unique).rename(columns={"POS": "DNA_POS", "CHROM": "CHR"})
-    normal_maf_df = get_normal_maf(maf_file, only_protein_pos=False)
-    coord_df = normal_maf_df[["Gene", "Ens_transcript_ID"]].drop_duplicates().reset_index(drop=True)
+    normal_maf_df = get_normal_maf(maf_file)
+    coord_df = normal_maf_df[["GENE", "Ens_transcript_ID"]].drop_duplicates().reset_index(drop=True)
 
     # Retrieve exon coordinates
     coord_df_lst = []
@@ -183,7 +183,7 @@ def generate_dna_protein_mapping(maf_file, consensus_file_unique, output_file):
         print("Processing gene:", gene)
         exons = [parse_cds_coord(exon) + [i] for i, exon in enumerate(get_cds_coord(transcript))]
         gene_df = pd.DataFrame(exons, columns=["Chr", "Start", "End", "Strand", "Exon"])
-        gene_df["Gene"] = gene
+        gene_df["GENE"] = gene
         gene_df["Ens_transcript_ID"] = transcript
         coord_df_lst.append(gene_df)
 
@@ -191,9 +191,9 @@ def generate_dna_protein_mapping(maf_file, consensus_file_unique, output_file):
 
     # Map DNA to protein positions
     dna_prot_df_lst = []
-    for gene in coord_df["Gene"].unique():
+    for gene in coord_df["GENE"].unique():
         print("Mapping DNA to protein for gene:", gene)
-        gene_coord_df = coord_df[coord_df["Gene"] == gene]
+        gene_coord_df = coord_df[coord_df["GENE"] == gene]
         dna_prot_df_lst.append(get_dna_map_to_protein(gene_coord_df))
 
     dna_prot_df = pd.concat(dna_prot_df_lst)

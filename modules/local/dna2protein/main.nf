@@ -23,8 +23,8 @@ process DNA_2_PROTEIN_MAPPING {
     def prefix = task.ext.prefix ?: "${meta2.id}"
     """
     cut -f 1,2,6,9 ${panel_file} | cut -f-4 | uniq > ${meta2.id}.panel.unique.tsv
-    panels_compute_dna_2_protein.py \\
-                --maf mutations_file \\
+    panels_computedna2protein.py \\
+                --maf ${mutations_file} \\
                 --consensus-file ${meta2.id}.panel.unique.tsv \\
                 --output ${prefix}.mapping.tsv;
 

@@ -227,7 +227,11 @@ workflow DEEPCSA{
     .join(MUT_PREPROCESSING.out.somatic_mafs).first()
     .set{mutations_all}
 
-    DNA2PROTEINMAPPING(mutations_all, CREATEPANELS.out.exons_consensus_bed)
+    if (params.vep_species == 'homo_sapiens'){
+        DNA2PROTEINMAPPING(mutations_all, CREATEPANELS.out.exons_consensus_panel)
+        ch_versions = ch_versions.mix(DNA2PROTEINMAPPING.out.versions)
+    }
+
 
     // Intersect BED of desired sites with samples' depths
     DEPTHSALLCONS(annotated_depths, CREATEPANELS.out.all_consensus_bed)
