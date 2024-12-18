@@ -5,7 +5,7 @@ process OMEGA_ESTIMATOR {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:latest'
+    container 'docker.io/ferriolcalvet/omega:20241217'
 
     input:
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)

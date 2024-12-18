@@ -117,7 +117,8 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSNONPROTCONS    } from '../modules/n
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSINTRONSCONS    } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { RELATIVE_MUTRATE          as RELMUTRATE           } from '../modules/local/relative_mutrate/main'
+include { SELECT_MUTRATES           as SYNMUTRATE           } from '../modules/local/select_mutrate/main'
+include { SELECT_MUTRATES           as SYNMUTREADSRATE      } from '../modules/local/select_mutrate/main'
 
 
 
@@ -247,8 +248,11 @@ workflow DEEPCSA{
         .join( MUTRATESYNONYMOUS.out.mutrates )
         .set{ all_samples_syn_mutrate }
 
-        RELMUTRATE(all_samples_syn_mutrate)
-        ch_versions = ch_versions.mix(RELMUTRATE.out.versions)
+        SYNMUTRATE(all_samples_syn_mutrate)
+        ch_versions = ch_versions.mix(SYNMUTRATE.out.versions)
+
+        SYNMUTREADSRATE(all_samples_syn_mutrate)
+        ch_versions = ch_versions.mix(SYNMUTREADSRATE.out.versions)
 
 
         // Concatenate all outputs into a single file
@@ -442,7 +446,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
                     hotspots_bed_file,
-                    RELMUTRATE.out.mutrate
+                    SYNMUTRATE.out.mutrate
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -456,7 +460,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_panel,
                         custom_groups_table,
                         hotspots_bed_file,
-                        RELMUTRATE.out.mutrate
+                        SYNMUTREADSRATE.out.mutrate
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -470,7 +474,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
                             hotspots_bed_file,
-                            RELMUTRATE.out.mutrate
+                            SYNMUTRATE.out.mutrate
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -481,7 +485,7 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_panel,
                                 custom_groups_table,
                                 hotspots_bed_file,
-                                RELMUTRATE.out.mutrate
+                                SYNMUTREADSRATE.out.mutrate
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }

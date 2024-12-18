@@ -57,6 +57,10 @@ workflow OMEGA_ANALYSIS{
     .join( profile )
     .set{ muts_n_depths_n_profile }
 
+    Channel.of([ [ id: "all_samples" ] ])
+    .join( profile ).first()
+    .set{ all_samples_mut_profile }
+
 
     if (params.omega_hotspots){
         EXPANDREGIONS(panel, hotspots_file)
@@ -68,8 +72,11 @@ workflow OMEGA_ANALYSIS{
         json_hotspots = bedfile
     }
 
-    // FIXME: here I am using bedfile as a dummy value channel
-    PREPROCESSING( muts_n_depths_n_profile, expanded_panel, bedfile)
+    // FIXME here I am using bedfile as a dummy value channel
+    PREPROCESSING( muts_n_depths_n_profile,
+                    expanded_panel,
+                    bedfile,
+                    all_samples_mut_profile)
     ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
 
     PREPROCESSING.out.mutabs_n_mutations_tsv
@@ -98,14 +105,19 @@ workflow OMEGA_ANALYSIS{
 
     if (params.omega_globalloc) {
 
-        PREPROCESSINGGLOBALLOC( muts_n_depths_n_profile, expanded_panel, relative_mutationrates.first() )
+        PREPROCESSINGGLOBALLOC(muts_n_depths_n_profile,
+                                expanded_panel,
+                                relative_mutationrates.first(),
+                                all_samples_mut_profile)
         ch_versions = ch_versions.mix(PREPROCESSINGGLOBALLOC.out.versions)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
         .join( depth )
         .set{ preprocess_globalloc_n_depths }
 
-        ESTIMATORGLOBALLOC( preprocess_globalloc_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
+        ESTIMATORGLOBALLOC(preprocess_globalloc_n_depths,
+                            expanded_panel,
+                            GROUPGENES.out.json_genes.first())
         ch_versions = ch_versions.mix(ESTIMATORGLOBALLOC.out.versions)
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
