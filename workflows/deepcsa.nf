@@ -119,6 +119,7 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/n
 
 include { SELECT_MUTRATES           as SYNMUTRATE           } from '../modules/local/select_mutrate/main'
 include { SELECT_MUTRATES           as SYNMUTREADSRATE      } from '../modules/local/select_mutrate/main'
+include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
 
 
 
@@ -223,6 +224,15 @@ workflow DEEPCSA{
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
     positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
+    Channel.of([["id": "all_samples"]])
+    .join(MUT_PREPROCESSING.out.somatic_mafs).first()
+    .set{mutations_all}
+
+    if (params.vep_species == 'homo_sapiens'){
+        DNA2PROTEINMAPPING(mutations_all, CREATEPANELS.out.exons_consensus_panel)
+        ch_versions = ch_versions.mix(DNA2PROTEINMAPPING.out.versions)
+    }
+
 
     // Intersect BED of desired sites with samples' depths
     DEPTHSALLCONS(annotated_depths, CREATEPANELS.out.all_consensus_bed)
@@ -319,9 +329,6 @@ workflow DEEPCSA{
     }
 
     if (params.expected_mutation_rate){
-        Channel.of([["id": "all_samples"]])
-        .join(MUT_PREPROCESSING.out.somatic_mafs)
-        .set{mutations_all}
 
         EXPECTEDMUTRATE(mutations_all,
                         CREATEPANELS.out.exons_consensus_bed,
