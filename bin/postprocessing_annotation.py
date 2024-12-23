@@ -127,7 +127,9 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 
-def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_ = False, assembly = 'hg38'):
+def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
+                             hotspots_file = None,
+                             all_ = False, assembly = 'hg38'):
     """
     # TODO
     explain what this function does
@@ -187,6 +189,14 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     annotated_variants_reduced = annotated_variants.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
     annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
 
+
+    if hotspots_file is not None:
+        hotspots_def_df = pd.read_table(hotspots_file, header = 0, sep = '\t')
+        new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS'] ]
+        annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS'], how = 'left')
+        annotated_variants_reduced[new_hostpot_columns] = annotated_variants_reduced[new_hostpot_columns].fillna("-")
+
+
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,
                                         index = False,
@@ -224,6 +234,17 @@ if __name__ == '__main__':
         all_sep = False
 
 
+    if len(sys.argv) >= 5:
+        print("Using the provided value:", end = "\t")
+        try:
+            hotspots_annotation_file = eval(f"{sys.argv[5]}")
+            print(hotspots_annotation_file)
+        except:
+            print("You should provide the path to the hotspots file as the fifth argument.")
+            exit(1)
+    else:
+        hotspots_annotation_file = None
 
-    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep, assembly_name)
+
+    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, hotspots_annotation_file, all_sep, assembly_name)
 

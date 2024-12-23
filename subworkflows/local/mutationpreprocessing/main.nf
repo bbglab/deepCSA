@@ -39,6 +39,7 @@ workflow MUTATION_PREPROCESSING {
     // Join all annotated samples and put them in a channel to be summarized together
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
 
+    hotspots_definition_file = params.hotspots_annotation ? Channel.fromPath( params.hotspots_definition_file, checkIfExists: true).first() : Channel.fromPath(params.input).first()
     SUMANNOTATION(annotated_samples)
     ch_versions = ch_versions.mix(SUMANNOTATION.out.versions)
 

@@ -13,7 +13,8 @@ process POSTPROCESS_VEP_ANNOTATION {
 
 
     input:
-    tuple val(meta), path(vep_annotated_file)
+    tuple val(meta) , path(vep_annotated_file)
+    tuple val(meta2), path(hotspots_annotation_file)
 
     output:
     tuple val(meta), path("*.compact.tsv") , emit: compact_panel_annotation
@@ -27,11 +28,15 @@ process POSTPROCESS_VEP_ANNOTATION {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def assembly = task.ext.assembly ?: "hg38"
     def canonical_only = task.ext.canonical_only ? "True" : "False"
+    def hotspots = task.ext.hotspots_annotation ? "${hotspots_annotation_file}" : ""
     // TODO
     // change panel postprocessing annotation into the same post processing annotation as before
     // keep it as the one for omega that is the one minimizing the computational processing
     // ensure that the columns are preserved whenever changing the version of VEP and
     // see if we want to separate information of the CANONICAL
+
+    // FIXME
+    // this selection of the columns from here looks very sensitive to changes in Ensembl, I think we should change it
     """
     zegrep -v '^##' ${vep_annotated_file} | cut -f 1,7,18,21 | awk '\$3!="-"' | uniq | \\
             tail -n +2 | \\
@@ -42,7 +47,8 @@ process POSTPROCESS_VEP_ANNOTATION {
                     ${prefix}.tmp.gz \\
                     ${assembly} \\
                     ${vep_annotated_file.getBaseName()}.compact.tsv \\
-                    ${canonical_only} ;
+                    ${canonical_only} \\
+                    ${hotspots};
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

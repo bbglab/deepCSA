@@ -85,6 +85,30 @@
                 }
             }
         },
+        "hotspot_annotation_options": {
+            "title": "Hotspot mutation annotation options",
+            "type": "object",
+            "description": "Flag and TSV file used for annotating specific custom hotspots.",
+            "default": "",
+            "properties": {
+                "hotspots_annotation": {
+                    "type": "boolean",
+                    "format": "file-path",
+                    "default": false,
+                    "description": "Enrich the annotation of mutations with the information on desired hotspots.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                },
+                "hotspots_definition_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "default": "",
+                    "description": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, HOTSPOT_NAME.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, HOTSPOT_NAME."
+                }
+            }
+        },
         "grouping_configs": {
             "title": "Sample grouping configurations",
             "type": "object",
