@@ -26,6 +26,7 @@ process EXP_MUTRATE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def metadata_file = task.ext.metadata_file ?: ""
     """
     mkdir expected_mutrate
     mutrisk_deepCSA.R \\
@@ -34,7 +35,8 @@ process EXP_MUTRATE {
             ${depths} \\
             ${annotated_panel} \\
             expected_mutrate \\
-            ${annotated_bed_file}
+            ${annotated_bed_file} \\
+            ${metadata_file}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -44,20 +44,27 @@ annotated_panelfile = args[4]
 output_folder = args[5]
 input_file_intervals = args[6]
 
+sample_sex_metadata_file = ifelse(length(args) >= 7, args[7], FALSE)
+# sample_sex_metadata_file = "/data/bbg/projects/bladder_ts/data/complete_cohort/samples_metadata/complete_cohort_bladder.discarded_histofindings_lowmuts.clinical_variables_extended.no_transposed.tsv"
+# TODO
+# document this:
+# this file must contain a row per sample and at least two columns called SAMPLE_ID and SEX, where male sex is encoded as "M"
+
+
 # define functions:
 inclusion_exclusion <- function(plist) {
   n <- length(plist)
-  
+
   if (n > 2) {
     p1 <- inclusion_exclusion(plist[1:(n %/% 2)])
     p2 <- inclusion_exclusion(plist[(n %/% 2 + 1):n])
     return(inclusion_exclusion(c(p1, p2)))
   }
-  
+
   if (n == 2) {
     return(plist[1] + plist[2] - plist[1] * plist[2])
   }
-  
+
   if (n == 1) {
     return(plist[1])
   }
@@ -66,17 +73,17 @@ inclusion_exclusion <- function(plist) {
 
 inclusion_exclusion <- function(plist) {
   n <- length(plist)
-  
+
   if (n > 2) {
     p1 <- inclusion_exclusion(plist[1:(n %/% 2)])
     p2 <- inclusion_exclusion(plist[(n %/% 2 + 1):n])
     return(inclusion_exclusion(c(p1, p2)))
   }
-  
+
   if (n == 2) {
     return(plist[1] + plist[2] - plist[1] * plist[2])
   }
-  
+
   if (n == 1) {
     return(plist[1])
   }
@@ -87,8 +94,8 @@ get_dnds_mut_context = function(muts) {
 
   muts_strand = muts |>
     mutate(genestrand = ifelse(strand == 1, "+", "-"))
-    
-    
+
+
   muts_gr = GRanges(seqnames = muts_strand$chr, IRanges(muts_strand$pos, end = muts_strand$pos)) + 1
   strand(muts_gr) = Rle(muts_strand$genestrand)
 
@@ -324,10 +331,10 @@ estimate_rates = function(mle_submodel, genemuts, RefCDS, relative_rates) {
 
     # how does the expected mutation load work:
     mutrates = sapply(substmodel[,1], \(x) prod(parmle[base::strsplit(x,split="\\*")[[1]]]))
-    
+
     # Rle(mutrates, RefCDS[[1]]$L[,2])
     # inclusion_exclusion(Rle(mutrates, RefCDS[[1]]$L[,2]))
-    
+
     genemuts_expected = t(sapply(RefCDS, \(x) colSums(x$L*mutrates)))
     colnames(genemuts_expected) = c("exp_syn", "exp_mis", "exp_non", "exp_spl")
     df = data.frame(gene_name = sapply(RefCDS, \(x) x$gene_name),
@@ -365,7 +372,7 @@ estimate_rates = function(mle_submodel, genemuts, RefCDS, relative_rates) {
 
 # estimate the mutation rates with inclusion/exclusion principle:
 estimate_rates_ie = function(mle_submodel, genemuts, RefCDS_1_genome, relative_rates) {
-  
+
   # if covariates are used, used the "exp_syn_cv" value to correct the mutation loads
   if (min(genemuts$n_syn) > 10) {
     message("local mutation rate is sufficiently high across all studied mutations, local synonymous rates will be used (dNdSloc)")
@@ -380,25 +387,25 @@ estimate_rates_ie = function(mle_submodel, genemuts, RefCDS_1_genome, relative_r
     message("no covariates / not enough synonymous mutations -> switching to dNdSglobal mutation rate")
     ratio = 1 # do not convert the rates
   }
-  
-  
+
+
   results_list = list()
   for (column in c("mle", "cilow", "cihigh")) {
-    
+
     par = mle_submodel
     parmle = setNames(par[,column], par[,1])
-    
+
     # how does the expected mutation load work:
     mutrates = sapply(substmodel[,1], \(x) prod(parmle[base::strsplit(x,split="\\*")[[1]]]))
-    
+
     # make indexes for combinations. Trunc is nonsense + splicing mutations
     index_consequences = list(exp_syn = 1, exp_mis = 2, exp_non = 3, exp_spl = 4, exp_trunc = c(3, 4), exp_all = 1:4)
     df_exp = matrix(NA, nrow = length(RefCDS_1_genome), ncol = length(index_consequences))
     rownames(df_exp) = sapply(RefCDS, \(x) x$gene_name)
     colnames(df_exp) = names(index_consequences)
     df_exp_ie = df_exp
-    
-    # multiply the rates to the lenght of each of the coding sequence. 
+
+    # multiply the rates to the lenght of each of the coding sequence.
     for (consequence in names(index_consequences)) {
       index = index_consequences[[consequence]]
       consequence_rates = mapply(RefCDS_1_genome, ratio, FUN = \(x,y) {
@@ -406,28 +413,28 @@ estimate_rates_ie = function(mle_submodel, genemuts, RefCDS_1_genome, relative_r
              if (length(rates) == 0 ) {rates = 0}
              rates = rates * y
              c(sum(rates), inclusion_exclusion(rates))})
-      
+
       df_exp[,consequence] = consequence_rates[1,]
       df_exp_ie[,consequence] = consequence_rates[2,]
     }
-    
+
     df_exp = as.data.frame(df_exp) |> rownames_to_column("gene_name")
     df_exp_ie = as.data.frame(df_exp_ie) |> rownames_to_column("gene_name")
-    
-    results_list[[column]] = rbindlist(list(sum = df_exp, inclusion_exclusion = df_exp_ie), idcol = "correction") |> 
+
+    results_list[[column]] = rbindlist(list(sum = df_exp, inclusion_exclusion = df_exp_ie), idcol = "correction") |>
       pivot_longer(starts_with("exp"), names_to = "consequence", values_to = "mutrate")
   }
-  
-  mutation_estimates = rbindlist(results_list, idcol = "column") |> 
+
+  mutation_estimates = rbindlist(results_list, idcol = "column") |>
     pivot_wider(values_from = "mutrate", names_from = "column")
-  
+
   return(mutation_estimates)
 }
 
 
 # estimate the mutation rates with inclusion/exclusion principle:
 estimate_rates_ie = function(mle_submodel, genemuts, RefCDS_1_genome, relative_rates) {
-  
+
   # if covariates are used, used the "exp_syn_cv" value to correct the mutation loads
   if (min(genemuts$n_syn) > 10) {
     message("local mutation rate is sufficiently high across all studied mutations, local synonymous rates will be used (dNdSloc)")
@@ -442,25 +449,25 @@ estimate_rates_ie = function(mle_submodel, genemuts, RefCDS_1_genome, relative_r
     message("no covariates / not enough synonymous mutations -> switching to dNdSglobal mutation rate")
     ratio = 1 # do not convert the rates
   }
-  
-  
+
+
   results_list = list()
   for (column in c("mle", "cilow", "cihigh")) {
-    
+
     par = mle_submodel
     parmle = setNames(par[,column], par[,1])
-    
+
     # how does the expected mutation load work:
     mutrates = sapply(substmodel[,1], \(x) prod(parmle[base::strsplit(x,split="\\*")[[1]]]))
-    
+
     # make indexes for combinations. Trunc is nonsense + splicing mutations
     index_consequences = list(exp_syn = 1, exp_mis = 2, exp_non = 3, exp_spl = 4, exp_trunc = c(3, 4), exp_all = 1:4)
     df_exp = matrix(NA, nrow = length(RefCDS_1_genome), ncol = length(index_consequences))
     rownames(df_exp) = sapply(RefCDS, \(x) x$gene_name)
     colnames(df_exp) = names(index_consequences)
     df_exp_ie = df_exp
-    
-    # multiply the rates to the lenght of each of the coding sequence. 
+
+    # multiply the rates to the lenght of each of the coding sequence.
     for (consequence in names(index_consequences)) {
       index = index_consequences[[consequence]]
       consequence_rates = mapply(RefCDS_1_genome, ratio, FUN = \(x,y) {
@@ -468,28 +475,28 @@ estimate_rates_ie = function(mle_submodel, genemuts, RefCDS_1_genome, relative_r
              if (length(rates) == 0 ) {rates = 0}
              rates = rates * y
              c(sum(rates), inclusion_exclusion(rates))})
-      
+
       df_exp[,consequence] = consequence_rates[1,]
       df_exp_ie[,consequence] = consequence_rates[2,]
     }
-    
+
     df_exp = as.data.frame(df_exp) |> rownames_to_column("gene_name")
     df_exp_ie = as.data.frame(df_exp_ie) |> rownames_to_column("gene_name")
-    
-    results_list[[column]] = rbindlist(list(sum = df_exp, inclusion_exclusion = df_exp_ie), idcol = "correction") |> 
+
+    results_list[[column]] = rbindlist(list(sum = df_exp, inclusion_exclusion = df_exp_ie), idcol = "correction") |>
       pivot_longer(starts_with("exp"), names_to = "consequence", values_to = "mutrate")
   }
-  
-  mutation_estimates = rbindlist(results_list, idcol = "column") |> 
+
+  mutation_estimates = rbindlist(results_list, idcol = "column") |>
     pivot_wider(values_from = "mutrate", names_from = "column")
-  
+
   return(mutation_estimates)
 }
 
 ##### LOAD DATA #######
 # Read in consensus file and mutations file:
 consensus = fread(consensus_file) |>
-  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT) |> 
+  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT) |>
   mutate(GENE = as.factor(GENE))
 
 input_muts = fread(input_muts_file) |>
@@ -507,7 +514,7 @@ sample_depths =  sample_depths |>
 ### ANALYSIS ####
 consensus_depths = left_join(consensus, sample_depths, by = c("chr", "pos"))
 
-# alternative gene strands approach: 
+# alternative gene strands approach:
 command = sprintf("zcat % s | cut -f16,18 | grep -v '##' | grep -v 'SYMBOL' | sort | uniq", annotated_panelfile)
 gene_strands = read.table(text = system(command, intern = TRUE), col.names = c("strand", "GENE"))
 
@@ -633,20 +640,20 @@ mutation_rates_avg = estimate_rates_ie(mle_submodel, genemuts = genemuts, RefCDS
 
 # intergrate with chromosome number
 mutation_rates_avg
-gene_chrs = consensus_depths |> 
-  select(chr, GENE) |> distinct() |> 
+gene_chrs = consensus_depths |>
+  select(chr, GENE) |> distinct() |>
   dplyr::rename(gene_name = GENE)
-per_cell = left_join(gene_chrs, mutation_rates_avg) |> 
+per_cell = left_join(gene_chrs, mutation_rates_avg) |>
   mutate(across(c(mle, cilow, cihigh), \(x) x*2))
-  
+
 # plot the difference across methods to determine the overall mutated epithelium.
-per_cell |> 
-  filter(consequence == "exp_all") |> 
-  ggplot(aes(x = gene_name, y = mle, fill = correction)) + 
-  geom_col(position = position_dodge(width = 0.9)) + 
-  geom_errorbar(aes(ymin = cilow, ymax = cihigh), position = position_dodge(width = 0.9), width = 0.2) + 
-  theme_classic() + 
-  labs(y = "fraction of mutated cells") + 
+per_cell |>
+  filter(consequence == "exp_all") |>
+  ggplot(aes(x = gene_name, y = mle, fill = correction)) +
+  geom_col(position = position_dodge(width = 0.9)) +
+  geom_errorbar(aes(ymin = cilow, ymax = cihigh), position = position_dodge(width = 0.9), width = 0.2) +
+  theme_classic() +
+  labs(y = "fraction of mutated cells") +
   scale_y_continuous(expand=expansion(mult=c(0,0.1)))
 
 ggsave(paste0(output_folder, "/compare_effect_inclusion_exclusion_average_cohort.png"),  width = 10, height = 6)
@@ -722,7 +729,7 @@ for (sample_name in unique(muts$sampleID)) {
                                              "exp_syn" ~ "synonymous",
                                              "exp_non" ~ "nonsense",
                                              "exp_mis" ~ "missense",
-                                             "exp_spl" ~ "splicing", 
+                                             "exp_spl" ~ "splicing",
                                              "exp_trunc" ~ "truncating"))
 
   rate_list[[sample_name]] = mutation_rate_depths
@@ -730,115 +737,79 @@ for (sample_name in unique(muts$sampleID)) {
 }
 
 fraction_genemut_genome = rbindlist(rate_list, idcol =  "sample")
+output_list$fraction_genemut_genome = fraction_genemut_genome |>
+    select(-sample, -`expected mutations`)
+
 globaldnds_all = rbindlist(globaldnds_list, idcol =  "sample")
-
-# load metadata to know sex of patients
-metadata_file = "/workspace/projects/bladder_ts/data/complete_cohort/samples_metadata/complete_cohort_bladder.discarded_histofindings_lowmuts.clinical_variables_extended.no_transposed.tsv"
-metadata = fread(metadata_file) |> 
-  select(SUBJECT_ID, SEX) |> 
-  distinct()
-
-# correct values by sex
-fraction_genemut_genome = fraction_genemut_genome |> 
-  mutate(SUBJECT_ID = paste0(str_split_i(sample, "_",1), "_", str_split_i(sample, "_", 2)))
-
-fraction_genemut_cell = left_join(fraction_genemut_genome, metadata)  |> 
-  left_join(gene_chrs) |>  
-  mutate(across(c(mle, cihigh, cilow), ~ ifelse(chr == "chrX" & SEX == "M",  ., . * 2))) |> 
-  select(-SUBJECT_ID, -`expected mutations`, -SEX, -chr)
-
-output_list$fraction_genemut_genome = fraction_genemut_genome |> 
-  select(-SUBJECT_ID, -`expected mutations`)
-output_list$fraction_genemut_cell = fraction_genemut_cell
-
-# load metadata to know sex of patients
-metadata_file = "/workspace/projects/bladder_ts/data/complete_cohort/samples_metadata/complete_cohort_bladder.discarded_histofindings_lowmuts.clinical_variables_extended.no_transposed.tsv"
-metadata = fread(metadata_file) |> 
-  select(SUBJECT_ID, SEX) |> 
-  distinct()
-
-# correct values by sex
-fraction_genemut_genome = fraction_genemut_genome |> 
-  mutate(SUBJECT_ID = paste0(str_split_i(sample, "_",1), "_", str_split_i(sample, "_", 2)))
-
-fraction_genemut_cell = left_join(fraction_genemut_genome, metadata)  |> 
-  left_join(gene_chrs) |>  
-  mutate(across(c(mle, cihigh, cilow), ~ ifelse(chr == "chrX" & SEX == "M",  ., . * 2))) |> 
-  select(-SUBJECT_ID, -`expected mutations`, -SEX, -chr)
-
-output_list$fraction_genemut_genome = fraction_genemut_genome |> 
-  select(-SUBJECT_ID, -`expected mutations`)
-output_list$fraction_genemut_cell = fraction_genemut_cell
-
 #plot the global dnds by sample.
 dnds_by_sample = ggplot(globaldnds_all, aes(x = reorder(sample, mle), y = mle)) +
-  facet_grid(name ~ . , scales = "free_y") +
-  geom_col() +
-  geom_errorbar(aes(ymin = cilow, ymax = cihigh), width = 0.5) +
-  geom_hline(yintercept = 1, linetype = "dotted") +
-  geom_hline(yintercept = 1, linetype = "dotted") +
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  scale_y_continuous(expand=expansion(mult=c(0,0.1))) + 
-  scale_y_continuous(expand=expansion(mult=c(0,0.1))) + 
-  labs(x = NULL)
+    facet_grid(name ~ . , scales = "free_y") +
+    geom_col() +
+    geom_errorbar(aes(ymin = cilow, ymax = cihigh), width = 0.5) +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    scale_y_continuous(expand=expansion(mult=c(0,0.1))) +
+    scale_y_continuous(expand=expansion(mult=c(0,0.1))) +
+    labs(x = NULL)
 ggsave(paste0(output_folder, "/dnds_by_sample.png"), dnds_by_sample, width = 5 + (length(globaldnds_all)/3), height = 5)
 
-# testing plot - check the effect of inclusion-exclusion principle
-sample_cell_ie = fraction_genemut_cell |> 
-  filter(correction == "inclusion_exclusion" & consequence == "exp_all") |> 
-  group_by(sample) |> 
-  summarize(inclusion_exclusion = inclusion_exclusion(mle), 
-            simple_sum = sum(mle)) |> 
-  arrange(desc(inclusion_exclusion)) |> 
-  mutate(sample = factor(sample, levels = sample)) |> 
-  pivot_longer(c(inclusion_exclusion, simple_sum))
 
-ggplot(sample_cell_ie, aes(x = sample, y = value, fill = name)) + 
-  geom_col(position = "dodge") + 
-  theme(axis.text.x = element_text(angle = 90)) + 
-  labs(x = NULL, y = "fraction of mutated genomes", 
-       title = "fraction of mutated genomes") + 
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  scale_y_continuous(expand=expansion(mult=c(0,0.1)))
-ggsave(paste0(output_folder, "/total_samples_difference_inclusion_exclusion.png"), width = 12, height = 6, dpi = 300)
-# testing plot - check the effect of inclusion-exclusion principle
-sample_cell_ie = fraction_genemut_cell |> 
-  filter(correction == "inclusion_exclusion" & consequence == "exp_all") |> 
-  group_by(sample) |> 
-  summarize(inclusion_exclusion = inclusion_exclusion(mle), 
-            simple_sum = sum(mle)) |> 
-  arrange(desc(inclusion_exclusion)) |> 
-  mutate(sample = factor(sample, levels = sample)) |> 
-  pivot_longer(c(inclusion_exclusion, simple_sum))
 
-ggplot(sample_cell_ie, aes(x = sample, y = value, fill = name)) + 
-  geom_col(position = "dodge") + 
-  theme(axis.text.x = element_text(angle = 90)) + 
-  labs(x = NULL, y = "fraction of mutated genomes", 
-       title = "fraction of mutated genomes") + 
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  scale_y_continuous(expand=expansion(mult=c(0,0.1)))
-ggsave(paste0(output_folder, "/total_samples_difference_inclusion_exclusion.png"), width = 12, height = 6, dpi = 300)
+# load metadata to know sex of patients
+if (sample_sex_metadata_file != FALSE){
+    print("Using sample metadata information")
 
-# values ready for publication: 
-output_list$percentage_mutated_epithelium = sample_cell_ie |> 
-  pivot_wider() |> 
-  select(-simple_sum)
-# values ready for publication: 
-output_list$percentage_mutated_epithelium = sample_cell_ie |> 
-  pivot_wider() |> 
-  select(-simple_sum)
+    metadata_file = sample_sex_metadata_file
+    metadata = fread(metadata_file) |>
+        select(SAMPLE_ID, SEX) |>
+        dplyr::rename(sample = SAMPLE_ID, sex = SEX) |>
+        distinct()
+
+    fraction_genemut_cell = left_join(fraction_genemut_genome, metadata)  |>
+        left_join(gene_chrs) |>
+        mutate(across(c(mle, cihigh, cilow), ~ ifelse(chr == "chrX" & sex == "M",  ., . * 2))) |>
+        select(-`expected mutations`, -sex, -chr)
+
+    output_list$fraction_genemut_cell = fraction_genemut_cell
+
+    # testing plot - check the effect of inclusion-exclusion principle
+    sample_cell_ie = fraction_genemut_cell |>
+        filter(correction == "inclusion_exclusion" & consequence == "exp_all") |>
+        group_by(sample) |>
+        summarize(inclusion_exclusion = inclusion_exclusion(mle),
+                    simple_sum = sum(mle)) |>
+        arrange(desc(inclusion_exclusion)) |>
+        mutate(sample = factor(sample, levels = sample)) |>
+        pivot_longer(c(inclusion_exclusion, simple_sum))
+
+    ggplot(sample_cell_ie, aes(x = sample, y = value, fill = name)) +
+        geom_col(position = "dodge") +
+        theme(axis.text.x = element_text(angle = 90)) +
+        labs(x = NULL, y = "fraction of mutated genomes",
+            title = "fraction of mutated genomes") +
+        theme_classic() +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+        scale_y_continuous(expand=expansion(mult=c(0,0.1)))
+    ggsave(paste0(output_folder, "/total_samples_difference_inclusion_exclusion.png"), width = 12, height = 6, dpi = 300)
+
+    # values ready for publication:
+    output_list$percentage_mutated_epithelium = sample_cell_ie |>
+        pivot_wider() |>
+        select(-simple_sum)
+
+}
 
 # save output tables
 if (exists("output_folder")) {
-  for (i in names(output_list)) {
-    print(i)
-    fwrite(output_list[[i]], paste0(output_folder, "/", i, ".tsv"), sep = "\t")
-  }
-}
+    for (i in names(output_list)) {
+        print(i)
+        fwrite(output_list[[i]], paste0(output_folder, "/", i, ".tsv"), sep = "\t")
+        }
+    }
+
+
 
 # save RefCDS object
 saveRDS(RefCDS_1_genome, paste0(output_folder, "/RefCDS.rds"))
