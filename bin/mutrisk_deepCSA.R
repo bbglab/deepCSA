@@ -6,6 +6,8 @@ library(data.table)
 library(tidyverse)
 library(abind)
 library(BSgenome.Hsapiens.UCSC.hg38)
+library(GenomicRanges)
+library(IRanges)
 options(dplyr.summarise.inform = FALSE)
 
 # load dndscv substmodel
@@ -40,6 +42,7 @@ input_muts_file = args[2]
 sample_depths_file = args[3]
 annotated_panelfile = args[4]
 output_folder = args[5]
+input_file_intervals = args[6]
 
 # define functions:
 inclusion_exclusion <- function(plist) {
@@ -205,6 +208,9 @@ fit_substmodel = function(N, L, substmodel) {
 }
 
 dndsloc = function(genemuts, RefCDS, constrain_wnon_wspl = TRUE, onesided = FALSE) {
+  # FIXME
+  # this function fails when there is no mutation of a given gene-impact type
+  # there are some divisions by 0
   message("[4] Running dNdSloc...")
 
   locll = function(nobs,nexp,x,indneut) {
@@ -485,14 +491,10 @@ estimate_rates_ie = function(mle_submodel, genemuts, RefCDS_1_genome, relative_r
 consensus = fread(consensus_file) |>
   dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT) |> 
   mutate(GENE = as.factor(GENE))
-  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT) |> 
-  mutate(GENE = as.factor(GENE))
 
 input_muts = fread(input_muts_file) |>
-  select(CHROM, POS, REF, ALT, INFO, SYMBOL, STRAND) |>
-  mutate(sampleID = gsub("SAMPLE=", "", str_split_i(INFO, pattern = ";", i = 1))) |>
-  select(-INFO) |>
-  dplyr::rename(chr = CHROM, pos = POS, ref = REF, alt = ALT, strand = STRAND, GENE = SYMBOL) |>
+  select(CHROM, POS, REF, ALT, SYMBOL, STRAND, SAMPLE_ID) |>
+  dplyr::rename(sampleID = SAMPLE_ID, chr = CHROM, pos = POS, ref = REF, alt = ALT, strand = STRAND, GENE = SYMBOL) |>
   select(sampleID, chr, pos, ref, alt, strand, GENE)
 
 # read in the depth file table for all samples:
@@ -500,6 +502,7 @@ sample_depths = fread(sample_depths_file)
 sample_depths =  sample_depths |>
   dplyr::select(-CONTEXT) |>
   dplyr::rename(chr = CHROM, pos = POS)
+
 
 ### ANALYSIS ####
 consensus_depths = left_join(consensus, sample_depths, by = c("chr", "pos"))
@@ -519,9 +522,7 @@ Llist = consensus_depths |>  get_dnds_mut_context() |> generate_tables_depth()
 
 # bind and sum the matrix to perform Poisson regression
 Nall = abind::abind(Nlist, along = 3)
-Nall = abind::abind(Nlist, along = 3)
 Lall = abind::abind(Llist, along = 3)
-N = apply(Nall, c(1,2), sum)
 N = apply(Nall, c(1,2), sum)
 L = apply(Lall, c(1,2), sum)
 
@@ -542,7 +543,6 @@ globaldnds = rbind(par, par1, par2)[c("wmis","wnon","wspl","wtru","wall"),]
 sel_loc = sel_cv = NULL
 
 ## 4. dNdSloc: variable rate dN/dS model (gene mutation rate inferred from synonymous subs in the gene only)
-genemuts = data.frame(gene_name = names(Nlist), n_syn=NA, n_mis=NA, n_non=NA, n_spl=NA, exp_syn=NA, exp_mis=NA, exp_non=NA, exp_spl=NA, stringsAsFactors=F)
 genemuts = data.frame(gene_name = names(Nlist), n_syn=NA, n_mis=NA, n_non=NA, n_spl=NA, exp_syn=NA, exp_mis=NA, exp_non=NA, exp_spl=NA, stringsAsFactors=F)
 genemuts[,2:5] = t(colSums(Nall))
 mutrates = sapply(substmodel[,1], function(x) prod(parmle[base::strsplit(x,split="\\*")[[1]]])) # Expected rate per available site
@@ -573,19 +573,12 @@ RefCDS = list()
 for (i in 1:length(Nlist)) {
   name = names(Nlist)[i]
   RefCDS[[i]] = list(L = Llist[[i]], N = Nlist[[i]], gene_name = name  )
-for (i in 1:length(Nlist)) {
-  name = names(Nlist)[i]
-  RefCDS[[i]] = list(L = Llist[[i]], N = Nlist[[i]], gene_name = name  )
 }
 
-# enter variables required for the dNdSloc function
-outp = 3
-constrain_wnon_wspl = F
-onesided = FALSE
 
 # run dNdSloc across genes
-sel_loc_trunc = dndsloc(genemuts, RefCDS, constrain_wnon_wspl = TRUE)
-sel_loc_all = dndsloc(genemuts, RefCDS, constrain_wnon_wspl = FALSE)
+sel_loc_trunc = dndsloc(genemuts, RefCDS, constrain_wnon_wspl = TRUE, onesided = FALSE)
+sel_loc_all = dndsloc(genemuts, RefCDS, constrain_wnon_wspl = FALSE, onesided = FALSE)
 
 rownames(sel_loc_trunc) = sel_loc_trunc$gene_name
 
@@ -602,7 +595,6 @@ dev.off()
 
 # plot of the dNdS values for the truncating mutations
 sel_loc_trunc |>
-sel_loc_trunc |>
   dplyr::select(gene_name, wmis_loc, wnon_loc) |>
   dplyr::rename(wtrunc_loc = wnon_loc) |>
   pivot_longer(-gene_name) |>
@@ -611,7 +603,6 @@ sel_loc_trunc |>
   labs(fill = NULL, y = "dNdS w value", x = NULL, title = "dNdSloc duplex data using deepCSA consensus regions") +
   theme_bw() +
   ggsci::scale_fill_nejm()
-ggsave(paste0(output_folder, "/dnds_bar_trunc.png"), width = 11, height = 4)
 ggsave(paste0(output_folder, "/dnds_bar_trunc.png"), width = 11, height = 4)
 
 # plot of the non-truncating mutations
@@ -726,7 +717,6 @@ for (sample_name in unique(muts$sampleID)) {
 
   # estimate the mutation rates
   mutation_rates_1_genome = estimate_rates_ie(mle_submodel,genemuts = genemuts_sample, RefCDS_1_genome = RefCDS_1_genome, relative_rates = ratios_all_samples)
-  mutation_rates_1_genome = estimate_rates_ie(mle_submodel,genemuts = genemuts_sample, RefCDS_1_genome = RefCDS_1_genome, relative_rates = ratios_all_samples)
   mutation_rate_depths = mutation_rates_1_genome |>
     mutate(`expected mutations` = case_match(consequence,
                                              "exp_syn" ~ "synonymous",
@@ -734,14 +724,11 @@ for (sample_name in unique(muts$sampleID)) {
                                              "exp_mis" ~ "missense",
                                              "exp_spl" ~ "splicing", 
                                              "exp_trunc" ~ "truncating"))
-                                             "exp_spl" ~ "splicing", 
-                                             "exp_trunc" ~ "truncating"))
 
   rate_list[[sample_name]] = mutation_rate_depths
   globaldnds_list[[sample_name]] = globaldnds
 }
 
-fraction_genemut_genome = rbindlist(rate_list, idcol =  "sample")
 fraction_genemut_genome = rbindlist(rate_list, idcol =  "sample")
 globaldnds_all = rbindlist(globaldnds_list, idcol =  "sample")
 
@@ -859,5 +846,20 @@ saveRDS(RefCDS_1_genome, paste0(output_folder, "/RefCDS.rds"))
 # Create a new object named RefCDS
 RefCDS <- RefCDS_1_genome
 
-# Save it as RefCDS in the .rda file
-save(RefCDS, file = file.path(output_folder, "RefCDS.rda"))
+
+
+#### Create gr_genes object needed for running dNdScv original package
+df_intervals <- fread(input_file_intervals)
+
+# Create the GRanges object
+# Ensure column names are mapped correctly: CHROMOSOME -> seqnames, START/END -> ranges, ELEMENT -> gene names
+gr_genes <- GRanges(
+  seqnames = df_intervals$CHROMOSOME,
+  ranges = IRanges(start = df_intervals$START, end = df_intervals$END),
+  strand = "*"
+)
+# Assign gene names from the ELEMENT column
+mcols(gr_genes)$names <- df_intervals$ELEMENT
+
+# Save RefCDS and gr_genes together in the .rda file
+save(RefCDS, gr_genes, file = file.path(output_folder, "RefCDS.rda"))

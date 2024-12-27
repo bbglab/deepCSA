@@ -3,6 +3,7 @@ include { TABIX_BGZIPTABIX_QUERY        as SUBSETDEPTHS      } from '../../../..
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS   } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                    as SUBSET_MUTEPIVAF  } from '../../../../modules/local/subsetmaf/main'
 include { EXP_MUTRATE                   as EXPMUTRATE        } from '../../../../modules/local/expected_mutrate/main'
+include { CREATECUSTOMBEDFILE           as INTERVALSBED      } from '../../../../modules/local/createpanels/custombedfile/main'
 
 workflow EXPECTED_MUTRATE {
 
@@ -25,11 +26,15 @@ workflow EXPECTED_MUTRATE {
 
     // SUBSET_MUTEPIVAF(SUBSETMUTATIONS.out.subset)
     // ch_versions = ch_versions.mix(SUBSET_MUTEPIVAF.out.versions)
+    INTERVALSBED(panel)
+    ch_versions = ch_versions.mix(INTERVALSBED.out.versions)
 
     EXPMUTRATE(panel,
                 SUBSETMUTATIONS.out.subset,
                 SUBSETDEPTHS.out.subset,
-                raw_annotation)
+                raw_annotation,
+                INTERVALSBED.out.bed
+                )
     ch_versions = ch_versions.mix(EXPMUTRATE.out.versions)
 
     emit:

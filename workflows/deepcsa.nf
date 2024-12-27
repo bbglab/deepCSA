@@ -112,7 +112,7 @@ include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkfl
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
 include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
-include { DNDS                as DNDS    } from '../subworkflows/local/dnds/main'
+include { DNDS                      as DNDS                 } from '../subworkflows/local/dnds/main'
 
 
 // Download annotation cache if needed
@@ -132,7 +132,6 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
 include { TABLE_2_GROUP             as TABLE2GROUP              } from '../modules/local/table2groups/main'
 include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
-
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

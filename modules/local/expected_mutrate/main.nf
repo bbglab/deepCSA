@@ -9,6 +9,7 @@ process EXP_MUTRATE {
     tuple val(meta2), path(mutations)
     tuple val(meta3), path(depths)
     tuple val(meta4), path(annotated_panel)
+    tuple val(meta5), path(annotated_bed_file)
 
 
     output:
@@ -28,11 +29,12 @@ process EXP_MUTRATE {
     """
     mkdir expected_mutrate
     mutrisk_deepCSA.R \\
-            $regions \\
-            $mutations \\
-            $depths \\
-            $annotated_panel \\
-            expected_mutrate
+            ${regions} \\
+            ${mutations} \\
+            ${depths} \\
+            ${annotated_panel} \\
+            expected_mutrate \\
+            ${annotated_bed_file}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
