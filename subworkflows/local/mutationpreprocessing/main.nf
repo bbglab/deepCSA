@@ -40,7 +40,7 @@ workflow MUTATION_PREPROCESSING {
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
 
     hotspots_definition_file = params.hotspots_annotation ? Channel.fromPath( params.hotspots_definition_file, checkIfExists: true).first() : Channel.fromPath(params.input).first()
-    SUMANNOTATION(annotated_samples)
+    SUMANNOTATION(annotated_samples, hotspots_definition_file)
     ch_versions = ch_versions.mix(SUMANNOTATION.out.versions)
 
     VCF2MAF(vcfs, SUMANNOTATION.out.tab)

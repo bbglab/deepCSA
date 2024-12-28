@@ -183,19 +183,17 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     annotated_variants["MUTTYPE"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: f"{x[1]}>{x[4]}" if x != '-' else '-')
     annotated_variants["CONTEXT_MUT_SIGPRO"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: f"{x[0]}[{x[1]}>{x[4]}]{x[2]}" if x != '-' else '-')
 
-#    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'IMPACT', 'CONTEXT']]
-#    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
     annotated_variants_columns = [x for x in annotated_variants.columns if x.replace("canonical_", "") not in ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'CHROM:POS', 'MUT'] ]
     annotated_variants_reduced = annotated_variants.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
-    annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
 
 
     if hotspots_file is not None:
         hotspots_def_df = pd.read_table(hotspots_file, header = 0, sep = '\t')
         new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS'] ]
         annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS'], how = 'left')
-        annotated_variants_reduced[new_hostpot_columns] = annotated_variants_reduced[new_hostpot_columns].fillna("-")
+        annotated_variants_columns += new_hostpot_columns
 
+    annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,
@@ -237,8 +235,10 @@ if __name__ == '__main__':
     if len(sys.argv) >= 5:
         print("Using the provided value:", end = "\t")
         try:
-            hotspots_annotation_file = eval(f"{sys.argv[5]}")
+            hotspots_annotation_file = f"{sys.argv[5]}"
             print(hotspots_annotation_file)
+            hotspots_annotation_df = pd.read_table(hotspots_annotation_file)
+            print(hotspots_annotation_df.head())
         except:
             print("You should provide the path to the hotspots file as the fifth argument.")
             exit(1)
