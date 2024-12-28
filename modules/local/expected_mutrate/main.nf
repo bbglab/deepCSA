@@ -10,6 +10,7 @@ process EXP_MUTRATE {
     tuple val(meta3), path(depths)
     tuple val(meta4), path(annotated_panel)
     tuple val(meta5), path(annotated_bed_file)
+    path (features_table)
 
 
     output:
@@ -26,7 +27,7 @@ process EXP_MUTRATE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def metadata_file = task.ext.metadata_file ?: ""
+    def metadata_file = task.ext.metadata_file ? "${features_table}": ""
     """
     mkdir expected_mutrate
     mutrisk_deepCSA.R \\

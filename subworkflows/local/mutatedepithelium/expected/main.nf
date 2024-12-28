@@ -29,11 +29,13 @@ workflow EXPECTED_MUTRATE {
     INTERVALSBED(panel)
     ch_versions = ch_versions.mix(INTERVALSBED.out.versions)
 
+    features_table = params.features_table ? Channel.fromPath( params.features_table, checkIfExists: true) : Channel.fromPath(params.input)
     EXPMUTRATE(panel,
                 SUBSETMUTATIONS.out.subset,
                 SUBSETDEPTHS.out.subset,
                 raw_annotation,
-                INTERVALSBED.out.bed
+                INTERVALSBED.out.bed,
+                features_table
                 )
     ch_versions = ch_versions.mix(EXPMUTRATE.out.versions)
 
