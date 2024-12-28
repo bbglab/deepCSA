@@ -38,9 +38,8 @@ process CREATESAMPLEPANELS {
         bedtools merge \\
             -i <(
                 tail -n +2 \$sample_panel | \\
-                awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t' | uniq
-            ) | \\
-            awk 'BEGIN { FS = "\\t"; OFS = "\\t" } { if (\$2 != \$3) { \$2 += 1 ; \$3 -= 1 } else { \$2 = \$2 ; \$3 = \$3 }; print }' > \${sample_panel%.tsv}.bed;
+                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | uniq
+            ) > \${sample_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml

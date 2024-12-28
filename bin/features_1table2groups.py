@@ -15,7 +15,7 @@ separator2character = {
 }
 
 def reformatnames(name):
-    return name.lower().replace(' ','').replace('_','').replace('.','').capitalize()
+    return str(name).lower().replace(' ','').replace('_','').replace('.','').capitalize()
 
 
 separator = separator2character.get(separator_input, separator_input)
