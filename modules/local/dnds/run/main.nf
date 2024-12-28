@@ -11,7 +11,6 @@ process RUN_DNDS {
     tuple val(meta) , path(mutations_table), path(depths)
     tuple val(meta2), path(ref_cds)
     path (covariates)
-    path (ref_transcripts)
 
     output:
     tuple val(meta), path("*.out.tsv*") , emit: results
@@ -31,10 +30,6 @@ process RUN_DNDS {
                 --covariates ${covariates} \\
                 --referencetranscripts ${ref_cds} \\
                 --genedepth ${depths}
-    # --referencetranscripts ${ref_cds} \\
-    # --referencetranscripts /workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda \\
-    # --covariates /workspace/projects/prominent/analysis/dNdScv/data/reference_files/covariates_hg19_hg38_epigenome_pcawg.rda \\
-    # --genelist genes.txt \\
     # --cores ${task.cpus}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

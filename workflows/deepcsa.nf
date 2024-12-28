@@ -35,8 +35,6 @@ datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExi
 annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
 seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
 cadd_scores = params.cadd_scores ? Channel.of([ file(params.cadd_scores, checkIfExists : true), file(params.cadd_scores_ind, checkIfExists : true) ]).first() : Channel.empty()
-covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
-ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
 
 
 
@@ -406,18 +404,21 @@ workflow DEEPCSA{
         }
     }
 
-    if (params.expected_mutation_rate & params.dnds){
+    // if (params.expected_mutation_rate & params.dnds){
+    if (params.dnds){
+        covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
+        ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
         DNDS(MUT_PREPROCESSING.out.somatic_mafs,
                     annotated_depths,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
-                    EXPECTEDMUTRATE.out.refcds_object_rda,
                     covariates,
                     ref_transcripts
                     )
+        ch_versions = ch_versions.mix(DNDS.out.versions)
     }
-    if (params.omega){
 
+    if (params.omega){
         // Omega
         if (params.profileall){
             OMEGA(MUT_PREPROCESSING.out.somatic_mafs,

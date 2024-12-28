@@ -13,7 +13,7 @@ workflow DNDS {
     depth
     bedfile
     panel
-    refcds_object
+    // refcds_object
     covariates
     ref_trans
 
@@ -37,7 +37,11 @@ workflow DNDS {
     .join(PREPROCESSDEPTHS.out.depths)
     .set{ mutations_n_depth }
 
-    DNDSRUN(mutations_n_depth, refcds_object, covariates, ref_trans)
+    // DNDSRUN(mutations_n_depth, refcds_object, covariates)
+    ref_trans.map{it -> [ ["id" : "global_RefCDS"] , it ] }
+    .set{ refcds_global }
+
+    DNDSRUN(mutations_n_depth, refcds_global, covariates)
     ch_versions = ch_versions.mix(DNDSRUN.out.versions)
 
     // PLOTMUTRATE()

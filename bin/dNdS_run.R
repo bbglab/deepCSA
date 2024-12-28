@@ -149,45 +149,54 @@ dndsout = dndscv(muts,
 )
 
 
-dnds_genes = dndsout$sel_cv
+# Check if dndsout$sel_cv is non-empty before proceeding
+dnds_genes <- dndsout$sel_cv
+if (!is.null(dnds_genes) && nrow(dnds_genes) > 0) {
+  # Add theta_ind if nbregind exists in dndsout
+  if ("nbregind" %in% names(dndsout)) {
+    if (!is.null(dndsout$nbregind) && !is.null(dndsout$nbregind$theta)) {
+      dnds_genes <- cbind(list("theta_ind" = dndsout$nbregind$theta), dnds_genes)
+    }
+  }
 
-if ("nbregind" %in% names(dndsout)) {
-  dnds_genes = cbind(list("theta_ind" = dndsout$nbregind$theta), dnds_genes)
+  # Add theta
+  if (!is.null(dndsout$nbreg$theta)) {
+    dnds_genes <- cbind(list("theta" = dndsout$nbreg$theta), dnds_genes)
+  }
+
+  # Add sample name
+  dnds_genes <- cbind(list("sample" = opt$samplename), dnds_genes)
+
+  # Write to file if dnds_genes is still valid
+  if (nrow(dnds_genes) > 0) {
+    write.table(dnds_genes,
+                file = opt$outputfile,
+                sep = "\t",
+                row.names = FALSE,
+                quote = FALSE)
+  }
 }
 
-dnds_genes = cbind(list("theta" = dndsout$nbreg$theta), dnds_genes)
-dnds_genes = cbind(list("sample" = opt$samplename), dnds_genes)
+# Handle dndsout$globaldnds
+dnds_genes <- dndsout$globaldnds
+if (!is.null(dnds_genes) && nrow(dnds_genes) > 0) {
+  dnds_genes <- cbind(list("sample" = opt$samplename), dnds_genes)
 
+  write.table(dnds_genes,
+              file = paste(opt$outputfile, 'globaldnds', sep = ''),
+              sep = "\t",
+              row.names = FALSE,
+              quote = FALSE)
+}
 
-write.table(dnds_genes,
-            file = opt$outputfile,
-            sep = "\t",
-            row.names = FALSE,
-            quote = FALSE)
+# Handle dndsout$sel_loc
+dnds_genes <- dndsout$sel_loc
+if (!is.null(dnds_genes) && nrow(dnds_genes) > 0) {
+  dnds_genes <- cbind(list("sample" = opt$samplename), dnds_genes)
 
-
-
-
-dnds_genes = dndsout$globaldnds
-dnds_genes = cbind(list("sample" = opt$samplename), dnds_genes)
-
-
-write.table(dnds_genes,
-            file = paste(opt$outputfile, 'globaldnds', sep = ''),
-            sep = "\t",
-            row.names = FALSE,
-            quote = FALSE)
-
-
-
-
-dnds_genes = dndsout$sel_loc
-
-dnds_genes = cbind(list("sample" = opt$samplename), dnds_genes)
-
-
-write.table(dnds_genes,
-            file = paste(opt$outputfile, 'loc', sep = ''),
-            sep = "\t",
-            row.names = FALSE,
-            quote = FALSE)
+  write.table(dnds_genes,
+              file = paste(opt$outputfile, 'loc', sep = ''),
+              sep = "\t",
+              row.names = FALSE,
+              quote = FALSE)
+}
