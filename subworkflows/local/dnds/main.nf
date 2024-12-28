@@ -1,4 +1,3 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSET_DNDS              } from '../../../modules/local/subsetmaf/main'
@@ -13,16 +12,11 @@ workflow DNDS {
     depth
     bedfile
     panel
-    // refcds_object
     covariates
     ref_trans
 
     main:
     ch_versions = Channel.empty()
-
-    // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETDEPTHS(depth, bedfile)
-    ch_versions = ch_versions.mix(SUBSETDEPTHS.out.versions)
 
     SUBSETMUTATIONS(mutations, bedfile)
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
@@ -30,21 +24,20 @@ workflow DNDS {
     SUBSET_DNDS(SUBSETMUTATIONS.out.subset)
     ch_versions = ch_versions.mix(SUBSET_DNDS.out.versions)
 
-    PREPROCESSDEPTHS(SUBSETDEPTHS.out.subset, panel)
+    PREPROCESSDEPTHS(depth, panel)
     ch_versions = ch_versions.mix(PREPROCESSDEPTHS.out.versions)
 
     SUBSET_DNDS.out.mutations
     .join(PREPROCESSDEPTHS.out.depths)
     .set{ mutations_n_depth }
 
-    // DNDSRUN(mutations_n_depth, refcds_object, covariates)
     ref_trans.map{it -> [ ["id" : "global_RefCDS"] , it ] }
     .set{ refcds_global }
-
     DNDSRUN(mutations_n_depth, refcds_global, covariates)
     ch_versions = ch_versions.mix(DNDSRUN.out.versions)
 
-    // PLOTMUTRATE()
+    // // uncomment whenever we can use the custom RefCDS file
+    // DNDSRUN(mutations_n_depth, ref_trans, covariates)
 
     emit:
     // dnds_values = DNDSRUN.out.dnds_values

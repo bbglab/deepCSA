@@ -137,12 +137,12 @@ Installed directly from nf-core/modules.
 */
 
 // MODULE
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { MULTIQC                                           } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
-include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
-include { TABLE_2_GROUP             as TABLE2GROUP              } from '../modules/local/table2groups/main'
-include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
+include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS       } from '../modules/local/annotatedepth/main'
+include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
+include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/local/mutations2sbs/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -449,7 +449,7 @@ workflow DEEPCSA{
         covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
         ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
         DNDS(MUT_PREPROCESSING.out.somatic_mafs,
-                    annotated_depths,
+                    DEPTHSEXONSCONS.out.subset,
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
                     covariates,
