@@ -21,7 +21,6 @@ process RUN_DNDS {
 
     script:
     def args = task.ext.args ?: ""
-    def option = task.ext.option ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     dNdS_run.R --inputfile ${mutations_table} \\
@@ -33,20 +32,19 @@ process RUN_DNDS {
     # --cores ${task.cpus}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        dNdScv: 0.1.0
     END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
-    def option = task.ext.option ?: "bayes"
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch output_${option}.tsv
+    touch ${prefix}.out.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        dNdScv: 0.1.0
     END_VERSIONS
     """
 }
