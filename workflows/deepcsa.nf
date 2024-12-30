@@ -207,7 +207,7 @@ workflow DEEPCSA{
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
     ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
     ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
