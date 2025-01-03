@@ -288,6 +288,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to plot omega results?"
                 },
+                "dnds": {
+                    "type": "boolean",
+                    "description": "Do you want to run dNdScv?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run dNdScv?"
+                },
                 "signatures": {
                     "type": "boolean",
                     "description": "Do you want to run signatures?",
@@ -498,6 +505,18 @@
                     "type": "string",
                     "description": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "dnds_ref_transcripts": {
+                    "type": "string",
+                    "description": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
+                    "help_text": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
+                    "fa_icon": "far fa-file-code"
+                },
+                "dnds_covariates": {
+                    "type": "string",
+                    "description": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
+                    "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "fa_icon": "far fa-file-code"
                 }
             }

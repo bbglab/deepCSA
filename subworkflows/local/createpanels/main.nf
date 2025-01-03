@@ -106,7 +106,7 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths, params.consensus_panel_min_depth)
 
     emit:
-
+    full_panel_annotated     = VCFANNOTATEPANEL.out.tab
     all_panel               = all_panel.first()
     all_bed                 = all_bed.first()
     prot_panel              = prot_panel.first()

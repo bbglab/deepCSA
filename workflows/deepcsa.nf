@@ -36,6 +36,8 @@ annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, c
 seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
 cadd_scores = params.cadd_scores ? Channel.of([ file(params.cadd_scores, checkIfExists : true), file(params.cadd_scores_ind, checkIfExists : true) ]).first() : Channel.empty()
 
+
+
 // if the user wants to use custom gene groups, import the gene groups table
 // otherwise I am using the input csv as a dummy value channel
 custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() : Channel.fromPath(params.input)
@@ -110,6 +112,8 @@ include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkfl
 
 include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
 
+include { DNDS                      as DNDS                 } from '../subworkflows/local/dnds/main'
+
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSALLCONS        } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSEXONSCONS      } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSPROTCONS       } from '../modules/nf-core/tabix/bgziptabixquery/main'
@@ -120,7 +124,6 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/n
 include { SELECT_MUTRATES           as SYNMUTRATE           } from '../modules/local/select_mutrate/main'
 include { SELECT_MUTRATES           as SYNMUTREADSRATE      } from '../modules/local/select_mutrate/main'
 include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
-
 
 
 // Download annotation cache if needed
@@ -134,13 +137,12 @@ Installed directly from nf-core/modules.
 */
 
 // MODULE
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { MULTIQC                                           } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
-include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
-include { TABLE_2_GROUP             as TABLE2GROUP              } from '../modules/local/table2groups/main'
-include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
-
+include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS       } from '../modules/local/annotatedepth/main'
+include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
+include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/local/mutations2sbs/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -333,7 +335,9 @@ workflow DEEPCSA{
         EXPECTEDMUTRATE(mutations_all,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
-                        ANNOTATEDEPTHS.out.all_samples_depths)
+                        ANNOTATEDEPTHS.out.all_samples_depths,
+                        CREATEPANELS.out.full_panel_annotated
+                        )
     }
 
 
@@ -440,10 +444,21 @@ workflow DEEPCSA{
         }
     }
 
-
+    // if (params.expected_mutation_rate & params.dnds){
+    if (params.dnds){
+        covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
+        ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
+        DNDS(MUT_PREPROCESSING.out.somatic_mafs,
+                    DEPTHSEXONSCONS.out.subset,
+                    CREATEPANELS.out.exons_consensus_bed,
+                    CREATEPANELS.out.exons_consensus_panel,
+                    covariates,
+                    ref_transcripts
+                    )
+        ch_versions = ch_versions.mix(DNDS.out.versions)
+    }
 
     if (params.omega){
-
         // Omega
         if (params.profileall){
             OMEGA(MUT_PREPROCESSING.out.somatic_mafs,
