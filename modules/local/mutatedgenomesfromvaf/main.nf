@@ -1,15 +1,14 @@
 process MUTATED_GENOMES_FROM_VAF {
     tag "$meta.id"
     label 'process_single'
-
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
+    label 'memory_medium'
 
     container 'docker.io/ferranmuinos/test_mutated_genomes'
-    
+    // conda activate probabilistic
+
     input:
-    tuple val(meta), path(mutations)
+    tuple val(meta) , path(mutations), path(omegas)
+    // fn = os.path.join(deepcsa_run_dir, 'omegagloballoc', f'output_mle.{sample}.multi.global_loc.tsv')
 
     output:
     tuple val(meta), path("*.sample.mutated_genomes_from_vaf.tsv") , emit: mutated_epi_sample
@@ -21,11 +20,15 @@ process MUTATED_GENOMES_FROM_VAF {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    mutated_genomes_from_vaf.py \\
+    mkdir -p ${prefix}.covered_genomes_snv_AM
+
+    mutgenomes_driver_priority.py \\
+                snv-am \\
                 --sample ${prefix} \\
-                --filename ${mutations} ;
+                --outfolder ${prefix}.covered_genomes_snv_AM \\
+                --somatic-mutations-file ${mutations} \\
+                --omega-file ${omegas} ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

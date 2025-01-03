@@ -5,23 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-
-df_consensus = pd.read_csv(f'{deepcsa_run_dir}/createpanels/consensuspanels/consensus.all.tsv', sep='\t')
-# gene chromosome dictionary
-gene_chr_df = df_consensus.groupby(by=['GENE']).agg({'CHROM': 'first'}).reset_index()
-gene_chr_dict = dict(zip(gene_chr_df['GENE'].values, gene_chr_df['CHROM'].values))
-
-
-# all omegas globalloc
-fn = os.path.join(deepcsa_run_dir, 'omegagloballoc', f'output_mle.{sample}.multi.global_loc.tsv')
-somatic_mutations_file = f'{deepcsa_run_dir}/somaticmutations/{sample}.somatic.mutations.tsv'
-
-    # ~(somatic_mutations['FILTER'].str.contains("not_in_panel"))
-    #     & (somatic_mutations['canonical_Protein_affecting'] == 'protein_affecting')
-
-    # 'canonical_SYMBOL', 'canonical_Consequence_broader', 'ALT_DEPTH_AM', 'DEPTH_AM',
-    # 'FILTER', 'canonical_Protein_affecting', 'TYPE', 'DEPTH_ND', 'ALT_DEPTH_ND',
-    # 'ALT_DEPTH', 'DEPTH',
+from utils import inclusion_exclusion
 
 
 
@@ -61,21 +45,6 @@ def get_binomial_low(x, n, alpha=0.05):
 def get_binomial_high(x, n, alpha=0.05):
 
     return stats.beta(x + 1, n - x).ppf(1 - alpha/2)
-
-
-def inclusion_exclusion(plist):
-
-    """Recursive version that exploits mutual independence of events"""
-
-    n = len(plist)
-    if n > 2:
-        p1 = inclusion_exclusion(plist[: n // 2])
-        p2 = inclusion_exclusion(plist[n // 2: ])
-        return inclusion_exclusion([p1, p2])
-    if n == 2:
-        return plist[0] + plist[1] - plist[0] * plist[1]
-    if n == 1:
-        return plist[0]
 
 
 def compute_covered_genomes(alt_read_count, depth, bootstrap_N=100):
@@ -121,12 +90,13 @@ def snv_am(sample, outfolder, somatic_mutations_file, omega_file):
 
     # parse mutations
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
-    mutations = somatic_mutations[
-        (somatic_mutations['TYPE'] == 'SNV')
-        & (somatic_mutations['canonical_Consequence_broader'].isin(['missense', 'nonsense']))
-        ].reset_index(drop = True)
+    mutations = somatic_mutations[(somatic_mutations['TYPE'] == 'SNV')
+                                    & (somatic_mutations['canonical_Consequence_broader'].isin(['missense', 'nonsense']))
+                                    ].reset_index(drop = True)
 
     mutations['LOWER_VAF_AM'] = mutations.apply(lambda r: stats.beta(r['ALT_DEPTH_AM'], r['DEPTH_AM'] - r['ALT_DEPTH_AM'] + 1).ppf(0.05/2), axis=1)
+
+    gene_chr_dict = { x : y  for x, y in somatic_mutations[['canonical_SYMBOL', 'CHROM']].drop_duplicates().values }
 
     # parse dN/dS excess
     excess_dict = compute_excess(omega_file)
@@ -205,6 +175,7 @@ def snv_am(sample, outfolder, somatic_mutations_file, omega_file):
                     res_dict[f'average_depth_{suffix}'] = res_dict[f'average_depth_{suffix}'] + [res['average_depth']]
 
     df = pd.DataFrame(res_dict)
+    df["sample"] = sample
     df.to_csv(f'{outfolder}/{sample}.covered_genomes_summary.tsv', sep='\t', index=False)
 
 @cli.command()
@@ -219,6 +190,9 @@ def indel_am(sample, outfolder, somatic_mutations_file):
 
     # mutations = mutations[mutations['canonical_Consequence_broader'].isin(['missense', 'nonsense'])]
     mutations['LOWER_VAF_AM'] = mutations.apply(lambda r: stats.beta(r['ALT_DEPTH_AM'], r['DEPTH_AM'] - r['ALT_DEPTH_AM'] + 1).ppf(0.05/2), axis=1)
+
+    gene_chr_dict = { x : y  for x, y in somatic_mutations[['canonical_SYMBOL', 'CHROM']].drop_duplicates().values }
+
 
     # select mutations
 
@@ -264,6 +238,7 @@ def indel_am(sample, outfolder, somatic_mutations_file):
                 res_dict[f'average_depth_{suffix}'] = res_dict[f'average_depth_{suffix}'] + [res['average_depth']]
 
     df = pd.DataFrame(res_dict)
+    df["sample"] = sample
     df.to_csv(f'{outfolder}/{sample}.covered_genomes_summary.tsv', sep='\t', index=False)
 
 
@@ -281,6 +256,8 @@ def cli_nonduplex(sample, outfolder, somatic_mutations_file, omega_file):
         (somatic_mutations['TYPE'] == 'SNV')
         & (somatic_mutations['canonical_Consequence_broader'].isin(['missense', 'nonsense']))
         ].reset_index(drop = True)
+    
+    gene_chr_dict = { x : y  for x, y in somatic_mutations[['canonical_SYMBOL', 'CHROM']].drop_duplicates().values }
 
     mutations = mutations[mutations['ALT_DEPTH_ND'] > 0]
 
@@ -366,6 +343,7 @@ def cli_nonduplex(sample, outfolder, somatic_mutations_file, omega_file):
                     res_dict[f'average_depth_{suffix}'] = res_dict[f'average_depth_{suffix}'] + [res['average_depth']]
 
     df = pd.DataFrame(res_dict)
+    df["sample"] = sample
     df.to_csv(f'{outfolder}/{sample}.covered_genomes_summary.nonduplex.tsv', sep='\t', index=False)
 
 

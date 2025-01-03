@@ -13,6 +13,7 @@ workflow MUTATED_EPITHELIUM_VAF {
     take:
     mutations
     bedfile
+    omegas    
 
 
     main:
@@ -21,18 +22,25 @@ workflow MUTATED_EPITHELIUM_VAF {
     SUBSETMUTATIONS(mutations, bedfile)
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-    SUBSETMUTEPIVAF(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSETMUTEPIVAF.out.versions)
-
-    MUTATEDGENOMESFROMVAF(SUBSETMUTEPIVAF.out.mutations)
-    ch_versions = ch_versions.mix(MUTATEDGENOMESFROMVAF.out.versions)
-
     if (params.all_duplex_counts){
         SUBSETMUTEPIVAFAM(SUBSETMUTATIONS.out.subset)
         ch_versions = ch_versions.mix(SUBSETMUTEPIVAFAM.out.versions)
 
-        MUTATEDGENOMESFROMVAFAM(SUBSETMUTEPIVAFAM.out.mutations)
+        SUBSETMUTEPIVAFAM.out.mutations
+        .join(omegas)
+        .set{mutations_n_omega}
+        MUTATEDGENOMESFROMVAFAM(mutations_n_omega)
         ch_versions = ch_versions.mix(MUTATEDGENOMESFROMVAFAM.out.versions)
+    } else {
+        SUBSETMUTEPIVAF(SUBSETMUTATIONS.out.subset)
+        ch_versions = ch_versions.mix(SUBSETMUTEPIVAF.out.versions)
+
+        SUBSETMUTEPIVAF.out.mutations
+        .join(omegas)
+        .set{mutations_n_omega}
+
+        MUTATEDGENOMESFROMVAF(mutations_n_omega)
+        ch_versions = ch_versions.mix(MUTATEDGENOMESFROMVAF.out.versions)
     }
 
 
