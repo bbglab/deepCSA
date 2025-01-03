@@ -220,7 +220,7 @@ if __name__ == '__main__':
         assembly_name = 'hg38'
 
 
-    if len(sys.argv) >= 4:
+    if len(sys.argv) > 4:
         print("Using the provided value:", end = "\t")
         try:
             all_sep = eval(f"{sys.argv[4]}")
