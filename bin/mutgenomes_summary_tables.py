@@ -18,44 +18,7 @@ import sys
 sys.path.append('/workspace/projects/bladder_ts/notebooks/manuscript_figures/')
 from consensus_variables import *
 
-
-
-
-
-
-
-import os
-import sys
-import tqdm
-import math
-from collections import namedtuple
-from multiprocessing import Pool
-import glob
-import click
-
-import numpy as np
-import pandas as pd
-import seaborn as sns
-
-import matplotlib.pyplot as plt
-from scipy import stats
-
-
-
-def inclusion_exclusion(plist):
-
-    """A more efficient version of the algorithm"""
-
-    n = len(plist)
-    if n > 2:
-        p1 = inclusion_exclusion(plist[: n // 2])
-        p2 = inclusion_exclusion(plist[n // 2: ])
-        return inclusion_exclusion([p1, p2])
-    if n == 2:
-        return plist[0] + plist[1] - plist[0] * plist[1]
-    if n == 1:
-        return plist[0]
-
+from utils import inclusion_exclusion
 
 
 def gather():
