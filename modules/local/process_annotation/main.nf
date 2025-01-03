@@ -13,7 +13,7 @@ process POSTPROCESS_VEP_ANNOTATION {
 
 
     input:
-    tuple val(meta), path(vep_annotated_file)
+    tuple val(meta) , path(vep_annotated_file)
 
     output:
     tuple val(meta), path("*.compact.tsv") , emit: compact_panel_annotation
@@ -32,6 +32,9 @@ process POSTPROCESS_VEP_ANNOTATION {
     // keep it as the one for omega that is the one minimizing the computational processing
     // ensure that the columns are preserved whenever changing the version of VEP and
     // see if we want to separate information of the CANONICAL
+
+    // FIXME
+    // this selection of the columns from here looks very sensitive to changes in Ensembl, I think we should change it
     """
     zegrep -v '^##' ${vep_annotated_file} | cut -f 1,7,18,21 | awk '\$3!="-"' | uniq | \\
             tail -n +2 | \\

@@ -13,7 +13,8 @@ process SUMMARIZE_ANNOTATION {
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta), path(tab_files)
+    tuple val(meta)  , path(tab_files)
+    path(hotspots_annotation_file)
 
     output:
     tuple val(meta), path("*.summary.tab.gz")   , emit: tab
@@ -27,7 +28,7 @@ process SUMMARIZE_ANNOTATION {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def assembly = task.ext.assembly ?: "hg38"
-
+    def hotspots = task.ext.hotspots_annotation ? "${hotspots_annotation_file}" : ""
     // TODO reimplement python script with click
     """
     zcat <\$(ls *.tab.gz | head -1) | grep '#' | grep -v '##' > header.tsv;
@@ -38,9 +39,12 @@ process SUMMARIZE_ANNOTATION {
     cat header.tsv <(sort -u ${prefix}.vep.tab.tmp | grep -v '#' | sed 's/^chr//g' | awk -F ':' 'length(\$1) <= 2' | awk '{ printf "chr"\$0"\\n" }') > ${prefix}.vep.tab ;
     rm ${prefix}.vep.tab.tmp;
 
-    postprocessing_annotation.py ${prefix}.vep.tab ${prefix}.vep.summary.tab ${assembly} False;
+    postprocessing_annotation.py ${prefix}.vep.tab \\
+                                    ${prefix}.vep.summary.tab \\
+                                    ${assembly} \\
+                                    False \\
+                                    ${hotspots} ;
     gzip ${prefix}.vep.summary.tab;
-
     gzip ${prefix}.vep.tab;
 
     cat <<-END_VERSIONS > versions.yml
