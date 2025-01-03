@@ -232,7 +232,7 @@ if __name__ == '__main__':
         all_sep = False
 
 
-    if len(sys.argv) >= 5:
+    if len(sys.argv) > 5:
         print("Using the provided value:", end = "\t")
         try:
             hotspots_annotation_file = f"{sys.argv[5]}"
