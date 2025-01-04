@@ -3,6 +3,9 @@ include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../..
 include { SUBSET_MAF                as SUBSET_DNDS              } from '../../../modules/local/subsetmaf/main'
 
 include { PREPROCESS_DNDS           as PREPROCESSDEPTHS         } from '../../../modules/local/dnds/preprocess/main'
+include { QUERY_BIOMART             as QUERYBIOMART             } from '../../../modules/local/dnds/querybiomart/main'
+include { BUILD_REFCDS              as BUILDREFCDS              } from '../../../modules/local/dnds/buildref/main'
+
 include { RUN_DNDS                  as DNDSRUN                  } from '../../../modules/local/dnds/run/main'
 
 
@@ -31,9 +34,13 @@ workflow DNDS {
     .join(PREPROCESSDEPTHS.out.depths)
     .set{ mutations_n_depth }
 
-    ref_trans.map{it -> [ ["id" : "global_RefCDS"] , it ] }
-    .set{ refcds_global }
-    DNDSRUN(mutations_n_depth, refcds_global, covariates)
+
+    QUERYBIOMART(panel, bedfile)
+
+    BUILDREFCDS(QUERYBIOMART.out.filtered_biomart)
+    BUILDREFCDS.out.ref_cds
+
+    DNDSRUN(mutations_n_depth, BUILDREFCDS.out.ref_cds, covariates)
     ch_versions = ch_versions.mix(DNDSRUN.out.versions)
 
     // // uncomment whenever we can use the custom RefCDS file
