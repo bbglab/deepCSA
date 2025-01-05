@@ -24,7 +24,7 @@ process BUILD_REFCDS {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    R "library(dndscv); buildref(\"${biomart_cds}\", \"${reference_genome}\", outfile = \"RefCDS.rda\")"
+    Rscript "library(dndscv); buildref(\"${biomart_cds}\", \"${reference_genome}\", outfile = \"RefCDS.rda\")"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -37,7 +37,7 @@ process BUILD_REFCDS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.out.tsv
+    touch RefCDS.rda
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -61,3 +61,21 @@ process BUILD_REFCDS {
 // --snvsonly"), type="logical",
 //             default=FALSE,
 //             help="Only use SNVs for the analysis [default= %default]", metavar="logical")
+
+// process runRScript {
+//     input:
+//     path 'input.txt'
+
+//     output:
+//     path 'output.txt'
+
+//     script:
+//     """
+//     #!/usr/bin/env Rscript
+
+//     # Your R code here
+//     data <- read.table("input.txt")
+//     # Process data
+//     write.table(processed_data, "output.txt")
+//     """
+// }

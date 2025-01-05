@@ -16,7 +16,7 @@ workflow DNDS {
     bedfile
     panel
     covariates
-    ref_trans
+    fasta
 
     main:
     ch_versions = Channel.empty()
@@ -37,8 +37,8 @@ workflow DNDS {
 
     QUERYBIOMART(panel, bedfile)
 
-    BUILDREFCDS(QUERYBIOMART.out.filtered_biomart)
-    BUILDREFCDS.out.ref_cds
+    BUILDREFCDS(QUERYBIOMART.out.filtered_biomart, fasta)
+    // BUILDREFCDS.out.ref_cds
 
     DNDSRUN(mutations_n_depth, BUILDREFCDS.out.ref_cds, covariates)
     ch_versions = ch_versions.mix(DNDSRUN.out.versions)

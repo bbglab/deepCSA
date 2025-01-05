@@ -52,16 +52,8 @@ process QUERY_BIOMART {
     </Query>
     EOF
 
-    # Biomart Query
-    biomart_url='http://jan2024.archive.ensembl.org/biomart/martservice'
-    biomart_cds_query=\$(cat biomartQuery.txt)
-    biomart_cds_query_encoded=\$(python -c "from urllib.parse import quote_plus; query = '''${biomart_cds_query}'''; print(quote_plus(query.replace('\\n', '')))")
-    curl -L -s "${biomart_url}?query=\${biomart_cds_query_encoded}" | \\
-        tail -n +2 | \\
-        awk -F'\\t' '(\$5!=""){print(\$0)}' > biomart_output.tsv
 
     filter_biomart_query.R --bedfile ${bed_file} \\
-                            --biomartoutput biomart_output.tsv \\
                             --outputfile custom_filtered_biomart.tsv
 
 
@@ -100,3 +92,14 @@ process QUERY_BIOMART {
 //             help="Only use SNVs for the analysis [default= %default]", metavar="logical")
     // <Filter name = "ensembl_gene_id" value = "ENSG00000141510,ENSG00000141511"/>
     // <Filter name = "external_gene_name" value = "`cat genes_list.txt`"/>
+
+    // # Biomart Query
+    // biomart_url='http://jan2024.archive.ensembl.org/biomart/martservice'
+    // biomart_cds_query=\$(cat biomartQuery.txt)
+    // biomart_cds_query_encoded=\$(python -c "from urllib.parse import quote_plus; query = '''${biomart_cds_query}'''; print(quote_plus(query.replace('\\n', '')))")
+    // curl -L -s "${biomart_url}?query=\${biomart_cds_query_encoded}" | \\
+    //     tail -n +2 | \\
+    //     awk -F'\\t' '(\$5!=""){print(\$0)}' > biomart_output.tsv
+
+    //                         --biomartoutput biomart_output.tsv \\
+

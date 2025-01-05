@@ -453,7 +453,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
                     covariates,
-                    ref_transcripts
+                    params.fasta
                     )
         ch_versions = ch_versions.mix(DNDS.out.versions)
     }
