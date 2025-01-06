@@ -24,7 +24,7 @@ process QUERY_BIOMART {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    cut -f 5 ${panel} | sort -u | tr -s '\\n' ',' > genes_list.txt
+    cut -f 6 ${panel} | sort -u | awk '\$1!="-"' | tr -s '\\n' ',' > genes_list.txt
 
     cat > biomartQuery.txt << EOF
     <?xml version="1.0" encoding="UTF-8"?>
