@@ -30,7 +30,8 @@ def get_normal_maf(path_maf):
     print("Initial shape of MAF DataFrame:", maf_df.shape)
 
     maf_df_filtered = maf_df.loc[
-        (~maf_df["FILTER.not_in_panel"]) &
+        (~maf_df["FILTER.not_in_exons"]) &
+        (~maf_df["FILTER.not_covered"]) &
         (maf_df["TYPE"].isin(["SNV", "INSERTION", "DELETION"]))
     ].reset_index(drop=True)
 

@@ -26,10 +26,9 @@ process FILTERBED {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def filtername = task.ext.filtername ?: "covered"
     """
-    filterbed.py ${maf} ${bedfile} not_in_panel;
+    filterbed.py ${maf} ${bedfile} ${filtername};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
