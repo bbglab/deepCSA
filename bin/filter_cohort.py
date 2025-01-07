@@ -98,10 +98,14 @@ else:
 
     # work with already filtered df + somatic only to explore potential artifacts
     # take only variant and sample info from the df
-    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "FILTER"]].reset_index(drop = True)
+    maf_df_f_somatic = maf_df[["MUT_ID", "SAMPLE_ID", "VAF_Ns", "FILTER"]].reset_index(drop = True)
 
-    n_rich_vars_df = maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")].groupby("MUT_ID").size()
-    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df >= 2].index)
+    n_rich_vars_df = maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")].groupby("MUT_ID")[
+                                            ['SAMPLE_ID', 'VAF_Ns']
+                                        ].agg({'SAMPLE_ID' : len, 'VAF_Ns' : min})
+    n_rich_vars_df = n_rich_vars_df.rename({'SAMPLE_ID' : 'frequency', 'VAF_Ns' : 'VAF_Ns_threshold'}, axis = 'columns')
+
+    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df['frequency'] >= 2].index)
 
     maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
 
@@ -113,7 +117,7 @@ else:
 
 
     # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
-    n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df > 0].index)
+    n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df['frequency'] > 0].index)
 
     maf_df["cohort_n_rich_uni"] = maf_df["MUT_ID"].isin(n_rich_vars_uni)
 
@@ -121,6 +125,19 @@ else:
                                                                         axis = 1
                                                                     )
     maf_df = maf_df.drop("cohort_n_rich_uni", axis = 1)
+
+
+    # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
+    maf_df = maf_df.merge(n_rich_vars_df, on = 'MUT_ID', how = 'left')
+    maf_df['frequency'] = maf_df['frequency'].fillna(0)
+    maf_df['VAF_Ns_threshold'] = maf_df['VAF_Ns_threshold'].fillna(1.1)
+
+    maf_df["cohort_n_rich_threshold"] = maf_df["VAF_Ns"] > maf_df['VAF_Ns_threshold']
+
+    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich_threshold"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich_threshold"], "cohort_n_rich_threshold"),
+                                                                        axis = 1
+                                                                    )
+    maf_df = maf_df.drop("cohort_n_rich_threshold", axis = 1)
 
 
 
