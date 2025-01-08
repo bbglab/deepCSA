@@ -1,3 +1,6 @@
+#!/opt/conda/bin/python
+
+
 import os
 import click
 
@@ -84,8 +87,8 @@ def cli():
 @cli.command()
 @click.option('--sample')
 @click.option('--outfolder')
-@click.option('--somatic_mutations_file')
-@click.option('--omega_file')
+@click.option('--somatic-mutations-file')
+@click.option('--omega-file')
 def snv_am(sample, outfolder, somatic_mutations_file, omega_file):
 
     # parse mutations
@@ -100,6 +103,7 @@ def snv_am(sample, outfolder, somatic_mutations_file, omega_file):
 
     # parse dN/dS excess
     excess_dict = compute_excess(omega_file)
+    genes_with_omega = list(excess_dict.keys())
 
     # select mutations
     res_dict = {}
@@ -111,7 +115,8 @@ def snv_am(sample, outfolder, somatic_mutations_file, omega_file):
         res_dict[f'mod_vaf_{suffix}'] = []
         res_dict[f'average_depth_{suffix}'] = []
 
-    for gene in mutations['canonical_SYMBOL'].unique():
+    genes_with_mutations_n_omega = sorted(set(genes_with_omega).intersection(set(mutations['canonical_SYMBOL'].unique())))
+    for gene in genes_with_mutations_n_omega:
 
         for csqn in ['missense', 'nonsense']:
 
@@ -181,7 +186,7 @@ def snv_am(sample, outfolder, somatic_mutations_file, omega_file):
 @cli.command()
 @click.option('--sample')
 @click.option('--outfolder')
-@click.option('--somatic_mutations_file')
+@click.option('--somatic-mutations-file')
 def indel_am(sample, outfolder, somatic_mutations_file):
 
     # parse mutations
@@ -246,8 +251,8 @@ def indel_am(sample, outfolder, somatic_mutations_file):
 @click.command()
 @click.option('--sample')
 @click.option('--outfolder')
-@click.option('--somatic_mutations_file')
-@click.option('--omega_file')
+@click.option('--somatic-mutations-file')
+@click.option('--omega-file')
 def cli_nonduplex(sample, outfolder, somatic_mutations_file, omega_file):
 
     # parse mutations
@@ -256,7 +261,7 @@ def cli_nonduplex(sample, outfolder, somatic_mutations_file, omega_file):
         (somatic_mutations['TYPE'] == 'SNV')
         & (somatic_mutations['canonical_Consequence_broader'].isin(['missense', 'nonsense']))
         ].reset_index(drop = True)
-    
+
     gene_chr_dict = { x : y  for x, y in somatic_mutations[['canonical_SYMBOL', 'CHROM']].drop_duplicates().values }
 
     mutations = mutations[mutations['ALT_DEPTH_ND'] > 0]

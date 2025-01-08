@@ -4,14 +4,12 @@ process MUTATED_GENOMES_FROM_VAF {
     label 'memory_medium'
 
     container 'docker.io/ferranmuinos/test_mutated_genomes'
-    // conda activate probabilistic
 
     input:
     tuple val(meta) , path(mutations), path(omegas)
-    // fn = os.path.join(deepcsa_run_dir, 'omegagloballoc', f'output_mle.{sample}.multi.global_loc.tsv')
 
     output:
-    tuple val(meta), path("*.sample.mutated_genomes_from_vaf.tsv") , emit: mutated_epi_sample
+    tuple val(meta), path("**.covered_genomes_summary.tsv") , emit: mutated_epi_sample
     path  "versions.yml"                                           , emit: versions
 
     when:
@@ -22,6 +20,7 @@ process MUTATED_GENOMES_FROM_VAF {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir -p ${prefix}.covered_genomes_snv_AM
+    mkdir -p ${prefix}.covered_genomes_indel_AM
 
     mutgenomes_driver_priority.py \\
                 snv-am \\
@@ -29,6 +28,12 @@ process MUTATED_GENOMES_FROM_VAF {
                 --outfolder ${prefix}.covered_genomes_snv_AM \\
                 --somatic-mutations-file ${mutations} \\
                 --omega-file ${omegas} ;
+
+    mutgenomes_driver_priority.py \\
+                indel-am \\
+                --sample ${prefix} \\
+                --outfolder ${prefix}.covered_genomes_indel_AM \\
+                --somatic-mutations-file ${mutations} ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

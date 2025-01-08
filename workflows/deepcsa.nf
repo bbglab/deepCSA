@@ -168,7 +168,7 @@ workflow DEEPCSA{
     // Separate input BAMs and VCFs
     //
     INPUT_CHECK.out.mutations.
-    map{ it -> [it[0]]}.
+    map{ it -> [ "id" : it[0].id ]}.
     set{ meta_samples_alone }
 
     INPUT_CHECK.out.mutations.
@@ -342,19 +342,6 @@ workflow DEEPCSA{
 
 
 
-    if (params.mutated_epithelium_vaf){
-        MUT_PREPROCESSING.out.somatic_mafs
-        .join(meta_samples_alone)
-        .set{ sample_mutations_only }
-
-        MUTATEDEPITHELIUMVAF(sample_mutations_only,
-                                CREATEPANELS.out.exons_consensus_bed,
-                                OMEGA.out.results_global
-                                // OMEGAMULTI.out.results_global
-                                )
-        ch_versions = ch_versions.mix(MUTATEDEPITHELIUMVAF.out.versions)
-    }
-
     if (params.mutated_epithelium){
         MUT_PREPROCESSING.out.somatic_mafs
         .join(meta_samples_alone)
@@ -503,6 +490,20 @@ workflow DEEPCSA{
         }
 
     }
+
+    if (params.mutated_epithelium_vaf){
+        MUT_PREPROCESSING.out.somatic_mafs
+        .join(meta_samples_alone)
+        .set{ sample_mutations_only }
+
+        MUTATEDEPITHELIUMVAF(sample_mutations_only,
+                                CREATEPANELS.out.exons_consensus_bed,
+                                OMEGA.out.results_global
+                                // OMEGAMULTI.out.results_global
+                                )
+        ch_versions = ch_versions.mix(MUTATEDEPITHELIUMVAF.out.versions)
+    }
+
 
     if (params.oncodriveclustl){
         // OncodriveClustl

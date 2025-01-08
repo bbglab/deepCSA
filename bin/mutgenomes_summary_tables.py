@@ -1,10 +1,10 @@
-import os
+#!/opt/conda/bin/python
+
+
 import glob
 import click
 
-import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 from utils import inclusion_exclusion
@@ -162,7 +162,7 @@ def cli():
 @click.option('--metadata-file')
 def gather_all(metadata_file):
     df_clinical, df_gene_clinical, df_sample_total_clinical = gather_snvs(metadata_file)
-    df_clinical, df_sample_total_clinical = gather_indels(metadata_file)    
+    df_clinical, df_sample_total_clinical = gather_indels(metadata_file)
 
 
 if __name__ == '__main__':
