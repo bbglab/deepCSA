@@ -6,7 +6,7 @@ process QUERY_BIOMART {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/dnds:latest'
+    container 'docker.io/ferriolcalvet/querybiomart:latest'
     // we are probably missing python in this container
 
     input:
@@ -24,7 +24,7 @@ process QUERY_BIOMART {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    cut -f 6 ${panel} | sort -u | awk '\$1!="-"' | tr -s '\\n' ',' > genes_list.txt
+    cut -f 6 ${panel} | tail -n +2 | sort -u | awk '\$1!="-"' | tr -s '\\n' ',' > genes_list.txt
 
     cat > biomartQuery.txt << EOF
     <?xml version="1.0" encoding="UTF-8"?>
@@ -54,6 +54,7 @@ process QUERY_BIOMART {
 
 
     filter_biomart_query.R --bedfile ${bed_file} \\
+                            --biomartquery biomartQuery.txt \\
                             --outputfile custom_filtered_biomart.tsv
 
 

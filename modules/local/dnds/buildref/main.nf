@@ -10,8 +10,8 @@ process BUILD_REFCDS {
 
     input:
     tuple val(meta) , path(biomart_cds)
-    tuple val(meta2), path(reference_genome)
-    
+    path(reference_genome)
+
 
     output:
     tuple val(meta), path("RefCDS.rda") , emit: ref_cds
@@ -24,11 +24,13 @@ process BUILD_REFCDS {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    Rscript "library(dndscv); buildref(\"${biomart_cds}\", \"${reference_genome}\", outfile = \"RefCDS.rda\")"
+    dNdS_build.R --biomart_cds "${biomart_cds}" \\
+            --reference_genome "${reference_genome}"
+            --outfile "RefCDS.rda"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R     : 
+        R     :
         dNdScv: 0.1.0
     END_VERSIONS
     """
@@ -41,7 +43,7 @@ process BUILD_REFCDS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R     : 
+        R     :
         dNdScv: 0.1.0
     END_VERSIONS
     """
