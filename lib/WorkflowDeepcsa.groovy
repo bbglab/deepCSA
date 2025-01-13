@@ -1,5 +1,5 @@
 //
-// This file holds several functions specific to the workflow/deepcsa.nf in the bbg/deepcsa pipeline
+// This file holds several functions specific to the workflow/deepcsa.nf in the bbglab/deepCSA pipeline
 //
 
 import nextflow.Nextflow

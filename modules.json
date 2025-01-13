@@ -1,5 +1,5 @@
 {
-    "name": "bbg/deepcsa",
+    "name": "bbglab/deepCSA",
     "homePage": "https://github.com/bbglab/deepcsa",
     "repos": {
         "https://github.com/nf-core/modules.git": {

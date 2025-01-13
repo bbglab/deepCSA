@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    bbg/deepcsa
+    bbglab/deepCSA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/bbg/deepcsa
+    Github : https://github.com/bbglab/deepCSA
 ----------------------------------------------------------------------------------------
 */
 
@@ -53,7 +53,7 @@ include { DEEPCSA  as BBG_DEEPCSA} from './workflows/deepcsa'
 */
 
 //
-// WORKFLOW: Run main bbg/deepcsa analysis pipeline
+// WORKFLOW: Run main bbglab/deepCSA analysis pipeline
 //
 workflow {
     BBG_DEEPCSA ()

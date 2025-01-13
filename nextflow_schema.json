@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/dev/nextflow_schema.json",
-    "title": "bbg/deepcsa pipeline parameters",
+    "title": "bbglab/deepCSA pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
     "defs": {
@@ -82,6 +82,30 @@
                     "description": "Path to FASTA genome file.",
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
                     "fa_icon": "far fa-file-code"
+                }
+            }
+        },
+        "hotspot_annotation_options": {
+            "title": "Hotspot mutation annotation options",
+            "type": "object",
+            "description": "Flag and TSV file used for annotating specific custom hotspots.",
+            "default": "",
+            "properties": {
+                "hotspots_annotation": {
+                    "type": "boolean",
+                    "format": "file-path",
+                    "default": false,
+                    "description": "Enrich the annotation of mutations with the information on desired hotspots.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                },
+                "hotspots_definition_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "default": "",
+                    "description": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, HOTSPOT_NAME.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, HOTSPOT_NAME."
                 }
             }
         },
@@ -180,6 +204,38 @@
                 }
             }
         },
+        "hotspot_bedfile_configs": {
+            "title": "Definition of hotspot regions configuration",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
+            "properties": {
+                "omega_hotspots": {
+                    "type": "boolean",
+                    "description": "Do you want to analyze omega hotspots independently?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to analyze omega hotspots independently?"
+                },
+                "omega_hotspots_bedfile": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "Path to BED file to use.",
+                    "help_text": "Path to BED file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "hotspot_expansion": {
+                    "type": "integer",
+                    "description": "Size (in bp) of how much you want to expand the region around the hotspot (same in both directions)",
+                    "default": 30,
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
         "tool_execution_configs": {
             "title": "Tool selection options",
             "type": "object",
@@ -249,6 +305,20 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run omega with the different VAF distorsioned gropus?"
                 },
+                "omega_plot": {
+                    "type": "boolean",
+                    "description": "Do you want to plot omega results?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to plot omega results?"
+                },
+                "dnds": {
+                    "type": "boolean",
+                    "description": "Do you want to run dNdScv?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run dNdScv?"
+                },
                 "signatures": {
                     "type": "boolean",
                     "description": "Do you want to run signatures?",
@@ -283,6 +353,13 @@
                     "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to run mutated_epithelium using the VAFs?"
+                },
+                "expected_mutation_rate": {
+                    "type": "boolean",
+                    "description": "Do you want to run expected_mutation_rate?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to run expected_mutation_rate?"
                 },
                 "plot_depths": {
                     "type": "boolean",
@@ -593,6 +670,24 @@
                     "description": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
                     "fa_icon": "far fa-file-code"
+                },
+                "cadd_scores_ind": {
+                    "type": "string",
+                    "description": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io",
+                    "help_text": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "dnds_ref_transcripts": {
+                    "type": "string",
+                    "description": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
+                    "help_text": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
+                    "fa_icon": "far fa-file-code"
+                },
+                "dnds_covariates": {
+                    "type": "string",
+                    "description": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
+                    "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
+                    "fa_icon": "far fa-file-code"
                 }
             }
         },
@@ -839,6 +934,9 @@
         },
         {
             "$ref": "#/defs/custom_bedfile_configs"
+        },
+        {
+            "$ref": "#/defs/hotspot_bedfile_configs"
         },
         {
             "$ref": "#/defs/tool_execution_configs"

@@ -10,7 +10,8 @@ process GROUP_GENES {
 
     input:
     tuple val(meta), path(mutations_table)
-    path(features_table)
+    path (features_table)
+    tuple val(meta2), path(hotspots_file)
 
     output:
     path("genes2group_out.json")                        , emit: json_genes
@@ -24,11 +25,12 @@ process GROUP_GENES {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "groups"
     def separator = task.ext.separator ?: "tab"
+    def hotspots = task.ext.hotspots ? 1 : 0
     def cmd_custom = task.ext.custom ? "${features_table} ${separator} pathway_groups_out.json" : ""
     """
     awk 'NR>1 {print \$1}' ${mutations_table} | sort -u  > gene_list.txt
 
-    features_2group_genes.py gene_list.txt genes2group_out.json ${cmd_custom}
+    features_2group_genes.py gene_list.txt ${hotspots} ${hotspots_file} genes2group_out.json ${cmd_custom}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

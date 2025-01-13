@@ -6,7 +6,7 @@ include { CREATECUSTOMBEDFILE           as READSPOSBED                  } from '
 include { READS_PER_REGION              as READSPERREGION               } from '../../../../modules/local/reads_per_region/main'
 
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS              } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
-include { SUBSET_MAF                    as SUBSET_MUTEPI                } from '../../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                    as SUBSETMUTEPI                } from '../../../../modules/local/subsetmaf/main'
 
 include { COMPUTE_MUTATED_EPITHELIUM    as COMPUTEMUTATEDEPITHELIUM     } from '../../../../modules/local/computemutatedepithelium/main'
 
@@ -60,10 +60,10 @@ workflow MUTATED_EPITHELIUM {
     SUBSETMUTATIONS(mutations, bedfile)
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-    SUBSET_MUTEPI(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSET_MUTEPI.out.versions)
+    SUBSETMUTEPI(SUBSETMUTATIONS.out.subset)
+    ch_versions = ch_versions.mix(SUBSETMUTEPI.out.versions)
 
-    SUBSET_MUTEPI.out.mutations
+    SUBSETMUTEPI.out.mutations
     .join(READSPERREGION.out.read_counts.map{it -> [ ["id" : it[0].id] , it[1] ]  })
     .set{ mutations_n_reads }
 

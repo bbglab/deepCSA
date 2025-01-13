@@ -33,8 +33,8 @@ def mutrate_sample(maf_df, depths_df, depths_adj_df, sample_name, type_list = Fa
     # mutation rate metrics
     sample_features = {"N_MUTS" : n_muts,
                         "N_MUTATED" : n_mutated_reads,
-                        "DEPTH" : depths_df[f"{sample_name}"].sum(),
-                        "DEPTH_ADJUSTED": depths_adj_df[f"{sample_name}"].sum()
+                        "DEPTH" : depths_df.drop_duplicates(subset = ["CHROM", "POS"])[f"{sample_name}"].sum(),
+                        "DEPTH_ADJUSTED": depths_adj_df[f"{sample_name}"].sum() # they should be the same for all impacts not for subsets of impacts
                         }
     sample_features["MUTRATE_MB"] = ( sample_features["N_MUTS"] / sample_features["DEPTH"] * 1000000 ).astype(float)
     sample_features["MUTRATE_MB_ADJUSTED"] = ( sample_features["N_MUTS"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
@@ -116,22 +116,26 @@ def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_
     annot_panel_df = pd.read_csv(annot_panel_path, sep = "\t", na_values = custom_na_values)
 
     # Subset depths with panel
-    ## mode 1: each position counts one
+    ## mode 1: each position counts one (once per gene, be careful that it might be duplicated in different genes)
     depths_subset_df = depths_df.merge(annot_panel_df[["CHROM", "POS", "GENE"]].drop_duplicates(),
                                         on = ["CHROM", "POS"], how = "inner")
     ## mode 2 (adjusted): each position counts as many times it contributes to the panel
     depths_df[sample_name.split('.')[0]] = depths_df[sample_name.split('.')[0]] / 3   # the depth per position can contribute to three different mutations
     depths_subset_adj_df = depths_df.merge(annot_panel_df[["CHROM", "POS", "GENE"]], on = ["CHROM", "POS"], how = "inner")
 
+    ## mode 3 (adjusted): each position counts as many times it contributes to the panel, but ONLY ONCE PER SAMPLE
+    depths_subset_adj_sample_df = depths_df.merge(annot_panel_df.drop_duplicates(subset = ["CHROM", "POS", "REF", "ALT"])[["CHROM", "POS"]],
+                                                    on = ["CHROM", "POS"], how = "inner")
+
     del depths_df
     del annot_panel_df
 
     # Compute mutation rates
     ## sample mutation rate
-    mutrate_sample_allmuts_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0])
-    mutrate_sample_snvs_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0], ["SNV"])
-    mutrate_sample_nonsnvs_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0], ["INSERTION", "DELETION", "COMPLEX", "MNV"])
-    mutrate_sample_indels_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0], ["INSERTION", "DELETION"])
+    mutrate_sample_allmuts_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0])
+    mutrate_sample_snvs_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0], ["SNV"])
+    mutrate_sample_nonsnvs_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0], ["INSERTION", "DELETION", "COMPLEX", "MNV"])
+    mutrate_sample_indels_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0], ["INSERTION", "DELETION"])
     ## per gene mutation rate
     mutrate_genes_allmuts_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0])
     mutrate_genes_snvs_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0], ["SNV"])
@@ -145,9 +149,12 @@ def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_
 
     # Save
     mutrate_df[["SAMPLE_ID", "GENE", "REGIONS", "MUTTYPES",
-                "N_MUTS", "N_MUTATED", "DEPTH",
-                "MUTRATE_MB", "MUTRATE_MB_ADJUSTED", "MUTRATE_KB", "MUTREADSRATE_KB_ADJUSTED",
-                "MUTREADSRATE_MB", "MUTREADSRATE_MB_ADJUSTED", "MUTREADSRATE_KB", "MUTREADSRATE_KB_ADJUSTED"]].to_csv(f"{sample_name.split('.')[0]}.{panel_v}.mutrates.tsv",
+                "DEPTH",
+                "N_MUTS", "N_MUTATED",
+                "MUTRATE_MB", "MUTRATE_MB_ADJUSTED",
+                "MUTRATE_KB", "MUTRATE_KB_ADJUSTED",
+                "MUTREADSRATE_MB", "MUTREADSRATE_MB_ADJUSTED",
+                "MUTREADSRATE_KB", "MUTREADSRATE_KB_ADJUSTED"]].to_csv(f"{sample_name.split('.')[0]}.{panel_v}.mutrates.tsv",
                                                             sep = "\t",
                                                             header = True,
                                                             index = False

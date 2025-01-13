@@ -83,11 +83,16 @@ def filtered_groups_to_compressed(data):
 
 if __name__ == '__main__':
     panel_genes_file = sys.argv[1]
-    output_json_groups_2_names = sys.argv[2]
+    hotspot_genes = sys.argv[2]
+    hotspot_genes_file = sys.argv[3]
+    output_json_groups_2_names = sys.argv[4]
 
     custom_groups = False
 
-    if len(sys.argv) > 3:
+    add_hotspots = hotspot_genes == "1"
+
+
+    if len(sys.argv) > 5:
         custom_groups = True
         table_file = sys.argv[3]
         separator = sys.argv[4]
@@ -110,6 +115,13 @@ if __name__ == '__main__':
         with open(output_json_groups, 'w') as f:
             json.dump(pathways, f, indent=4)
 
+    # if the hotspots are present add them at the end,
+    # this means that if there is any group with the
+    # same name as the hotspot it will be overwritten
+    if add_hotspots:
+        with open(hotspot_genes_file, 'r') as file:
+            hotspot_pairs = json.load(file)
+            genes_to_keep_dict.update(hotspot_pairs)
 
     with open(output_json_groups_2_names, 'w') as f:
         json.dump(genes_to_keep_dict, f, indent=4)

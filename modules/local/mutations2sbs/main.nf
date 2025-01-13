@@ -25,9 +25,9 @@ process MUTATIONS_2_SIGNATURES {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mutations_n_sbs.py --mutations ${maf} \\
-                        --signature-probabilities ${signature_probabilities} \\
-                        --output ${prefix}.sigs.annotated.tsv.gz
+    signatures_mutations_n_sbs.py --mutations ${maf} \\
+                            --signature-probabilities ${signature_probabilities} \\
+                            --output ${prefix}.sigs.annotated.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
