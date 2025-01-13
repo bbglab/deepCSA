@@ -11,7 +11,7 @@ process EXPAND_REGIONS {
 
     input:
     tuple val(meta)     , path(panel)
-    path(bedfile)
+    path (bedfile)
     // tuple val(meta2)    , path(bedfile)
 
     output:
@@ -23,11 +23,9 @@ process EXPAND_REGIONS {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
     def expansion = task.ext.expansion ?: 30
     """
-    add_hotspots.py ${panel} ${bedfile} ${expansion}
+    add_hotspots.py ${panel} None 1 0
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
