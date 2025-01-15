@@ -29,8 +29,10 @@ print(vaf_all_molecules)
 if vaf_all_molecules:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs",
-                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM", "VAF_AM",
+                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
+                        "numNs", 'VAF_Ns',
+                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "VAF_AM",
+                        "numNs_AM", "VAF_Ns_AM",
                         'DEPTH_ND', 'ALT_DEPTH_ND',
                         # 'REF_DEPTH_ND', "numNs_ND",
                         "VAF_ND",
@@ -41,7 +43,8 @@ if vaf_all_molecules:
 else:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs",
+                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
+                        "numNs", 'VAF_Ns',
                         "VAF_distorted", "VAF_distorted_reduced", "VAF_distorted_expanded",
                         "VAF_distortion"]
     print("Not using information on non-duplex molecules.")
@@ -180,6 +183,7 @@ def read_from_vardict_VCF_all(sample,
     dat_full["DEPTH"] = dat_full["CDP"].astype(int)
 
     dat_full["numNs"] = dat_full["NDP"].astype(int)
+    dat_full["VAF_Ns"] = dat_full["numNs"] / (dat_full["DEPTH"] + dat_full["numNs"])
 
     # compute VAF
     dat_full["VAF"] = dat_full["ALT_DEPTH"] / dat_full["DEPTH"]
@@ -199,6 +203,7 @@ def read_from_vardict_VCF_all(sample,
         dat_full["DEPTH_AM"] = dat_full["CDPAM"].astype(int)
 
         dat_full["numNs_AM"] = dat_full["NDPAM"].astype(int)
+        dat_full["VAF_Ns_AM"] = dat_full["numNs_AM"] / (dat_full["DEPTH_AM"] + dat_full["numNs_AM"])
 
         # compute VAF
         dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
@@ -211,7 +216,6 @@ def read_from_vardict_VCF_all(sample,
         dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
 
         dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
-
 
         dat_full["ALT_DEPTH_ND"] = dat_full["ALT_DEPTH_AM"] - dat_full["ALT_DEPTH"]
         dat_full["DEPTH_ND"] = dat_full["DEPTH_AM"] - dat_full["DEPTH"]
