@@ -24,8 +24,9 @@ process EXPAND_REGIONS {
 
     script:
     def expansion = task.ext.expansion ?: 30
+    def configuration = task.ext.use_hotspot_bed ? "${bedfile} ${expansion} 1" : 'None 0 0'
     """
-    add_hotspots.py ${panel} None 1 0
+    add_hotspots.py ${panel} ${configuration}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
