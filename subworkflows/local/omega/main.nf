@@ -65,11 +65,11 @@ workflow OMEGA_ANALYSIS{
     if (params.omega_hotspots){
         EXPANDREGIONS(panel, hotspots_file)
         ch_versions = ch_versions.mix(EXPANDREGIONS.out.versions)
-        expanded_panel = EXPANDREGIONS.out.panel_increased
-        json_hotspots = EXPANDREGIONS.out.new_regions_json
+        expanded_panel = EXPANDREGIONS.out.panel_increased.first()
+        json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
     } else {
-        expanded_panel = panel
-        json_hotspots = bedfile
+        expanded_panel = panel.first()
+        json_hotspots = bedfile.first()
     }
 
     // FIXME here I am using bedfile as a dummy value channel
