@@ -169,17 +169,17 @@ workflow DEEPCSA{
     //
     // Separate input BAMs and VCFs
     //
-    INPUT_CHECK.out.mutations.
-    map{ it -> [it[0], it[1]]}.
-    set{ meta_vcfs_alone }
+    INPUT_CHECK.out.mutations
+    .map{ it -> [it[0], it[1]]}
+    .set{ meta_vcfs_alone }
 
-    INPUT_CHECK.out.mutations.
-    map{ it -> [it[0], it[2]]}.
-    set{ meta_bams_alone }
+    INPUT_CHECK.out.mutations
+    .map{ it -> [it[0], it[2]]}
+    .set{ meta_bams_alone }
 
-    INPUT_CHECK.out.mutations.
-    map{ it -> [it[0], it[3], it[4]]}.
-    set{ meta_pileupbamindex_alone }
+    INPUT_CHECK.out.mutations
+    .map{ it -> [it[0], it[3], it[4]]}
+    .set{ meta_pileupbamindex_alone }
 
 
 
@@ -221,7 +221,9 @@ workflow DEEPCSA{
     }
 
     // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files, CREATEPANELS.out.exons_consensus_bed,
+    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files,
+                        CREATEPANELS.out.all_consensus_bed,
+                        CREATEPANELS.out.exons_bed,
                         TABLE2GROUP.out.json_allgroups, seqinfo_df)
     ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
     positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
