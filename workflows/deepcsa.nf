@@ -6,7 +6,7 @@
 
 include { validateParameters; paramsHelp; paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
 
-def summary_params = paramsSummaryMap(workflow)
+// def summary_params = paramsSummaryMap(workflow)
 
 // def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 // def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -14,47 +14,13 @@ def summary_params = paramsSummaryMap(workflow)
 // // Print parameter summary log to screen
 // log.info logo + paramsSummaryLog(workflow) + citation
 
-WorkflowDeepcsa.initialise(params, log)
+// WorkflowDeepcsa.initialise(params, log)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
-ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-
-features_table = params.features_table ? Channel.fromPath( params.features_table, checkIfExists: true) : Channel.fromPath(params.input)
-
-wgs_trinucs = params.wgs_trinuc_counts ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first() : Channel.empty()
-cosmic_ref = params.cosmic_ref_signatures ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first() : Channel.empty()
-datasets3d = params.datasets3d ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() : Channel.empty()
-annotations3d = params.annotations3d ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() : Channel.empty()
-seqinfo_df = params.datasets3d ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() : Channel.empty()
-cadd_scores = params.cadd_scores ? Channel.of([ file(params.cadd_scores, checkIfExists : true), file(params.cadd_scores_ind, checkIfExists : true) ]).first() : Channel.empty()
-
-
-
-// if the user wants to use custom gene groups, import the gene groups table
-// otherwise I am using the input csv as a dummy value channel
-custom_groups_table = params.custom_groups_file ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() : Channel.fromPath(params.input)
-
-// if the user wants to use custom BED file for computing the depths, import the BED file
-// otherwise I am using the input csv as a dummy value channel
-custom_bed_file = params.custom_bedfile ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
-
-// if the user wants to define hotspots for omega, import the hotspots definition BED file
-// otherwise I am using the input csv as a dummy value channel
-hotspots_bed_file = params.omega_hotspots_bedfile ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first() : Channel.fromPath(params.input)
-
-
-
-def run_mutabilities = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
-def run_mutrate = (params.mutationrate || params.omega)
-
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,10 +116,56 @@ include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/l
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// Info required for completion email and summary
-def multiqc_report = []
-
 workflow DEEPCSA{
+
+    // // Input channel definitions
+    features_table  = Channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
+
+    wgs_trinucs     = params.wgs_trinuc_counts 
+                            ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first() 
+                            : Channel.empty()
+    cosmic_ref      = params.cosmic_ref_signatures 
+                            ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first() 
+                            : Channel.empty()
+    datasets3d      = params.datasets3d 
+                            ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() 
+                            : Channel.empty()
+    annotations3d   = params.annotations3d 
+                            ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() 
+                            : Channel.empty()
+    seqinfo_df      = params.datasets3d 
+                            ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() 
+                            : Channel.empty()
+    cadd_scores     = params.cadd_scores 
+                            ? Channel.of([ 
+                                file(params.cadd_scores, checkIfExists : true), 
+                                file(params.cadd_scores_ind, checkIfExists : true) 
+                                ]).first() 
+                            : Channel.empty()
+
+
+    // if the user wants to use custom gene groups, import the gene groups table
+    // otherwise I am using the input csv as a dummy value channel
+    custom_groups_table = params.custom_groups_file 
+                                ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() 
+                                : Channel.fromPath(params.input)
+
+    // if the user wants to use custom BED file for computing the depths, import the BED file
+    // otherwise I am using the input csv as a dummy value channel
+    custom_bed_file     = params.custom_bedfile 
+                                ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() 
+                                : Channel.fromPath(params.input)
+
+    // if the user wants to define hotspots for omega, import the hotspots definition BED file
+    // otherwise I am using the input csv as a dummy value channel
+    hotspots_bed_file   = params.omega_hotspots_bedfile 
+                                ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first() 
+                                : Channel.fromPath(params.input)
+
+    // Initialize booleans based on user params
+    def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
+    def run_mutrate         = (params.mutationrate || params.omega)
+
 
     ch_versions = Channel.empty()
 
@@ -189,7 +201,7 @@ workflow DEEPCSA{
     ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
     if (params.download_cache) {
         PREPARE_CACHE(ensemblvep_info)
-        vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ meta, cache -> [ cache ] }
+        vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ _meta, cache -> [ cache ] }
         ch_versions = ch_versions.mix(PREPARE_CACHE.out.versions)
     } else {
         vep_cache = params.vep_cache
@@ -567,6 +579,15 @@ workflow DEEPCSA{
     //
     // MODULE: MultiQC
     //
+    ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
+    ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+    ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
+
+    // Info required for completion email and summary
+    def multiqc_report = []
+    
+    def summary_params = paramsSummaryMap(workflow)
     workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
@@ -594,16 +615,16 @@ workflow DEEPCSA{
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow.onComplete {
-    if (params.email || params.email_on_fail) {
-        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
-    }
-    NfcoreTemplate.dump_parameters(workflow, params)
-    NfcoreTemplate.summary(workflow, params, log)
-    if (params.hook_url) {
-        NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
-    }
-}
+// workflow.onComplete {
+//     if (params.email || params.email_on_fail) {
+//         NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
+//     }
+//     NfcoreTemplate.dump_parameters(workflow, params)
+//     NfcoreTemplate.summary(workflow, params, log)
+//     if (params.hook_url) {
+//         NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
+//     }
+// }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
