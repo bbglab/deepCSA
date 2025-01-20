@@ -12,11 +12,7 @@ process ONCODRIVE3D_PLOT {
 
 
     input:
-    tuple val(meta), path(genes_csv)
-    tuple val(meta), path(pos_csv)
-    tuple val(meta), path(mutations_csv)
-    tuple val(meta), path(miss_prob_json)
-    tuple val(meta), path(seq_df_tsv)
+    tuple val(meta), path(genes_csv), path(pos_csv), path(mutations_csv), path(miss_prob_json), path(seq_df_tsv)
     path(datasets)
     path(annotations)
 
