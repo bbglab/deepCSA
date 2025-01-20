@@ -1,15 +1,12 @@
 #!/usr/local/bin/python
 
-
-import pandas as pd
-import numpy as np
 import sys
+import pandas as pd
 
-from itertools import product
 from bgreference import hg38, hg19, mm10, mm39
 
 from utils import vartype
-from utils_context import canonical_channels, transform_context
+from utils_context import transform_context
 from utils_impacts import *
 from read_utils import custom_na_values
 
@@ -189,8 +186,8 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
 
     if hotspots_file is not None:
         hotspots_def_df = pd.read_table(hotspots_file, header = 0, sep = '\t')
-        new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS'] ]
-        annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS'], how = 'left')
+        new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS', "MUTTYPE"] ]
+        annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS', "MUTTYPE"], how = 'left')
         annotated_variants_columns += new_hostpot_columns
 
     annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
