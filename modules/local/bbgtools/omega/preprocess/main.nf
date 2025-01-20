@@ -5,7 +5,7 @@ process OMEGA_PREPROCESS {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:20241217'
+    container 'docker.io/ferriolcalvet/omega:20250113'
 
     input:
     tuple val(meta) , path(mutations), path(depths), path(mutation_profile)
