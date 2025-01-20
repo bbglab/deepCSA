@@ -45,11 +45,9 @@ workflow CREATE_PANELS {
 
     main:
 
-    ch_versions = Channel.empty()
 
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
-    ch_versions = ch_versions.mix(SITESFROMPOSITIONS.out.versions)
 
     // Create a tuple for VEP annotation (mandatory)
     SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation } // change names of vars
@@ -65,15 +63,12 @@ workflow CREATE_PANELS {
                     params.vep_cache_version,
                     vep_cache,
                     vep_extra_files)
-    ch_versions = ch_versions.mix(VCFANNOTATEPANEL.out.versions)
 
     // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
-    ch_versions = ch_versions.mix(POSTPROCESSVEPPANEL.out.versions)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
-    ch_versions = ch_versions.mix(CREATECAPTUREDPANELS.out.versions)
 
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all).set{all_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all_bed).set{all_bed}
@@ -144,7 +139,5 @@ workflow CREATE_PANELS {
     // exons_sample_bed        = restructureSamplePanel(CREATESAMPLEPANELSEXONS.out.sample_specific_panel_bed.flatten())
     // introns_sample_panel    = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel.flatten())
     // introns_sample_bed      = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel_bed.flatten())
-
-    versions = ch_versions                // channel: [ versions.yml ]
 
 }

@@ -12,7 +12,7 @@ process SIGPROFILERASSIGNMENT {
     tuple val(meta), path("**.pdf")                                         , emit: plots
     tuple val(meta), path("**.txt")                                         , emit: stats
     tuple val(meta), path("**Decomposed_MutationType_Probabilities.*.txt")  , emit: mutation_probs
-    path "versions.yml"                                                     , emit: versions
+    path "versions.yml"                                                     , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

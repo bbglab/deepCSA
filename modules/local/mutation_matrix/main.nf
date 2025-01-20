@@ -17,7 +17,7 @@ process COMPUTE_MATRIX {
     tuple val(meta), path("*.single.sigprofiler")      , optional:true, emit: single_sigprof
     tuple val(meta), path("*.per_sample")              , optional:true, emit: per_sample
     tuple val(meta), path("*.per_sample.sigprofiler")  , optional:true, emit: per_sample_sigprof
-    path "versions.yml"                                               , emit: versions
+    path "versions.yml"                                               , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

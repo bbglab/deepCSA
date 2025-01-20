@@ -19,7 +19,7 @@ process EXP_MUTRATE {
     tuple val(meta), path("**.rds")     , emit: rds_file
     tuple val(meta), path("**.rda")     , emit: rda_file
 
-    path "versions.yml"                 , emit: versions
+    path "versions.yml"                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

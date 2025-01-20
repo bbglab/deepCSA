@@ -11,7 +11,7 @@ process PLOT_SELECTION_METRICS {
 
     output:
     tuple val(meta), path("**.pdf")  , emit: plots
-    path "versions.yml"              , emit: versions
+    path "versions.yml"              , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

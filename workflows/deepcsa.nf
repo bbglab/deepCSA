@@ -166,16 +166,12 @@ workflow DEEPCSA{
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutrate         = (params.mutationrate || params.omega)
 
-
-    ch_versions = Channel.empty()
-
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
     INPUT_CHECK (
         file(params.input)
     )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
 
     //
@@ -194,7 +190,6 @@ workflow DEEPCSA{
     .set{ meta_pileupbamindex_alone }
 
 
-
     // TODO: test if downloading VEP cache works
     // Download Ensembl VEP cache if needed
     // Assuming that if the cache is provided, the user has already downloaded it
@@ -202,7 +197,6 @@ workflow DEEPCSA{
     if (params.download_cache) {
         PREPARE_CACHE(ensemblvep_info)
         vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ _meta, cache -> [ cache ] }
-        ch_versions = ch_versions.mix(PREPARE_CACHE.out.versions)
     } else {
         vep_cache = params.vep_cache
     }
@@ -210,19 +204,15 @@ workflow DEEPCSA{
 
 
     TABLE2GROUP(features_table)
-    ch_versions = ch_versions.mix(TABLE2GROUP.out.versions)
 
 
     // Depth analysis: compute and plots
     DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
-    ch_versions = ch_versions.mix(DEPTHANALYSIS.out.versions)
 
     // Panels generation: all modalities
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
-    ch_versions = ch_versions.mix(CREATEPANELS.out.versions)
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
-    ch_versions = ch_versions.mix(ANNOTATEDEPTHS.out.versions)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
 
 
@@ -237,7 +227,6 @@ workflow DEEPCSA{
                         CREATEPANELS.out.all_consensus_bed,
                         CREATEPANELS.out.exons_bed,
                         TABLE2GROUP.out.json_allgroups, seqinfo_df)
-    ch_versions = ch_versions.mix(MUT_PREPROCESSING.out.versions)
     positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
     Channel.of([["id": "all_samples"]])
@@ -246,7 +235,6 @@ workflow DEEPCSA{
 
     if (params.vep_species == 'homo_sapiens'){
         DNA2PROTEINMAPPING(mutations_all, CREATEPANELS.out.exons_consensus_panel)
-        ch_versions = ch_versions.mix(DNA2PROTEINMAPPING.out.versions)
     }
 
 
@@ -256,7 +244,6 @@ workflow DEEPCSA{
     DEPTHSPROTCONS(annotated_depths, CREATEPANELS.out.prot_consensus_bed)
     DEPTHSNONPROTCONS(annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
     DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
-    ch_versions = ch_versions.mix(DEPTHSEXONSCONS.out.versions)
 
 
     if (run_mutrate){
@@ -265,20 +252,14 @@ workflow DEEPCSA{
         MUTRATEPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
         MUTRATENONPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
         MUTRATESYNONYMOUS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, CREATEPANELS.out.synonymous_consensus_panel)
-        ch_versions = ch_versions.mix(MUTRATEALL.out.versions)
-        ch_versions = ch_versions.mix(MUTRATEPROT.out.versions)
-        ch_versions = ch_versions.mix(MUTRATENONPROT.out.versions)
-        ch_versions = ch_versions.mix(MUTRATESYNONYMOUS.out.versions)
 
         Channel.of([ [ id: "all_samples" ] ])
         .join( MUTRATESYNONYMOUS.out.mutrates )
         .set{ all_samples_syn_mutrate }
 
         SYNMUTRATE(all_samples_syn_mutrate)
-        ch_versions = ch_versions.mix(SYNMUTRATE.out.versions)
 
         SYNMUTREADSRATE(all_samples_syn_mutrate)
-        ch_versions = ch_versions.mix(SYNMUTREADSRATE.out.versions)
 
 
         // Concatenate all outputs into a single file
@@ -297,20 +278,16 @@ workflow DEEPCSA{
     // Mutational profile
     if (params.profileall){
         MUTPROFILEALL(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
-        ch_versions = ch_versions.mix(MUTPROFILEALL.out.versions)
     }
     if (params.profilenonprot){
         MUTPROFILENONPROT(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
-        ch_versions = ch_versions.mix(MUTPROFILENONPROT.out.versions)
     }
     if (params.profileexons){
         MUTPROFILEEXONS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSEXONSCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs)
-        ch_versions = ch_versions.mix(MUTPROFILEEXONS.out.versions)
     }
     if (params.profileintrons){
         DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
         MUTPROFILEINTRONS(MUT_PREPROCESSING.out.somatic_mafs, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
-        ch_versions = ch_versions.mix(MUTPROFILEINTRONS.out.versions)
     }
 
 
@@ -322,7 +299,6 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_panel,
                             CREATEPANELS.out.exons_consensus_bed
                             )
-            ch_versions = ch_versions.mix(MUTABILITYALL.out.versions)
         }
         if (params.profilenonprot){
             MUTABILITYNONPROT(MUT_PREPROCESSING.out.somatic_mafs,
@@ -331,7 +307,6 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_panel,
                                 CREATEPANELS.out.exons_consensus_bed
                                 )
-            ch_versions = ch_versions.mix(MUTABILITYNONPROT.out.versions)
         }
     }
 
@@ -341,7 +316,6 @@ workflow DEEPCSA{
                         CREATEPANELS.out.all_consensus_bed
                         )
         positive_selection_results = positive_selection_results.join(INDELSSELECTION.out.indels, remainder: true)
-        ch_versions = ch_versions.mix(INDELSSELECTION.out.versions)
     }
 
     if (params.expected_mutation_rate){
@@ -364,7 +338,6 @@ workflow DEEPCSA{
 
         MUTATEDEPITHELIUMVAF(sample_mutations_only,
                                 CREATEPANELS.out.exons_consensus_bed)
-        ch_versions = ch_versions.mix(MUTATEDEPITHELIUMVAF.out.versions)
     }
 
     if (params.mutated_epithelium){
@@ -379,7 +352,6 @@ workflow DEEPCSA{
                             meta_pileupbamindex_alone,
                             params.fasta
                             )
-        ch_versions = ch_versions.mix(MUTATEDEPITHELIUM.out.versions)
 
         if (params.pileup_all_duplex) {
             // Concatenate all outputs into a single file
@@ -436,7 +408,6 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_panel,
                                 cadd_scores
                             )
-            ch_versions = ch_versions.mix(ONCODRIVEFMLALL.out.versions)
             // positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
         }
@@ -445,7 +416,6 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.exons_consensus_panel,
                                     cadd_scores
                                 )
-            ch_versions = ch_versions.mix(ONCODRIVEFMLNONPROT.out.versions)
         }
     }
 
@@ -454,7 +424,6 @@ workflow DEEPCSA{
             // Oncodrive3D
             ONCODRIVE3D(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
                         datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
-            ch_versions = ch_versions.mix(ONCODRIVE3D.out.versions)
         }
     }
 
@@ -469,7 +438,6 @@ workflow DEEPCSA{
                     covariates,
                     ref_transcripts
                     )
-        ch_versions = ch_versions.mix(DNDS.out.versions)
     }
 
     if (params.omega){
@@ -486,7 +454,6 @@ workflow DEEPCSA{
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
-            ch_versions = ch_versions.mix(OMEGA.out.versions)
 
             // Omega multi
             OMEGAMULTI(MUT_PREPROCESSING.out.somatic_mafs,
@@ -500,7 +467,6 @@ workflow DEEPCSA{
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
-            ch_versions = ch_versions.mix(OMEGAMULTI.out.versions)
         }
         if (params.profilenonprot){
             OMEGANONPROT(MUT_PREPROCESSING.out.somatic_mafs,
@@ -512,7 +478,6 @@ workflow DEEPCSA{
                             hotspots_bed_file,
                             SYNMUTRATE.out.mutrate
                             )
-            ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
             OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
                                 DEPTHSEXONSCONS.out.subset,
@@ -523,7 +488,6 @@ workflow DEEPCSA{
                                 hotspots_bed_file,
                                 SYNMUTREADSRATE.out.mutrate
                                 )
-            ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }
 
     }
@@ -532,7 +496,6 @@ workflow DEEPCSA{
         // OncodriveClustl
         if (params.profileall){
             ONCODRIVECLUSTL(MUT_PREPROCESSING.out.somatic_mafs, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_panel)
-            ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
         }
     }
 
@@ -542,27 +505,22 @@ workflow DEEPCSA{
         // Signature Analysis
         if (params.profileall){
             SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-            ch_versions = ch_versions.mix(SIGNATURESALL.out.versions)
 
             MUT_PREPROCESSING.out.somatic_mafs
             .join(SIGNATURESALL.out.mutation_probs)
             .set{mutations_n_sbs}
             MUTS2SIGS(mutations_n_sbs)
-            ch_versions = ch_versions.mix(MUTS2SIGS.out.versions)
 
 
         }
         if (params.profilenonprot){
             SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-            ch_versions = ch_versions.mix(SIGNATURESNONPROT.out.versions)
         }
         if (params.profileexons){
             SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-            ch_versions = ch_versions.mix(SIGNATURESEXONS.out.versions)
         }
         if (params.profileintrons){
             SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
-            ch_versions = ch_versions.mix(SIGNATURESINTRONS.out.versions)
         }
     }
 
@@ -572,7 +530,7 @@ workflow DEEPCSA{
     }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+        Channel.topic('versions').unique().collectFile(name: 'collated_versions.yml')
     )
 
 

@@ -19,7 +19,7 @@ process SUMMARIZE_ANNOTATION {
     output:
     tuple val(meta), path("*.summary.tab.gz")   , emit: tab
     tuple val(meta), path("*.vep.tab.gz")       , emit: tab_all
-    path "versions.yml"                         , emit: versions
+    path "versions.yml"                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

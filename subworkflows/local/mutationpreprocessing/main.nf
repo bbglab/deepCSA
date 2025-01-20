@@ -27,7 +27,6 @@ workflow MUTATION_PREPROCESSING {
 
     main:
 
-    ch_versions = Channel.empty()
 
     VCFANNOTATE(vcfs,
                     params.fasta,
@@ -36,47 +35,36 @@ workflow MUTATION_PREPROCESSING {
                     params.vep_cache_version,
                     vep_cache,
                     vep_extra_files)
-    ch_versions = ch_versions.mix(VCFANNOTATE.out.versions.first())
 
     // Join all annotated samples and put them in a channel to be summarized together
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
 
     hotspots_definition_file = params.hotspots_annotation ? Channel.fromPath( params.hotspots_definition_file, checkIfExists: true).first() : Channel.fromPath(params.input).first()
     SUMANNOTATION(annotated_samples, hotspots_definition_file)
-    ch_versions = ch_versions.mix(SUMANNOTATION.out.versions)
 
     VCF2MAF(vcfs, SUMANNOTATION.out.tab)
-    ch_versions = ch_versions.mix(VCF2MAF.out.versions.first())
 
     FILTEREXONS(VCF2MAF.out.maf, bedfile_exons)
-    ch_versions = ch_versions.mix(FILTEREXONS.out.versions.first())
 
     FILTERPANEL(FILTEREXONS.out.maf, bedfile)
-    ch_versions = ch_versions.mix(FILTERPANEL.out.versions.first())
 
     // Join all samples' MAFs and put them in a channel to be merged
     FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
 
     MERGEBATCH(samples_maf)
-    ch_versions = ch_versions.mix(MERGEBATCH.out.versions)
 
     FILTERBATCH(MERGEBATCH.out.cohort_maf)
-    ch_versions = ch_versions.mix(FILTERBATCH.out.versions)
 
     PLOTMAF(FILTERBATCH.out.cohort_maf)
-    ch_versions = ch_versions.mix(PLOTMAF.out.versions)
 
     WRITEMAF(FILTERBATCH.out.cohort_maf, groups)
-    ch_versions = ch_versions.mix(WRITEMAF.out.versions)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
 
     SOMATICMUTATIONS(named_mafs)
-    ch_versions = ch_versions.mix(SOMATICMUTATIONS.out.versions)
 
     PLOTNEEDLES(SOMATICMUTATIONS.out.mutations, sequence_information_df)
-    ch_versions = ch_versions.mix(PLOTNEEDLES.out.versions)
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
@@ -97,6 +85,5 @@ workflow MUTATION_PREPROCESSING {
     somatic_mafs            = SOMATICMUTATIONS.out.mutations
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
     bedfile_clean           = bedfile_updated
-    versions                = ch_versions
 
 }

@@ -17,7 +17,7 @@ process ENSEMBLVEP_DOWNLOAD {
 
     output:
     tuple val(meta), path("vep_cache"), emit: cache
-    path "versions.yml"               , emit: versions
+    path "versions.yml"               , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

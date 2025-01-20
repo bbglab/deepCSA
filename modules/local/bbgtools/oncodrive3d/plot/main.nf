@@ -28,7 +28,7 @@ process ONCODRIVE3D_PLOT {
     tuple val(meta), path("**.associations_plots/**.volcano_plot_gene.png")    , emit: volcano_plot_gene, optional: true
     tuple val(meta), path("**.3d_clustering_pos.annotated.csv")                , emit: pos_annotated_csv, optional: true
     tuple val(meta), path("**.log")                                            , emit: log
-    path "versions.yml"                                                        , emit: versions
+    path "versions.yml"                                                        , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

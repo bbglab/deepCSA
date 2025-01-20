@@ -13,7 +13,7 @@ process INDELS_COMPARISON {
 
     output:
     tuple val(meta), path("*.indels.tsv") , emit: indels
-    path  "versions.yml"                  , emit: versions
+    path  "versions.yml"                  , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -35,7 +35,7 @@ process INDELS_COMPARISON {
 
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
+    def panel_version = task.ext.panel_version ?: "${meta.id}"
     """
     touch ${prefix}.${panel_version}.mutrates.tsv
 

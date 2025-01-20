@@ -14,7 +14,7 @@ process DNA_2_PROTEIN_MAPPING {
 
     output:
     tuple val(meta2), path("*.mapping.tsv") , emit: mapping
-    path  "versions.yml"                   , emit: versions
+    path  "versions.yml"                   , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

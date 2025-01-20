@@ -15,7 +15,7 @@ process COMPUTE_PROFILE {
     tuple val(meta), path("*.pdf")                    , optional:true  , emit: plots
     tuple val(meta), path("*.matrix.WGS")             , optional:true  , emit: wgs
     tuple val(meta), path("*.matrix.WGS.sigprofiler") , optional:true  , emit: wgs_sigprofiler
-    path "versions.yml"                                                , emit: versions
+    path "versions.yml"                                                , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

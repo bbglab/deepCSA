@@ -13,7 +13,7 @@ process COMPUTE_FRAGMENT_COORDS {
 
     output:
     tuple val(meta), path("*.fragments.tsv.gz")     , emit: fragments
-    path "versions.yml"                             , emit: versions
+    path "versions.yml"                             , topic: versions
 
 
     when:

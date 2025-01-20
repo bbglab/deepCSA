@@ -16,7 +16,7 @@ process TABLE_2_GROUP {
     path("samples.json")                        , emit: json_samples
     path("groups.json")       , optional : true , emit: json_groups
     path("all_groups.json")                     , emit: json_allgroups
-    path "versions.yml"                         , emit: versions
+    path "versions.yml"                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

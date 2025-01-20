@@ -17,7 +17,7 @@ process ONCODRIVECLUSTL {
     tuple val(meta), path("**.txt")                 , emit: txt
     tuple val(meta), path("**.png")  , optional:true, emit: png
     tuple val(meta), path("**.log")                 , emit: log
-    path "versions.yml"                             , emit: versions
+    path "versions.yml"                             , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

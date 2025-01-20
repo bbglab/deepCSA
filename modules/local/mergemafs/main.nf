@@ -18,7 +18,7 @@ process MERGE_BATCH {
 
     output:
     tuple val(meta), path("*.cohort.tsv.gz") , emit: cohort_maf
-    path "versions.yml"                      , emit: versions
+    path "versions.yml"                      , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
