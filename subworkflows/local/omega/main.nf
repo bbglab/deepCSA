@@ -1,16 +1,17 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-
-
 include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
+
+include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
+
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
 include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
+include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES     } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
+include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
 
 include { SUBSET_MAF                as SUBSETOMEGA_EXPANDED     } from '../../../modules/local/subsetmaf/main'
@@ -24,8 +25,6 @@ include { OMEGA_ESTIMATOR           as ESTIMATOROK              } from '../../..
 include { SUBSET_MAF                as SUBSETOMEGA_REDUCED      } from '../../../modules/local/subsetmaf/main'
 include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-
 
 
 
@@ -102,6 +101,12 @@ workflow OMEGA_ANALYSIS{
         ch_versions = ch_versions.mix(PLOTOMEGA.out.versions)
     }
 
+    if (params.omega_mutabilities){
+        ABSOLUTEMUTABILITIES(preprocess_globalloc_n_depths,
+                                expanded_panel,
+                                GROUPGENES.out.json_genes.first())
+    }
+
 
     if (params.omega_globalloc) {
 
@@ -129,6 +134,12 @@ workflow OMEGA_ANALYSIS{
 
             PLOTOMEGAGLOBALLOC(mutations_n_omegagloloc)
             ch_versions = ch_versions.mix(PLOTOMEGAGLOBALLOC.out.versions)
+        }
+
+        if (params.omega_mutabilities){
+            ABSOLUTEMUTABILITIESGLOBALLOC(preprocess_globalloc_n_depths,
+                                            expanded_panel,
+                                            GROUPGENES.out.json_genes.first())
         }
 
     } else {
