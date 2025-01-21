@@ -102,7 +102,7 @@ workflow OMEGA_ANALYSIS{
     }
 
     if (params.omega_mutabilities){
-        ABSOLUTEMUTABILITIES(preprocess_globalloc_n_depths,
+        ABSOLUTEMUTABILITIES(preprocess_n_depths,
                                 expanded_panel,
                                 GROUPGENES.out.json_genes.first())
     }

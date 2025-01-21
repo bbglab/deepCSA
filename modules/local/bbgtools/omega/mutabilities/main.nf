@@ -13,15 +13,13 @@ process OMEGA_MUTABILITIES {
     path (genes_json)
 
     output:
-    tuple val(meta), path("mutabilities_per_site.*.tsv"), emit: results
-    path "versions.yml"                                 , emit: versions
+    tuple val(meta), path("mutabilities_per_site.*.tsv.gz") , emit: mutabilities
+    path "versions.yml"                                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def option = task.ext.option ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
 
@@ -36,7 +34,6 @@ process OMEGA_MUTABILITIES {
     EOF
 
     omega mutabilities --mutability-file ${mutabilities_table} \\
-                        --observed-mutations-file ${mutations_table} \\
                         --depths-file ${depths} \\
                         --vep-annotation-file ${annotated_panel} \\
                         --grouping-folder ./groups/ \\
@@ -49,11 +46,9 @@ process OMEGA_MUTABILITIES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def option = task.ext.option ?: "bayes"
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch output_${option}.tsv
+    touch mutabilities_per_site.${prefix}.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
