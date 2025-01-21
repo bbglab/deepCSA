@@ -54,19 +54,19 @@ workflow ONCODRIVE3D_ANALYSIS{
 
     if (params.o3d_plot) {
         ONCODRIVE3D_PLOT(ONCODRIVE3D_RUN.out.csv_genes
-                            | ONCODRIVE3D_RUN.out.csv_pos
-                            | ONCODRIVE3D_RUN.out.mut_processed
-                            | ONCODRIVE3D_RUN.out.prob_processed
-                            | ONCODRIVE3D_RUN.out.seq_processed,
+                            | join(ONCODRIVE3D_RUN.out.csv_pos)
+                            | join(ONCODRIVE3D_RUN.out.mut_processed)
+                            | join(ONCODRIVE3D_RUN.out.prob_processed)
+                            | join(ONCODRIVE3D_RUN.out.seq_processed),
                             datasets,
                             annotations)
     }
 
     if (params.o3d_plot_chimerax) {
         ONCODRIVE3D_PLOT_CHIMERAX(ONCODRIVE3D_RUN.out.csv_genes
-                                    | ONCODRIVE3D_RUN.out.csv_pos
-                                    | ONCODRIVE3D_RUN.out.prob_processed
-                                    | ONCODRIVE3D_RUN.out.seq_processed,
+                                    | join(ONCODRIVE3D_RUN.out.csv_pos)
+                                    | join(ONCODRIVE3D_RUN.out.prob_processed)
+                                    | join(ONCODRIVE3D_RUN.out.seq_processed),
                                     datasets)
     }
 
