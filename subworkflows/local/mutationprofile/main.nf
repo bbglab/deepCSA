@@ -20,7 +20,6 @@ workflow MUTATIONAL_PROFILE {
 
     main:
     // actual code
-    ch_versions = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
@@ -53,5 +52,4 @@ workflow MUTATIONAL_PROFILE {
     matrix_sigprof  = sigprofiler_matrix
     trinucleotides  = COMPUTETRINUC.out.trinucleotides
     wgs_sigprofiler = sigprofiler_wgs
-    versions        = ch_versions                           // channel: [ versions.yml ]
 }

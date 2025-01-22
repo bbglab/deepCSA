@@ -17,7 +17,6 @@ workflow INPUT_CHECK {
 
     emit:
     mutations                                 // channel: [ val(meta), file(row.vcf), file(row.bam) ]
-    versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }
 
 // Function to get list of [ meta, [ fastq_1, fastq_2 ] ]

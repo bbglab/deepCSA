@@ -14,7 +14,7 @@ process OMEGA_ESTIMATOR {
 
     output:
     tuple val(meta), path("output_*.tsv"), emit: results
-    path "versions.yml"                  , emit: versions
+    path "versions.yml"                  , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

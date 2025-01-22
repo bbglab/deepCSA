@@ -13,7 +13,7 @@ process SELECT_MUTRATES {
 
     output:
     tuple val(meta), path("*.gene_mutrates.tsv") , emit: mutrate
-    path  "versions.yml"                         , emit: versions
+    path  "versions.yml"                         , topic: versions
 
 
     when:

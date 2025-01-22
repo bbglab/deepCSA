@@ -15,17 +15,14 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
 
 
     input:
-    tuple val(meta), path(genes_csv)
-    tuple val(meta), path(pos_csv)
-    tuple val(meta), path(miss_prob_json)
-    tuple val(meta), path(seq_df_tsv)
+    tuple val(meta), path(genes_csv), path(pos_csv), path(miss_prob_json), path(seq_df_tsv)
     path(datasets)
 
     output:
     tuple val(meta), path("**.chimerax/attributes/**.defattr")       , emit: chimerax_defattr, optional: true
     tuple val(meta), path("**.chimerax/plots/**.png")                , emit: chimerax_plot, optional: true
     tuple val(meta), path("**.log")                               , emit: log
-    path "versions.yml"                                           , emit: versions
+    path "versions.yml"                                           , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

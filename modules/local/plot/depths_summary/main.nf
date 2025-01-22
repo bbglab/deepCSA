@@ -15,7 +15,7 @@ process PLOT_DEPTHS {
     output:
     tuple val(meta), path("*.pdf")          , emit: plots
     tuple val(meta), path("*depth*.tsv")    , emit: depths
-    path  "versions.yml"                    , emit: versions
+    path  "versions.yml"                    , topic: versions
 
 
     when:

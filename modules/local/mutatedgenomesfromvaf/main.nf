@@ -13,7 +13,7 @@ process MUTATED_GENOMES_FROM_VAF {
 
     output:
     tuple val(meta), path("*.sample.mutated_genomes_from_vaf.tsv") , emit: mutated_epi_sample
-    path  "versions.yml"                                           , emit: versions
+    path  "versions.yml"                                           , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

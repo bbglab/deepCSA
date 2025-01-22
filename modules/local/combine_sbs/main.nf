@@ -16,7 +16,7 @@ process SIGNATURES_PROBABILITIES {
 
     output:
     path ("*.decomposed_probabilities.tsv") , emit: signature_probs
-    path "versions.yml"                     , emit: versions
+    path "versions.yml"                     , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

@@ -16,7 +16,7 @@ process TABIX_BGZIPTABIX_QUERY_INDEX {
 
     output:
     tuple val(meta), path("*.gz"), path("*.gz.tbi")   , emit: subset
-    path  "versions.yml"                              , emit: versions
+    path  "versions.yml"                              , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

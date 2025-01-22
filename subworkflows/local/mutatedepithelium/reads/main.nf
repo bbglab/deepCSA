@@ -25,43 +25,35 @@ workflow MUTATED_EPITHELIUM {
 
 
     main:
-    ch_versions = Channel.empty()
 
     pileup_bam_bai.map{ it -> [ it[0], it[1] ]}
     .set{ bamfile }
 
     ch_bamall_bai_bed = pileup_bam_bai.combine(bedfile.map{ it -> [ it[1] ]}  )
     PILEUPBAMALL(ch_bamall_bai_bed, fasta)
-    ch_versions = ch_versions.mix(PILEUPBAMALL.out.versions)
 
     PILEUPBAMALL.out.mpileup.map{ it -> [it[0], it[1]] }
     .set{ pileup }
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETPILEUP(pileup, bedfile)
-    ch_versions = ch_versions.mix(SUBSETPILEUP.out.versions)
 
     COMPUTEFRAGMENTSCOORDS(bamfile)
-    ch_versions = ch_versions.mix(COMPUTEFRAGMENTSCOORDS.out.versions)
 
     READSPOSBED(panel)
-    ch_versions = ch_versions.mix(READSPOSBED.out.versions)
 
     SUBSETPILEUP.out.subset
     .join(COMPUTEFRAGMENTSCOORDS.out.fragments)
     .set{ pileup_n_fragments }
 
     READSPERREGION(pileup_n_fragments, READSPOSBED.out.bed)
-    ch_versions = ch_versions.mix(READSPERREGION.out.versions)
 
     // TODO
     // see if we should be using the bedfile we generated above here
     // or it does not matter
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
     SUBSETMUTEPI(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSETMUTEPI.out.versions)
 
     SUBSETMUTEPI.out.mutations
     .join(READSPERREGION.out.read_counts.map{it -> [ ["id" : it[0].id] , it[1] ]  })
@@ -75,6 +67,5 @@ workflow MUTATED_EPITHELIUM {
     mut_epi_exon    = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_exon
     mut_epi_gene    = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_gene
     mut_epi_sample  = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_sample
-    versions        = ch_versions                // channel: [ versions.yml ]
 
 }

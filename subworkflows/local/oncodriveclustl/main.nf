@@ -15,13 +15,10 @@ workflow ONCODRIVECLUSTL_ANALYSIS{
     panel_file
 
     main:
-    ch_versions = Channel.empty()
 
     ONCODRIVECLUSTLBED(panel_file)
-    ch_versions = ch_versions.mix(ONCODRIVECLUSTLBED.out.versions)
 
     SUBSETONCODRIVECLUSTL(mutations)
-    ch_versions = ch_versions.mix(ONCODRIVECLUSTLBED.out.versions)
 
     SUBSETONCODRIVECLUSTL.out.mutations
     .join(mutabilities)
@@ -29,10 +26,8 @@ workflow ONCODRIVECLUSTL_ANALYSIS{
 
     ONCODRIVECLUSTL(muts_n_mutability,  ONCODRIVECLUSTLBED.out.bed)
     // ONCODRIVECLUSTLSNVS(muts_n_mutability,  ONCODRIVECLUSTLBED.out.bed)
-    ch_versions = ch_versions.mix(ONCODRIVECLUSTL.out.versions)
 
     emit:
     results         = ONCODRIVECLUSTL.out.tsv          // channel: [ val(meta), file(results) ]
     // results_snvs    = ONCODRIVECLUSTLSNVS.out.tsv      // channel: [ val(meta), file(results) ]
-    versions        = ch_versions                   // channel: [ versions.yml ]
 }

@@ -43,14 +43,11 @@ workflow OMEGA_ANALYSIS{
 
 
     main:
-    ch_versions = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
     SUBSETOMEGA(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSETOMEGA.out.versions)
 
     SUBSETOMEGA.out.mutations
     .join( depth )
@@ -64,7 +61,6 @@ workflow OMEGA_ANALYSIS{
 
     if (params.omega_hotspots){
         EXPANDREGIONS(panel, hotspots_file)
-        ch_versions = ch_versions.mix(EXPANDREGIONS.out.versions)
         expanded_panel = EXPANDREGIONS.out.panel_increased.first()
         json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
     } else {
@@ -77,7 +73,6 @@ workflow OMEGA_ANALYSIS{
                     expanded_panel,
                     bedfile,
                     all_samples_mut_profile)
-    ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
 
     PREPROCESSING.out.mutabs_n_mutations_tsv
     .join( depth )
@@ -88,10 +83,8 @@ workflow OMEGA_ANALYSIS{
     .set{ all_samples_muts }
 
     GROUPGENES(all_samples_muts, custom_gene_groups, json_hotspots)
-    ch_versions = ch_versions.mix(GROUPGENES.out.versions)
 
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
-    ch_versions = ch_versions.mix(ESTIMATOR.out.versions)
 
     if (params.omega_plot){
         SUBSETMUTATIONS.out.subset
@@ -99,7 +92,6 @@ workflow OMEGA_ANALYSIS{
         .set{mutations_n_omega}
 
         PLOTOMEGA(mutations_n_omega)
-        ch_versions = ch_versions.mix(PLOTOMEGA.out.versions)
     }
 
 
@@ -109,7 +101,6 @@ workflow OMEGA_ANALYSIS{
                                 expanded_panel,
                                 relative_mutationrates.first(),
                                 all_samples_mut_profile)
-        ch_versions = ch_versions.mix(PREPROCESSINGGLOBALLOC.out.versions)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
         .join( depth )
@@ -118,7 +109,6 @@ workflow OMEGA_ANALYSIS{
         ESTIMATORGLOBALLOC(preprocess_globalloc_n_depths,
                             expanded_panel,
                             GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATORGLOBALLOC.out.versions)
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
 
@@ -128,7 +118,6 @@ workflow OMEGA_ANALYSIS{
             .set{mutations_n_omegagloloc}
 
             PLOTOMEGAGLOBALLOC(mutations_n_omegagloloc)
-            ch_versions = ch_versions.mix(PLOTOMEGAGLOBALLOC.out.versions)
         }
 
     } else {
@@ -144,7 +133,6 @@ workflow OMEGA_ANALYSIS{
         .set{ all_samples_muts }
 
         SUBSETOMEGA_EXPANDED(all_samples_muts)
-        ch_versions = ch_versions.mix(SUBSETOMEGA_EXPANDED.out.versions)
 
         SUBSETOMEGA_EXPANDED.out.mutations
         .join( depth )
@@ -153,20 +141,17 @@ workflow OMEGA_ANALYSIS{
 
         // FIXME: here I am using bedfile as a dummy value channel
         PREPROCESSINGEXP( muts_n_depths_n_profile_exp, expanded_panel, bedfile)
-        ch_versions = ch_versions.mix(PREPROCESSINGEXP.out.versions)
 
         PREPROCESSINGEXP.out.mutabs_n_mutations_tsv
         .join( depth )
         .set{ preprocess_n_depths_exp }
 
         ESTIMATOREXP( preprocess_n_depths_exp, expanded_panel, GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATOREXP.out.versions)
 
 
 
 
         SUBSETOMEGA_OK(all_samples_muts)
-        ch_versions = ch_versions.mix(SUBSETOMEGA_OK.out.versions)
 
         SUBSETOMEGA_OK.out.mutations
         .join( depth )
@@ -175,19 +160,16 @@ workflow OMEGA_ANALYSIS{
 
         // FIXME: here I am using bedfile as a dummy value channel
         PREPROCESSINGOK( muts_n_depths_n_profile_ok, expanded_panel, bedfile)
-        ch_versions = ch_versions.mix(PREPROCESSINGEXP.out.versions)
 
         PREPROCESSINGOK.out.mutabs_n_mutations_tsv
         .join( depth )
         .set{ preprocess_n_depths_ok }
 
         ESTIMATOROK( preprocess_n_depths_ok, expanded_panel, GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATOROK.out.versions)
 
 
 
         SUBSETOMEGA_REDUCED(all_samples_muts)
-        ch_versions = ch_versions.mix(SUBSETOMEGA_REDUCED.out.versions)
 
         SUBSETOMEGA_REDUCED.out.mutations
         .join( depth )
@@ -196,14 +178,12 @@ workflow OMEGA_ANALYSIS{
 
         // FIXME: here I am using bedfile as a dummy value channel
         PREPROCESSINGRED( muts_n_depths_n_profile_red, expanded_panel, bedfile)
-        ch_versions = ch_versions.mix(PREPROCESSINGRED.out.versions)
 
         PREPROCESSINGRED.out.mutabs_n_mutations_tsv
         .join( depth )
         .set{ preprocess_n_depths_red }
 
         ESTIMATORRED( preprocess_n_depths_red, expanded_panel, GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATORRED.out.versions)
 
         expanded_results = ESTIMATOREXP.out.results
         concording_results = ESTIMATOROK.out.results
@@ -218,7 +198,6 @@ workflow OMEGA_ANALYSIS{
     results         = ESTIMATOR.out.results
     results_global  = global_loc_results
 
-    versions = ch_versions           // channel: [ versions.yml ]
 
     // plots = ONCODRIVE3D.out.plots
 
