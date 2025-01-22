@@ -9,6 +9,8 @@ def load_data(panel_file, mutations_file, mutabilities_file):
     panel = pd.read_csv(panel_file, sep="\t", compression="gzip")
     # Load mutations
     mutations = pd.read_csv(mutations_file, sep="\t")
+    if "EFFECTIVE_MUTS" not in mutations.columns:
+        mutations["EFFECTIVE_MUTS"] = 1
     # Load mutabilities
     mutabilities = pd.read_csv(mutabilities_file, sep="\t", compression="gzip")
     return panel, mutations, mutabilities
@@ -55,6 +57,9 @@ def compute_by_size(panel, mutations, mutabilities, size, sample_column):
     result["(OBS-EXP)/EXP"] = ((result["OBSERVED_MUTS"] - result["EXPECTED_MUTS"])/result["EXPECTED_MUTS"]).fillna(0)
 
     return result
+
+
+
 
 @click.command()
 @click.option('--mutations-file', type=click.Path(exists=True), required=True, help="Path to mutations file.")
