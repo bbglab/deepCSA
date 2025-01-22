@@ -1,6 +1,8 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
 
+
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
@@ -8,11 +10,13 @@ include { GROUP_GENES               as GROUPGENES               } from '../../..
 include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../../modules/local/bbgtools/omega/estimator/main'
 include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES     } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
+include { SITE_COMPARISON           as SITECOMPARISON           } from '../../../modules/local/bbgtools/sitecomparison/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
 include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC  } from '../../../modules/local/bbgtools/sitecomparison/main'
 
 include { SUBSET_MAF                as SUBSETOMEGA_EXPANDED     } from '../../../modules/local/subsetmaf/main'
 include { OMEGA_PREPROCESS          as PREPROCESSINGEXP         } from '../../../modules/local/bbgtools/omega/preprocess/main'
@@ -38,7 +42,8 @@ workflow OMEGA_ANALYSIS{
     panel
     custom_gene_groups
     hotspots_file
-    relative_mutationrates
+    mutationrates
+    complete_panel
 
 
     main:
@@ -47,6 +52,9 @@ workflow OMEGA_ANALYSIS{
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
     ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
+
+    SUBSETPANEL(complete_panel, bedfile)
+
 
     SUBSETOMEGA(SUBSETMUTATIONS.out.subset)
     ch_versions = ch_versions.mix(SUBSETOMEGA.out.versions)
@@ -112,7 +120,7 @@ workflow OMEGA_ANALYSIS{
 
         PREPROCESSINGGLOBALLOC(muts_n_depths_n_profile,
                                 expanded_panel,
-                                relative_mutationrates.first(),
+                                mutationrates.first(),
                                 all_samples_mut_profile)
         ch_versions = ch_versions.mix(PREPROCESSINGGLOBALLOC.out.versions)
 
@@ -140,6 +148,12 @@ workflow OMEGA_ANALYSIS{
             ABSOLUTEMUTABILITIESGLOBALLOC(preprocess_globalloc_n_depths,
                                             expanded_panel,
                                             GROUPGENES.out.json_genes.first())
+            SUBSETOMEGA.out.mutations
+            .join(ABSOLUTEMUTABILITIESGLOBALLOC.out.mutabilities)
+            .set{mutations_n_mutabilities_globalloc}
+
+            SITECOMPARISONGLOBALLOC(mutations_n_mutabilities_globalloc,
+                                    SUBSETPANEL.out.subset)
         }
 
     } else {

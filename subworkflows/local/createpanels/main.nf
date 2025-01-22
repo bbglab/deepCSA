@@ -1,6 +1,7 @@
 include { SITESFROMPOSITIONS                                            } from '../../../modules/local/sitesfrompositions/main'
 include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/panel_process_annotation/simple/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANELRICHER    } from '../../../modules/local/panel_process_annotation/rich/main'
 
 include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
 
@@ -70,6 +71,9 @@ workflow CREATE_PANELS {
     // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
     ch_versions = ch_versions.mix(POSTPROCESSVEPPANEL.out.versions)
+
+    // Postprocess annotations to get one annotation per mutation
+    POSTPROCESSVEPPANELRICHER(VCFANNOTATEPANEL.out.tab)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
