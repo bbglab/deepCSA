@@ -470,7 +470,8 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
                     hotspots_bed_file,
-                    SYNMUTRATE.out.mutrate
+                    SYNMUTRATE.out.mutrate,
+                    CREATEPANELS.out.panel_annotated_rich
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -484,7 +485,8 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_panel,
                         custom_groups_table,
                         hotspots_bed_file,
-                        SYNMUTREADSRATE.out.mutrate
+                        SYNMUTREADSRATE.out.mutrate,
+                        CREATEPANELS.out.panel_annotated_rich
                         )
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -498,7 +500,8 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
                             hotspots_bed_file,
-                            SYNMUTRATE.out.mutrate
+                            SYNMUTRATE.out.mutrate,
+                            CREATEPANELS.out.panel_annotated_rich
                             )
             ch_versions = ch_versions.mix(OMEGANONPROT.out.versions)
 
@@ -509,7 +512,8 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_panel,
                                 custom_groups_table,
                                 hotspots_bed_file,
-                                SYNMUTREADSRATE.out.mutrate
+                                SYNMUTREADSRATE.out.mutrate,
+                                CREATEPANELS.out.panel_annotated_rich
                                 )
             ch_versions = ch_versions.mix(OMEGANONPROTMULTI.out.versions)
         }

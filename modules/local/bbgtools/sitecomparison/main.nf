@@ -8,39 +8,26 @@ process SITE_COMPARISON {
     container 'docker.io/ferriolcalvet/omega:20250121'
 
     input:
-    tuple val(meta) , path(mutations), path(mutabilities_table)
+    tuple val(meta) , path(mutations), path(mutabilities_per_site)
     tuple val(meta2), path(annotated_panel_richer)
-    // tuple val(meta2), path(annotated_panel)
-    // path (genes_json)
 
     output:
-    tuple val(meta), path("site_comparison.*.tsv.gz") , emit: comparisons
-    path "versions.yml"                               , emit: versions
+    tuple val(meta), path("*.comparison.tsv") , emit: comparisons
+    path "versions.yml"                       , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def size = task.ext.size ?: "aa_change" // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
+    def size = task.ext.size ?: "aminoacid_change" // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
     """
+    omega_comparison_per_site.py --mutations-file ${mutations} \\
+                                    --panel-file ${annotated_panel_richer} \\
+                                    --mutabilities-file ${mutabilities_per_site} \\
+                                    --size ${size} \\
+                                    --output-file ${prefix}.${size}.comparison.tsv
 
-    mkdir groups;
-
-    mv ${genes_json} groups/group_genes.json
-
-    cat > groups/group_samples.json << EOF
-    {
-        "${meta.id}" : ["${meta.id}"]
-    }
-    EOF
-
-    omega mutabilities --mutability-file ${mutabilities_table} \\
-                        --depths-file ${depths} \\
-                        --vep-annotation-file ${annotated_panel} \\
-                        --grouping-folder ./groups/ \\
-                        --output-fn mutabilities_per_site.${prefix}.tsv.gz \\
-                        --cores 4
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         omega: 1.0

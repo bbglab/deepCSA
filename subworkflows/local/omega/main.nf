@@ -55,7 +55,6 @@ workflow OMEGA_ANALYSIS{
 
     SUBSETPANEL(complete_panel, bedfile)
 
-
     SUBSETOMEGA(SUBSETMUTATIONS.out.subset)
     ch_versions = ch_versions.mix(SUBSETOMEGA.out.versions)
 
@@ -113,6 +112,12 @@ workflow OMEGA_ANALYSIS{
         ABSOLUTEMUTABILITIES(preprocess_n_depths,
                                 expanded_panel,
                                 GROUPGENES.out.json_genes.first())
+        SUBSETOMEGA.out.mutations
+        .join(ABSOLUTEMUTABILITIES.out.mutabilities)
+        .set{mutations_n_mutabilities}
+
+        SITECOMPARISON(mutations_n_mutabilities,
+                        SUBSETPANEL.out.subset.first())
     }
 
 
@@ -153,7 +158,7 @@ workflow OMEGA_ANALYSIS{
             .set{mutations_n_mutabilities_globalloc}
 
             SITECOMPARISONGLOBALLOC(mutations_n_mutabilities_globalloc,
-                                    SUBSETPANEL.out.subset)
+                                    SUBSETPANEL.out.subset.first())
         }
 
     } else {
