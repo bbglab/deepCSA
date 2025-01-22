@@ -42,14 +42,16 @@
                     "format": "file-path",
                     "description": "BED file with the low mappability regions.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
+                    "default": "/workspace/datasets/genomes/GRCh38/masking_bedfiles/blacklist/GRCh38.encode.blacklist.bed"
                 },
                 "low_complex_file": {
                     "type": "string",
                     "format": "file-path",
                     "description": "BED file with the low complex regions.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
+                    "default": "/workspace/datasets/genomes/GRCh38/masking_bedfiles/hg38_lowcomplexity_repetitive_regions.mutcoords.bed"
                 }
             }
         },
@@ -67,7 +69,8 @@
                     "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
                     "description": "Path to FASTA genome file.",
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/datasets/genomes/GRCh38/clean_n_fixed_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.masked.fna"
                 }
             }
         },
@@ -149,7 +152,7 @@
                 "custom_groups_separator": {
                     "type": "string",
                     "description": "Separator of the features table file",
-                    "default": "comma",
+                    "default": "tab",
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 }
@@ -379,14 +382,14 @@
                 "sample_panel_min_depth": {
                     "type": "integer",
                     "description": "Depth threshold for the sample panels",
-                    "default": 10,
+                    "default": 40,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
                 "consensus_panel_min_depth": {
                     "type": "integer",
                     "description": "Depth threshold for the consensus panel",
-                    "default": 1000,
+                    "default": 500,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -425,7 +428,8 @@
                     "mimetype": "text/plain",
                     "description": "Path to file containing the reference signatures to use in SigProfilerAssignment.",
                     "help_text": "You can obtain it from COSMIC website or adapt one from any other source, but it should follow the same structure as the COSMIC one.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/datasets/transfer/ferriol_deepcsa/COSMIC_v3.4_SBS_GRCh38.txt"
                 },
                 "wgs_trinuc_counts": {
                     "type": "string",
@@ -434,11 +438,12 @@
                     "mimetype": "text/plain",
                     "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
                     "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/datasets/transfer/ferriol_deepcsa/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 },
                 "exclude_subgroups": {
                     "type": "string",
-                    "default": "[]",
+                    "default": "[\\'UV_signatures\\', \\'MMR_deficiency_signatures\\', \\'POL_deficiency_signatures\\', \\'HR_deficiency_signatures\\',\\'BER_deficiency_signatures\\', \\'Artifact_signatures\\', \\'Lymphoid_signatures\\']",
                     "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
                     "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
                     "fa_icon": "far fa-file-code"
@@ -447,37 +452,43 @@
                     "type": "string",
                     "description": "Path to folder containing the oncodrive3d datasets built.",
                     "help_text": "Path to folder containing the oncodrive3d datasets built.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/nobackup/scratch/oncodrive3d/datasets_240506"
                 },
                 "annotations3d": {
                     "type": "string",
                     "description": "Path to folder containing the oncodrive3d annotation built.",
                     "help_text": "Path to folder containing the oncodrive3d annotation built.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/nobackup/scratch/oncodrive3d/annotations_240506"
                 },
                 "cadd_scores": {
                     "type": "string",
                     "description": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/datasets/CADD/v1.6/hg38/whole_genome_SNVs.tsv.gz"
                 },
                 "cadd_scores_ind": {
                     "type": "string",
                     "description": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/datasets/CADD/v1.6/hg38/whole_genome_SNVs.tsv.gz.tbi"
                 },
                 "dnds_ref_transcripts": {
                     "type": "string",
                     "description": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda"
                 },
                 "dnds_covariates": {
                     "type": "string",
                     "description": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "/workspace/projects/prominent/analysis/dNdScv/data/reference_files/covariates_hg19_hg38_epigenome_pcawg.rda"
                 }
             }
         },
@@ -491,31 +502,36 @@
                     "type": "string",
                     "description": "Genome assembly for Ensembl VEP.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "For the latest human genome assembly this should be: GRCh38."
+                    "help_text": "For the latest human genome assembly this should be: GRCh38.",
+                    "default": "GRCh38"
                 },
                 "vep_species": {
                     "type": "string",
                     "description": "Species to use for Ensembl VEP.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Use `homo_sapiens` when working with human data."
+                    "help_text": "Use `homo_sapiens` when working with human data.",
+                    "default": "homo_sapiens"
                 },
                 "vep_cache_version": {
                     "type": "integer",
                     "description": "Ensembl VEP cache version.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Make sure to also update the container to use. Otherwise leave 108."
+                    "help_text": "Make sure to also update the container to use. Otherwise leave 108.",
+                    "default": 111
                 },
                 "vep_out_format": {
                     "type": "string",
                     "description": "Ensembl VEP output format.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "tab or vcf"
+                    "help_text": "tab or vcf",
+                    "default": "tab"
                 },
                 "vep_params": {
                     "type": "string",
                     "description": "Additional parameters for running Ensembl VEP.",
                     "fa_icon": "fas fa-book",
-                    "help_text": ""
+                    "help_text": "",
+                    "default": "--no_stats --cache --offline --symbol --protein --canonical --af_gnomadg --af_gnomade"
                 },
                 "download_cache": {
                     "type": "boolean",
@@ -527,7 +543,8 @@
                     "type": "string",
                     "description": "Location of Ensembl VEP cache.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Define a place to store the Ensembl VEP cache."
+                    "help_text": "Define a place to store the Ensembl VEP cache.",
+                    "default": "/workspace/datasets/vep"
                 }
             }
         },
@@ -562,7 +579,7 @@
                 "max_cpus": {
                     "type": "integer",
                     "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 16,
+                    "default": 56,
                     "fa_icon": "fas fa-microchip",
                     "hidden": true,
                     "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
@@ -570,7 +587,7 @@
                 "max_memory": {
                     "type": "string",
                     "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "128.GB",
+                    "default": "256 GB",
                     "fa_icon": "fas fa-memory",
                     "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
                     "hidden": true,
@@ -579,7 +596,7 @@
                 "max_time": {
                     "type": "string",
                     "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
+                    "default": "10d",
                     "fa_icon": "far fa-clock",
                     "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
                     "hidden": true,
@@ -612,14 +629,7 @@
                     "description": "Method used to save pipeline results to output directory.",
                     "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
                     "fa_icon": "fas fa-copy",
-                    "enum": [
-                        "symlink",
-                        "rellink",
-                        "link",
-                        "copy",
-                        "copyNoFollow",
-                        "move"
-                    ],
+                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
                     "hidden": true
                 },
                 "email_on_fail": {
@@ -737,5 +747,16 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "store_depths": {
+            "type": "boolean"
+        },
+        "multiqc_title": {
+            "type": "string"
+        },
+        "email": {
+            "type": "string"
+        }
+    }
 }
