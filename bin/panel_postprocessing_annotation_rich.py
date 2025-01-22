@@ -147,7 +147,7 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
                                         header = None, na_values = custom_na_values)
     print("all possible sites loaded")
-    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'SYMBOL', 'CANONICAL'] # TranscriptID, protein_position and aa change at least
+    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'Feature', 'Protein_position', 'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
 
     if using_canonical:
         annotated_variants = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
@@ -181,11 +181,10 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
 
     annotated_variants["CONTEXT"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: x[:3])
 
-    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'Consequence_broader', 'CONTEXT_MUT', 'CONTEXT']]
-    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT', 'CONTEXT']
+    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'SYMBOL', 'Consequence_broader', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']]
+    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'GENE', 'IMPACT', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']
     annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] )
     print("Annotation sorted")
-
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,

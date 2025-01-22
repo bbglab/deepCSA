@@ -38,7 +38,7 @@ process POSTPROCESS_VEP_ANNOTATION {
     """
     zegrep -v '^##' ${vep_annotated_file} | cut -f 1,5,7,10,11,16,18,21-22 | awk '\$7!="-"' | uniq | \\
             tail -n +2 | \\
-            awk -F'\\t' 'BEGIN {OFS = "\\t"} {split(\$1, a, "[_/]"); print a[1], a[2], a[3], a[4], \$1, \$2, \$3, \$4}' | \\
+            awk -F'\\t' 'BEGIN {OFS = "\\t"} {split(\$1, a, "[_/]"); print a[1], a[2], a[3], a[4], \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9}' | \\
             gzip > ${prefix}.tmp.gz
 
     panel_postprocessing_annotation_rich.py \\
