@@ -20,9 +20,11 @@ if use_bed:
     # Use BED file for exon definition
     exons_bed = pd.read_table(bedfile, header=None, sep="\t")
     # Check if a name column is provided
-    if exons_bed.shape[1] == 4:
+    if exons_bed.shape[1] > 3:
+        exons_bed = exons_bed.iloc[:,:4]
         exons_bed.columns = ["CHROM", "START", "END", "NAME"]
     else:
+        exons_bed = exons_bed.iloc[:,:3]
         exons_bed.columns = ["CHROM", "START", "END"]
         exons_bed["NAME"] = None
     print(exons_bed)
