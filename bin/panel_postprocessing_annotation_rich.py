@@ -147,7 +147,7 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
                                         header = None, na_values = custom_na_values)
     print("all possible sites loaded")
-    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Consequence', 'Feature', 'Protein_position', 'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
+    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Feature', 'Consequence', 'Protein_position', 'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
 
     if using_canonical:
         annotated_variants = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
