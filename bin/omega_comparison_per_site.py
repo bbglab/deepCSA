@@ -23,12 +23,13 @@ def get_sample_column(mutabilities):
 
 def compute_by_size(panel, mutations, mutabilities, size, sample_column):
     # Merge mutations and panel to associate protein positions
-    mutations = mutations.merge(panel[['CHROM', 'POS', 'Protein_position', 'Amino_acids', 'GENE', 'Feature']],
-                                on=['CHROM', 'POS'], how='inner')
+    mutations = mutations.merge(panel[['CHROM', 'POS', 'REF', 'ALT', 'Protein_position', 'Amino_acids', 'GENE', 'Feature']],
+                                on=['CHROM', 'POS', 'REF', 'ALT'], how='inner')
 
     # Mutabilities: Merge with panel to associate protein positions and transcript info
-    mutabilities = mutabilities.merge(panel[['CHROM', 'POS', 'Protein_position', 'Amino_acids', 'GENE', 'Feature']],
-                                        on=['CHROM', 'POS', 'GENE'], how='inner')
+    mutabilities = mutabilities.merge(panel[['CHROM', 'POS', 'REF', 'ALT', 'CONTEXT_MUT', 'Protein_position', 'Amino_acids', 'GENE', 'Feature']],
+                                        on=['CHROM', 'POS', 'CONTEXT_MUT', 'GENE'], how='inner')
+    mutabilities = mutabilities.drop('CONTEXT_MUT', axis = 'columns')
 
     # Define grouping based on size
     if size == "site":
@@ -41,16 +42,17 @@ def compute_by_size(panel, mutations, mutabilities, size, sample_column):
         raise ValueError(f"Invalid size: {size}. Choose 'site', 'aminoacid', or 'aminoacid_change'.")
 
     # Observed counts
-    observed = mutations.groupby(group_cols)['SAMPLE_ID'].count().reset_index()
-    observed.columns = group_cols + ['observed_count']
+    observed = mutations.groupby(group_cols)['EFFECTIVE_MUTS'].sum().reset_index()
+    observed.columns = group_cols + ['OBSERVED_MUTS']
 
     # Accumulated mutability
     mutability = mutabilities.groupby(group_cols)[sample_column].sum().reset_index()
-    mutability.columns = group_cols + ['accumulated_mutability']
+    mutability.columns = group_cols + ['EXPECTED_MUTS']
 
     # Merge results
     result = pd.merge(observed, mutability, on=group_cols, how='outer').fillna(0)
-    result["comparison"] = (result["observed_count"] - result["accumulated_mutability"]).fillna(0)
+    result["OBS-EXP"] = (result["OBSERVED_MUTS"] - result["EXPECTED_MUTS"]).fillna(0)
+    result["(OBS-EXP)/EXP"] = ((result["OBSERVED_MUTS"] - result["EXPECTED_MUTS"])/result["EXPECTED_MUTS"]).fillna(0)
 
     return result
 
