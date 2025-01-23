@@ -65,9 +65,9 @@ def compute_by_size(panel, mutations, mutabilities, size, sample_column):
 @click.option('--mutations-file', type=click.Path(exists=True), required=True, help="Path to mutations file.")
 @click.option('--mutabilities-file', type=click.Path(exists=True), required=True, help="Path to mutabilities file (gzip compressed).")
 @click.option('--panel-file', type=click.Path(exists=True), required=True, help="Path to captured panel file (gzip compressed).")
-@click.option('--size', type=click.Choice(['site', 'aminoacid', 'aminoacid_change'], case_sensitive=False), default='aminoacid_change', help="Level of aggregation.")
-@click.option('--output-file', type=click.Path(writable=True), required=True, help="Path to output file.")
-def main(panel_file, mutations_file, mutabilities_file, size, output_file):
+@click.option('--size', type=str, default='aminoacid_change', help="Comma-separated list of sizes or 'all' for all sizes. The options are: 'site', 'aminoacid', 'aminoacid_change'")
+@click.option('--output-prefix', type=str, required=True, help="Output file prefix.")
+def main(panel_file, mutations_file, mutabilities_file, size, output_prefix):
     """Compute comparison between observed mutations and accumulated mutabilities."""
     panel, mutations, mutabilities = load_data(panel_file, mutations_file, mutabilities_file)
 
@@ -75,9 +75,23 @@ def main(panel_file, mutations_file, mutabilities_file, size, output_file):
     sample_column = get_sample_column(mutabilities)
     click.echo(f"Detected sample column: {sample_column}")
 
-    result = compute_by_size(panel, mutations, mutabilities, size, sample_column)
-    result.to_csv(output_file, sep="\t", index=False)
-    click.echo(f"Results written to {output_file}")
+    # Determine the sizes to compute
+    all_sizes = ['site', 'aminoacid', 'aminoacid_change']
+    sizes_to_run = all_sizes if size.lower() == 'all' else size.split(',')
+
+    for current_size in sizes_to_run:
+        current_size = current_size.strip().lower()
+        if current_size not in all_sizes:
+            raise ValueError(f"Invalid size: {current_size}. Valid options are {all_sizes} or 'all'.")
+
+        click.echo(f"Processing size: {current_size}")
+        result = compute_by_size(panel, mutations, mutabilities, current_size, sample_column)
+
+        # Write output
+        output_file = f"{output_prefix}.{current_size}.comparison.tsv.gz"
+        result.to_csv(output_file, sep="\t", index=False)
+        click.echo(f"Results for size '{current_size}' written to {output_file}")
+
 
 if __name__ == "__main__":
     main()

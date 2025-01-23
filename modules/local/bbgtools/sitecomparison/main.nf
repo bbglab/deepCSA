@@ -12,21 +12,21 @@ process SITE_COMPARISON {
     tuple val(meta2), path(annotated_panel_richer)
 
     output:
-    tuple val(meta), path("*.comparison.tsv") , emit: comparisons
-    path "versions.yml"                       , emit: versions
+    tuple val(meta), path("*.comparison.tsv.gz") , emit: comparisons
+    path "versions.yml"                          , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def size = task.ext.size ?: "aminoacid_change" // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
+    def size = task.ext.size ?: "all" // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
     """
     omega_comparison_per_site.py --mutations-file ${mutations} \\
                                     --panel-file ${annotated_panel_richer} \\
                                     --mutabilities-file ${mutabilities_per_site} \\
                                     --size ${size} \\
-                                    --output-file ${prefix}.${size}.comparison.tsv
+                                    --output-prefix ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
