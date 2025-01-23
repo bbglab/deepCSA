@@ -14,7 +14,7 @@ process OMEGA_MUTABILITIES {
 
     output:
     tuple val(meta), path("mutabilities_per_site.*.tsv.gz") , emit: mutabilities
-    path "versions.yml"                                     , emit: versions
+    path "versions.yml"                                     , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

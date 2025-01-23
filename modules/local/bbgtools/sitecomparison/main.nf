@@ -13,7 +13,7 @@ process SITE_COMPARISON {
 
     output:
     tuple val(meta), path("*.comparison.tsv.gz") , emit: comparisons
-    path "versions.yml"                          , emit: versions
+    path "versions.yml"                          , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

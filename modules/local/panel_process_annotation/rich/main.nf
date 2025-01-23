@@ -17,7 +17,7 @@ process POSTPROCESS_VEP_ANNOTATION {
 
     output:
     tuple val(meta), path("*.compact.tsv") , emit: compact_panel_annotation
-    path  "versions.yml"                   , emit: versions
+    path  "versions.yml"                   , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
