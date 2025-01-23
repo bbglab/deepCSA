@@ -17,7 +17,7 @@ process ONCODRIVEFML {
     tuple val(meta), path("**.tsv.gz")  , emit: tsv
     tuple val(meta), path("**.png")     , emit: png
     tuple val(meta), path("**.html")    , emit: html
-    path "versions.yml"                 , emit: versions
+    path "versions.yml"                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

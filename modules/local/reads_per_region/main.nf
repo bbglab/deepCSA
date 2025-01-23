@@ -16,7 +16,7 @@ process READS_PER_REGION {
     output:
     tuple val(meta), path("*.reads_x_region.tsv.gz")    , emit: read_counts
     tuple val(meta), path("*.custom.bed")               , emit: redesigned_bed
-    path "versions.yml"                                 , emit: versions
+    path "versions.yml"                                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

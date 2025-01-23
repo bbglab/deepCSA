@@ -20,14 +20,12 @@ workflow MUTABILITY {
 
     main:
     // actual code
-    ch_versions = Channel.empty()
 
     // this line was not needed nor used in the computation of mutabilities,
     // since there is an additional left_join merge in the compute mutabilities code,
     // the depths can be the full ones
     // SUBSETDEPTHS(depth, bedfiles)
     SUBSETMUTATIONS(mutations, bedfiles)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
 
     SUBSETMUTABILITY(SUBSETMUTATIONS.out.subset)
@@ -43,5 +41,4 @@ workflow MUTABILITY {
 
     emit:
     mutability      = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
-    versions        = ch_versions                           // channel: [ versions.yml ]
 }

@@ -26,7 +26,7 @@ process ENSEMBLVEP_VEP {
     tuple val(meta), path("*.tab.gz")  , optional:true, emit: tab
     tuple val(meta), path("*.json.gz") , optional:true, emit: json
     path "*.summary.html"              , optional:true, emit: report
-    path "versions.yml"                               , emit: versions
+    path "versions.yml"                               , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

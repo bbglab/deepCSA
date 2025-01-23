@@ -10,7 +10,7 @@ process PLOT_OMEGA {
 
     output:
     tuple val(meta), path("**.pdf")  , optional: true   , emit: plots
-    path "versions.yml"                                 , emit: versions
+    path "versions.yml"                                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

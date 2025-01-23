@@ -17,7 +17,7 @@ process EXPAND_REGIONS {
     output:
     tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
     tuple val(meta), path("hotspot_names.json") , emit: new_regions_json
-    path "versions.yml"                         , emit: versions
+    path "versions.yml"                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

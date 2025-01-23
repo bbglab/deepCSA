@@ -13,7 +13,7 @@ process ONCODRIVE3D_PREPROCESSING {
 
     output:
     tuple val(meta), path("*.mutations.raw_vep.tsv") , emit: vep_output4o3d
-    path "versions.yml"                              , emit: versions
+    path "versions.yml"                              , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

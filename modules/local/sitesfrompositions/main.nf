@@ -17,7 +17,7 @@ process SITESFROMPOSITIONS {
 
     output:
     tuple val(meta), path("*.sites4VEP.tsv")  , emit: annotated_panel_reg
-    path  "versions.yml"                      , emit: versions
+    path  "versions.yml"                      , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

@@ -15,7 +15,7 @@ process CREATECONSENSUSPANELS {
     output:
     tuple val(meta), path("*.tsv")       , emit: consensus_panel
     tuple val(meta), path("*.bed")       , emit: consensus_panel_bed
-    path "versions.yml"                  , emit: versions
+    path "versions.yml"                  , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

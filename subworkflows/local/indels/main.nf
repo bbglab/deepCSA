@@ -12,18 +12,13 @@ workflow INDELS_SELECTION {
     bedfile
 
     main:
-    ch_versions = Channel.empty()
 
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
     SUBSETINDELS(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSETINDELS.out.versions)
 
     INDELS(SUBSETINDELS.out.mutations)
-    ch_versions = ch_versions.mix(INDELS.out.versions)
 
     emit:
     indels = INDELS.out.indels
-    versions = ch_versions                // channel: [ versions.yml ]
 }

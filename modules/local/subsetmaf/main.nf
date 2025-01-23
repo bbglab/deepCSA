@@ -14,7 +14,7 @@ process SUBSET_MAF {
 
     output:
     tuple val(meta), path("*.mutations.tsv")  , emit: mutations
-    path "versions.yml"                       , emit: versions
+    path "versions.yml"                       , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
