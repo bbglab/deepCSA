@@ -312,6 +312,20 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to plot omega results?"
                 },
+                "omega_mutabilities": {
+                    "type": "boolean",
+                    "description": "Do you want to get omega mutabilities per site and a per site comparison with the observed?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to get omega mutabilities per site and a per site comparison with the observed?"
+                },
+                "site_comparison_grouping": {
+                    "type": "string",
+                    "description": "Define which is the unit of comparison of the per site mutabilities exp. vs obs. The options are: 'site', 'aminoacid', 'aminoacid_change'. You can provide a comma separated list of the preferred options or also all.",
+                    "default": "aminoacid_change",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Define which is the unit of comparison of the per site mutabilities exp. vs obs. The options are: 'site', 'aminoacid', 'aminoacid_change'. You can provide a comma separated list of the preferred options or also all."
+                },
                 "dnds": {
                     "type": "boolean",
                     "description": "Do you want to run dNdScv?",
