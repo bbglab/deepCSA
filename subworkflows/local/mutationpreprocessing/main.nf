@@ -2,7 +2,7 @@
 include { VCF_ANNOTATE_ENSEMBLVEP   as VCFANNOTATE      } from '../../nf-core/vcf_annotate_ensemblvep/main'
 
 
-include { SUMMARIZE_ANNOTATION      as SUMANNOTATION    } from '../../../modules/local/summarize_annotation/main'
+include { SUMMARIZE_ANNOTATION      as SUMANNOTATION    } from '../../../modules/local/process_annotation/mutations/main'
 include { VCF2MAF                   as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
 include { FILTERBED                 as FILTERPANEL      } from '../../../modules/local/filterbed/main'
 include { FILTERBED                 as FILTEREXONS      } from '../../../modules/local/filterbed/main'
