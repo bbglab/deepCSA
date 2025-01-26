@@ -1,17 +1,18 @@
 // Annotation
-include { VCF_ANNOTATE_ENSEMBLVEP   as VCFANNOTATE      } from '../../nf-core/vcf_annotate_ensemblvep/main'
+include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATE      } from '../../nf-core/vcf_annotate_ensemblvep/main'
 
 
-include { SUMMARIZE_ANNOTATION      as SUMANNOTATION    } from '../../../modules/local/process_annotation/mutations/main'
-include { VCF2MAF                   as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
-include { FILTERBED                 as FILTERPANEL      } from '../../../modules/local/filterbed/main'
-include { FILTERBED                 as FILTEREXONS      } from '../../../modules/local/filterbed/main'
-include { MERGE_BATCH               as MERGEBATCH       } from '../../../modules/local/mergemafs/main'
-include { FILTER_BATCH              as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
-include { WRITE_MAFS                as WRITEMAF         } from '../../../modules/local/writemaf/main'
-include { SUBSET_MAF                as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
-include { PLOT_MUTATIONS            as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
-include { PLOT_NEEDLES              as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
+include { SUMMARIZE_ANNOTATION          as SUMANNOTATION    } from '../../../modules/local/process_annotation/mutations/main'
+include { CUSTOM_MUTATION_PROCESSING    as CUSTOMANNOTATION } from '../../../modules/local/process_annotation/mutations_custom/main'
+include { VCF2MAF                       as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
+include { FILTERBED                     as FILTERPANEL      } from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTEREXONS      } from '../../../modules/local/filterbed/main'
+include { MERGE_BATCH                   as MERGEBATCH       } from '../../../modules/local/mergemafs/main'
+include { FILTER_BATCH                  as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
+include { WRITE_MAFS                    as WRITEMAF         } from '../../../modules/local/writemaf/main'
+include { SUBSET_MAF                    as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
+include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
+include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -41,7 +42,8 @@ workflow MUTATION_PREPROCESSING {
 
     hotspots_definition_file = params.hotspots_annotation ? Channel.fromPath( params.hotspots_definition_file, checkIfExists: true).first() : Channel.fromPath(params.input).first()
     SUMANNOTATION(annotated_samples, hotspots_definition_file)
-
+    // CUSTOMANNOTATION(SUMANNOTATION.out.tab)
+    // CUSTOMANNOTATION.out.mutations
     VCF2MAF(vcfs, SUMANNOTATION.out.tab)
 
     FILTEREXONS(VCF2MAF.out.maf, bedfile_exons)
