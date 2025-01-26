@@ -1,0 +1,60 @@
+process CUSTOM_ANNOTATION_PROCESSING {
+
+    tag "${meta.id}"
+
+    label 'cpu_low'
+    label 'time_low'
+    label 'process_high_memory'
+
+    container "docker.io/ferriolcalvet/bgreference"
+    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    //         'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
+    //         'biocontainers/pandas:1.5.2' }"
+
+    input:
+    tuple val(meta) , path(panel_annotated)
+    path (custom_regions)
+
+
+    output:
+    tuple val(meta), path("*.custom.tsv") , emit: custom_panel_annotation
+    path  "versions.yml"                  , topic: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def simple = task.ext.simple ? "True" : "False"
+    // TODO
+    // Document this custom_regions has to be a TSV file with the following columns:
+    // chromosome  start   end gene_name    impactful_mutations [neutral_impact] [new_impact]
+    // chromosome start and end indicate the region that is being customized
+    // gene_name           : is the name of the region that is being added, make sure that it does not coincide with the name of any other gene.
+    // impactful_mutations : is a comma-separated list of mutations that need to be labelled with the value indicated in new_impact, format: chr5:1294991_C>T
+    // neutral_impact      : (optional, default; synonymous)
+    // new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.
+    """
+    panel_custom_processing.py \\
+                    ${panel_annotated} \\
+                    ${panel_annotated.getBaseName()}.custom.tsv \\
+                    ${simple}
+                    ;
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
+    """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${vep_annotated_file.getBaseName()}.compact.tsv;
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
+    """
+}

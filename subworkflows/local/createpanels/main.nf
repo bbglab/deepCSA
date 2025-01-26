@@ -4,6 +4,9 @@ include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '
 include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/simple/main'
 include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANELRICHER    } from '../../../modules/local/process_annotation/rich/main'
 
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING             } from '../../../modules/local/process_annotation/panelcustom/main'
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH         } from '../../../modules/local/process_annotation/panelcustom/main'
+
 include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
 
 include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL                  } from '../../../modules/local/createpanels/sample/main'
@@ -71,6 +74,10 @@ workflow CREATE_PANELS {
 
     // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANELRICHER(VCFANNOTATEPANEL.out.tab)
+
+    // Update specific regions based on user preferences
+    CUSTOMPROCESSING(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
+    CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANEL.out.compact_panel_annotation_rich)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
