@@ -50,14 +50,11 @@ workflow CREATE_PANELS {
 
     main:
 
-
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
 
     // Create a tuple for VEP annotation (mandatory)
-    SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation } // change names of vars
-    // TEMPORARY: bgreference won't work in my cluster so to continue I give sites_annotation from params
-    // Channel.of([1]).map{ it -> [[ id : "captured_panel"], params.sites_annotation] }.set{ sites_annotation }
+    SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation }
 
     // Annotate all possible mutations in the captured panel
     // COMMENTED to avoid running VEP again and again during testing
@@ -70,17 +67,25 @@ workflow CREATE_PANELS {
                     vep_extra_files)
 
     // Postprocess annotations to get one annotation per mutation
-    POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
-
-    // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANELRICHER(VCFANNOTATEPANEL.out.tab)
 
-    // Update specific regions based on user preferences
-    CUSTOMPROCESSING(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
-    CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANEL.out.compact_panel_annotation_rich)
+    if (params.customize_annotation) {
+        custom_annotation_tsv = file(params.custom_annotation_tsv)
 
+        // Update specific regions based on user preferences
+        CUSTOMPROCESSING(POSTPROCESSVEPPANELRICHER.out.compact_panel_annotation, custom_annotation_tsv)
+        complete_annotated_panel = CUSTOMPROCESSING.out.custom_panel_annotation
+
+        CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANELRICHER.out.rich_panel_annotation, custom_annotation_tsv)
+        rich_annotated = CUSTOMPROCESSINGRICH.out.custom_panel_annotation
+
+    } else {
+        complete_annotated_panel = POSTPROCESSVEPPANELRICHER.out.compact_panel_annotation
+        rich_annotated = POSTPROCESSVEPPANELRICHER.out.rich_panel_annotation
+    }
+    
     // Create captured-specific panels: all modalities
-    CREATECAPTUREDPANELS(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
+    CREATECAPTUREDPANELS(complete_annotated_panel)
 
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all).set{all_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all_bed).set{all_bed}
@@ -141,7 +146,7 @@ workflow CREATE_PANELS {
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
-    panel_annotated_rich        = POSTPROCESSVEPPANELRICHER.out.compact_panel_annotation
+    panel_annotated_rich        = rich_annotated
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())

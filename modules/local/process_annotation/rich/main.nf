@@ -16,8 +16,9 @@ process POSTPROCESS_VEP_ANNOTATION {
     tuple val(meta) , path(vep_annotated_file)
 
     output:
-    tuple val(meta), path("*.compact.tsv") , emit: compact_panel_annotation
-    path  "versions.yml"                   , topic: versions
+    tuple val(meta), path("*.compact.tsv")      , emit: compact_panel_annotation
+    tuple val(meta), path("*.compact_rich.tsv") , emit: rich_panel_annotation
+    path  "versions.yml"                        , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -44,7 +45,7 @@ process POSTPROCESS_VEP_ANNOTATION {
     panel_postprocessing_annotation_rich.py \\
                     ${prefix}.tmp.gz \\
                     ${assembly} \\
-                    ${vep_annotated_file.getBaseName()}.compact.tsv \\
+                    ${vep_annotated_file.getBaseName()}.compact \\
                     ${canonical_only} ;
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

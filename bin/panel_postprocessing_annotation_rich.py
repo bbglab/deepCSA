@@ -186,7 +186,15 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] )
     print("Annotation sorted")
 
-    annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
+    annotated_variants_reduced.to_csv(f"{all_possible_sites_annotated_file}_rich.tsv",
+                                        header = True,
+                                        index = False,
+                                        sep = "\t")
+
+
+    annotated_variants_reduced = annotated_variants_reduced[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT', 'CONTEXT']]
+    print("Annotation simple selected")
+    annotated_variants_reduced.to_csv(f"{all_possible_sites_annotated_file}.tsv",
                                         header = True,
                                         index = False,
                                         sep = "\t")
