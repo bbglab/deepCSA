@@ -121,45 +121,45 @@ workflow DEEPCSA{
     // // Input channel definitions
     features_table  = Channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
 
-    wgs_trinucs     = params.wgs_trinuc_counts 
-                            ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first() 
+    wgs_trinucs     = params.wgs_trinuc_counts
+                            ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first()
                             : Channel.empty()
-    cosmic_ref      = params.cosmic_ref_signatures 
-                            ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first() 
+    cosmic_ref      = params.cosmic_ref_signatures
+                            ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first()
                             : Channel.empty()
-    datasets3d      = params.datasets3d 
-                            ? Channel.fromPath( params.datasets3d, checkIfExists: true).first() 
+    datasets3d      = params.datasets3d
+                            ? Channel.fromPath( params.datasets3d, checkIfExists: true).first()
                             : Channel.empty()
-    annotations3d   = params.annotations3d 
-                            ? Channel.fromPath( params.annotations3d, checkIfExists: true).first() 
+    annotations3d   = params.annotations3d
+                            ? Channel.fromPath( params.annotations3d, checkIfExists: true).first()
                             : Channel.empty()
-    seqinfo_df      = params.datasets3d 
-                            ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first() 
+    seqinfo_df      = params.datasets3d
+                            ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first()
                             : Channel.empty()
-    cadd_scores     = params.cadd_scores 
-                            ? Channel.of([ 
-                                file(params.cadd_scores, checkIfExists : true), 
-                                file(params.cadd_scores_ind, checkIfExists : true) 
-                                ]).first() 
+    cadd_scores     = params.cadd_scores
+                            ? Channel.of([
+                                file(params.cadd_scores, checkIfExists : true),
+                                file(params.cadd_scores_ind, checkIfExists : true)
+                                ]).first()
                             : Channel.empty()
 
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
-    custom_groups_table = params.custom_groups_file 
-                                ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first() 
+    custom_groups_table = params.custom_groups_file
+                                ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first()
                                 : Channel.fromPath(params.input)
 
     // if the user wants to use custom BED file for computing the depths, import the BED file
     // otherwise I am using the input csv as a dummy value channel
-    custom_bed_file     = params.custom_bedfile 
-                                ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first() 
+    custom_bed_file     = params.custom_bedfile
+                                ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
                                 : Channel.fromPath(params.input)
 
     // if the user wants to define hotspots for omega, import the hotspots definition BED file
     // otherwise I am using the input csv as a dummy value channel
-    hotspots_bed_file   = params.omega_hotspots_bedfile 
-                                ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first() 
+    hotspots_bed_file   = params.omega_hotspots_bedfile
+                                ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first()
                                 : Channel.fromPath(params.input)
 
     // Initialize booleans based on user params
@@ -548,7 +548,7 @@ workflow DEEPCSA{
 
     // Info required for completion email and summary
     def multiqc_report = []
-    
+
     def summary_params = paramsSummaryMap(workflow)
     workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)

@@ -19,7 +19,6 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
     # simple = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID'          , 'GENE', 'IMPACT'                                              , 'CONTEXT_MUT', 'CONTEXT']
     # rich   = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'GENE', 'IMPACT', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
-                                        header = None,
                                         na_values = custom_na_values)
     print("all possible sites loaded")
 
@@ -27,8 +26,6 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
 
     current_chr = ""
     for ind, row in custom_regions_df.iterrows():
-        # row["CHROM"], row["START"], row["END"], 
-    # for ind, row in exons_bed.iterrows():
         try:
             if row["CHROM"] != current_chr:
                 current_chr = row["CHROM"]
@@ -37,7 +34,7 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
 
             # Get start and end indices
             ind_start = np.where(chr_data["POS"] == row["START"])[0][0]
-            ind_end = np.where(chr_data.iloc[ind_start:,:]["POS"] == row["END"])[0][0]
+            ind_end = np.where(chr_data.iloc[ind_start:,:]["POS"] == row["END"])[0][-1]
             # gene = chr_data.iloc[ind_start]["GENE"]
 
             ind_end += ind_start
@@ -61,13 +58,13 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
             upd_end = ind_end
 
             # Extract hotspot data and modify gene names
-            hotspot_data = chr_data.iloc[upd_start: upd_end + 1, :].copy()
+            hotspot_data = chr_data.iloc[upd_start: upd_end + 1, :].copy().drop("IMPACT", axis = 'columns')
             original_df_start = hotspot_data.index[0]
             original_df_end = hotspot_data.index[-1]
             hotspot_data["GENE"] = row["NAME"]
 
             # Split the string into individual entries
-            entries = row["IMPACTFUL"].str.split(',')
+            entries = row["IMPACTFUL"].split(',')
 
             # Create a DataFrame
             impactful_df = pd.DataFrame(entries, columns = ["MUT_ID"])
@@ -86,13 +83,12 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
 
             hotspot_data["IMPACT"] = hotspot_data["IMPACT"].fillna(row["NEUTRAL"])
 
-
             ## Insert modified rows back into the df
             if simple:
-                all_possible_sites.loc[original_df_start: original_df_end + 1, ["GENE", "IMPACT"]] = hotspot_data[["GENE", "IMPACT"]]
+                all_possible_sites.loc[original_df_start: original_df_end, ["GENE", "IMPACT"]] = hotspot_data[["GENE", "IMPACT"]].values
             else:
                 hotspot_data["Feature"] = '-'
-                all_possible_sites.loc[original_df_start: original_df_end + 1, ["GENE", "IMPACT", "Feature"]] = hotspot_data[["GENE", "IMPACT", "Feature"]]
+                all_possible_sites.loc[original_df_start: original_df_end, ["GENE", "IMPACT", "Feature"]] = hotspot_data[["GENE", "IMPACT", "Feature"]].values
 
             print("Small region added:", row["NAME"])
 
