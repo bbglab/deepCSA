@@ -43,7 +43,7 @@
                     "description": "BED file with the low mappability regions.",
                     "fa_icon": "fas fa-book",
                     "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "/workspace/datasets/genomes/GRCh38/masking_bedfiles/blacklist/GRCh38.encode.blacklist.bed"
+                    "default": "GRCh38.encode.blacklist.bed"
                 },
                 "low_complex_file": {
                     "type": "string",
@@ -51,7 +51,7 @@
                     "description": "BED file with the low complex regions.",
                     "fa_icon": "fas fa-book",
                     "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "/workspace/datasets/genomes/GRCh38/masking_bedfiles/hg38_lowcomplexity_repetitive_regions.mutcoords.bed"
+                    "default": "hg38_lowcomplexity_repetitive_regions.mutcoords.bed"
                 }
             }
         },
@@ -69,8 +69,7 @@
                     "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
                     "description": "Path to FASTA genome file.",
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
-                    "fa_icon": "far fa-file-code",
-                    "default": "/workspace/datasets/genomes/GRCh38/clean_n_fixed_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.masked.fna"
+                    "fa_icon": "far fa-file-code"
                 }
             }
         },
@@ -442,7 +441,7 @@
                     "description": "Path to file containing the reference signatures to use in SigProfilerAssignment.",
                     "help_text": "You can obtain it from COSMIC website or adapt one from any other source, but it should follow the same structure as the COSMIC one.",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/datasets/transfer/ferriol_deepcsa/COSMIC_v3.4_SBS_GRCh38.txt"
+                    "default": "COSMIC_v3.4_SBS_GRCh38.txt"
                 },
                 "wgs_trinuc_counts": {
                     "type": "string",
@@ -452,7 +451,7 @@
                     "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
                     "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/datasets/transfer/ferriol_deepcsa/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                    "default": "assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 },
                 "exclude_subgroups": {
                     "type": "string",
@@ -466,42 +465,42 @@
                     "description": "Path to folder containing the oncodrive3d datasets built.",
                     "help_text": "Path to folder containing the oncodrive3d datasets built.",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/nobackup/scratch/oncodrive3d/datasets_240506"
+                    "default": "oncodrive3d/datasets"
                 },
                 "annotations3d": {
                     "type": "string",
                     "description": "Path to folder containing the oncodrive3d annotation built.",
                     "help_text": "Path to folder containing the oncodrive3d annotation built.",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/nobackup/scratch/oncodrive3d/annotations_240506"
+                    "default": "oncodrive3d/annotations"
                 },
                 "cadd_scores": {
                     "type": "string",
                     "description": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/datasets/CADD/v1.6/hg38/whole_genome_SNVs.tsv.gz"
+                    "default": "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz"
                 },
                 "cadd_scores_ind": {
                     "type": "string",
                     "description": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/datasets/CADD/v1.6/hg38/whole_genome_SNVs.tsv.gz.tbi"
+                    "default": "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz.tbi"
                 },
                 "dnds_ref_transcripts": {
                     "type": "string",
                     "description": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda"
+                    "default": "RefCDS_human_latest_intogen.rda"
                 },
                 "dnds_covariates": {
                     "type": "string",
                     "description": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "fa_icon": "far fa-file-code",
-                    "default": "/workspace/projects/prominent/analysis/dNdScv/data/reference_files/covariates_hg19_hg38_epigenome_pcawg.rda"
+                    "default": "covariates_hg19_hg38_epigenome_pcawg.rda"
                 }
             }
         },
@@ -557,7 +556,7 @@
                     "description": "Location of Ensembl VEP cache.",
                     "fa_icon": "fas fa-book",
                     "help_text": "Define a place to store the Ensembl VEP cache.",
-                    "default": "/workspace/datasets/vep"
+                    "default": ".vep"
                 }
             }
         },
