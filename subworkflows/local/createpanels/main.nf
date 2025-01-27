@@ -71,6 +71,7 @@ workflow CREATE_PANELS {
     // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANELRICHER(VCFANNOTATEPANEL.out.tab)
 
+
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
 
