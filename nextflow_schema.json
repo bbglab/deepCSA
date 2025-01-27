@@ -4,21 +4,19 @@
     "title": "bbglab/deepCSA pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
-    "defs": {
+    "$defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "input",
-                "outdir"
-            ],
+            "required": ["input", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
+                    "schema": "assets/schema_input.json",
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
@@ -30,18 +28,6 @@
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
-                },
-                "email": {
-                    "type": "string",
-                    "description": "Email address for completion summary.",
-                    "fa_icon": "fas fa-envelope",
-                    "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
-                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
-                },
-                "multiqc_title": {
-                    "type": "string",
-                    "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
-                    "fa_icon": "fas fa-file-signature"
                 }
             }
         },
@@ -56,14 +42,16 @@
                     "format": "file-path",
                     "description": "BED file with the low mappability regions.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
+                    "default": "GRCh38.encode.blacklist.bed"
                 },
                 "low_complex_file": {
                     "type": "string",
                     "format": "file-path",
                     "description": "BED file with the low complex regions.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis."
+                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
+                    "default": "hg38_lowcomplexity_repetitive_regions.mutcoords.bed"
                 }
             }
         },
@@ -94,7 +82,6 @@
                 "hotspots_annotation": {
                     "type": "boolean",
                     "format": "file-path",
-                    "default": false,
                     "description": "Enrich the annotation of mutations with the information on desired hotspots.",
                     "fa_icon": "fas fa-book",
                     "help_text": "BED file that contains the regions to be discarded in the analysis."
@@ -102,7 +89,6 @@
                 "hotspots_definition_file": {
                     "type": "string",
                     "format": "file-path",
-                    "default": "",
                     "description": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, MUTTYPE, HOTSPOT_NAME. Values of MUTTYPE column have to be to be C>N, T>N or '-'.",
                     "fa_icon": "fas fa-book",
                     "help_text": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, MUTTYPE, HOTSPOT_NAME. Values of MUTTYPE column have to be to be C>N, T>N or '-'."
@@ -149,7 +135,6 @@
                 "custom_groups": {
                     "type": "boolean",
                     "description": "Do you want to use custom gene groups?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to use custom gene groups?"
                 },
@@ -166,7 +151,7 @@
                 "custom_groups_separator": {
                     "type": "string",
                     "description": "Separator of the features table file",
-                    "default": "comma",
+                    "default": "tab",
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 }
@@ -181,7 +166,6 @@
                 "use_custom_bedfile": {
                     "type": "boolean",
                     "description": "Do you want to use a custom BED file?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to use a custom BED file?"
                 },
@@ -213,7 +197,6 @@
                 "omega_hotspots": {
                     "type": "boolean",
                     "description": "Do you want to analyze omega hotspots independently?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to analyze omega hotspots independently?"
                 },
@@ -222,7 +205,6 @@
                     "format": "file-path",
                     "exists": true,
                     "mimetype": "text/plain",
-                    "default": null,
                     "description": "Path to BED file to use.",
                     "help_text": "Path to BED file to use.",
                     "fa_icon": "far fa-file-code"
@@ -245,77 +227,59 @@
                 "oncodrivefml": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrivefml?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run oncodrivefml?"
+                    "help_text": "Set to true if you want to run oncodrivefml."
                 },
                 "oncodriveclustl": {
                     "type": "boolean",
                     "description": "Do you want to run oncodriveclustl?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run oncodriveclustl?"
+                    "help_text": "Set to true if you want to run oncodriveclustl."
                 },
                 "oncodrive3d": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrive3d?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run oncodrive3d?"
+                    "help_text": "Set to true if you want to run oncodrive3d."
                 },
                 "o3d_raw_vep": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrive3d with the raw vep output as input?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run oncodrive3d with the raw vep output as input?"
+                    "fa_icon": "fas fa-book"
                 },
                 "o3d_plot": {
                     "type": "boolean",
                     "description": "Do you want to plot the oncodrive3d results?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to plot the oncodrive3d results?"
+                    "fa_icon": "fas fa-book"
                 },
                 "o3d_plot_chimerax": {
                     "type": "boolean",
                     "description": "Do you want to plot the structural representation of oncodrive3d results?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to plot the structural representation of oncodrive3d results?"
+                    "fa_icon": "fas fa-book"
                 },
                 "omega": {
                     "type": "boolean",
                     "description": "Do you want to run omega?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run omega?"
+                    "fa_icon": "fas fa-book"
                 },
                 "omega_globalloc": {
                     "type": "boolean",
                     "description": "Do you want to run omega with the globalloc mode?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run omega with the globalloc mode?"
+                    "fa_icon": "fas fa-book"
                 },
                 "omega_vaf_distorsioned": {
                     "type": "boolean",
                     "description": "Do you want to run omega with the different VAF distorsioned gropus?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run omega with the different VAF distorsioned gropus?"
+                    "fa_icon": "fas fa-book"
                 },
                 "omega_plot": {
                     "type": "boolean",
                     "description": "Do you want to plot omega results?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to plot omega results?"
+                    "fa_icon": "fas fa-book"
                 },
                 "omega_mutabilities": {
                     "type": "boolean",
                     "description": "Do you want to get omega mutabilities per site and a per site comparison with the observed?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to get omega mutabilities per site and a per site comparison with the observed?"
                 },
@@ -329,58 +293,42 @@
                 "dnds": {
                     "type": "boolean",
                     "description": "Do you want to run dNdScv?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run dNdScv?"
+                    "fa_icon": "fas fa-book"
                 },
                 "signatures": {
                     "type": "boolean",
                     "description": "Do you want to run signatures?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run signatures?"
+                    "fa_icon": "fas fa-book"
                 },
                 "mutationrate": {
                     "type": "boolean",
                     "description": "Do you want to run mutationrate?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run mutationrate?"
+                    "fa_icon": "fas fa-book"
                 },
                 "indels": {
                     "type": "boolean",
                     "description": "Do you want to run indels?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run indels?"
+                    "fa_icon": "fas fa-book"
                 },
                 "mutated_epithelium": {
                     "type": "boolean",
                     "description": "Do you want to run mutated_epithelium?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run mutated_epithelium?"
+                    "fa_icon": "fas fa-book"
                 },
                 "mutated_epithelium_vaf": {
                     "type": "boolean",
                     "description": "Do you want to run mutated_epithelium using the VAFs?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run mutated_epithelium using the VAFs?"
+                    "fa_icon": "fas fa-book"
                 },
                 "expected_mutation_rate": {
                     "type": "boolean",
                     "description": "Do you want to run expected_mutation_rate?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run expected_mutation_rate?"
+                    "fa_icon": "fas fa-book"
                 },
                 "plot_depths": {
                     "type": "boolean",
                     "description": "Do you want to run plot_depths?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run plot_depths?"
+                    "fa_icon": "fas fa-book"
                 }
             }
         },
@@ -393,30 +341,22 @@
                 "profileall": {
                     "type": "boolean",
                     "description": "Do you want to run the profile for all mutations?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run the profile for all mutations?"
+                    "fa_icon": "fas fa-book"
                 },
                 "profilenonprot": {
                     "type": "boolean",
                     "description": "Do you want to run the profile for non-protein affecting mutations only?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run the profile for non-protein affecting mutations only?"
+                    "fa_icon": "fas fa-book"
                 },
                 "profileexons": {
                     "type": "boolean",
                     "description": "Do you want to run the profile for exon mutations only?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run the profile for exon mutations only?"
+                    "fa_icon": "fas fa-book"
                 },
                 "profileintrons": {
                     "type": "boolean",
                     "description": "Do you want to run the profile for intron mutations only?",
-                    "default": false,
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to run the profile for intron mutations only?"
+                    "fa_icon": "fas fa-book"
                 }
             }
         },
@@ -436,14 +376,11 @@
                 "all_duplex_counts": {
                     "type": "boolean",
                     "description": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules.",
-                    "default": false,
-                    "fa_icon": "fas fa-question-circle",
-                    "help_text": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules."
+                    "fa_icon": "fas fa-question-circle"
                 },
                 "pileup_all_duplex": {
                     "type": "boolean",
                     "description": "Whether the BAM provided for the pileup is the mediumhigh quality BAM file or the whole duplex BAM.",
-                    "default": false,
                     "fa_icon": "fas fa-question-circle",
                     "help_text": "Whether the BAM provided for the pileup is the mediumhigh quality BAM file or the whole duplex BAM."
                 },
@@ -457,14 +394,14 @@
                 "sample_panel_min_depth": {
                     "type": "integer",
                     "description": "Depth threshold for the sample panels",
-                    "default": 10,
+                    "default": 40,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
                 "consensus_panel_min_depth": {
                     "type": "integer",
                     "description": "Depth threshold for the consensus panel",
-                    "default": 1000,
+                    "default": 500,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -503,7 +440,8 @@
                     "mimetype": "text/plain",
                     "description": "Path to file containing the reference signatures to use in SigProfilerAssignment.",
                     "help_text": "You can obtain it from COSMIC website or adapt one from any other source, but it should follow the same structure as the COSMIC one.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "COSMIC_v3.4_SBS_GRCh38.txt"
                 },
                 "wgs_trinuc_counts": {
                     "type": "string",
@@ -512,11 +450,12 @@
                     "mimetype": "text/plain",
                     "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
                     "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 },
                 "exclude_subgroups": {
                     "type": "string",
-                    "default": "[]",
+                    "default": "[\\'UV_signatures\\', \\'MMR_deficiency_signatures\\', \\'POL_deficiency_signatures\\', \\'HR_deficiency_signatures\\',\\'BER_deficiency_signatures\\', \\'Artifact_signatures\\', \\'Lymphoid_signatures\\']",
                     "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
                     "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
                     "fa_icon": "far fa-file-code"
@@ -525,37 +464,43 @@
                     "type": "string",
                     "description": "Path to folder containing the oncodrive3d datasets built.",
                     "help_text": "Path to folder containing the oncodrive3d datasets built.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "oncodrive3d/datasets"
                 },
                 "annotations3d": {
                     "type": "string",
                     "description": "Path to folder containing the oncodrive3d annotation built.",
                     "help_text": "Path to folder containing the oncodrive3d annotation built.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "oncodrive3d/annotations"
                 },
                 "cadd_scores": {
                     "type": "string",
                     "description": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz"
                 },
                 "cadd_scores_ind": {
                     "type": "string",
                     "description": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io",
                     "help_text": "Path to the CADD scores file index for running OncodriveFML. See: oncodrivefml.readthedocs.io.",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz.tbi"
                 },
                 "dnds_ref_transcripts": {
                     "type": "string",
                     "description": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "RefCDS_human_latest_intogen.rda"
                 },
                 "dnds_covariates": {
                     "type": "string",
                     "description": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "default": "covariates_hg19_hg38_epigenome_pcawg.rda"
                 }
             }
         },
@@ -569,31 +514,36 @@
                     "type": "string",
                     "description": "Genome assembly for Ensembl VEP.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "For the latest human genome assembly this should be: GRCh38."
+                    "help_text": "For the latest human genome assembly this should be: GRCh38.",
+                    "default": "GRCh38"
                 },
                 "vep_species": {
                     "type": "string",
                     "description": "Species to use for Ensembl VEP.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Use `homo_sapiens` when working with human data."
+                    "help_text": "Use `homo_sapiens` when working with human data.",
+                    "default": "homo_sapiens"
                 },
                 "vep_cache_version": {
                     "type": "integer",
                     "description": "Ensembl VEP cache version.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Make sure to also update the container to use. Otherwise leave 108."
+                    "help_text": "Make sure to also update the container to use. Otherwise leave 108.",
+                    "default": 111
                 },
                 "vep_out_format": {
                     "type": "string",
                     "description": "Ensembl VEP output format.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "tab or vcf"
+                    "help_text": "tab or vcf",
+                    "default": "tab"
                 },
                 "vep_params": {
                     "type": "string",
                     "description": "Additional parameters for running Ensembl VEP.",
                     "fa_icon": "fas fa-book",
-                    "help_text": ""
+                    "help_text": "",
+                    "default": "--no_stats --cache --offline --symbol --protein --canonical --af_gnomadg --af_gnomade"
                 },
                 "download_cache": {
                     "type": "boolean",
@@ -605,7 +555,8 @@
                     "type": "string",
                     "description": "Location of Ensembl VEP cache.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Define a place to store the Ensembl VEP cache."
+                    "help_text": "Define a place to store the Ensembl VEP cache.",
+                    "default": ".vep"
                 }
             }
         },
@@ -640,7 +591,7 @@
                 "max_cpus": {
                     "type": "integer",
                     "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 16,
+                    "default": 56,
                     "fa_icon": "fas fa-microchip",
                     "hidden": true,
                     "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
@@ -648,7 +599,7 @@
                 "max_memory": {
                     "type": "string",
                     "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "128.GB",
+                    "default": "256 GB",
                     "fa_icon": "fas fa-memory",
                     "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
                     "hidden": true,
@@ -657,7 +608,7 @@
                 "max_time": {
                     "type": "string",
                     "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
+                    "default": "10d",
                     "fa_icon": "far fa-clock",
                     "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
                     "hidden": true,
@@ -690,14 +641,7 @@
                     "description": "Method used to save pipeline results to output directory.",
                     "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
                     "fa_icon": "fas fa-copy",
-                    "enum": [
-                        "symlink",
-                        "rellink",
-                        "link",
-                        "copy",
-                        "copyNoFollow",
-                        "move"
-                    ],
+                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
                     "hidden": true
                 },
                 "email_on_fail": {
@@ -759,79 +703,72 @@
                     "default": true,
                     "fa_icon": "fas fa-check-square",
                     "hidden": true
-                },
-                "validationShowHiddenParams": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-eye-slash",
-                    "description": "Show all params when using `--help`",
-                    "hidden": true,
-                    "help_text": "By default, parameters set as _hidden_ in the schema are not shown on the command line when a user runs with `--help`. Specifying this option will tell the pipeline to show all parameters."
-                },
-                "validationFailUnrecognisedParams": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters fails when an unrecognised parameter is found.",
-                    "hidden": true,
-                    "help_text": "By default, when an unrecognised parameter is found, it returns a warinig."
-                },
-                "validationLenientMode": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters in lenient more.",
-                    "hidden": true,
-                    "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode)."
                 }
             }
         }
     },
     "allOf": [
         {
-            "$ref": "#/defs/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/defs/bed_files_options"
+            "$ref": "#/$defs/bed_files_options"
         },
         {
-            "$ref": "#/defs/reference_genome_options"
+            "$ref": "#/$defs/reference_genome_options"
         },
         {
-            "$ref": "#/defs/grouping_configs"
+            "$ref": "#/$defs/grouping_configs"
         },
         {
-            "$ref": "#/defs/gene_grouping_configs"
+            "$ref": "#/$defs/gene_grouping_configs"
         },
         {
-            "$ref": "#/defs/custom_bedfile_configs"
+            "$ref": "#/$defs/custom_bedfile_configs"
         },
         {
-            "$ref": "#/defs/hotspot_bedfile_configs"
+            "$ref": "#/$defs/hotspot_bedfile_configs"
         },
         {
-            "$ref": "#/defs/tool_execution_configs"
+            "$ref": "#/$defs/hotspot_annotation_options"
         },
         {
-            "$ref": "#/defs/generic_options"
+            "$ref": "#/$defs/tool_execution_configs"
         },
         {
-            "$ref": "#/defs/profile_computation_config"
+            "$ref": "#/$defs/generic_options"
         },
         {
-            "$ref": "#/defs/filtering_parameters"
+            "$ref": "#/$defs/profile_computation_config"
         },
         {
-            "$ref": "#/defs/reference_datasets"
+            "$ref": "#/$defs/filtering_parameters"
         },
         {
-            "$ref": "#/defs/ensembl_vep_options"
+            "$ref": "#/$defs/reference_datasets"
         },
         {
-            "$ref": "#/defs/institutional_config_options"
+            "$ref": "#/$defs/ensembl_vep_options"
         },
         {
-            "$ref": "#/defs/max_job_request_options"
+            "$ref": "#/$defs/institutional_config_options"
         },
         {
-            "$ref": "#/defs/generic_options"
+            "$ref": "#/$defs/max_job_request_options"
+        },
+        {
+            "$ref": "#/$defs/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "store_depths": {
+            "type": "boolean"
+        },
+        "multiqc_title": {
+            "type": "string"
+        },
+        "email": {
+            "type": "string"
+        }
+    }
 }

@@ -63,6 +63,7 @@ process PLOT_MUTATIONS {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_prefix = task.ext.output_prefix ?: ""
     """
     touch ${prefix}${output_prefix}.pdf
 

@@ -35,7 +35,7 @@ process MUTATED_GENOMES_FROM_VAF {
 
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
+    def panel_version = task.ext.panel_version ?: "${meta.id}"
     """
     touch ${prefix}.${panel_version}.mutrates.tsv
 
