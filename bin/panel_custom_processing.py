@@ -24,6 +24,8 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
 
     custom_regions_df = pd.read_table(custom_regions_file)
 
+    added_regions_df = pd.DataFrame()
+
     current_chr = ""
     for ind, row in custom_regions_df.iterrows():
         try:
@@ -87,19 +89,31 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
             if simple:
                 all_possible_sites.loc[original_df_start: original_df_end, ["GENE", "IMPACT"]] = hotspot_data[["GENE", "IMPACT"]].values
             else:
+                print("Getting Feature to '-'")
                 hotspot_data["Feature"] = '-'
                 all_possible_sites.loc[original_df_start: original_df_end, ["GENE", "IMPACT", "Feature"]] = hotspot_data[["GENE", "IMPACT", "Feature"]].values
 
+            added_regions_df = pd.concat((added_regions_df, hotspot_data))
             print("Small region added:", row["NAME"])
-
 
         except Exception as e:
             print(f"Error processing row {row}: {e}")
 
+    all_possible_sites = all_possible_sites.drop_duplicates(subset = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID',
+                                                                    'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
+                                                            keep = 'first')
     all_possible_sites.to_csv(customized_output_annotation_file,
                                         header = True,
                                         index = False,
                                         sep = "\t")
+
+    added_regions_df = added_regions_df.drop_duplicates(subset = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID',
+                                                                    'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
+                                                        keep = 'first')
+    added_regions_df.to_csv('added_regions.tsv',
+                                header = True,
+                                index = False,
+                                sep = "\t")
 
 
 if __name__ == '__main__':
@@ -113,7 +127,7 @@ if __name__ == '__main__':
     # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
     customized_output_annotation_file = sys.argv[3]
 
-    simple = bool(sys.argv[4])
+    simple = eval(sys.argv[4])
 
     customize_panel_regions(VEP_output_file, custom_regions_file, customized_output_annotation_file,
                                    simple

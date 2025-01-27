@@ -25,6 +25,7 @@ workflow MUTATION_PREPROCESSING {
     bedfile_exons
     groups
     sequence_information_df
+    custom_annotation_tsv
 
     main:
 
@@ -42,9 +43,16 @@ workflow MUTATION_PREPROCESSING {
 
     hotspots_definition_file = params.hotspots_annotation ? Channel.fromPath( params.hotspots_definition_file, checkIfExists: true).first() : Channel.fromPath(params.input).first()
     SUMANNOTATION(annotated_samples, hotspots_definition_file)
-    // CUSTOMANNOTATION(SUMANNOTATION.out.tab)
-    // CUSTOMANNOTATION.out.mutations
-    VCF2MAF(vcfs, SUMANNOTATION.out.tab)
+
+    if (params.customize_annotation) {
+        // Update impact of mutations in specific regions based on user preferences
+        CUSTOMANNOTATION(SUMANNOTATION.out.tab, custom_annotation_tsv)
+        summary_of_mutations = CUSTOMANNOTATION.out.mutations.first()
+    } else {
+        summary_of_mutations = SUMANNOTATION.out.tab.first()
+    }
+
+    VCF2MAF(vcfs, summary_of_mutations)
 
     FILTEREXONS(VCF2MAF.out.maf, bedfile_exons)
 

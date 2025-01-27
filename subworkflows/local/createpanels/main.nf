@@ -79,11 +79,14 @@ workflow CREATE_PANELS {
         CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANELRICHER.out.rich_panel_annotation, custom_annotation_tsv)
         rich_annotated = CUSTOMPROCESSINGRICH.out.custom_panel_annotation
 
+        added_regions = CUSTOMPROCESSINGRICH.out.added_regions
+
     } else {
         complete_annotated_panel = POSTPROCESSVEPPANELRICHER.out.compact_panel_annotation
         rich_annotated = POSTPROCESSVEPPANELRICHER.out.rich_panel_annotation
+        added_regions = Channel.empty()
     }
-    
+
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
 
@@ -147,6 +150,7 @@ workflow CREATE_PANELS {
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
     panel_annotated_rich        = rich_annotated
+    added_custom_regions        = added_regions
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())

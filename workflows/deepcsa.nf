@@ -226,7 +226,10 @@ workflow DEEPCSA{
     MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files,
                         CREATEPANELS.out.all_consensus_bed,
                         CREATEPANELS.out.exons_bed,
-                        TABLE2GROUP.out.json_allgroups, seqinfo_df)
+                        TABLE2GROUP.out.json_allgroups,
+                        seqinfo_df,
+                        CREATEPANELS.out.added_custom_regions
+                        )
     positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
     Channel.of([["id": "all_samples"]])
