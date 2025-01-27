@@ -90,9 +90,10 @@
                 "hotspots_definition_file": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, HOTSPOT_NAME.",
+                    "default": "",
+                    "description": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, MUTTYPE, HOTSPOT_NAME. Values of MUTTYPE column have to be to be C>N, T>N or '-'.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, HOTSPOT_NAME."
+                    "help_text": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, MUTTYPE, HOTSPOT_NAME. Values of MUTTYPE column have to be to be C>N, T>N or '-'."
                 }
             }
         },
