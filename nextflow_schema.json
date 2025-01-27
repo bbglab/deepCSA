@@ -90,7 +90,6 @@
                 "hotspots_definition_file": {
                     "type": "string",
                     "format": "file-path",
-                    "default": "",
                     "description": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, MUTTYPE, HOTSPOT_NAME. Values of MUTTYPE column have to be to be C>N, T>N or '-'.",
                     "fa_icon": "fas fa-book",
                     "help_text": "TSV file with the definition of hotspots. It MUST contain a header with the following columns: CHROM, POS, MUTTYPE, HOTSPOT_NAME. Values of MUTTYPE column have to be to be C>N, T>N or '-'."
@@ -282,7 +281,6 @@
                 "omega_mutabilities": {
                     "type": "boolean",
                     "description": "Do you want to get omega mutabilities per site and a per site comparison with the observed?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to get omega mutabilities per site and a per site comparison with the observed?"
                 },
