@@ -36,7 +36,8 @@ if vaf_all_molecules:
                         'DEPTH_ND', 'ALT_DEPTH_ND',
                         # 'REF_DEPTH_ND', "numNs_ND",
                         "VAF_ND",
-                        "VAF_distorted", "VAF_distorted_reduced", "VAF_distorted_expanded",
+                        # "VAF_distorted", "VAF_distorted_reduced",
+                        "VAF_distorted_expanded",
                         "VAF_distortion",
                         ]
     print("Using also information on all molecules, duplex and non-duplex.")
@@ -45,7 +46,8 @@ else:
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
                         'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
                         "numNs", 'VAF_Ns',
-                        "VAF_distorted", "VAF_distorted_reduced", "VAF_distorted_expanded",
+                        # "VAF_distorted", "VAF_distorted_reduced",
+                        "VAF_distorted_expanded",
                         "VAF_distortion"]
     print("Not using information on non-duplex molecules.")
 
@@ -199,33 +201,39 @@ def read_from_vardict_VCF_all(sample,
         # assign it to the column
         dat_full["ALT_DEPTH_AM"] = [int(v[1]) for v in dat_full["CADAM"].str.split(",")]
         dat_full["REF_DEPTH_AM"] = [int(v[0]) for v in dat_full["CADAM"].str.split(",")]
-
         dat_full["DEPTH_AM"] = dat_full["CDPAM"].astype(int)
+        
+        # compute VAF_AM
+        dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
 
         dat_full["numNs_AM"] = dat_full["NDPAM"].astype(int)
         dat_full["VAF_Ns_AM"] = dat_full["numNs_AM"] / (dat_full["DEPTH_AM"] + dat_full["numNs_AM"])
 
-        # compute VAF
-        dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
-        dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
-
-        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
-        dat_full["VAF_distorted_reduced"] = (1 / dat_full["VAF_distortion"]) > 3
-
-        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
-        dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
-
-        dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
-
+        # compute VAF_ND
         dat_full["ALT_DEPTH_ND"] = dat_full["ALT_DEPTH_AM"] - dat_full["ALT_DEPTH"]
         dat_full["DEPTH_ND"] = dat_full["DEPTH_AM"] - dat_full["DEPTH"]
         dat_full["VAF_ND"] = dat_full["ALT_DEPTH_ND"] / dat_full["DEPTH_ND"]
 
 
+        # compute VAF distortion
+        dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
+
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
+
+        # dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
+        # dat_full["VAF_distorted_reduced"] = (1 / dat_full["VAF_distortion"]) > 3
+
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
+        # dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
+
+        # dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
+
+
+
     else:
         dat_full["VAF_distortion"] = 1
-        dat_full["VAF_distorted"] = False
-        dat_full["VAF_distorted_reduced"] = False
+        # dat_full["VAF_distorted"] = False
+        # dat_full["VAF_distorted_reduced"] = False
         dat_full["VAF_distorted_expanded"] = False
 
 
