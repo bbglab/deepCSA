@@ -1,6 +1,7 @@
 include { SITESFROMPOSITIONS                                            } from '../../../modules/local/sitesfrompositions/main'
 include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/panel_process_annotation/simple/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANELRICHER    } from '../../../modules/local/panel_process_annotation/rich/main'
 
 include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
 
@@ -128,6 +129,8 @@ workflow CREATE_PANELS {
     introns_consensus_bed       = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed.first()
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
+
+    panel_annotated_rich        = POSTPROCESSVEPPANELRICHER.out.compact_panel_annotation
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
