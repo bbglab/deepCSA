@@ -9,7 +9,6 @@ from utils_impacts import *
 from read_utils import custom_na_values
 
 
-
 def customize_annotations(mutation_summary_file, custom_regions_file,
                             customized_mutations_output,
                             simple = True
@@ -26,12 +25,13 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
     # alternatively we could take only the MUT_ID but
     # the one of the mutations is different from
     # the one coming from the panels
-    custom_regions_df = pd.read_table(custom_regions_file)[["MUT_ID", "GENE", "IMPACT"]].drop_duplicates().reset_index(drop = True)
-    custom_regions_df["MUT_ID"] = custom_regions_df["MUT_ID"].str.replace("/", ">", regex = 'False').str.replace("_", ":", n = 1)
-    custom_regions_df.columns = ["MUT_ID", "SYMBOL_new", "Consequence_new"]
+    custom_regions_df = pd.read_table(custom_regions_file)[["MUT_ID_pyr", "GENE", "IMPACT"]].drop_duplicates().reset_index(drop = True)
+#    custom_regions_df["MUT_ID"] = custom_regions_df["MUT_ID"].str.replace("/", ">", regex = 'False').str.replace("_", ":", n = 1)
+    custom_regions_df["MUT_ID_pyr"] = custom_regions_df["MUT_ID_pyr"].str.replace("/", ">", regex = 'False').str.replace("_", ":", n = 1)
 
+    custom_regions_df.columns = ["MUT_ID_pyr", "SYMBOL_new", "Consequence_new"]
     mutation_summary_custom = mutation_summary.merge(custom_regions_df,
-                                                        on = ["MUT_ID"],
+                                                        on = ["MUT_ID_pyr"],
                                                         suffixes = ('_old', ''),
                                                         how = 'left'
                                                         )
@@ -64,7 +64,7 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
 
                         ]
 
-    columns_to_remain = ['MUT_ID', 'Location', 'Allele',
+    columns_to_remain = ['MUT_ID', 'MUT_ID_pyr', 'Location', 'Allele',
                             'Existing_variation', 'IMPACT',
                             'gnomADe_AF', 'gnomADe_AFR_AF', 'gnomADe_AMR_AF',
                             'gnomADe_ASJ_AF', 'gnomADe_EAS_AF', 'gnomADe_FIN_AF', 'gnomADe_NFE_AF',

@@ -6,7 +6,14 @@ import numpy as np
 import sys
 
 from read_utils import custom_na_values
-
+muttype_conversion_map = {
+                'G/A': 'C/T',
+                'G/C': 'C/G',
+                'G/T': 'C/A',
+                'A/G': 'T/C',
+                'A/T': 'T/A',
+                'A/C': 'T/G',
+            }
 
 
 def customize_panel_regions(VEP_output_file, custom_regions_file, customized_output_annotation_file,
@@ -69,19 +76,25 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
             entries = row["IMPACTFUL"].split(',')
 
             # Create a DataFrame
-            impactful_df = pd.DataFrame(entries, columns = ["MUT_ID"])
+            impactful_df = pd.DataFrame(entries, columns = ["MUT_ID_pyr"])
             impactful_df["IMPACT"] = row["IMPACT"]
 
             all_pos_len = hotspot_data.shape[0]
+
+            # convert MUT_ID to C>N and T>N only
+            hotspot_data["MUT_ID_pyr"] = hotspot_data["MUT_ID"].replace(muttype_conversion_map, regex = True)
             hotspot_data = hotspot_data.merge(impactful_df,
-                                                on = ["MUT_ID"],
+                                                on = ["MUT_ID_pyr"],
                                                 how = 'outer'
                                                 )
             all_pos_len_after = hotspot_data.shape[0]
 
             # TODO add an error raise
             if all_pos_len != all_pos_len_after:
-                print("Mutation provided is not in the desired region")
+                print("Some of the mutations provided are not in the desired region")
+                print(hotspot_data[hotspot_data["POS"].isna()]["MUT_ID_pyr"])
+                hotspot_data = hotspot_data[~(hotspot_data["POS"].isna())].reset_index(drop = True)
+                hotspot_data["POS"] = hotspot_data["POS"].astype(int)
 
             hotspot_data["IMPACT"] = hotspot_data["IMPACT"].fillna(row["NEUTRAL"])
 
