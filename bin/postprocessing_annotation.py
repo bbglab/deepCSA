@@ -16,6 +16,21 @@ assembly_name2function = {"hg38": hg38,
                             "mm39": mm39}
 
 
+muttype_conversion_map = {
+                'G>A': 'C>T',
+                'G>C': 'C>G',
+                'G>T': 'C>A',
+                'A>G': 'T>C',
+                'A>T': 'T>A',
+                'A>C': 'T>G',
+            }
+
+
+def get_canonical_mutid(mutid):
+    elements__ = mutid.split("_")
+    mutation_change = elements__[-1]
+    upd_mutation_change = muttype_conversion_map.get(mutation_change, mutation_change)
+    return "_".join(elements__[:-1] + [upd_mutation_change])
 
 
 
@@ -125,8 +140,8 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
-                             hotspots_file = None,
-                             all_ = False, assembly = 'hg38'):
+                                hotspots_file = None,
+                                all_ = False, assembly = 'hg38'):
     """
     # TODO
     explain what this function does
@@ -191,6 +206,8 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
         annotated_variants_columns += new_hostpot_columns
 
     annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
+
+    annotated_variants_reduced["MUT_ID_pyr"] = annotated_variants_reduced["MUT_ID"].apply(lambda x : get_canonical_mutid(x))
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,

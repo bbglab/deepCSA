@@ -176,7 +176,9 @@ def generate_dna_protein_mapping(maf_file, consensus_file_unique, output_file):
     # Load and prepare data
     dna_sites = pd.read_table(consensus_file_unique).rename(columns={"POS": "DNA_POS", "CHROM": "CHR"})
     normal_maf_df = get_normal_maf(maf_file)
-    coord_df = normal_maf_df[normal_maf_df["GENE"] != '-'][["GENE", "Ens_transcript_ID"]].drop_duplicates().reset_index(drop=True)
+    coord_df = normal_maf_df[(normal_maf_df["GENE"] != '-') &
+                                (normal_maf_df["Ens_transcript_ID"] != '-')
+                            ][["GENE", "Ens_transcript_ID"]].drop_duplicates().reset_index(drop=True)
 
     # Retrieve exon coordinates
     coord_df_lst = []
