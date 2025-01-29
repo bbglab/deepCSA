@@ -68,6 +68,7 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
 
             # Extract hotspot data and modify gene names
             hotspot_data = chr_data.iloc[upd_start: upd_end + 1, :].copy().drop("IMPACT", axis = 'columns')
+            hotspot_data["index_col"] = hotspot_data.index
             original_df_start = hotspot_data.index[0]
             original_df_end = hotspot_data.index[-1]
             hotspot_data["GENE"] = row["NAME"]
@@ -97,6 +98,7 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
                 hotspot_data["POS"] = hotspot_data["POS"].astype(int)
 
             hotspot_data["IMPACT"] = hotspot_data["IMPACT"].fillna(row["NEUTRAL"])
+            hotspot_data = hotspot_data.sort_values(by='index_col').drop("index_col", axis = 'columns')
 
             ## Insert modified rows back into the df
             if simple:
