@@ -36,6 +36,7 @@ process PLOT_OMEGA {
 
     stub:
     def args = task.ext.args ?: ''
+    def output_prefix = task.ext.output_prefix ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}${output_prefix}.pdf
