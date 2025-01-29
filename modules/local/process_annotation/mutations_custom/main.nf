@@ -6,10 +6,6 @@ process CUSTOM_MUTATION_PROCESSING {
     label 'time_low'
 
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
@@ -43,7 +39,7 @@ process CUSTOM_MUTATION_PROCESSING {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.vep.summary.tab.gz
+    touch ${mutations_annotated.getBaseName()}.custom.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

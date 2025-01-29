@@ -33,7 +33,7 @@ process CUSTOM_ANNOTATION_PROCESSING {
     // chromosome  start   end gene_name    impactful_mutations [neutral_impact] [new_impact]
     // chromosome start and end indicate the region that is being customized
     // gene_name           : is the name of the region that is being added, make sure that it does not coincide with the name of any other gene.
-    // impactful_mutations : is a comma-separated list of mutations that need to be labelled with the value indicated in new_impact, format: chr5_1294991_C/T
+    // impactful_mutations : is a comma-separated list of SNVs that need to be labelled with the value indicated in new_impact, format: chr5_1294991_C/T, with pyrimidine based definition
     // neutral_impact      : (optional, default; synonymous)
     // new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.
     """

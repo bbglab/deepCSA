@@ -94,3 +94,16 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 > Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
 >
 > _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
+
+
+
+## (temporary) Documentation
+
+### Custom TSV regions annotation file should contain this
+Document this custom_regions has to be a TSV file with the following columns:
+    * chromosome  start   end gene_name    impactful_mutations [neutral_impact] [new_impact]
+    * chromosome start and end indicate the region that is being customized
+    * gene_name           : is the name of the region that is being added, make sure that it does not coincide with the name of any other gene.
+    * impactful_mutations : is a comma-separated list of SNVs that need to be labelled with the value indicated in new_impact, format: chr5_1294991_C/T, with pyrimidine based definition
+    * neutral_impact      : (optional, default; synonymous)
+    * new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.

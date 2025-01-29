@@ -1,8 +1,7 @@
 include { SITESFROMPOSITIONS                                            } from '../../../modules/local/sitesfrompositions/main'
 include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
 
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/simple/main'
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANELRICHER    } from '../../../modules/local/process_annotation/rich/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/panel/main'
 
 include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING             } from '../../../modules/local/process_annotation/panelcustom/main'
 include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH         } from '../../../modules/local/process_annotation/panelcustom/main'
@@ -67,23 +66,23 @@ workflow CREATE_PANELS {
                     vep_extra_files)
 
     // Postprocess annotations to get one annotation per mutation
-    POSTPROCESSVEPPANELRICHER(VCFANNOTATEPANEL.out.tab)
+    POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
 
     if (params.customize_annotation) {
         custom_annotation_tsv = file(params.custom_annotation_tsv)
 
         // Update specific regions based on user preferences
-        CUSTOMPROCESSING(POSTPROCESSVEPPANELRICHER.out.compact_panel_annotation, custom_annotation_tsv)
+        CUSTOMPROCESSING(POSTPROCESSVEPPANEL.out.compact_panel_annotation, custom_annotation_tsv)
         complete_annotated_panel = CUSTOMPROCESSING.out.custom_panel_annotation
 
-        CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANELRICHER.out.rich_panel_annotation, custom_annotation_tsv)
+        CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANEL.out.rich_panel_annotation, custom_annotation_tsv)
         rich_annotated = CUSTOMPROCESSINGRICH.out.custom_panel_annotation
 
         added_regions = CUSTOMPROCESSINGRICH.out.added_regions
 
     } else {
-        complete_annotated_panel = POSTPROCESSVEPPANELRICHER.out.compact_panel_annotation
-        rich_annotated = POSTPROCESSVEPPANELRICHER.out.rich_panel_annotation
+        complete_annotated_panel = POSTPROCESSVEPPANEL.out.compact_panel_annotation
+        rich_annotated = POSTPROCESSVEPPANEL.out.rich_panel_annotation
         added_regions = Channel.empty()
     }
 

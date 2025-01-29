@@ -42,7 +42,7 @@ process POSTPROCESS_VEP_ANNOTATION {
             awk -F'\\t' 'BEGIN {OFS = "\\t"} {split(\$1, a, "[_/]"); print a[1], a[2], a[3], a[4], \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9}' | \\
             gzip > ${prefix}.tmp.gz
 
-    panel_postprocessing_annotation_rich.py \\
+    panel_postprocessing_annotation.py \\
                     ${prefix}.tmp.gz \\
                     ${assembly} \\
                     ${vep_annotated_file.getBaseName()}.compact \\

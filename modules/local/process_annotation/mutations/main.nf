@@ -6,10 +6,6 @@ process SUMMARIZE_ANNOTATION {
     label 'time_low'
 
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
