@@ -38,6 +38,7 @@ if vaf_all_molecules:
                         "VAF_ND",
                         # "VAF_distorted", "VAF_distorted_reduced",
                         "VAF_distorted_expanded",
+                        "VAF_distorted_expanded_3",
                         "VAF_distortion",
                         ]
     print("Using also information on all molecules, duplex and non-duplex.")
@@ -48,6 +49,7 @@ else:
                         "numNs", 'VAF_Ns',
                         # "VAF_distorted", "VAF_distorted_reduced",
                         "VAF_distorted_expanded",
+                        "VAF_distorted_expanded_3",
                         "VAF_distortion"]
     print("Not using information on non-duplex molecules.")
 
@@ -219,13 +221,16 @@ def read_from_vardict_VCF_all(sample,
         dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
 
         dat_full["VAF_distorted_expanded"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
+        dat_full["VAF_distorted_expanded_3"] = dat_full["VAF_distortion"] > 3
+
+
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
+        dat_full["VAF_distorted_expanded_3"] = dat_full["VAF_distorted_expanded_3"].fillna(True)
 
         # dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
         # dat_full["VAF_distorted_reduced"] = (1 / dat_full["VAF_distortion"]) > 3
 
-        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
         # dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
-
         # dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
 
 
@@ -235,6 +240,7 @@ def read_from_vardict_VCF_all(sample,
         # dat_full["VAF_distorted"] = False
         # dat_full["VAF_distorted_reduced"] = False
         dat_full["VAF_distorted_expanded"] = False
+        dat_full["VAF_distorted_expanded_3"] = False
 
 
 
