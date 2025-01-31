@@ -1,8 +1,10 @@
 #!/usr/local/bin/python
 
-import pandas as pd
-import gzip
+
 import click
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
 
 def load_data(panel_file, mutations_file, mutabilities_file):
     # Load captured panel
@@ -22,6 +24,13 @@ def get_sample_column(mutabilities):
     if len(sample_columns) != 1:
         raise ValueError(f"Expected 1 sample column in mutabilities but found {len(sample_columns)}: {sample_columns}")
     return sample_columns[0]
+
+def poisson_pvalue(observed, expected):
+    """
+    Compute the p-value for observing 'observed' or more mutations 
+    given a Poisson distribution with mean 'expected'.
+    """
+    return 1 - stats.poisson.cdf(observed - 1, expected)
 
 def compute_by_size(panel, mutations, mutabilities, size, sample_column):
     # Merge mutations and panel to associate protein positions
@@ -53,8 +62,10 @@ def compute_by_size(panel, mutations, mutabilities, size, sample_column):
 
     # Merge results
     result = pd.merge(observed, mutability, on=group_cols, how='outer').fillna(0)
-    result["OBS-EXP"] = (result["OBSERVED_MUTS"] - result["EXPECTED_MUTS"]).fillna(0)
-    result["(OBS-EXP)/EXP"] = ((result["OBSERVED_MUTS"] - result["EXPECTED_MUTS"])/result["EXPECTED_MUTS"]).fillna(0)
+
+    result["OBS/EXP"] = (result["OBSERVED_MUTS"] / result["EXPECTED_MUTS"]).fillna(0)
+    result["OBS/EXP"] = result["OBS/EXP"].replace([np.inf, -np.inf], 0)
+    result["p_value"] = result[["OBSERVED_MUTS", "EXPECTED_MUTS"]].apply(lambda row: poisson_pvalue(row["OBSERVED_MUTS"], row["EXPECTED_MUTS"]), axis=1)
 
     return result
 
