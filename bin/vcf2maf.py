@@ -6,6 +6,7 @@
 # add plotting modules to bgreference container
 import sys
 import pandas as pd
+import numpy as np
 # import seaborn as sns
 # import matplotlib.pyplot as plt
 from utils import vartype
@@ -38,8 +39,9 @@ if vaf_all_molecules:
                         "VAF_ND",
                         # "VAF_distorted", "VAF_distorted_reduced",
                         "VAF_distorted_expanded",
-                        "VAF_distorted_expanded_3",
+                        "VAF_distorted_expanded_sq",
                         "VAF_distortion",
+                        "VAF_distortion_sq"
                         ]
     print("Using also information on all molecules, duplex and non-duplex.")
 else:
@@ -49,8 +51,10 @@ else:
                         "numNs", 'VAF_Ns',
                         # "VAF_distorted", "VAF_distorted_reduced",
                         "VAF_distorted_expanded",
-                        "VAF_distorted_expanded_3",
-                        "VAF_distortion"]
+                        "VAF_distorted_expanded_sq",
+                        "VAF_distortion",
+                        "VAF_distortion_sq"
+                        ]
     print("Not using information on non-duplex molecules.")
 
 
@@ -204,7 +208,7 @@ def read_from_vardict_VCF_all(sample,
         dat_full["ALT_DEPTH_AM"] = [int(v[1]) for v in dat_full["CADAM"].str.split(",")]
         dat_full["REF_DEPTH_AM"] = [int(v[0]) for v in dat_full["CADAM"].str.split(",")]
         dat_full["DEPTH_AM"] = dat_full["CDPAM"].astype(int)
-        
+
         # compute VAF_AM
         dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
 
@@ -219,13 +223,14 @@ def read_from_vardict_VCF_all(sample,
 
         # compute VAF distortion
         dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
+        dat_full["VAF_distortion_sq"] = np.log10(dat_full["VAF"]) / np.log10(dat_full["VAF_AM"])
 
-        dat_full["VAF_distorted_expanded"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
-        dat_full["VAF_distorted_expanded_3"] = dat_full["VAF_distortion"] > 3
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
+        dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
 
 
         dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
-        dat_full["VAF_distorted_expanded_3"] = dat_full["VAF_distorted_expanded_3"].fillna(True)
+        dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF_distorted_expanded_sq"].fillna(True)
 
         # dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
         # dat_full["VAF_distorted_reduced"] = (1 / dat_full["VAF_distortion"]) > 3
@@ -237,10 +242,11 @@ def read_from_vardict_VCF_all(sample,
 
     else:
         dat_full["VAF_distortion"] = 1
+        dat_full["VAF_distortion_sq"] = 1
         # dat_full["VAF_distorted"] = False
         # dat_full["VAF_distorted_reduced"] = False
         dat_full["VAF_distorted_expanded"] = False
-        dat_full["VAF_distorted_expanded_3"] = False
+        dat_full["VAF_distorted_expanded_sq"] = False
 
 
 
