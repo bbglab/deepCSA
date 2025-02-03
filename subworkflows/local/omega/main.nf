@@ -1,5 +1,7 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETOMEGAMULTI         } from '../../../modules/local/subsetmaf/main'
+
 
 
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
@@ -11,25 +13,15 @@ include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../..
 include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES     } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISON           } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { SITE_COMPARISON           as SITECOMPARISONMULTI           } from '../../../modules/local/bbgtools/sitecomparison/main'
+
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
 include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC  } from '../../../modules/local/bbgtools/sitecomparison/main'
-
-include { SUBSET_MAF                as SUBSETOMEGA_EXPANDED     } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGEXP         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOREXP             } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-include { SUBSET_MAF                as SUBSETOMEGA_OK           } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGOK          } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOROK              } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-include { SUBSET_MAF                as SUBSETOMEGA_REDUCED      } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
-
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI  } from '../../../modules/local/bbgtools/sitecomparison/main'
 
 
 workflow OMEGA_ANALYSIS{
@@ -54,6 +46,7 @@ workflow OMEGA_ANALYSIS{
     SUBSETPANEL(complete_panel, bedfile)
 
     SUBSETOMEGA(SUBSETMUTATIONS.out.subset)
+    SUBSETOMEGAMULTI(SUBSETMUTATIONS.out.subset)
 
     SUBSETOMEGA.out.mutations
     .join( depth )
@@ -110,6 +103,13 @@ workflow OMEGA_ANALYSIS{
 
         SITECOMPARISON(mutations_n_mutabilities,
                         SUBSETPANEL.out.subset.first())
+
+        SUBSETOMEGAMULTI.out.mutations
+        .join(ABSOLUTEMUTABILITIES.out.mutabilities)
+        .set{mutations_n_mutabilities_globalloc}
+
+        SITECOMPARISONMULTI(mutations_n_mutabilities_globalloc,
+                                SUBSETPANEL.out.subset.first())
     }
 
 
@@ -148,6 +148,13 @@ workflow OMEGA_ANALYSIS{
 
             SITECOMPARISONGLOBALLOC(mutations_n_mutabilities_globalloc,
                                     SUBSETPANEL.out.subset.first())
+
+            SUBSETOMEGAMULTI.out.mutations
+            .join(ABSOLUTEMUTABILITIESGLOBALLOC.out.mutabilities)
+            .set{mutations_n_mutabilities_globalloc}
+
+            SITECOMPARISONGLOBALLOCMULTI(mutations_n_mutabilities_globalloc,
+                                            SUBSETPANEL.out.subset.first())
         }
 
     } else {
