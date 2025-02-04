@@ -16,7 +16,7 @@ process PLOT_NEEDLES {
     path (gene_data_df)
 
     output:
-    tuple val(meta), path("**.pdf")  , emit: plots
+    tuple val(meta), path("**.pdf")  , emit: plots, optional : true
     path "versions.yml"              , topic: versions
 
     when:
@@ -26,8 +26,6 @@ process PLOT_NEEDLES {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def output_prefix = task.ext.output_prefix ?: ""
-    def filters = task.ext.filters ?: ""
-    def requested_plots = task.ext.plots ?: ""
     """
     plot_needles.py \\
                     ${prefix} \\
