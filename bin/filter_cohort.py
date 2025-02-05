@@ -62,7 +62,8 @@ if max_samples < 2:
     print("Not enough samples to identify cohort_n_rich mutations!")
 
 else:
-    proportion_of_samples = (max_samples * n_rich_cohort_proportion) // 1
+    number_of_samples = max(2, (max_samples * n_rich_cohort_proportion) // 1)
+    print(f"flagging mutations that are n_rich in at least: {number_of_samples} samples as cohort_n_rich")
 
     # work with already filtered df + somatic only to explore potential artifacts
     # take only variant and sample info from the df
@@ -73,7 +74,7 @@ else:
                                         ].agg({'SAMPLE_ID' : len, 'VAF_Ns' : min})
     n_rich_vars_df = n_rich_vars_df.rename({'SAMPLE_ID' : 'frequency', 'VAF_Ns' : 'VAF_Ns_threshold'}, axis = 'columns')
 
-    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df['frequency'] >= proportion_of_samples].index)
+    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df['frequency'] >= number_of_samples].index)
 
     maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
 
