@@ -16,7 +16,7 @@ process TABIX_BGZIPTABIX_QUERY {
 
     output:
     tuple val(meta), path("*.gz")   , emit: subset
-    path  "versions.yml"            , emit: versions
+    path  "versions.yml"            , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

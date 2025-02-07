@@ -13,7 +13,7 @@ process COMPUTE_MUTATED_EPITHELIUM {
     tuple val(meta), path("*.exon.mutated_epithelium.tsv")      , emit: mutated_epi_exon
     tuple val(meta), path("*.gene.mutated_epithelium.tsv")      , emit: mutated_epi_gene
     tuple val(meta), path("*.sample.mutated_epithelium.tsv")    , emit: mutated_epi_sample
-    path  "versions.yml"                                        , emit: versions
+    path  "versions.yml"                                        , topic: versions
 
 
     when:
@@ -37,7 +37,7 @@ process COMPUTE_MUTATED_EPITHELIUM {
 
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
+    def panel_version = task.ext.panel_version ?: "${meta.id}"
     """
     touch ${prefix}.${panel_version}.mutrates.tsv
 

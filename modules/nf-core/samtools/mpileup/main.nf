@@ -13,7 +13,7 @@ process SAMTOOLS_MPILEUP {
 
     output:
     tuple val(meta), path("*.mpileup.gz"), path("*.mpileup.gz.tbi") , emit: mpileup
-    path  "versions.yml"                                            , emit: versions
+    path  "versions.yml"                                            , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,13 +21,13 @@ process SAMTOOLS_MPILEUP {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def intervals = intervals ? "--positions ${intervals}" : ""
+    def intervals_arg = intervals ? "-l ${intervals}" : ""
     """
     samtools mpileup \\
         --fasta-ref ${fasta} \\
         --output ${prefix}.mpileup \\
         ${args} \\
-        ${intervals} \\
+        ${intervals_arg} \\
         ${bam}
     bgzip -@${task.cpus} ${prefix}.mpileup
     tabix -s 1 -b 2 -e 2 ${prefix}.mpileup.gz

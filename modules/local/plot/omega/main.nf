@@ -10,7 +10,7 @@ process PLOT_OMEGA {
 
     output:
     tuple val(meta), path("**.pdf")  , optional: true   , emit: plots
-    path "versions.yml"                                 , emit: versions
+    path "versions.yml"                                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -36,6 +36,7 @@ process PLOT_OMEGA {
 
     stub:
     def args = task.ext.args ?: ''
+    def output_prefix = task.ext.output_prefix ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}${output_prefix}.pdf

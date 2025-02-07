@@ -25,7 +25,7 @@ process CREATECAPTUREDPANELS {
     path("*.exons_splice_sites.bed")       , emit: captured_panel_exons_splice_sites_bed
     path("*.introns_intergenic.bed")       , emit: captured_panel_introns_intergenic_bed
     path("*.synonymous.bed")                , emit: captured_panel_synonymous_bed
-    path "versions.yml"                    , emit: versions
+    path "versions.yml"                    , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

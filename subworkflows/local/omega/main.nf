@@ -1,32 +1,27 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-
-
 include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETOMEGAMULTI         } from '../../../modules/local/subsetmaf/main'
+
+
+
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
+
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
 include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
+include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES     } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
+include { SITE_COMPARISON           as SITECOMPARISON           } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { SITE_COMPARISON           as SITECOMPARISONMULTI           } from '../../../modules/local/bbgtools/sitecomparison/main'
+
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
+include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
-
-include { SUBSET_MAF                as SUBSETOMEGA_EXPANDED     } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGEXP         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOREXP             } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-include { SUBSET_MAF                as SUBSETOMEGA_OK           } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGOK          } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOROK              } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-include { SUBSET_MAF                as SUBSETOMEGA_REDUCED      } from '../../../modules/local/subsetmaf/main'
-include { OMEGA_PREPROCESS          as PREPROCESSINGRED         } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATORRED             } from '../../../modules/local/bbgtools/omega/estimator/main'
-
-
-
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC  } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI  } from '../../../modules/local/bbgtools/sitecomparison/main'
 
 
 workflow OMEGA_ANALYSIS{
@@ -39,18 +34,19 @@ workflow OMEGA_ANALYSIS{
     panel
     custom_gene_groups
     hotspots_file
-    relative_mutationrates
+    mutationrates
+    complete_panel
 
 
     main:
-    ch_versions = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
+
+    SUBSETPANEL(complete_panel, bedfile)
 
     SUBSETOMEGA(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSETOMEGA.out.versions)
+    SUBSETOMEGAMULTI(SUBSETMUTATIONS.out.subset)
 
     SUBSETOMEGA.out.mutations
     .join( depth )
@@ -64,12 +60,11 @@ workflow OMEGA_ANALYSIS{
 
     if (params.omega_hotspots){
         EXPANDREGIONS(panel, hotspots_file)
-        ch_versions = ch_versions.mix(EXPANDREGIONS.out.versions)
-        expanded_panel = EXPANDREGIONS.out.panel_increased
-        json_hotspots = EXPANDREGIONS.out.new_regions_json
+        expanded_panel = EXPANDREGIONS.out.panel_increased.first()
+        json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
     } else {
-        expanded_panel = panel
-        json_hotspots = bedfile
+        expanded_panel = panel.first()
+        json_hotspots = bedfile.first()
     }
 
     // FIXME here I am using bedfile as a dummy value channel
@@ -77,7 +72,6 @@ workflow OMEGA_ANALYSIS{
                     expanded_panel,
                     bedfile,
                     all_samples_mut_profile)
-    ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
 
     PREPROCESSING.out.mutabs_n_mutations_tsv
     .join( depth )
@@ -88,10 +82,8 @@ workflow OMEGA_ANALYSIS{
     .set{ all_samples_muts }
 
     GROUPGENES(all_samples_muts, custom_gene_groups, json_hotspots)
-    ch_versions = ch_versions.mix(GROUPGENES.out.versions)
 
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
-    ch_versions = ch_versions.mix(ESTIMATOR.out.versions)
 
     if (params.omega_plot){
         SUBSETMUTATIONS.out.subset
@@ -99,7 +91,25 @@ workflow OMEGA_ANALYSIS{
         .set{mutations_n_omega}
 
         PLOTOMEGA(mutations_n_omega)
-        ch_versions = ch_versions.mix(PLOTOMEGA.out.versions)
+    }
+
+    if (params.omega_mutabilities){
+        ABSOLUTEMUTABILITIES(preprocess_n_depths,
+                                expanded_panel,
+                                GROUPGENES.out.json_genes.first())
+        SUBSETOMEGA.out.mutations
+        .join(ABSOLUTEMUTABILITIES.out.mutabilities)
+        .set{mutations_n_mutabilities}
+
+        SITECOMPARISON(mutations_n_mutabilities,
+                        SUBSETPANEL.out.subset.first())
+
+        SUBSETOMEGAMULTI.out.mutations
+        .join(ABSOLUTEMUTABILITIES.out.mutabilities)
+        .set{mutations_n_mutabilities_globalloc}
+
+        SITECOMPARISONMULTI(mutations_n_mutabilities_globalloc,
+                                SUBSETPANEL.out.subset.first())
     }
 
 
@@ -107,9 +117,8 @@ workflow OMEGA_ANALYSIS{
 
         PREPROCESSINGGLOBALLOC(muts_n_depths_n_profile,
                                 expanded_panel,
-                                relative_mutationrates.first(),
+                                mutationrates.first(),
                                 all_samples_mut_profile)
-        ch_versions = ch_versions.mix(PREPROCESSINGGLOBALLOC.out.versions)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
         .join( depth )
@@ -118,7 +127,6 @@ workflow OMEGA_ANALYSIS{
         ESTIMATORGLOBALLOC(preprocess_globalloc_n_depths,
                             expanded_panel,
                             GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATORGLOBALLOC.out.versions)
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
 
@@ -128,7 +136,25 @@ workflow OMEGA_ANALYSIS{
             .set{mutations_n_omegagloloc}
 
             PLOTOMEGAGLOBALLOC(mutations_n_omegagloloc)
-            ch_versions = ch_versions.mix(PLOTOMEGAGLOBALLOC.out.versions)
+        }
+
+        if (params.omega_mutabilities){
+            ABSOLUTEMUTABILITIESGLOBALLOC(preprocess_globalloc_n_depths,
+                                            expanded_panel,
+                                            GROUPGENES.out.json_genes.first())
+            SUBSETOMEGA.out.mutations
+            .join(ABSOLUTEMUTABILITIESGLOBALLOC.out.mutabilities)
+            .set{mutations_n_mutabilities_globalloc}
+
+            SITECOMPARISONGLOBALLOC(mutations_n_mutabilities_globalloc,
+                                    SUBSETPANEL.out.subset.first())
+
+            SUBSETOMEGAMULTI.out.mutations
+            .join(ABSOLUTEMUTABILITIESGLOBALLOC.out.mutabilities)
+            .set{mutations_n_mutabilities_globalloc}
+
+            SITECOMPARISONGLOBALLOCMULTI(mutations_n_mutabilities_globalloc,
+                                            SUBSETPANEL.out.subset.first())
         }
 
     } else {
@@ -137,88 +163,11 @@ workflow OMEGA_ANALYSIS{
 
 
 
-    if (params.omega_vaf_distorsioned) {
-
-        Channel.of([ [ id: "all_samples" ] ])
-        .join( SUBSETMUTATIONS.out.subset )
-        .set{ all_samples_muts }
-
-        SUBSETOMEGA_EXPANDED(all_samples_muts)
-        ch_versions = ch_versions.mix(SUBSETOMEGA_EXPANDED.out.versions)
-
-        SUBSETOMEGA_EXPANDED.out.mutations
-        .join( depth )
-        .join( profile )
-        .set{ muts_n_depths_n_profile_exp }
-
-        // FIXME: here I am using bedfile as a dummy value channel
-        PREPROCESSINGEXP( muts_n_depths_n_profile_exp, expanded_panel, bedfile)
-        ch_versions = ch_versions.mix(PREPROCESSINGEXP.out.versions)
-
-        PREPROCESSINGEXP.out.mutabs_n_mutations_tsv
-        .join( depth )
-        .set{ preprocess_n_depths_exp }
-
-        ESTIMATOREXP( preprocess_n_depths_exp, expanded_panel, GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATOREXP.out.versions)
-
-
-
-
-        SUBSETOMEGA_OK(all_samples_muts)
-        ch_versions = ch_versions.mix(SUBSETOMEGA_OK.out.versions)
-
-        SUBSETOMEGA_OK.out.mutations
-        .join( depth )
-        .join( profile )
-        .set{ muts_n_depths_n_profile_ok }
-
-        // FIXME: here I am using bedfile as a dummy value channel
-        PREPROCESSINGOK( muts_n_depths_n_profile_ok, expanded_panel, bedfile)
-        ch_versions = ch_versions.mix(PREPROCESSINGEXP.out.versions)
-
-        PREPROCESSINGOK.out.mutabs_n_mutations_tsv
-        .join( depth )
-        .set{ preprocess_n_depths_ok }
-
-        ESTIMATOROK( preprocess_n_depths_ok, expanded_panel, GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATOROK.out.versions)
-
-
-
-        SUBSETOMEGA_REDUCED(all_samples_muts)
-        ch_versions = ch_versions.mix(SUBSETOMEGA_REDUCED.out.versions)
-
-        SUBSETOMEGA_REDUCED.out.mutations
-        .join( depth )
-        .join( profile )
-        .set{ muts_n_depths_n_profile_red }
-
-        // FIXME: here I am using bedfile as a dummy value channel
-        PREPROCESSINGRED( muts_n_depths_n_profile_red, expanded_panel, bedfile)
-        ch_versions = ch_versions.mix(PREPROCESSINGRED.out.versions)
-
-        PREPROCESSINGRED.out.mutabs_n_mutations_tsv
-        .join( depth )
-        .set{ preprocess_n_depths_red }
-
-        ESTIMATORRED( preprocess_n_depths_red, expanded_panel, GROUPGENES.out.json_genes.first())
-        ch_versions = ch_versions.mix(ESTIMATORRED.out.versions)
-
-        expanded_results = ESTIMATOREXP.out.results
-        concording_results = ESTIMATOROK.out.results
-        reduced_results = ESTIMATORRED.out.results
-    } else {
-        expanded_results = Channel.empty()
-    }
-
-
 
     emit:
     results         = ESTIMATOR.out.results
     results_global  = global_loc_results
 
-    versions = ch_versions           // channel: [ versions.yml ]
 
     // plots = ONCODRIVE3D.out.plots
 

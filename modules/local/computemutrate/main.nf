@@ -12,7 +12,7 @@ process MUTRATE {
 
     output:
     tuple val(meta), path("*.mutrates.tsv"), emit: mutrates
-    path  "versions.yml"                   , emit: versions
+    path  "versions.yml"                   , topic: versions
 
 
     when:

@@ -19,7 +19,7 @@ process ONCODRIVEFML {
     tuple val(meta), path("**.png")     , emit: png
     tuple val(meta), path("**.html")    , emit: html
     tuple val(meta), path("${meta.id}.${mode}/")         , emit: folder
-    path "versions.yml"                 , emit: versions
+    path "versions.yml"                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

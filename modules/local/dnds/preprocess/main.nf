@@ -13,7 +13,7 @@ process PREPROCESS_DNDS {
 
     output:
     tuple val(meta), path("*.depths_input.tsv") , emit: depths
-    path "versions.yml"                         , emit: versions
+    path "versions.yml"                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
