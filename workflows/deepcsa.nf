@@ -563,22 +563,18 @@ workflow DEEPCSA{
 
         if (params.mutationrate && params.mutrate_regressions){
             REGRESSIONSMUTRATE("mutrate", all_mutrates_file, params.mutrate_regressions)
-            ch_versions = ch_versions.mix(REGRESSIONSMUTRATE.out.versions)
         }
 
         if (params.oncodrivefml && params.oncodrivefml_regressions){
             REGRESSIONSONCODRIVEFML("oncodrivefml", oncodrivefml_regressions_files.toList(), params.oncodrivefml_regressions)
-            ch_versions = ch_versions.mix(REGRESSIONSONCODRIVEFML.out.versions)
         }
 
         if (params.omega && params.omega_regressions){
             REGRESSIONSOMEGA("omega", omega_regressions_files.toList(), params.omega_regressions)
-            ch_versions = ch_versions.mix(REGRESSIONSOMEGA.out.versions)
         }
 
         if (params.omega_globalloc && params.omega_regressions){
             REGRESSIONSOMEGAGLOB("omegagloballoc", omega_regressions_files.toList(), params.omega_regressions)
-            ch_versions = ch_versions.mix(REGRESSIONSOMEGAGLOB.out.versions)
         }
 
     }
