@@ -373,7 +373,7 @@
                     "fa_icon": "far fa-file-code"
                 },
                 "responses_excluded_regressions": {
-                    "type": "string",
+                    "type": "object",
                     "mimetype": "text/plain",
                     "description": "Set of responses for which not to run the analysis in a specific method-metric combination",
                     "help_text": "If you want to exclude from the analysis a subset of responses, add in a dictionary format the method-metric and the responses separated by comma",
@@ -396,7 +396,7 @@
                     "fa_icon": "far fa-file-code"
                 },
                 "predictors_plot_config_regressions": {
-                    "type": "string",
+                    "type": "object",
                     "mimetype": "text/plain",
                     "description": "Dictionary containing the plot configuration for each predictor variable. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
                     "help_text": "Provide here the configuration to display the results in the plot. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
@@ -411,7 +411,7 @@
                     "fa_icon": "far fa-file-code"
                 },
                 "multipletesting_join_regressions": {
-                    "type": "string",
+                    "type": "object",
                     "mimetype": "text/plain",
                     "default": "",
                     "description": "Rules to join metrics tables for its p-values to be corrected together after multiple testing",
@@ -419,7 +419,7 @@
                     "fa_icon": "far fa-file-code"
                 },
                 "multivariate_rules_regressions": {
-                    "type": "string",
+                    "type": "object",
                     "mimetype": "text/plain",
                     "default": "",
                     "description": "User rules to choose which variables to run together in the multivariate regressions",
