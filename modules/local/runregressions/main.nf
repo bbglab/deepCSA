@@ -34,8 +34,6 @@ process RUNREGRESSIONS {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "regressions"
     def responses_excluded = "\'${groovy.json.JsonOutput.toJson(responses_excluded_regressions)}\'"
     def predictors_plot_config = "\'${groovy.json.JsonOutput.toJson(predictors_plot_config_regressions)}\'"
     def multipletesting_join = "\'${groovy.json.JsonOutput.toJson(multipletesting_join_regressions)}\'"
@@ -71,8 +69,6 @@ process RUNREGRESSIONS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "regressions"
     """
 
     cat <<-END_VERSIONS > versions.yml
