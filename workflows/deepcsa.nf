@@ -447,6 +447,8 @@ workflow DEEPCSA{
 
     if (params.omega){
         omega_regressions_files = Channel.empty()
+        omega_regressions_files_gloc = Channel.empty()
+
         // Omega
         if (params.profileall){
             OMEGA(MUT_PREPROCESSING.out.somatic_mafs,
@@ -464,7 +466,7 @@ workflow DEEPCSA{
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
-                // omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results_global.map{ it -> it[1] })
+                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGA.out.results_global.map{ it -> it[1] })
             }
 
             // Omega multi
@@ -483,7 +485,7 @@ workflow DEEPCSA{
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGAMULTI.out.results.map{ it -> it[1] })
-                // omega_regressions_files = omega_regressions_files.mix(OMEGAMULTI.out.results_global.map{ it -> it[1] })
+                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGAMULTI.out.results_global.map{ it -> it[1] })
             }
         }
         if (params.profilenonprot){
@@ -499,7 +501,7 @@ workflow DEEPCSA{
                             )
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
-                // omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results_global.map{ it -> it[1] })
+                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGANONPROT.out.results_global.map{ it -> it[1] })
             }
 
             OMEGANONPROTMULTI(MUT_PREPROCESSING.out.somatic_mafs,
@@ -515,7 +517,7 @@ workflow DEEPCSA{
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGANONPROTMULTI.out.results.map{ it -> it[1] })
-                // omega_regressions_files = omega_regressions_files.mix(OMEGANONPROTMULTI.out.results_global.map{ it -> it[1] })
+                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGANONPROTMULTI.out.results_global.map{ it -> it[1] })
             }
         }
 
@@ -574,7 +576,7 @@ workflow DEEPCSA{
         }
 
         if (params.omega_globalloc && params.omega_regressions){
-            REGRESSIONSOMEGAGLOB("omegagloballoc", omega_regressions_files.toList(), params.omega_regressions)
+            REGRESSIONSOMEGAGLOB("omegagloballoc", omega_regressions_files_gloc.toList(), params.omega_regressions)
         }
 
     }
