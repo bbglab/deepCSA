@@ -32,7 +32,7 @@ def process_signatures(signature_probabilities_files):
 @click.option('--signature-probabilities', type=click.Path(exists=True), help='File listing decomposed mutation probability files.')
 
 def main(signature_probabilities):
-    click.echo(f"Combining signature probabilities of all samples and groups...")
+    click.echo("Combining signature probabilities of all samples and groups...")
     process_signatures(signature_probabilities)
 
 if __name__ == '__main__':

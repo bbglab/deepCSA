@@ -20,7 +20,6 @@ process FILTER_BATCH {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def repetitive_variant = task.ext.repetitive_variant ?: "${params.repetitive_variant_thres}"
     def germline_threshold = task.ext.germline_threshold ?: "${params.germline_threshold}"
@@ -34,8 +33,6 @@ process FILTER_BATCH {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch all_samples.cohort.filtered.tsv.gz
 

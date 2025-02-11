@@ -1,5 +1,5 @@
 process TABIX_BGZIPTABIX_QUERY_INDEX {
-    cache true
+    cache false
 
     tag "$meta.id"
     label 'process_high'
