@@ -712,7 +712,7 @@ def main(pdf_path, metric,
                             global_loc = False)
 
             elif method == "omegagloballoc":
-                process_omega(omega_data = config["metrics.data"]["omega"],
+                process_omega(omega_data = config["metrics.data"]["omegagloballoc"],
                             omega_config = method_config, 
                             total_cols_by = "mean",
                             rows_names = responses,
