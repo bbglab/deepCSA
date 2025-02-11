@@ -15,9 +15,8 @@ workflow ONCODRIVEFML_ANALYSIS{
     panel_file
     cadd_scores
     mode
-    
-    main:
 
+    main:
     ONCODRIVEFMLBED(panel_file)
 
     SUBSETONCODRIVEFML(mutations)
@@ -37,8 +36,4 @@ workflow ONCODRIVEFML_ANALYSIS{
     results_folder         = ONCODRIVEFML.out.folder          // channel: [ val(meta), file(results) ]
     results_snvs_folder    = ONCODRIVEFMLSNVS.out.folder      // channel: [ val(meta), file(results) ]
 
-
-    emit:
-    results         = ONCODRIVEFML.out.tsv          // channel: [ val(meta), file(results) ]
-    results_snvs    = ONCODRIVEFMLSNVS.out.tsv      // channel: [ val(meta), file(results) ]
 }

@@ -261,7 +261,7 @@ workflow DEEPCSA{
 
 
         // Concatenate all outputs into a single file
-        mutrate_empty = Channel.empty()
+        Channel.empty()
         .concat(MUTRATEALL.out.mutrates.map{ it -> it[1]}.flatten())
         .concat(MUTRATEPROT.out.mutrates.map{ it -> it[1]}.flatten())
         .concat(MUTRATENONPROT.out.mutrates.map{ it -> it[1]}.flatten())
