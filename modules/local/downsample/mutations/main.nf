@@ -17,8 +17,7 @@ process DOWNSAMPLE_MUTATIONS {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def downsample_prop = task.ext.downsample_prop ?: 0.5
-    // def configuration = task.ext.use_hotspot_bed ? "${bedfile} ${expansion} 1" : 'None 0 0'
+    def downsample_prop = task.ext.downsample_prop ?: 1
     """
     downsample_script.py mutations \\
                         --file ${mutations_file} \\

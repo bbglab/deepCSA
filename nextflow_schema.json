@@ -338,7 +338,7 @@
                 }
             }
         },
-      "regressions_config": {
+        "regressions_config": {
             "title": "Parameters needed to run the regressions",
             "type": "object",
             "fa_icon": "fas fa-dna",
@@ -560,6 +560,19 @@
                     "type": "integer",
                     "description": "Any variant shared among these or more samples is flagged as repetitive variant.",
                     "default": 5,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "downsample": {
+                    "type": "boolean",
+                    "description": "Decide if you want to do downsampling of the mutations and depth to a given proportion of the maximum. Uniform across samples.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "downsample_proportion": {
+                    "type": "number",
+                    "description": "Any variant shared among these or more samples is flagged as repetitive variant.",
+                    "default": 1,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 }

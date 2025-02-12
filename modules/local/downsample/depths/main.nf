@@ -21,7 +21,7 @@ process DOWNSAMPLE_DEPTHS {
     task.ext.when == null || task.ext.when
 
     script:
-    def downsample_prop = task.ext.downsample_prop ?: 0.5
+    def downsample_prop = task.ext.downsample_prop ?: 1
     // def configuration = task.ext.use_hotspot_bed ? "${bedfile} ${expansion} 1" : 'None 0 0'
     """
     downsample_script.py depths \\

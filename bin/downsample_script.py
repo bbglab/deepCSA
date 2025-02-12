@@ -9,11 +9,10 @@ import numpy as np
 def cli():
     pass
 
-@cli.command()
-@click.argument('depths')
+@cli.command(name='depths')
 @click.option('--file', required=True, type=click.Path(exists=True), help='Input file with depths.')
 @click.option('--proportion', required=True, type=float, help='Proportion to downsample depth values.')
-def downsample(depths, file, proportion):
+def downsample_depths(file, proportion):
     """
     Downsample depth values in the provided file based on the given proportion.
 
@@ -39,12 +38,11 @@ def downsample(depths, file, proportion):
 
 
 
-@cli.command()
-@click.argument('mutations')
+@cli.command(name='mutations')
 @click.option('--file', required=True, type=click.Path(exists=True), help='Input file with mutations info.')
 @click.option('--proportion', required=True, type=float, help='Proportion to downsample depth values.')
 @click.option('--samplename', required=True, type=str, help='Sample name for output file.')
-def downsample_mutations(mutations, file, proportion, samplename):
+def downsample_mutations(file, proportion, samplename):
     """
     Downsample mutation depths and filter mutations based on VAF.
 
