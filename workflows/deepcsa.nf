@@ -102,6 +102,8 @@ include { MULTIQC                                           } from '../modules/n
 include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS       } from '../modules/local/annotatedepth/main'
+include { DOWNSAMPLE_DEPTHS         as DOWNSAMPLEDEPTHS     } from '../modules/local/downsample/depths/main'
+include { DOWNSAMPLE_MUTATIONS      as DOWNSAMPLEMUTS       } from '../modules/local/downsample/mutations/main'
 include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
 include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/local/mutations2sbs/main'
 
@@ -208,8 +210,13 @@ workflow DEEPCSA{
     CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
-    ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
-
+    ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
+    if (params.downsample){
+        DOWNSAMPLEDEPTHS(annotated_depths_full)
+        annotated_depths = DOWNSAMPLEDEPTHS.out.downsampled_depths
+    } else {
+        annotated_depths = annotated_depths_full
+    }
 
     if (params.plot_depths){
         PLOTDEPTHSALLCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
@@ -225,6 +232,14 @@ workflow DEEPCSA{
                         seqinfo_df,
                         CREATEPANELS.out.added_custom_regions
                         )
+    if (params.downsample){
+        DOWNSAMPLEMUTS(MUT_PREPROCESSING.out.somatic_mafs)
+        somatic_mutations = DOWNSAMPLEMUTS.out.downsampled_muts
+    } else {
+        somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
+    }
+
+
     positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
     Channel.of([["id": "all_samples"]])
