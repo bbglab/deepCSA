@@ -5,6 +5,14 @@ import click
 import pandas as pd
 import numpy as np
 
+
+# Perform uniform sampling with replacement from a pool of 0s and 1s
+def uniform_sampling(row):
+    ref_depth = row['orig_DEPTH'] - row['ALT_DEPTH']
+    pool = [1] * row['ALT_DEPTH'] + [0] * ref_depth
+    sampled = np.random.choice(pool, size=row['DEPTH'], replace=True)
+    return sampled.sum()
+
 @click.group()
 def cli():
     pass
@@ -55,17 +63,18 @@ def downsample_mutations(file, proportion, samplename):
 
     # Load the input file
     df = pd.read_csv(file, sep='\t', header=0)
+    df = df.rename(columns={"DEPTH": "orig_DEPTH"})
 
     # Downsample the depth values by multiplying and rounding
-    df["DEPTH"] = ((df["DEPTH"] * proportion) // 1).astype(int)
+    df["DEPTH"] = ((df["orig_DEPTH"] * proportion) // 1).astype(int)
 
     # Use Poisson distribution to decide if mutation remains
-    df['upd_ALT_DEPTH'] = df.apply(lambda row: np.random.poisson(row['VAF'], row['DEPTH']).sum(), axis=1)
-    df['ALT_DEPTH'] = df['upd_ALT_DEPTH']
-    df['retain_mutation'] = df['upd_ALT_DEPTH'] > 0
+    #df['upd_ALT_DEPTH'] = df.apply(lambda row: np.random.poisson(row['VAF'], row['DEPTH']).sum(), axis=1)
+    df['ALT_DEPTH'] = df.apply(uniform_sampling, axis=1)
+    df['retain_mutation'] = df['ALT_DEPTH'] > 0
 
     # Filter to retain only mutations
-    filtered_df = df[df['retain_mutation']].drop(columns=['retain_mutation', 'upd_ALT_DEPTH'])
+    filtered_df = df[df['retain_mutation']].drop(columns=['retain_mutation', 'orig_DEPTH'])
     filtered_df["VAF"] = df['ALT_DEPTH'] / df["DEPTH"]
 
     # Output the downsampled data
