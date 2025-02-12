@@ -10,7 +10,7 @@ import numpy as np
 def uniform_sampling(row):
     ref_depth = row['orig_DEPTH'] - row['ALT_DEPTH']
     pool = [1] * row['ALT_DEPTH'] + [0] * ref_depth
-    sampled = np.random.choice(pool, size=row['DEPTH'], replace=True)
+    sampled = np.random.choice(pool, size=row['DEPTH'], replace=False)
     return sampled.sum()
 
 @click.group()
