@@ -17,14 +17,11 @@ workflow MUTATED_EPITHELIUM_VAF {
 
 
     main:
-    ch_versions = Channel.empty()
 
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
     if (params.all_duplex_counts){
         SUBSETMUTEPIVAFAM(SUBSETMUTATIONS.out.subset)
-        ch_versions = ch_versions.mix(SUBSETMUTEPIVAFAM.out.versions)
 
         SUBSETMUTEPIVAFAM.out.mutations
         .join(omegas)
@@ -44,9 +41,8 @@ workflow MUTATED_EPITHELIUM_VAF {
     }
 
 
-    emit:
+    // emit:
     // TODO add some other output
     // mut_epi_sample  = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_sample
-    versions        = ch_versions                // channel: [ versions.yml ]
 
 }

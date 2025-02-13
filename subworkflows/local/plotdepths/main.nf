@@ -14,20 +14,15 @@ workflow PLOT_DEPTHS {
     panel
 
     main:
-    ch_versions = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETDEPTHS(depth, bedfile)
-    ch_versions = ch_versions.mix(SUBSETDEPTHS.out.versions)
 
     ONCODRIVEFMLBED(panel)
-    ch_versions = ch_versions.mix(ONCODRIVEFMLBED.out.versions)
 
     PLOTDEPTHS(SUBSETDEPTHS.out.subset, ONCODRIVEFMLBED.out.bed)
-    ch_versions = ch_versions.mix(PLOTDEPTHS.out.versions)
 
 
     emit:
     plots = PLOTDEPTHS.out.plots
-    versions = ch_versions                // channel: [ versions.yml ]
 }

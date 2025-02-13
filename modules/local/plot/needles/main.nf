@@ -16,8 +16,8 @@ process PLOT_NEEDLES {
     path (gene_data_df)
 
     output:
-    tuple val(meta), path("**.pdf")  , emit: plots
-    path "versions.yml"             , emit: versions
+    tuple val(meta), path("**.pdf")  , emit: plots, optional : true
+    path "versions.yml"              , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -26,8 +26,6 @@ process PLOT_NEEDLES {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def output_prefix = task.ext.output_prefix ?: ""
-    def filters = task.ext.filters ?: ""
-    def requested_plots = task.ext.plots ?: ""
     """
     plot_needles.py \\
                     ${prefix} \\
@@ -43,8 +41,10 @@ process PLOT_NEEDLES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
+    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_prefix = task.ext.output_prefix ?: ""
+
     """
     touch ${prefix}${output_prefix}.pdf
 

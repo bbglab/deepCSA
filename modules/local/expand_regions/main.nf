@@ -11,23 +11,22 @@ process EXPAND_REGIONS {
 
     input:
     tuple val(meta)     , path(panel)
-    path(bedfile)
+    path (bedfile)
     // tuple val(meta2)    , path(bedfile)
 
     output:
     tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
     tuple val(meta), path("hotspot_names.json") , emit: new_regions_json
-    path "versions.yml"                         , emit: versions
+    path "versions.yml"                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
     def expansion = task.ext.expansion ?: 30
+    def configuration = task.ext.use_hotspot_bed ? "${bedfile} ${expansion} 1" : 'None 0 0'
     """
-    add_hotspots.py ${panel} ${bedfile} ${expansion}
+    add_hotspots.py ${panel} ${configuration}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

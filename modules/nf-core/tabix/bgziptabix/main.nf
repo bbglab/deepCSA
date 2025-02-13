@@ -15,7 +15,7 @@ process TABIX_BGZIPTABIX {
     output:
     tuple val(meta), path("*.gz"), path("*.tbi"), optional: true, emit: gz_tbi
     tuple val(meta), path("*.gz"), path("*.csi"), optional: true, emit: gz_csi
-    path  "versions.yml" ,                        emit: versions
+    path  "versions.yml" ,                        topic: versions
 
     when:
     task.ext.when == null || task.ext.when

@@ -1,6 +1,10 @@
 include { SITESFROMPOSITIONS                                            } from '../../../modules/local/sitesfrompositions/main'
 include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/main'
+
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/panel/main'
+
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING             } from '../../../modules/local/process_annotation/panelcustom/main'
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH         } from '../../../modules/local/process_annotation/panelcustom/main'
 
 include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
 
@@ -45,16 +49,11 @@ workflow CREATE_PANELS {
 
     main:
 
-    ch_versions = Channel.empty()
-
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
-    ch_versions = ch_versions.mix(SITESFROMPOSITIONS.out.versions)
 
     // Create a tuple for VEP annotation (mandatory)
-    SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation } // change names of vars
-    // TEMPORARY: bgreference won't work in my cluster so to continue I give sites_annotation from params
-    // Channel.of([1]).map{ it -> [[ id : "captured_panel"], params.sites_annotation] }.set{ sites_annotation }
+    SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation }
 
     // Annotate all possible mutations in the captured panel
     // COMMENTED to avoid running VEP again and again during testing
@@ -65,15 +64,30 @@ workflow CREATE_PANELS {
                     params.vep_cache_version,
                     vep_cache,
                     vep_extra_files)
-    ch_versions = ch_versions.mix(VCFANNOTATEPANEL.out.versions)
 
     // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
-    ch_versions = ch_versions.mix(POSTPROCESSVEPPANEL.out.versions)
+
+    if (params.customize_annotation) {
+        custom_annotation_tsv = file(params.custom_annotation_tsv)
+
+        // Update specific regions based on user preferences
+        CUSTOMPROCESSING(POSTPROCESSVEPPANEL.out.compact_panel_annotation, custom_annotation_tsv)
+        complete_annotated_panel = CUSTOMPROCESSING.out.custom_panel_annotation
+
+        CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANEL.out.rich_panel_annotation, custom_annotation_tsv)
+        rich_annotated = CUSTOMPROCESSINGRICH.out.custom_panel_annotation
+
+        added_regions = CUSTOMPROCESSINGRICH.out.added_regions
+
+    } else {
+        complete_annotated_panel = POSTPROCESSVEPPANEL.out.compact_panel_annotation
+        rich_annotated = POSTPROCESSVEPPANEL.out.rich_panel_annotation
+        added_regions = Channel.empty()
+    }
 
     // Create captured-specific panels: all modalities
-    CREATECAPTUREDPANELS(POSTPROCESSVEPPANEL.out.compact_panel_annotation)
-    ch_versions = ch_versions.mix(CREATECAPTUREDPANELS.out.versions)
+    CREATECAPTUREDPANELS(complete_annotated_panel)
 
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all).set{all_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all_bed).set{all_bed}
@@ -106,7 +120,7 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths, params.consensus_panel_min_depth)
 
     emit:
-
+    full_panel_annotated     = VCFANNOTATEPANEL.out.tab
     all_panel               = all_panel.first()
     all_bed                 = all_bed.first()
     prot_panel              = prot_panel.first()
@@ -134,6 +148,9 @@ workflow CREATE_PANELS {
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
+    panel_annotated_rich        = rich_annotated
+    added_custom_regions        = added_regions
+
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
     // prot_sample_panel       = restructureSamplePanel(CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel.flatten())
@@ -144,7 +161,5 @@ workflow CREATE_PANELS {
     // exons_sample_bed        = restructureSamplePanel(CREATESAMPLEPANELSEXONS.out.sample_specific_panel_bed.flatten())
     // introns_sample_panel    = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel.flatten())
     // introns_sample_bed      = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel_bed.flatten())
-
-    versions = ch_versions                // channel: [ versions.yml ]
 
 }

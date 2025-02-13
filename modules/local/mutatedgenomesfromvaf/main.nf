@@ -10,7 +10,7 @@ process MUTATED_GENOMES_FROM_VAF {
 
     output:
     tuple val(meta), path("**.covered_genomes_summary.tsv") , emit: mutated_epi_sample
-    path  "versions.yml"                                           , emit: versions
+    path  "versions.yml"                                           , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -43,7 +43,7 @@ process MUTATED_GENOMES_FROM_VAF {
 
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
+    def panel_version = task.ext.panel_version ?: "${meta.id}"
     """
     touch ${prefix}.${panel_version}.mutrates.tsv
 

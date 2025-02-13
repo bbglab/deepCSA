@@ -12,7 +12,7 @@ process CREATECUSTOMBEDFILE {
 
     output:
     tuple val(meta), path("*.bed"), emit: bed
-    path "versions.yml"           , emit: versions
+    path "versions.yml"           , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

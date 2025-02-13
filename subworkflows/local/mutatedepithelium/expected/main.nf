@@ -3,9 +3,7 @@ include { TABIX_BGZIPTABIX_QUERY        as SUBSETDEPTHS      } from '../../../..
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS   } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                    as SUBSETMUTEPIVAF  } from '../../../../modules/local/subsetmaf/main'
 include { EXP_MUTRATE                   as EXPMUTRATE        } from '../../../../modules/local/expected_mutrate/main'
-
-
-
+include { CREATECUSTOMBEDFILE           as INTERVALSBED      } from '../../../../modules/local/createpanels/custombedfile/main'
 
 workflow EXPECTED_MUTRATE {
 
@@ -14,26 +12,31 @@ workflow EXPECTED_MUTRATE {
     bedfile
     panel
     depth
+    raw_annotation
 
     main:
-    ch_versions = Channel.empty()
 
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETDEPTHS(depth, bedfile)
-    ch_versions = ch_versions.mix(SUBSETDEPTHS.out.versions)
 
-    // SUBSETMUTEPIVAF(SUBSETMUTATIONS.out.subset)
-    // ch_versions = ch_versions.mix(SUBSETMUTEPIVAF.out.versions)
+    // SUBSET_MUTEPIVAF(SUBSETMUTATIONS.out.subset)
+    INTERVALSBED(panel)
 
-    EXPMUTRATE(panel, SUBSETMUTATIONS.out.subset, SUBSETDEPTHS.out.subset)
-    ch_versions = ch_versions.mix(EXPMUTRATE.out.versions)
+    features_table = params.features_table ? Channel.fromPath( params.features_table, checkIfExists: true) : Channel.fromPath(params.input)
+    EXPMUTRATE(panel,
+                SUBSETMUTATIONS.out.subset,
+                SUBSETDEPTHS.out.subset,
+                raw_annotation,
+                INTERVALSBED.out.bed,
+                features_table
+                )
 
     emit:
     // TODO add some other output
     // mut_epi_sample  = COMPUTEMUTATEDEPITHELIUM.out.mutated_epi_sample
-    versions        = ch_versions                // channel: [ versions.yml ]
+    refcds_object       = EXPMUTRATE.out.rds_file.first()
+    refcds_object_rda   = EXPMUTRATE.out.rda_file.first()
 
 }

@@ -11,7 +11,7 @@ process PLOT_SELECTION_METRICS {
 
     output:
     tuple val(meta), path("**.pdf")  , emit: plots
-    path "versions.yml"              , emit: versions
+    path "versions.yml"              , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -39,6 +39,7 @@ process PLOT_SELECTION_METRICS {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_prefix = task.ext.output_prefix ?: ""
     """
     touch ${prefix}${output_prefix}.pdf
 

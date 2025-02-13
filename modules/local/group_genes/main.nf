@@ -16,7 +16,7 @@ process GROUP_GENES {
     output:
     path("genes2group_out.json")                        , emit: json_genes
     path("pathway_groups_out.json") , optional : true   , emit: json_pathways
-    path "versions.yml"                                 , emit: versions
+    path "versions.yml"                                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

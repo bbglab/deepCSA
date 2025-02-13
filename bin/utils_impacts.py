@@ -7,6 +7,7 @@ GROUPING_DICT = {
     'start_lost': 'nonsense',
 
     'missense_variant': 'missense',
+    'missense': 'missense',                                     ## customly added
     'inframe_insertion': 'missense',
     'inframe_deletion': 'missense',
 
@@ -20,6 +21,7 @@ GROUPING_DICT = {
     'splice_polypyrimidine_tract_variant': 'splice_region_variant',
 
     'synonymous_variant': 'synonymous',
+    'synonymous': 'synonymous',                                 ## customly added
     'incomplete_terminal_codon_variant': 'synonymous',
     'start_retained_variant': 'synonymous',
     'stop_retained_variant': 'synonymous',
@@ -91,6 +93,7 @@ CONSEQUENCES_LIST = [
     'inframe_insertion',
     'inframe_deletion',
     'missense_variant',
+    'missense',                                 ## customly added
     'protein_altering_variant',
     'splice_region_variant',
     'splice_donor_5th_base_variant',
@@ -100,6 +103,7 @@ CONSEQUENCES_LIST = [
     'start_retained_variant',
     'stop_retained_variant',
     'synonymous_variant',
+    'synonymous',                               ## customly added
 
     'coding_sequence_variant',
 
@@ -144,6 +148,7 @@ CONSEQUENCES_LIST_WITHIN = [
     'inframe_insertion',
     'inframe_deletion',
     'missense_variant',
+    'missense',                                 ## customly added
     'protein_altering_variant',
     'splice_region_variant',
     'splice_donor_5th_base_variant',
@@ -153,6 +158,7 @@ CONSEQUENCES_LIST_WITHIN = [
     'start_retained_variant',
     'stop_retained_variant',
     'synonymous_variant',
+    'synonymous',                               ## customly added
     'coding_sequence_variant',
     '5_prime_UTR_variant',
     '3_prime_UTR_variant',

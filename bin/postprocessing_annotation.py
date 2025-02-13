@@ -1,15 +1,12 @@
 #!/usr/local/bin/python
 
-
-import pandas as pd
-import numpy as np
 import sys
+import pandas as pd
 
-from itertools import product
 from bgreference import hg38, hg19, mm10, mm39
 
 from utils import vartype
-from utils_context import canonical_channels, transform_context
+from utils_context import transform_context
 from utils_impacts import *
 from read_utils import custom_na_values
 
@@ -19,6 +16,21 @@ assembly_name2function = {"hg38": hg38,
                             "mm39": mm39}
 
 
+muttype_conversion_map = {
+                'G>A': 'C>T',
+                'G>C': 'C>G',
+                'G>T': 'C>A',
+                'A>G': 'T>C',
+                'A>T': 'T>A',
+                'A>C': 'T>G',
+            }
+
+
+def get_canonical_mutid(mutid):
+    elements__ = mutid.split("_")
+    mutation_change = elements__[-1]
+    upd_mutation_change = muttype_conversion_map.get(mutation_change, mutation_change)
+    return "_".join(elements__[:-1] + [upd_mutation_change])
 
 
 
@@ -127,7 +139,9 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 
-def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_ = False, assembly = 'hg38'):
+def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
+                                hotspots_file = None,
+                                all_ = False, assembly = 'hg38'):
     """
     # TODO
     explain what this function does
@@ -178,13 +192,22 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     # remove context from the other substitution types
     genome_func = assembly_name2function[assembly]
     annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', genome_func) if x["TYPE"] == "SNV" else "-", axis = 1)
+    annotated_variants["MUTTYPE"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: f"{x[1]}>{x[4]}" if x != '-' else '-')
     annotated_variants["CONTEXT_MUT_SIGPRO"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: f"{x[0]}[{x[1]}>{x[4]}]{x[2]}" if x != '-' else '-')
 
-#    annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'SYMBOL', 'IMPACT', 'CONTEXT']]
-#    annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT']
     annotated_variants_columns = [x for x in annotated_variants.columns if x.replace("canonical_", "") not in ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'CHROM:POS', 'MUT'] ]
     annotated_variants_reduced = annotated_variants.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
+
+
+    if hotspots_file is not None:
+        hotspots_def_df = pd.read_table(hotspots_file, header = 0, sep = '\t')
+        new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS', "MUTTYPE"] ]
+        annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS', "MUTTYPE"], how = 'left')
+        annotated_variants_columns += new_hostpot_columns
+
     annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
+
+    annotated_variants_reduced["MUT_ID_pyr"] = annotated_variants_reduced["MUT_ID"].apply(lambda x : get_canonical_mutid(x))
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,
@@ -211,7 +234,7 @@ if __name__ == '__main__':
         assembly_name = 'hg38'
 
 
-    if len(sys.argv) >= 4:
+    if len(sys.argv) > 4:
         print("Using the provided value:", end = "\t")
         try:
             all_sep = eval(f"{sys.argv[4]}")
@@ -223,6 +246,19 @@ if __name__ == '__main__':
         all_sep = False
 
 
+    if len(sys.argv) > 5:
+        print("Using the provided value:", end = "\t")
+        try:
+            hotspots_annotation_file = f"{sys.argv[5]}"
+            print(hotspots_annotation_file)
+            hotspots_annotation_df = pd.read_table(hotspots_annotation_file)
+            print(hotspots_annotation_df.head())
+        except:
+            print("You should provide the path to the hotspots file as the fifth argument.")
+            exit(1)
+    else:
+        hotspots_annotation_file = None
 
-    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, all_sep, assembly_name)
+
+    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, hotspots_annotation_file, all_sep, assembly_name)
 
