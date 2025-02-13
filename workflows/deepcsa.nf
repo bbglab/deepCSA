@@ -492,7 +492,6 @@ workflow DEEPCSA{
                                 OMEGA.out.results_global
                                 // OMEGAMULTI.out.results_global
                                 )
-        ch_versions = ch_versions.mix(MUTATEDEPITHELIUMVAF.out.versions)
     }
 
 

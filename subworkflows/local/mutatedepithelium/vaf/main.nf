@@ -13,7 +13,7 @@ workflow MUTATED_EPITHELIUM_VAF {
     take:
     mutations
     bedfile
-    omegas    
+    omegas
 
 
     main:
@@ -27,17 +27,14 @@ workflow MUTATED_EPITHELIUM_VAF {
         .join(omegas)
         .set{mutations_n_omega}
         MUTATEDGENOMESFROMVAFAM(mutations_n_omega)
-        ch_versions = ch_versions.mix(MUTATEDGENOMESFROMVAFAM.out.versions)
     } else {
         SUBSETMUTEPIVAF(SUBSETMUTATIONS.out.subset)
-        ch_versions = ch_versions.mix(SUBSETMUTEPIVAF.out.versions)
 
         SUBSETMUTEPIVAF.out.mutations
         .join(omegas)
         .set{mutations_n_omega}
 
         MUTATEDGENOMESFROMVAF(mutations_n_omega)
-        ch_versions = ch_versions.mix(MUTATEDGENOMESFROMVAF.out.versions)
     }
 
 
