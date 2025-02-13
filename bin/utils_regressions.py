@@ -85,6 +85,14 @@ def create_metric_table(metric_df, metric_var, rows_var, cols_var,
                                   index = rows_var,
                                   columns = cols_var).reindex(index = rows_names,
                                                               columns = cols_names)
+    # fill NA with gene's mean
+    metric_df_p = metric_df_p.apply(lambda row: row.fillna(row.mean()), axis = 1)
+
+    # remove genes for which all the values are NA
+    genes2remove = metric_df_p.loc[metric_df_p.isna().all(axis = 1)].index
+    print("These genes will be removed from the analysis because no value was calculated:", genes2remove.tolist())
+    metric_df_p = metric_df_p.dropna(how = 'all')
+
     # reorder alphabetically if provided ordered is not kept
     if not keep_rows_ordered:
         metric_df_p = metric_df_p.sort_index(axis = 0)
