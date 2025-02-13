@@ -142,7 +142,7 @@ def process_mutrate(mutrate_file, mutrate_config,
     Generates and saves pivoted dataframes of mutation rates,
     with columns as samples and rows as genes. Does the same with
     a two column table for the total of the genes and the total
-    of the samples. Creates as many versions as those specified 
+    of the samples. Creates as many versions as those specified
     in mutrate_config
 
     Parameters
@@ -169,7 +169,7 @@ def process_mutrate(mutrate_file, mutrate_config,
         Path where to store the generated files
     metric: str (default: "mutrate")
         Mutation rate metric to use, which can be mutation rate or
-        mutated reads rate. 
+        mutated reads rate.
         Allowed values: mutrate, mutreadsrate
 
     Returns
@@ -221,8 +221,8 @@ def process_mutrate(mutrate_file, mutrate_config,
             mutrate_df_f = mutrate_df.loc[(mutrate_df["REGIONS"] == region)
                                             & (mutrate_df["MUTTYPES"] == muttype)]
             mutrate_df_f = mutrate_df_f.rename({"GENE": "gene", "SAMPLE_ID": "sample"}, axis = 1)
-            
-            if rows_names == ['']: 
+
+            if rows_names == ['']:
                 rows_names = [gene for gene in list(mutrate_df_f["gene"].unique()) if gene != "ALL_GENES"]
 
             if muttype == "DELETION-INSERTION": # to correctly name the file below
@@ -260,8 +260,8 @@ def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
     oncodrivefml_config: list
         List containing the specific versions to be created
         regarding metric, profile and significance level
-        Allowed values: zscore, diffobsvsexp, allprof, 
-        nonprotaffprof, nosignificant, significant 
+        Allowed values: zscore, diffobsvsexp, allprof,
+        nonprotaffprof, nosignificant, significant
     total_cols_by: str
         How to calculate the total for the columns of the dataframe.
         Can be "sum", "mean" or "median"
@@ -328,7 +328,7 @@ def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
             oncodrivefml_df_f["sample"] = oncodrivefml_df_f.apply(
                 lambda row: row["sample"].split(".")[0], axis = 1)    # after use, remove profile info to every sample id
             oncodrivefml_df_f = oncodrivefml_df_f.rename({"GENE_ID": "gene"}, axis = 1)
-            if rows_names == ['']: 
+            if rows_names == ['']:
                 rows_names = [gene for gene in list(oncodrivefml_df_f["gene"].unique()) if gene != "ALL_GENES"]
 
             ## table w/ all oncodrivefml values, regardless of significance
@@ -348,7 +348,7 @@ def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
                 ### aproach 1: filter out non-significant values, generates NA
                 # oncodrivefml_df_f.loc[(oncodrivefml_df_f["Q_VALUE"] > 0.05)
                                     # | ((oncodrivefml_df_f["Q_VALUE"].isna()) & (oncodrivefml_df_f["P_VALUE"] > 0.05)), metric_var] = np.nan                                          | ((oncodrivefml_df_f["Q_VALUE"].isna()) & (oncodrivefml_df_f["P_VALUE"] < 0.05))]
-                ### aproach 2: fill non-significant values with zero 
+                ### aproach 2: fill non-significant values with zero
                 oncodrivefml_df_f.loc[(oncodrivefml_df_f["Q_VALUE"] > 0.05)
                                     | ((oncodrivefml_df_f["Q_VALUE"].isna()) & (oncodrivefml_df_f["P_VALUE"] > 0.05)), metric_var] = 0
                 create_metric_table(metric_df = oncodrivefml_df_f,
@@ -412,12 +412,18 @@ def process_omega(omega_data, omega_config,
         omega_dir = omega_data[0]
         omega_data = [f"{omega_dir}/{file}" for file in os.listdir(omega_dir) if omega_modality in file]
         for file in omega_data:
-            sample_df = pd.read_csv(file, sep = "\t", header = 0)
+            try :
+                sample_df = pd.read_csv(file, sep = "\t", header = 0)
+            except pd.errors.EmptyDataError:
+                sample_df = pd.DataFrame()
             sample_df["sample"] = file.split("/")[-1]
             omega_df = pd.concat((omega_df, sample_df)).reset_index(drop = True)
     else:
         for file in omega_data:
-            sample_df = pd.read_csv(file, sep = "\t", header = 0)
+            try :
+                sample_df = pd.read_csv(file, sep = "\t", header = 0)
+            except pd.errors.EmptyDataError:
+                sample_df = pd.DataFrame()
             sample_df["sample"] = file
             omega_df = pd.concat((omega_df, sample_df)).reset_index(drop = True)
 
@@ -427,7 +433,7 @@ def process_omega(omega_data, omega_config,
         vals = val.split("-")
         omega_config_fixed.extend(vals)
 
-    print(omega_config_fixed)    
+    print(omega_config_fixed)
     metric_var = "dnds"
 
     ## mutation impacts
@@ -478,9 +484,9 @@ def process_omega(omega_data, omega_config,
                 print(omega_df_f)
                 omega_df_f["sample"] = omega_df_f.apply(lambda row: row["sample"].split(".")[1], axis = 1)   # after use, remove analysis info to every sample id
                 omega_df_f = omega_df_f.rename({"GENE_ID": "gene"}, axis = 1)
-                if rows_names == ['']: 
+                if rows_names == ['']:
                     rows_names = [gene for gene in list(omega_df_f["gene"].unique()) if gene != "ALL_GENES"]
-            
+
                 ## table w/ all omega values, regardless of significance
                 if "nosignificant" in omega_config_fixed:
                     metric_var4file = f"omega.{metric_var}_{omega_modality}_{impact.replace('_', '')}_{omega2regressions_profile[profile]}_{omega2regressions_muts[uniqormulti]}_nosignificant"
@@ -499,7 +505,7 @@ def process_omega(omega_data, omega_config,
                     metric_var4file = f"omega.{metric_var}_{omega_modality}_{impact.replace('_', '')}_{omega2regressions_profile[profile]}_{omega2regressions_muts[uniqormulti]}_significant"
                     ### aproach 1: filter out non-significant values, generates NA
                     # omega_df_f = omega_df_f.loc[(omega_df_f["pvalue"] < 0.05)]
-                    ### aproach 2: fill non-significant values with zero 
+                    ### aproach 2: fill non-significant values with zero
                     omega_df_f.loc[(omega_df_f["pvalue"] > 0.05), metric_var] = 0
                     create_metric_table(metric_df = omega_df_f,
                                         metric_var = metric_var,
@@ -552,7 +558,7 @@ def univar_linear_regression(response_vars_df, name_response_vars, name_predicto
     highi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     pvals_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     intercepts_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
-    
+
     # list of variables that need intercept passing through zero
     vars_zero_intercep = ["age_decades"]
 
@@ -566,7 +572,7 @@ def univar_linear_regression(response_vars_df, name_response_vars, name_predicto
                 interc = "- 1"
             else:
                 interc = "+ 1"
-            
+
             print(f"MODEL formula (univariable): {response_var} ~ {pred_var} {interc}")
             mod = smf.ols(formula = f'{response_var} ~ {pred_var}', data = response_vars_df, missing = "drop")
             res = mod.fit()
@@ -645,7 +651,7 @@ def univar_mixedeffects_linear_regression(response_vars_df, name_response_vars, 
                     interc = "- 1"
                 else:
                     interc = "+ 1"
-                
+
                 print(f"MODEL formula (univariable): {response_var} ~ {pred_var} {interc}")
                 mod = smf.mixedlm(formula = f'{response_var} ~ {pred_var} {interc}', data = response_vars_df,
                                 groups = response_vars_df[name_random_effects], missing = "drop") #raises error if NA otherwise
@@ -710,7 +716,7 @@ def multivar_linear_regression(response_vars_df, name_response_vars, name_predic
     highi_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     pvals_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
     intercepts_df = pd.DataFrame(index = name_response_vars, columns = name_predictor_vars)
-    
+
     # list of variables that need intercept passing through zero
     vars_zero_intercep = ["age_decades"]
 
@@ -722,7 +728,7 @@ def multivar_linear_regression(response_vars_df, name_response_vars, name_predic
         if rules == None:
             for pred_var in name_predictor_vars:
                 formula = f'{formula} + {pred_var}'
-                
+
         else:
             name_predictor_vars = rules[response_var]
             for pred_var in name_predictor_vars:
