@@ -1,29 +1,30 @@
-process MUTATED_GENOMES_FROM_VAF {
+process MUTATED_CELLS_FROM_VAF {
     tag "$meta.id"
     label 'process_single'
     label 'memory_medium'
 
     container 'docker.io/ferranmuinos/test_mutated_genomes'
+    // conda activate probabilistic
 
     input:
-    path (mutated_genomes_results)
+    tuple val(meta), path (mutated_genomes_results)
+    path (clinical_features)
 
     output:
-    tuple val(meta), path("*.sample.mutated_genomes_from_vaf.tsv") , emit: mutated_epi_sample
-    path  "versions.yml"                                           , emit: versions
+    tuple val(meta), path("*.sample.mutated_genomes_from_vaf.tsv") , emit: mutated_cells_sample
+    path  "versions.yml"                                           , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    // def separator = task.ext.separator ?: "comma"
     """
-    conda activate probabilistic
+
 
     mutgenomes_summary_tables.py \\
                 gather-all \\
-                --metadata ${params.features_table}
+                --metadata ${clinical_features}
                 ;
 
     cat <<-END_VERSIONS > versions.yml
@@ -36,7 +37,7 @@ process MUTATED_GENOMES_FROM_VAF {
     def prefix = task.ext.prefix ?: "all_samples"
     // def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    touch ${prefix}.${panel_version}.mutrates.tsv
+    touch ${prefix}.sample.mutated_genomes_from_vaf.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -45,3 +46,12 @@ process MUTATED_GENOMES_FROM_VAF {
     """
 
 }
+
+// this could be used to define the way sex is encodedand which is the sample id column
+//     def features = task.ext.features ?: ""
+//     """
+//     cat > features_table_information.json << EOF
+//     {
+//         ${features}
+//     }
+//     EOF

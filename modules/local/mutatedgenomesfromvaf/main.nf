@@ -9,8 +9,8 @@ process MUTATED_GENOMES_FROM_VAF {
     tuple val(meta) , path(mutations), path(omegas)
 
     output:
-    tuple val(meta), path("**.covered_genomes_summary.tsv") , emit: mutated_epi_sample
-    path  "versions.yml"                                           , topic: versions
+    tuple val(meta), path("**.covered_genomes_summary.tsv") , emit: mutated_gen_sample
+    path  "versions.yml"                                    , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
