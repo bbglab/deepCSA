@@ -57,7 +57,7 @@ include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkfl
 include { INDELS_SELECTION          as INDELSSELECTION      } from '../subworkflows/local/indels/main'
 
 include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/reads/main'
-include { MUTATED_EPITHELIUM_VAF    as MUTATEDEPITHELIUMVAF } from '../subworkflows/local/mutatedepithelium/vaf/main'
+include { MUTATED_CELLS_VAF         as MUTATEDCELLSVAF      } from '../subworkflows/local/mutatedepithelium/vaf/main'
 
 include { EXPECTED_MUTRATE          as EXPECTEDMUTRATE      } from '../subworkflows/local/mutatedepithelium/expected/main'
 
@@ -487,9 +487,10 @@ workflow DEEPCSA{
         .join(meta_samples_alone)
         .set{ sample_mutations_only }
 
-        MUTATEDEPITHELIUMVAF(sample_mutations_only,
+        MUTATEDCELLSVAF(sample_mutations_only,
                                 CREATEPANELS.out.exons_consensus_bed,
-                                OMEGA.out.results_global
+                                OMEGA.out.results_global,
+                                features_table
                                 // OMEGAMULTI.out.results_global
                                 )
     }

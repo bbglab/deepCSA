@@ -20,8 +20,6 @@ process MUTATED_CELLS_FROM_VAF {
     script:
     // def separator = task.ext.separator ?: "comma"
     """
-
-
     mutgenomes_summary_tables.py \\
                 gather-all \\
                 --metadata ${clinical_features}

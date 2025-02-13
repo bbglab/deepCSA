@@ -9,7 +9,7 @@ include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAFAM  } from '../.
 include { MUTATED_CELLS_FROM_VAF        as MUTATEDCELLSFROMVAFAM    } from '../../../../modules/local/mutatedcellsfromvaf/main'
 
 
-workflow MUTATED_EPITHELIUM_VAF {
+workflow MUTATED_CELLS_VAF {
 
     take:
     mutations
