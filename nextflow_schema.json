@@ -188,6 +188,30 @@
                 }
             }
         },
+        "custom_annotation_configs": {
+            "title": "Custom annotation configurations",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BED-like file to customize the annotation of variants falling in certain regions.",
+            "properties": {
+                "customize_annotation": {
+                    "type": "boolean",
+                    "description": "Do you want to use a custom BED file?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to use a custom BED file?"
+                },
+                "custom_annotation_tsv": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "description": "TSV file with the following columns: chromosome  start   end gene_name    impactful_mutations neutral_impact new_impact",
+                    "help_text": "TSV file with the following columns: chromosome  start   end gene_name    impactful_mutations neutral_impact new_impact",
+                    "fa_icon": "far fa-file-code"
+                }
+            }
+        },
         "hotspot_bedfile_configs": {
             "title": "Definition of hotspot regions configuration",
             "type": "object",
@@ -425,6 +449,13 @@
                     "default": 5,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
+                },
+                "prop_samples_nrich": {
+                    "type": "number",
+                    "description": "Any variant that is n_rich in this proportion of samples is flagged as cohort_n_rich variant.",
+                    "default": 0.1,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
                 }
             }
         },
@@ -544,6 +575,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "",
                     "default": "--no_stats --cache --offline --symbol --protein --canonical --af_gnomadg --af_gnomade"
+                },
+                "vep_params_panel": {
+                    "type": "string",
+                    "description": "Additional parameters for running Ensembl VEP for the panel annotation.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "",
+                    "default": "--no_stats --cache --offline --symbol --protein --canonical"
                 },
                 "download_cache": {
                     "type": "boolean",
