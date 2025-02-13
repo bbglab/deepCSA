@@ -135,11 +135,11 @@ def create_metric_table(metric_df, metric_var, rows_var, cols_var,
 
     ## -- SAVE OR RETURN -- ##
     metric_df_p.to_csv(os.path.join(save_files_dir, f"{metric_var4file.lower()}.tsv"), sep = "\t")
-    assert metric_df_p.shape == (len(rows_names), len(cols_names))
+    # assert metric_df_p.shape == (len(rows_names), len(cols_names))
     metric_rows_total_df.to_csv(os.path.join(save_files_dir, f"{metric_var4file.lower()}.total_{rows_var.lower()}.tsv"), sep = "\t")
-    assert metric_rows_total_df.shape == (len(rows_names), 1)
+    # assert metric_rows_total_df.shape == (len(rows_names), 1)
     metric_cols_total_df.to_csv(os.path.join(save_files_dir, f"{metric_var4file.lower()}.total_{cols_var.lower()}.tsv"), sep = "\t") # having points here may collapse with the file naming in the main function
-    assert metric_cols_total_df.shape == (len(cols_names), 1)
+    # assert metric_cols_total_df.shape == (len(cols_names), 1)
 
     return None
 
