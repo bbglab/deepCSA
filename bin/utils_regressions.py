@@ -8,7 +8,9 @@ def create_metric_table(metric_df, metric_var, rows_var, cols_var,
                         rows_names, cols_names,
                         total_cols_by, total_rows_by,
                         metric_var4file, save_files_dir,
-                        keep_rows_ordered = True, keep_cols_ordered = True):
+                        keep_rows_ordered = True, keep_cols_ordered = True,
+                        missing_values = 'cohort'
+                        ):
     """
     Converts metric_df in a pivoted table using
     metric_var, rows_var and cols_var. Saves this
@@ -75,18 +77,29 @@ def create_metric_table(metric_df, metric_var, rows_var, cols_var,
     Returns
     -------
     None
-
-
     """
-
     ## -- MAIN DATAFRAME -- ##
     # pivot and reindex so that it contains all col_names and rows_names
     metric_df_p = metric_df.pivot(values = metric_var,
                                   index = rows_var,
                                   columns = cols_var).reindex(index = rows_names,
                                                               columns = cols_names)
-    # fill NA with gene's mean
-    metric_df_p = metric_df_p.apply(lambda row: row.fillna(row.mean()), axis = 1)
+    if missing_values == 'ignore':
+        pass
+
+    elif missing_values == 'cohort':
+        # fill NA with gene's cohort value
+        metric_df_cohort = metric_df.pivot(values = metric_var,
+                                        index = rows_var,
+                                        columns = cols_var).reindex(index = rows_names,
+                                                                    columns = ["all_samples"])
+        metric_df_p = metric_df_p.apply(lambda col: col.fillna(metric_df_cohort["all_samples"]))
+
+    elif missing_values == 'mean_samples':
+        # fill NA with gene's mean
+        metric_df_p = metric_df_p.apply(lambda row: row.fillna(row.mean()), axis = 1)
+
+    print(f"Treated missing values in {missing_values} mode")
 
     # remove genes for which all the values are NA
     genes2remove = metric_df_p.loc[metric_df_p.isna().all(axis = 1)].index
@@ -145,7 +158,9 @@ def create_metric_table(metric_df, metric_var, rows_var, cols_var,
 
 def process_mutrate(mutrate_file, mutrate_config,
                     rows_names, cols_names,
-                    save_files_dir, metric = "mutrate"):
+                    save_files_dir,
+                    missing_values_treatment,
+                    metric = "mutrate"):
     """
     Generates and saves pivoted dataframes of mutation rates,
     with columns as samples and rows as genes. Does the same with
@@ -244,12 +259,15 @@ def process_mutrate(mutrate_file, mutrate_config,
                                 total_rows_by = "all_samples",
                                 metric_var4file = f'{metric.split("_")[0]}.{"".join(region.split("_"))}_{muttype.lower().replace("_", "")}',
                                 save_files_dir = save_files_dir,
-                                keep_rows_ordered = True, keep_cols_ordered = True)
+                                keep_rows_ordered = True, keep_cols_ordered = True,
+                                missing_values = missing_values_treatment
+                                )
 
     return None
 
 def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
                          rows_names, cols_names,
+                         missing_values_treatment,
                          save_files_dir):
     """
     Generates and saves pivoted dataframes of OncodriveFML metrics
@@ -323,7 +341,7 @@ def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
     ## profile
     profiles = []
     regressions2fml_profile = {"allprof": ".all",
-                               "nonprotaffprof": ".non_prot_aff"}
+                                "nonprotaffprof": ".non_prot_aff"}
     for prof in regressions2fml_profile:
         if prof in oncodrivefml_config:
             profiles.append(regressions2fml_profile[prof])
@@ -349,7 +367,9 @@ def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
                                     total_rows_by = "all_samples",
                                     metric_var4file = f'oncodrivefml.{"".join(metric_var.split("-"))}_{"".join(profile[1:].split("_"))}prof_nosignificant',
                                     save_files_dir = save_files_dir,
-                                    keep_rows_ordered = True, keep_cols_ordered = True)
+                                    keep_rows_ordered = True, keep_cols_ordered = True,
+                                    missing_values = missing_values_treatment
+                                    )
 
             ## table w/ only significant values
             if "significant" in oncodrivefml_config:
@@ -367,16 +387,19 @@ def process_oncodrivefml(oncodrivefml_data, oncodrivefml_config, total_cols_by,
                                     total_rows_by = "all_samples",
                                     metric_var4file = f'oncodrivefml.{"".join(metric_var.split("-"))}_{"".join(profile[1:].split("_"))}prof_significant',
                                     save_files_dir = save_files_dir,
-                                    keep_rows_ordered = True, keep_cols_ordered = True)
+                                    keep_rows_ordered = True, keep_cols_ordered = True,
+                                    missing_values = missing_values_treatment
+                                    )
 
     return None
 
 def process_omega(omega_data, omega_config,
-                      total_cols_by,
-                      rows_names, cols_names,
-                      save_files_dir,
-                      omega_modality = "mle",
-                      global_loc = True):
+                        total_cols_by,
+                        rows_names, cols_names,
+                        save_files_dir,
+                        missing_values_treatment,
+                        omega_modality = "mle",
+                        global_loc = True):
     """
     Generates and saves pivoted dataframes of omega (MLE or bayes),
     with columns as samples and rows as genes.
@@ -506,7 +529,8 @@ def process_omega(omega_data, omega_config,
                                         total_rows_by = "all_samples",
                                         metric_var4file = metric_var4file,
                                         save_files_dir = save_files_dir,
-                                        keep_rows_ordered = True, keep_cols_ordered = True)
+                                        keep_rows_ordered = True, keep_cols_ordered = True,
+                                        missing_values = missing_values_treatment)
 
                 ## table w/ only significant omega values
                 if "significant" in omega_config_fixed:
@@ -523,7 +547,8 @@ def process_omega(omega_data, omega_config,
                                         total_rows_by = "all_samples",
                                         metric_var4file = metric_var4file,
                                         save_files_dir = save_files_dir,
-                                        keep_rows_ordered = True, keep_cols_ordered = True)
+                                        keep_rows_ordered = True, keep_cols_ordered = True,
+                                        missing_values = missing_values_treatment)
 
 
     return None

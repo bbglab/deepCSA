@@ -9,6 +9,7 @@ process RUNREGRESSIONS {
     val  (metric_name)
     path (metric_data)
     val  (metric_params)
+
     val  (responses_subset_regressions)
     val  (responses_excluded_regressions)
     val  (samples_subset_regressions)
@@ -18,11 +19,6 @@ process RUNREGRESSIONS {
     val  (multipletesting_join_regressions)
     val  (multivariate_rules_regressions)
     val  (response_subplots)
-    val  (total_plot)
-    val  (response_and_total_subplots)
-    val  (make2)
-    val  (correct_pvals)
-    val  (sign_threshold)
 
     output:
     path (metric_name)     , emit: res_tables
@@ -34,6 +30,7 @@ process RUNREGRESSIONS {
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ""
     def responses_excluded = "\'${groovy.json.JsonOutput.toJson(responses_excluded_regressions)}\'"
     def predictors_plot_config = "\'${groovy.json.JsonOutput.toJson(predictors_plot_config_regressions)}\'"
     def multipletesting_join = "\'${groovy.json.JsonOutput.toJson(multipletesting_join_regressions)}\'"
@@ -55,12 +52,8 @@ process RUNREGRESSIONS {
                 --multipletesting_join ${multipletesting_join} \\
                 --multivariate_rules ${multivariate_rules} \\
                 --response_subplots ${response_subplots} \\
-                --total_plot ${total_plot} \\
-                --response_and_total_subplots ${response_and_total_subplots} \\
-                --make2 ${make2} \\
-                --correct_pvals ${correct_pvals} \\
-                --sign_threshold ${sign_threshold} \\
-                --save_tables_dir ${metric_name};
+                --save_tables_dir ${metric_name} \\
+                ${args};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

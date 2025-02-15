@@ -1,14 +1,14 @@
 #!/usr/local/bin/python
 
 # -- Import libraries -- #
-import pandas as pd
-import numpy as np
-from matplotlib.backends.backend_pdf import PdfPages
 import os
-import configparser
 import json
 import re
 import click
+import pandas as pd
+import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 from utils_regressions import *
 
@@ -17,7 +17,7 @@ from utils_regressions import *
 
 def linreg_analysis(data_df,
                     response_vars, predictors,
-                    predictors4plot_dict, responses4plot_dict, 
+                    predictors4plot_dict, responses4plot_dict,
                     # predictors2plot,
                     plot_config_dict,
                     pdf,
@@ -460,109 +460,115 @@ def do_regression_analysis(info_row, pdf,
 
 @click.option('--pdf_path',
 	 		  '-pdf',
-			  required = True,
-			  help = "path to the pdf file where the regression plots will be stored")
+              required = True,
+              help = "path to the pdf file where the regression plots will be stored")
 
 @click.option('--metric',
-			  required = True,
+              required = True,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--data',
-			  required = True,
+              required = True,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--metric_params',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--responses_subset',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--responses_excluded',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--samples_subset',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--predictors_file',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--predictors_plot_config',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--random_effects_vars',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--multipletesting_join',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--multivariate_rules',
-			  required = False,
+              required = False,
               default = "",
-			  help = "")
+              help = "")
 
 @click.option('--response_subplots',
               type = click.BOOL,
               default = False,
               show_default = True,
-			  required = False,
-			  help = "whether to generate per response and/or per predictor subplots")
+              required = False,
+              help = "whether to generate per response and/or per predictor subplots")
 
 @click.option('--total_plot',
               type = click.BOOL,
               default = False,
               show_default = True,
-			  required = False,
-			  help = "whether to generate a single total subplot")
+              required = False,
+              help = "whether to generate a single total subplot")
 
 @click.option('--response_and_total_subplots',
               type = click.BOOL,
               default = True,
               show_default = True,
-			  required = False,
-			  help = "whether to generate per response and/or per predictor subplots including a total subplot")
+              required = False,
+              help = "whether to generate per response and/or per predictor subplots including a total subplot")
 
 @click.option('--make2',
               type = click.BOOL,
               default = True,
               show_default = True,
-			  required = False,
-			  help = "whether to generate a second grid in which each subplot contains the results of each predictor variable")
+              required = False,
+              help = "whether to generate a second grid in which each subplot contains the results of each predictor variable")
 
 @click.option('--save_tables_dir',
 	 		  '-save',
-			  required = False,
-			  help = "path to the directory where to store the results of the linear models")
+              required = False,
+              help = "path to the directory where to store the results of the linear models")
 
 @click.option('--correct_pvals',
               type = click.BOOL,
               default = True,
               show_default = True,
-			  required = False,
-			  help = "whether to apply multiple testing correction of the p-values")
+              required = False,
+              help = "whether to apply multiple testing correction of the p-values")
 
 @click.option('--sign_threshold',
-			  required = False,
+              required = False,
               show_default = True,
               default = 0.05,
-			  help = "FDR threshold to consider a value statistically significant")
+              help = "FDR threshold to consider a value statistically significant")
+
+@click.option('--missing_values',
+              required = False,
+              show_default = True,
+              default = 'ignore',
+              help = "How to deal with missing values in the regressions")
 
 # -- Main function  -- #
 
@@ -572,7 +578,9 @@ def main(pdf_path, metric,
         predictors_file, predictors_plot_config, random_effects_vars,
         multipletesting_join, multivariate_rules, response_subplots,
         total_plot, response_and_total_subplots, make2, save_tables_dir,
-        correct_pvals, sign_threshold):
+        correct_pvals, sign_threshold,
+        missing_values
+        ):
     """
 
     Generates the input dataframe for do_regression_analysis
@@ -620,36 +628,35 @@ def main(pdf_path, metric,
 
     # Initialize config dataframe
     config_df = pd.DataFrame(columns = ["method", "metric", "metric_file_path"])
-    new_row = {} 
+    new_row = {}
 
     # Load configuration data and create a dictionary with the information
-    
     print("\tGenerating config dataframe with analysis information according to the rules provided as command line arguments...")
     config = {
-        "metrics.data": 
-        {metric: data
+        "metrics.data": {metric: data},
+        "metrics.config": {metric: metric_params},
+        "variables": {
+            "responses_subset": responses_subset,
+            "responses_excluded": responses_excluded,
+            # "responses_excluded": '{"omega.missense":["CDKN1A","ARID1A","KMT2C"],"omega.truncating":["TP53","RB1"]}',
+            "samples_subset": samples_subset,
+            "predictors_file": predictors_file,
+            "predictors": predictors_plot_config,
+            # "predictors": '{"had_prior_chemotherapy":["#FAEC82","Had prior chemotherapy"],"history_drinking":["#C5FA8F","Was/is drinker"],"history_smoking":["#B27DFA","Was/is smoker"],"bmi_scaled":["#FACC79","BMI 0-1 scaled"],"is_male":["#9EC9F9","Is Male"],"age_decades":["#F7645E","Age decade"]}',
+            "random_effects": random_effects_vars
         },
-        "metrics.config":
-        {metric: metric_params
-        },
-        "variables":
-        {"responses_subset": responses_subset,
-        "responses_excluded": responses_excluded,
-        "samples_subset": samples_subset,
-        "predictors_file": predictors_file,
-        "predictors": predictors_plot_config,
-        "random_effects": random_effects_vars
-        },
-        "advance":
-        {"multipletesting_join": multipletesting_join,
-        "multivariate_rules": multivariate_rules
+        "advance": {
+            "multipletesting_join": multipletesting_join,
+            # "multipletesting_join": '{"multipletest_rule1":["truncating|nonsynonymoussplice","allprof","uniquemuts","nosignificant"]}',
+            "multivariate_rules": multivariate_rules
+            # "multivariate_rules": '{"multirule3":"age_decades, bmi_scaled","multirule1":"history_smoking, is_male","multirule2":"history_smoking, age_decades"}'
         }
         }
     print("\tConfig dictionary created\n")
 
     # Iterate through all metrics to be analyzed and create one row per analysis modality
     print("\tStart populating config dataframe. Input files for each method will be generated applying subsetting rules for samples and responses")
-    
+
     ## Create directory to store input files
     os.mkdir("inputs")
 
@@ -681,7 +688,7 @@ def main(pdf_path, metric,
             print(f"\tMETHOD -> {method}: data source and/or method parameters not submitted. Analysis will not be done for this method.")
         else:
             print(f"\tMETHOD -> {method}: data source and method parameters were submitted. Input files will be generated and analysis performed for this method.")
-            
+
             ### create subdirectory to store input files for this method
             method_directory = f"inputs/{method}"
             os.mkdir(method_directory)
@@ -693,6 +700,7 @@ def main(pdf_path, metric,
                                 rows_names = responses,
                                 cols_names = samples,
                                 save_files_dir = method_directory,
+                                missing_values_treatment = missing_values,
                                 metric = "mutrate")
             elif method == "oncodrivefml":
                 process_oncodrivefml(oncodrivefml_data = config["metrics.data"]["oncodrivefml"],
@@ -700,24 +708,27 @@ def main(pdf_path, metric,
                                     total_cols_by = "mean",
                                     rows_names = responses,
                                     cols_names = samples,
+                                    missing_values_treatment = missing_values,
                                     save_files_dir = method_directory)
             elif method == "omega":
                 process_omega(omega_data = config["metrics.data"]["omega"],
-                            omega_config = method_config, 
+                            omega_config = method_config,
                             total_cols_by = "mean",
                             rows_names = responses,
                             cols_names = samples,
                             save_files_dir = method_directory,
+                            missing_values_treatment = missing_values,
                             omega_modality = "mle",
                             global_loc = False)
 
             elif method == "omegagloballoc":
                 process_omega(omega_data = config["metrics.data"]["omegagloballoc"],
-                            omega_config = method_config, 
+                            omega_config = method_config,
                             total_cols_by = "mean",
                             rows_names = responses,
                             cols_names = samples,
                             save_files_dir = method_directory,
+                            missing_values_treatment = missing_values,
                             omega_modality = "mle",
                             global_loc = True)
 
@@ -741,7 +752,7 @@ def main(pdf_path, metric,
                                 metric_elems = new_row["metric"].split("_")
                                 for elem in metric_elems:
                                     if elem == k_elems[1]:
-                                        metric_df2edit = pd.read_csv(new_row["metric_file_path"], sep = "\t") 
+                                        metric_df2edit = pd.read_csv(new_row["metric_file_path"], sep = "\t")
                                         genes2exclude = responses_excluded[k]
                                         metric_df2edit = metric_df2edit.loc[~metric_df2edit["gene"].isin(genes2exclude)]
                                         os.remove(new_row["metric_file_path"])
