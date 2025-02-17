@@ -15,15 +15,14 @@ process RUNREGRESSIONS {
     val  (samples_subset_regressions)
     path (predictors_file_regressions)
     val  (predictors_plot_config_regressions)
-    val  (random_effects_vars_regressions)
     val  (multipletesting_join_regressions)
     val  (multivariate_rules_regressions)
-    val  (response_subplots)
 
     output:
-    path (metric_name)     , emit: res_tables
-    path ("*.pdf")         , emit: res_pdf
-    path "versions.yml"    , topic: versions
+    path ("inputs/*")          , emit: regression_inputs
+    path (metric_name)      , emit: res_tables
+    path ("*.pdf")          , emit: res_pdf
+    path "versions.yml"     , topic: versions
 
 
     when:
@@ -48,10 +47,8 @@ process RUNREGRESSIONS {
                 --responses_excluded ${responses_excluded} \\
                 --samples_subset ${samples_subset_regressions} \\
                 --predictors_plot_config ${predictors_plot_config} \\
-                --random_effects_vars ${random_effects_vars_regressions} \\
                 --multipletesting_join ${multipletesting_join} \\
                 --multivariate_rules ${multivariate_rules} \\
-                --response_subplots ${response_subplots} \\
                 --save_tables_dir ${metric_name} \\
                 ${args};
 

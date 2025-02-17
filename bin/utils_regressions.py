@@ -84,8 +84,15 @@ def create_metric_table(metric_df, metric_var, rows_var, cols_var,
                                   index = rows_var,
                                   columns = cols_var).reindex(index = rows_names,
                                                               columns = cols_names)
+
+    # remove genes for which all the values are NA
+    genes2remove = metric_df_p.loc[metric_df_p.isna().all(axis = 1)].index
+    print("These genes will be removed from the analysis because no value was calculated:", genes2remove.tolist())
+    metric_df_p = metric_df_p.dropna(how = 'all', axis=0)
+
+
     if missing_values == 'ignore':
-        pass
+        print("Not filling NAs with cohort value")
 
     elif missing_values == 'cohort':
         # fill NA with gene's cohort value
@@ -94,17 +101,24 @@ def create_metric_table(metric_df, metric_var, rows_var, cols_var,
                                         columns = cols_var).reindex(index = rows_names,
                                                                     columns = ["all_samples"])
         metric_df_p = metric_df_p.apply(lambda col: col.fillna(metric_df_cohort["all_samples"]))
+        print("Filling NAs with cohort value")
 
     elif missing_values == 'mean_samples':
         # fill NA with gene's mean
         metric_df_p = metric_df_p.apply(lambda row: row.fillna(row.mean()), axis = 1)
+        print("Filling NAs with mean value")
 
-    print(f"Treated missing values in {missing_values} mode")
+    else:
+        raise ValueError("Invalid missing values treatment")
 
-    # remove genes for which all the values are NA
-    genes2remove = metric_df_p.loc[metric_df_p.isna().all(axis = 1)].index
-    print("These genes will be removed from the analysis because no value was calculated:", genes2remove.tolist())
-    metric_df_p = metric_df_p.dropna(how = 'all')
+
+    # Identify genes where all values in a row are the same
+    genes_to_remove = metric_df_p.loc[metric_df_p.nunique(axis=1) == 1].index
+    print("These genes will be removed from the analysis because all values are identical:", genes_to_remove.tolist())
+
+    # Drop these rows from the dataframe
+    metric_df_p = metric_df_p.loc[metric_df_p.nunique(axis=1) > 1]
+
 
     # reorder alphabetically if provided ordered is not kept
     if not keep_rows_ordered:
