@@ -122,7 +122,7 @@ def plot_mutations_per_gene(sample_name, maf, parameters = {}):
     ax.set_xlabel("Genes", fontsize=14)
     ax.set_ylabel("Number mutations", fontsize=14)
 
-    plt.xticks(fontsize=10, rotation=30)
+    plt.xticks(fontsize=10, rotation=90)
     plt.yticks(fontsize=12)
     plt.tick_params(axis='x', which='major', labelsize=14)
     ax.set_title(f"Mutations per gene in {sample_name}")
