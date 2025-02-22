@@ -200,7 +200,7 @@ workflow DEEPCSA{
     DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
 
     // Panels generation: all modalities
-    CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
+    CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files, file("${params.annotations3d}/pfam.tsv"))
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths }
@@ -442,7 +442,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
-                    hotspots_bed_file,
+                    hotspots_bed_file, // CREATEPANELS.out.hotspots_bed,
                     SYNMUTRATE.out.mutrate,
                     CREATEPANELS.out.panel_annotated_rich
                     )
