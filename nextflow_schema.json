@@ -31,30 +31,6 @@
                 }
             }
         },
-        "bed_files_options": {
-            "title": "BED file options",
-            "type": "object",
-            "description": "BED files used for filtering mutations or genomic regions.",
-            "default": "",
-            "properties": {
-                "low_mappability_file": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "BED file with the low mappability regions.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "GRCh38.encode.blacklist.bed"
-                },
-                "low_complex_file": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "BED file with the low complex regions.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "hg38_lowcomplexity_repetitive_regions.mutcoords.bed"
-                }
-            }
-        },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
