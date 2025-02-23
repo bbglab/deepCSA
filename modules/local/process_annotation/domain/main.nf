@@ -9,8 +9,7 @@ process DOMAIN_ANNOTATION {
     container "docker.io/ferriolcalvet/bgreference"
 
     input:
-    tuple val(meta)  , path(mutations)
-    tuple val(meta2) , path(panel_annotated)
+    tuple val(meta) , path(panel_annotated)
     path (domains_file)
 
     output:

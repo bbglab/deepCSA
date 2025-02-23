@@ -11,13 +11,13 @@ def generate_domains2dna_mapping(consensus_panel_rich_file, domains_file, output
     """
     Main function to process DNA to protein mapping.
     """
-    
+
     all_protein_positions = pd.read_table(consensus_panel_rich_file)[['CHROM', 'POS', 'STRAND', 'GENE', 'Feature', 'Protein_position']]
     all_protein_positions = all_protein_positions[all_protein_positions["Protein_position"] != "-"].drop_duplicates()
     all_protein_positions["Protein_position"] = all_protein_positions["Protein_position"].astype(float)
     all_protein_positions_summary = all_protein_positions[~(all_protein_positions["Protein_position"].isna())
                                                             ][['GENE', 'Protein_position', "CHROM", "POS", "STRAND"]].reset_index(drop = True)
-    
+
     panel_all_genes = all_protein_positions["Feature"].unique()
 
     #pfam_domains = pd.read_table("/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506/pfam.tsv")
@@ -25,7 +25,7 @@ def generate_domains2dna_mapping(consensus_panel_rich_file, domains_file, output
     pfam_domains["NAME"] = pfam_domains["Gene"] + '--' + pfam_domains["Description"].str.replace("-", "_") + '-' + pfam_domains["Ens_Transcr_ID"]
 
     pfam_domains_summary = pfam_domains[['Gene', 'Ens_Transcr_ID', 'Begin', 'End','NAME']]
-    pfam_domains_summary = pfam_domains_summary[pfam_domains_summary["Gene"].isin(panel_all_genes)].reset_index(drop = True)
+    pfam_domains_summary = pfam_domains_summary[pfam_domains_summary["Ens_Transcr_ID"].isin(panel_all_genes)].reset_index(drop = True)
 
 
 
