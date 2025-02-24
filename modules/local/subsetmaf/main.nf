@@ -3,10 +3,6 @@ process SUBSET_MAF {
     tag "$meta.id"
     label 'process_low'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
@@ -52,7 +48,6 @@ process SUBSET_MAF {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.mutations.tsv
