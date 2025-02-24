@@ -5,18 +5,17 @@ import sys
 import json
 import pandas as pd
 import numpy as np
-from utils import to_int_if_possible
-from read_utils import custom_na_values
+
 
 panel_file = sys.argv[1]
 bedfile = sys.argv[2]  # BED file (optional, can be None)
 expand = int(sys.argv[3])  # Expansion factor for defining regions
-use_bed = bool(int(sys.argv[4]))  # Whether to use the BED file for exon definitions
+autoexons = bool(int(sys.argv[4]))  # Whether to use the BED file for exon definitions
 
 # Read input data
 panel_data = pd.read_table(panel_file)
 
-if use_bed:
+if not autoexons:
     # Use BED file for exon definition
     exons_bed = pd.read_table(bedfile, header=None, sep="\t")
     # Check if a name column is provided
@@ -81,7 +80,7 @@ for ind, row in exons_bed.iterrows():
             exon_number = exon_counters[gene]
             region_name = f"{gene}--exon_{exon_number}"
 
-        if use_bed:
+        if not autoexons:
             # Expand within limits of the same gene only if BED file is used
             upd_start = max(ind_start - expand * 3, 0)
             while upd_start < len(chr_data) and chr_data.iloc[upd_start]["GENE"] != gene:

@@ -13,8 +13,8 @@ process DOMAIN_ANNOTATION {
     path (domains_file)
 
     output:
-    tuple val(meta), path("*.domains.bed4.bed") , emit: domains_bed
-    path  "versions.yml"                        , topic: versions
+    path("*.domains.bed4.bed")  , emit: domains_bed
+    path  "versions.yml"        , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

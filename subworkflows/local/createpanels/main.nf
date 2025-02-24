@@ -49,7 +49,6 @@ workflow CREATE_PANELS {
     depths
     vep_cache
     vep_extra_files
-    domains_file
 
     main:
 
@@ -90,6 +89,8 @@ workflow CREATE_PANELS {
         added_regions = Channel.empty()
     }
 
+    // Generate BED file with genomic coordinates of sequenced domains
+    domains_file = file("${params.annotations3d}/pfam.tsv")
     DOMAINANNOTATION(rich_annotated, domains_file)
 
     // Create captured-specific panels: all modalities
