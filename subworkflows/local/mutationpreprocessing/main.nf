@@ -11,6 +11,7 @@ include { MERGE_BATCH                   as MERGEBATCH       } from '../../../mod
 include { FILTER_BATCH                  as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                    as WRITEMAF         } from '../../../modules/local/writemaf/main'
 include { SUBSET_MAF                    as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
+include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    } from '../../../modules/local/blacklistmuts/main'
 include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
 
@@ -74,7 +75,18 @@ workflow MUTATION_PREPROCESSING {
 
     SOMATICMUTATIONS(named_mafs)
 
-    PLOTNEEDLES(SOMATICMUTATIONS.out.mutations, sequence_information_df)
+    if (params.blacklist_mutations) {
+        blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
+        BLACKLISTMUTS(SOMATICMUTATIONS.out.mutations, blacklist_mutations)
+        somatic_mutations = BLACKLISTMUTS.out.mutations
+    } else {
+        somatic_mutations = SOMATICMUTATIONS.out.mutations
+    }
+
+
+
+
+    PLOTNEEDLES(somatic_mutations, sequence_information_df)
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
@@ -92,7 +104,7 @@ workflow MUTATION_PREPROCESSING {
 
     emit:
     mafs                    = named_mafs
-    somatic_mafs            = SOMATICMUTATIONS.out.mutations
+    somatic_mafs            = somatic_mutations
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
     bedfile_clean           = bedfile_updated
 
