@@ -74,19 +74,19 @@ workflow MUTATION_PREPROCESSING {
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
 
     SOMATICMUTATIONS(named_mafs)
-    
+
     if (params.blacklist_mutations) {
-        blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true)
+        blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
         BLACKLISTMUTS(SOMATICMUTATIONS.out.mutations, blacklist_mutations)
         somatic_mutations = BLACKLISTMUTS.out.mutations
     } else {
         somatic_mutations = SOMATICMUTATIONS.out.mutations
     }
-    
 
 
 
-    PLOTNEEDLES(SOMATICMUTATIONS.out.mutations, sequence_information_df)
+
+    PLOTNEEDLES(somatic_mutations, sequence_information_df)
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
