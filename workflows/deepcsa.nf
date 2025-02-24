@@ -222,12 +222,8 @@ workflow DEEPCSA{
                         )
     positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
-    Channel.of([["id": "all_samples"]])
-    .join(MUT_PREPROCESSING.out.somatic_mafs).first()
-    .set{mutations_all}
-
     if (params.vep_species == 'homo_sapiens'){
-        DNA2PROTEINMAPPING(mutations_all, CREATEPANELS.out.exons_consensus_panel)
+        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples, CREATEPANELS.out.exons_consensus_panel)
     }
 
 
@@ -313,7 +309,7 @@ workflow DEEPCSA{
 
     if (params.expected_mutation_rate){
 
-        EXPECTEDMUTRATE(mutations_all,
+        EXPECTEDMUTRATE(MUT_PREPROCESSING.out.mutations_all_samples,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
                         ANNOTATEDEPTHS.out.all_samples_depths,
@@ -501,7 +497,7 @@ workflow DEEPCSA{
 
         // Signature Analysis
         if (params.profileall){
-            SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
 
             MUT_PREPROCESSING.out.somatic_mafs
             .join(SIGNATURESALL.out.mutation_probs)
@@ -511,13 +507,13 @@ workflow DEEPCSA{
 
         }
         if (params.profilenonprot){
-            SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileexons){
-            SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileintrons){
-            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
     }
 

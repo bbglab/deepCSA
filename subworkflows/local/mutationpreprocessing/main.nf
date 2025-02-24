@@ -13,6 +13,7 @@ include { WRITE_MAFS                    as WRITEMAF         } from '../../../mod
 include { SUBSET_MAF                    as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
 include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    } from '../../../modules/local/blacklistmuts/main'
 include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
+include { PLOT_MUTATIONS                as PLOTSOMATICMAF   } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
 
 
@@ -72,9 +73,9 @@ workflow MUTATION_PREPROCESSING {
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
-
+    
     SOMATICMUTATIONS(named_mafs)
-
+    
     if (params.blacklist_mutations) {
         blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
         BLACKLISTMUTS(SOMATICMUTATIONS.out.mutations, blacklist_mutations)
@@ -83,10 +84,14 @@ workflow MUTATION_PREPROCESSING {
         somatic_mutations = SOMATICMUTATIONS.out.mutations
     }
 
+    Channel.of([["id": "all_samples"]])
+    .join(somatic_mutations).first()
+    .set{muts_all_samples}
 
+    PLOTSOMATICMAF(muts_all_samples)
 
+    PLOTNEEDLES(muts_all_samples, sequence_information_df)
 
-    PLOTNEEDLES(somatic_mutations, sequence_information_df)
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
@@ -105,6 +110,7 @@ workflow MUTATION_PREPROCESSING {
     emit:
     mafs                    = named_mafs
     somatic_mafs            = somatic_mutations
+    mutations_all_samples   = muts_all_samples
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
     bedfile_clean           = bedfile_updated
 
