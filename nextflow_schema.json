@@ -31,30 +31,6 @@
                 }
             }
         },
-        "bed_files_options": {
-            "title": "BED file options",
-            "type": "object",
-            "description": "BED files used for filtering mutations or genomic regions.",
-            "default": "",
-            "properties": {
-                "low_mappability_file": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "BED file with the low mappability regions.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "GRCh38.encode.blacklist.bed"
-                },
-                "low_complex_file": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "BED file with the low complex regions.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "hg38_lowcomplexity_repetitive_regions.mutcoords.bed"
-                }
-            }
-        },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
@@ -212,13 +188,13 @@
                 }
             }
         },
-        "hotspot_bedfile_configs": {
+        "omega_bedfile_configs": {
             "title": "Definition of hotspot regions configuration",
             "type": "object",
             "fa_icon": "fas fa-dna",
             "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
             "properties": {
-                "omega_hotspots": {
+                "omega_withingene": {
                     "type": "boolean",
                     "description": "Do you want to analyze omega hotspots independently?",
                     "fa_icon": "fas fa-book",
@@ -239,6 +215,18 @@
                     "default": 30,
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
+                },
+                "omega_autodomains": {
+                    "type": "boolean",
+                    "description": "Do you want to automatically generate the domains for omega?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to automatically generate the domains for omega?"
+                },
+                "omega_autoexons": {
+                    "type": "boolean",
+                    "description": "Do you want to automatically generate the theoretical exons from the panel for omega?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to automatically generate the theoretical exons from the panel for omega?"
                 }
             }
         },
@@ -758,9 +746,6 @@
             "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/$defs/bed_files_options"
-        },
-        {
             "$ref": "#/$defs/reference_genome_options"
         },
         {
@@ -773,7 +758,7 @@
             "$ref": "#/$defs/custom_bedfile_configs"
         },
         {
-            "$ref": "#/$defs/hotspot_bedfile_configs"
+            "$ref": "#/$defs/omega_bedfile_configs"
         },
         {
             "$ref": "#/$defs/hotspot_annotation_options"

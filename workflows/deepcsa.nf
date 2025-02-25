@@ -146,12 +146,6 @@ workflow DEEPCSA{
                                 ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
                                 : Channel.fromPath(params.input)
 
-    // if the user wants to define hotspots for omega, import the hotspots definition BED file
-    // otherwise I am using the input csv as a dummy value channel
-    hotspots_bed_file   = params.omega_hotspots_bedfile
-                                ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first()
-                                : Channel.fromPath(params.input)
-
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutrate         = (params.mutationrate || params.omega)
@@ -438,7 +432,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
-                    hotspots_bed_file,
+                    CREATEPANELS.out.domains_panel_bed,
                     SYNMUTRATE.out.mutrate,
                     CREATEPANELS.out.panel_annotated_rich
                     )
@@ -452,7 +446,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
                         custom_groups_table,
-                        hotspots_bed_file,
+                        CREATEPANELS.out.domains_panel_bed,
                         SYNMUTREADSRATE.out.mutrate,
                         CREATEPANELS.out.panel_annotated_rich
                         )
@@ -466,7 +460,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
-                            hotspots_bed_file,
+                            CREATEPANELS.out.domains_panel_bed,
                             SYNMUTRATE.out.mutrate,
                             CREATEPANELS.out.panel_annotated_rich
                             )
@@ -477,7 +471,7 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
                                 custom_groups_table,
-                                hotspots_bed_file,
+                                CREATEPANELS.out.domains_panel_bed,
                                 SYNMUTREADSRATE.out.mutrate,
                                 CREATEPANELS.out.panel_annotated_rich
                                 )
