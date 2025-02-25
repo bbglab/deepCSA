@@ -188,13 +188,13 @@
                 }
             }
         },
-        "hotspot_bedfile_configs": {
+        "omega_bedfile_configs": {
             "title": "Definition of hotspot regions configuration",
             "type": "object",
             "fa_icon": "fas fa-dna",
             "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
             "properties": {
-                "omega_hotspots": {
+                "omega_withingene": {
                     "type": "boolean",
                     "description": "Do you want to analyze omega hotspots independently?",
                     "fa_icon": "fas fa-book",
@@ -215,6 +215,18 @@
                     "default": 30,
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
+                },
+                "omega_autodomains": {
+                    "type": "boolean",
+                    "description": "Do you want to automatically generate the domains for omega?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to automatically generate the domains for omega?"
+                },
+                "omega_autoexons": {
+                    "type": "boolean",
+                    "description": "Do you want to automatically generate the theoretical exons from the panel for omega?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to automatically generate the theoretical exons from the panel for omega?"
                 }
             }
         },
@@ -746,7 +758,7 @@
             "$ref": "#/$defs/custom_bedfile_configs"
         },
         {
-            "$ref": "#/$defs/hotspot_bedfile_configs"
+            "$ref": "#/$defs/omega_bedfile_configs"
         },
         {
             "$ref": "#/$defs/hotspot_annotation_options"

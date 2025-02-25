@@ -15,20 +15,26 @@ autoexons = bool(int(sys.argv[4]))  # Whether to use the BED file for exon defin
 # Read input data
 panel_data = pd.read_table(panel_file)
 
-if not autoexons:
-    # Use BED file for exon definition
-    exons_bed = pd.read_table(bedfile, header=None, sep="\t")
-    # Check if a name column is provided
-    if exons_bed.shape[1] > 3:
-        exons_bed = exons_bed.iloc[:,:4]
-        exons_bed.columns = ["CHROM", "START", "END", "NAME"]
-    else:
-        exons_bed = exons_bed.iloc[:,:3]
-        exons_bed.columns = ["CHROM", "START", "END"]
-        exons_bed["NAME"] = None
-    print(exons_bed)
+exons_bed = pd.DataFrame()
+exons_bed_provided = pd.DataFrame()
 
+if bedfile != 'None':
+    print("Using the BED file provided")
+    # Use BED file for exon definition
+    exons_bed_provided = pd.read_table(bedfile, header=None, sep="\t")
+    # Check if a name column is provided
+    if exons_bed_provided.shape[1] > 3:
+        exons_bed_provided = exons_bed_provided.iloc[:,:4]
+        exons_bed_provided.columns = ["CHROM", "START", "END", "NAME"]
+    else:
+        exons_bed_provided = exons_bed_provided.iloc[:,:3]
+        exons_bed_provided.columns = ["CHROM", "START", "END"]
+        exons_bed_provided["NAME"] = None
 else:
+    print("NOT using any BED file")
+
+if autoexons:
+    print("Automated generation of exons from the panel")
     # Use breakpoints to define exons
     exons_bed = []
     for chrom, gene_group in panel_data.groupby(["CHROM", "GENE"]):
@@ -46,7 +52,15 @@ else:
         # Append to exons
         exons_bed.extend([{"CHROM": chrom[0], "START": s, "END": e, "NAME": None, "GENE": chrom[1]} for s, e in zip(starts, ends)])
     exons_bed = pd.DataFrame(exons_bed)
+else:
+    print("NO automated generation of exons from the panel")
 
+
+# Concatenate the previous two BED dataframes
+exons_bed = pd.concat((exons_bed, exons_bed_provided))
+
+if exons_bed.shape[0] == 0:
+    raise ValueError("No regions to extend")
 
 ## Process panel data to create new genes per exon
 new_data = pd.DataFrame()
@@ -80,7 +94,7 @@ for ind, row in exons_bed.iterrows():
             exon_number = exon_counters[gene]
             region_name = f"{gene}--exon_{exon_number}"
 
-        if not autoexons:
+        if ("--exon_" not in region_name) and (expand > 0):
             # Expand within limits of the same gene only if BED file is used
             upd_start = max(ind_start - expand * 3, 0)
             while upd_start < len(chr_data) and chr_data.iloc[upd_start]["GENE"] != gene:

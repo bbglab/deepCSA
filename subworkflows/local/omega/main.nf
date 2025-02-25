@@ -66,9 +66,9 @@ workflow OMEGA_ANALYSIS{
     Channel.of([ [ id: "all_samples" ] ])
     .join( profile ).first()
     .set{ all_samples_mut_profile }
-    
 
-    if (params.omega_hotspots){
+
+    if (params.omega_withingene){
         EXPANDREGIONS(panel, hotspots_bed_file)
         expanded_panel = EXPANDREGIONS.out.panel_increased.first()
         json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
