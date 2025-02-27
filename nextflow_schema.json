@@ -161,6 +161,13 @@
                     "default": 0,
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
+                },
+                "apply_uniform_depth": {
+                    "type": "boolean",
+                    "description": "Whether you want to uniformize the depth across sites and samples",
+                    "default": false,
+                    "help_text": "",
+                    "fa_icon": "far fa-file-code"
                 }
             }
         },
