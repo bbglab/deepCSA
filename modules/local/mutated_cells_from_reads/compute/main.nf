@@ -10,9 +10,9 @@ process COMPUTE_MUTATED_EPITHELIUM {
     tuple val(meta), path(mutations), path(readcounts)
 
     output:
-    tuple val(meta), path("*.exon.mutated_epithelium.tsv")      , emit: mutated_epi_exon
-    tuple val(meta), path("*.gene.mutated_epithelium.tsv")      , emit: mutated_epi_gene
-    tuple val(meta), path("*.sample.mutated_epithelium.tsv")    , emit: mutated_epi_sample
+    tuple val(meta), path("*.exon.mutated_cells_reads.tsv")      , emit: mutated_epi_exon
+    tuple val(meta), path("*.gene.mutated_cells_reads.tsv")      , emit: mutated_epi_gene
+    tuple val(meta), path("*.sample.mutated_cells_reads.tsv")    , emit: mutated_epi_sample
     path  "versions.yml"                                        , topic: versions
 
 
@@ -20,11 +20,10 @@ process COMPUTE_MUTATED_EPITHELIUM {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     // def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    compute_mutated_epithelium.py \\
+    mutgenomes_reads_compute.py \\
                 ${prefix} \\
                 ${mutations} \\
                 ${readcounts} ;

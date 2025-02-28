@@ -46,7 +46,7 @@ def compute_mutepithelium_exon(sample_n, mutations_file, denominator_file):
     #                                                         index = False
     #                                                         )
 
-    mutated_epithelium_data.to_csv(f"{sample_n}.exon.mutated_epithelium.tsv",
+    mutated_epithelium_data.to_csv(f"{sample_n}.exon.mutated_cells_reads.tsv",
                                                                 sep = "\t",
                                                                 header = True,
                                                                 index = False
@@ -94,7 +94,7 @@ def compute_mut_epi_per_gene(sample_n, mut_epi_per_exon):
     gene_mutated_epithelium["SAMPLE_ID"] = sample_n
     gene_mutated_epithelium = gene_mutated_epithelium[['SAMPLE_ID'] + orig_columns]
 
-    gene_mutated_epithelium.to_csv(f"{sample_n}.gene.mutated_epithelium.tsv",
+    gene_mutated_epithelium.to_csv(f"{sample_n}.gene.mutated_cells_reads.tsv",
                                                                 sep = "\t",
                                                                 header = True,
                                                                 index = False
@@ -137,7 +137,7 @@ def compute_mut_epi_per_sample(sample_n, mut_epi_per_gene):
     output_df["index"] = sample_n
     output_df.columns = ['SAMPLE_ID'] + orig_columns
 
-    output_df.to_csv(f"{sample_n}.sample.mutated_epithelium.tsv",
+    output_df.to_csv(f"{sample_n}.sample.mutated_cells_reads.tsv",
                                     sep = "\t",
                                     header = True,
                                     index = False

@@ -56,10 +56,10 @@ include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkfl
 
 include { INDELS_SELECTION          as INDELSSELECTION      } from '../subworkflows/local/indels/main'
 
-include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/reads/main'
-include { MUTATED_CELLS_VAF         as MUTATEDCELLSVAF      } from '../subworkflows/local/mutatedepithelium/vaf/main'
+// include { MUTATED_CELLS_READS        as MUTATEDCELLS    } from '../subworkflows/local/mutatedcells/reads/main'
+include { MUTATED_CELLS_VAF         as MUTATEDCELLSVAF      } from '../subworkflows/local/mutatedcells/vaf/main'
 
-include { EXPECTED_MUTRATE          as EXPECTEDMUTRATE      } from '../subworkflows/local/mutatedepithelium/expected/main'
+include { EXPECTED_MUTATED_CELLS    as EXPECTEDMUTATEDCELLS } from '../subworkflows/local/mutatedcells/expected/main'
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
@@ -315,9 +315,9 @@ workflow DEEPCSA{
         positive_selection_results = positive_selection_results.join(INDELSSELECTION.out.indels, remainder: true)
     }
 
-    if (params.expected_mutation_rate){
+    if (params.expected_mutated_cells){
 
-        EXPECTEDMUTRATE(mutations_all,
+        EXPECTEDMUTATEDCELLS(mutations_all,
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
                         ANNOTATEDEPTHS.out.all_samples_depths,
@@ -327,59 +327,59 @@ workflow DEEPCSA{
 
 
 
-    if (params.mutated_epithelium){
-        MUT_PREPROCESSING.out.somatic_mafs
-        .join(meta_samples_alone)
-        .set{ sample_mutations_only }
+    // if (params.mutated_cells_reads){
+    //     MUT_PREPROCESSING.out.somatic_mafs
+    //     .join(meta_samples_alone)
+    //     .set{ sample_mutations_only }
 
-        MUTATEDEPITHELIUM(sample_mutations_only,
-                            CREATEPANELS.out.exons_consensus_bed,
-                            CREATEPANELS.out.exons_consensus_panel,
-                            meta_pileupbamindex_alone,
-                            params.fasta
-                            )
+    //     MUTATEDCELLS(sample_mutations_only,
+    //                         CREATEPANELS.out.exons_consensus_bed,
+    //                         CREATEPANELS.out.exons_consensus_panel,
+    //                         meta_pileupbamindex_alone,
+    //                         params.fasta
+    //                         )
 
-        if (params.pileup_all_duplex) {
-            // Concatenate all outputs into a single file
-            mut_epithelium_empty = Channel.empty()
-            mut_epithelium_empty
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_exon.map{ it -> it[1]}.flatten())
-            .set{ all_mutepiexon }
-            all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
+    //     if (params.pileup_all_duplex) {
+    //         // Concatenate all outputs into a single file
+    //         mut_epithelium_empty = Channel.empty()
+    //         mut_epithelium_empty
+    //         .concat(MUTATEDCELLS.out.mut_epi_exon.map{ it -> it[1]}.flatten())
+    //         .set{ all_mutepiexon }
+    //         all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
 
-            mut_epithelium_empty2 = Channel.empty()
-            mut_epithelium_empty2
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_gene.map{ it -> it[1]}.flatten())
-            .set{ all_mutepigene }
-            all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
+    //         mut_epithelium_empty2 = Channel.empty()
+    //         mut_epithelium_empty2
+    //         .concat(MUTATEDCELLS.out.mut_epi_gene.map{ it -> it[1]}.flatten())
+    //         .set{ all_mutepigene }
+    //         all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
 
-            mut_epithelium_empty3 = Channel.empty()
-            mut_epithelium_empty3
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_sample.map{ it -> it[1]}.flatten())
-            .set{ all_mutepisample }
-            all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
-        } else {
-            // Concatenate all outputs into a single file
-            mut_epithelium_empty = Channel.empty()
-            mut_epithelium_empty
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_exon.map{ it -> it[1]}.flatten())
-            .set{ all_mutepiexon }
-            all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
+    //         mut_epithelium_empty3 = Channel.empty()
+    //         mut_epithelium_empty3
+    //         .concat(MUTATEDCELLS.out.mut_epi_sample.map{ it -> it[1]}.flatten())
+    //         .set{ all_mutepisample }
+    //         all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
+    //     } else {
+    //         // Concatenate all outputs into a single file
+    //         mut_epithelium_empty = Channel.empty()
+    //         mut_epithelium_empty
+    //         .concat(MUTATEDCELLS.out.mut_epi_exon.map{ it -> it[1]}.flatten())
+    //         .set{ all_mutepiexon }
+    //         all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
 
-            mut_epithelium_empty2 = Channel.empty()
-            mut_epithelium_empty2
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_gene.map{ it -> it[1]}.flatten())
-            .set{ all_mutepigene }
-            all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
+    //         mut_epithelium_empty2 = Channel.empty()
+    //         mut_epithelium_empty2
+    //         .concat(MUTATEDCELLS.out.mut_epi_gene.map{ it -> it[1]}.flatten())
+    //         .set{ all_mutepigene }
+    //         all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
 
-            mut_epithelium_empty3 = Channel.empty()
-            mut_epithelium_empty3
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_sample.map{ it -> it[1]}.flatten())
-            .set{ all_mutepisample }
-            all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
+    //         mut_epithelium_empty3 = Channel.empty()
+    //         mut_epithelium_empty3
+    //         .concat(MUTATEDCELLS.out.mut_epi_sample.map{ it -> it[1]}.flatten())
+    //         .set{ all_mutepisample }
+    //         all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
 
-        }
-    }
+    //     }
+    // }
 
 
 
@@ -413,7 +413,7 @@ workflow DEEPCSA{
         }
     }
 
-    // if (params.expected_mutation_rate & params.dnds){
+    // if (params.expected_mutated_cells & params.dnds){
     if (params.dnds){
         covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
         ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
@@ -482,7 +482,7 @@ workflow DEEPCSA{
 
     }
 
-    if (params.mutated_epithelium_vaf){
+    if (params.mutated_cells_vaf){
         MUT_PREPROCESSING.out.somatic_mafs
         .join(meta_samples_alone)
         .set{ sample_mutations_only }

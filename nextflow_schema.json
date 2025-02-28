@@ -334,19 +334,19 @@
                     "description": "Do you want to run indels?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutated_epithelium": {
+                "mutated_cells_reads": {
                     "type": "boolean",
-                    "description": "Do you want to run mutated_epithelium?",
+                    "description": "Do you want to run mutated_cells_reads?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutated_epithelium_vaf": {
+                "mutated_cells_vaf": {
                     "type": "boolean",
-                    "description": "Do you want to run mutated_epithelium using the VAFs?",
+                    "description": "Do you want to run mutated_cells_reads using the VAFs?",
                     "fa_icon": "fas fa-book"
                 },
-                "expected_mutation_rate": {
+                "expected_mutated_cells": {
                     "type": "boolean",
-                    "description": "Do you want to run expected_mutation_rate?",
+                    "description": "Do you want to run expected_mutated_cells?",
                     "fa_icon": "fas fa-book"
                 },
                 "plot_depths": {

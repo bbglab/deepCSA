@@ -22,13 +22,12 @@ process READS_PER_REGION {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO decide whether any of these would be useful in here
     // zcat ${pileup} | bgzip -c > ${prefix}.indexed.tsv.tmp.gz; tabix -s 1 -b 2 -e 2 ${prefix}.indexed.tsv.tmp.gz
     // tabix -s 1 -b 2 -e 2 ${prefix}.indexed.tsv.tmp.gz
     """
-    reads_x_region.py ${pileup} ${fragments_coords} ${regions} ${prefix}
+    mutgenomes_reads_x_region.py ${pileup} ${fragments_coords} ${regions} ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

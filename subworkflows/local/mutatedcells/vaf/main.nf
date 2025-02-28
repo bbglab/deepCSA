@@ -1,12 +1,12 @@
 
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS          } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                    as SUBSETMUTEPIVAF          } from '../../../../modules/local/subsetmaf/main'
-include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAF    } from '../../../../modules/local/mutatedgenomesfromvaf/main'
-include { MUTATED_CELLS_FROM_VAF        as MUTATEDCELLSFROMVAF      } from '../../../../modules/local/mutatedcellsfromvaf/main'
+include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAF    } from '../../../../modules/local/mutated_genomes_from_vaf/main'
+include { MUTATED_CELLS_FROM_VAF        as MUTATEDCELLSFROMVAF      } from '../../../../modules/local/mutated_cells_from_vaf/main'
 
 include { SUBSET_MAF                    as SUBSETMUTEPIVAFAM        } from '../../../../modules/local/subsetmaf/main'
-include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAFAM  } from '../../../../modules/local/mutatedgenomesfromvaf/main'
-include { MUTATED_CELLS_FROM_VAF        as MUTATEDCELLSFROMVAFAM    } from '../../../../modules/local/mutatedcellsfromvaf/main'
+include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAFAM  } from '../../../../modules/local/mutated_genomes_from_vaf/main'
+include { MUTATED_CELLS_FROM_VAF        as MUTATEDCELLSFROMVAFAM    } from '../../../../modules/local/mutated_cells_from_vaf/main'
 
 
 workflow MUTATED_CELLS_VAF {
