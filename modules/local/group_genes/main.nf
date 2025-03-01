@@ -22,8 +22,6 @@ process GROUP_GENES {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "groups"
     def separator = task.ext.separator ?: "tab"
     def hotspots = task.ext.hotspots ? 1 : 0
     def cmd_custom = task.ext.custom ? "${features_table} ${separator} pathway_groups_out.json" : ""
@@ -39,8 +37,6 @@ process GROUP_GENES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "groups"
     """
     touch genes2group_out.json
 
