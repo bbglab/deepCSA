@@ -30,7 +30,7 @@ process COMPUTEDEPTHS {
     def minimum_depth = task.ext.minimum_depth ? "| awk 'NR == 1 {print; next}  {sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
 
     // this variable is used for setting a uniform depth across sites
-    def uniform_depth = task.ext.uniform_depth ? "| awk 'NR == 1 {print; next} {for (i=3; i<=NF; i++) \$i = 100; print}'" : ""
+    def uniform_depth = task.ext.uniform_depth ? "| awk 'BEGIN {OFS=\"\\t\"} NR == 1 {print; next} {for (i=3; i<=NF; i++) \$i = 100; print}'" : ""
 
     """
     ls -1 *.bam > bam_files_list.txt;
