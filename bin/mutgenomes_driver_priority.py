@@ -181,7 +181,7 @@ def snv_am(sample, outfolder, somatic_mutations_file, omega_file):
 
     df = pd.DataFrame(res_dict)
     df["sample"] = sample
-    df.to_csv(f'{outfolder}/{sample}.covered_genomes_summary.tsv', sep='\t', index=False)
+    df.to_csv(f'{outfolder}/{sample}.snv.covered_genomes_summary.tsv', sep='\t', index=False)
 
 @cli.command()
 @click.option('--sample')
@@ -244,7 +244,7 @@ def indel_am(sample, outfolder, somatic_mutations_file):
 
     df = pd.DataFrame(res_dict)
     df["sample"] = sample
-    df.to_csv(f'{outfolder}/{sample}.covered_genomes_summary.tsv', sep='\t', index=False)
+    df.to_csv(f'{outfolder}/{sample}.indel.covered_genomes_summary.tsv', sep='\t', index=False)
 
 
 
@@ -349,7 +349,7 @@ def cli_nonduplex(sample, outfolder, somatic_mutations_file, omega_file):
 
     df = pd.DataFrame(res_dict)
     df["sample"] = sample
-    df.to_csv(f'{outfolder}/{sample}.covered_genomes_summary.nonduplex.tsv', sep='\t', index=False)
+    df.to_csv(f'{outfolder}/{sample}.nd.covered_genomes_summary.nonduplex.tsv', sep='\t', index=False)
 
 
 if __name__ == '__main__':

@@ -22,7 +22,7 @@ process MUTATED_CELLS_FROM_VAF {
     """
     mutgenomes_summary_tables.py \\
                 gather-all \\
-                --metadata ${clinical_features}
+                --metadata-file ${clinical_features}
                 ;
 
     cat <<-END_VERSIONS > versions.yml
