@@ -30,7 +30,7 @@ process COMPUTEDEPTHS {
     def minimum_depth = task.ext.minimum_depth ? "| awk 'NR == 1 {print; next}  {sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
 
     // this variable is used for setting a uniform depth across sites
-    def uniform_depth = task.ext.uniform_depth ? "| awk 'BEGIN {OFS=\"\\t\"} NR == 1 {print; next} {for (i=3; i<=NF; i++) \$i = 100; print}'" : ""
+    // def uniform_depth = task.ext.uniform_depth ? "| awk 'BEGIN {OFS=\"\\t\"} NR == 1 {print; next} {for (i=3; i<=NF; i++) \$i = 100; print}'" : ""
 
     """
     ls -1 *.bam > bam_files_list.txt;
@@ -42,8 +42,30 @@ process COMPUTEDEPTHS {
         -f bam_files_list.txt \\
         | tail -c +2 \\
         ${minimum_depth} \\
-        ${uniform_depth} \\
         | gzip -c > ${prefix}.depths.tsv.gz;
+
+    if [ "${task.ext.uniform_depth}" ]; then
+        zcat ${prefix}.depths.tsv.gz \\
+        | tail -n +2 \\
+        | cut -f1-2 | gzip -c > ${prefix}.depths.2cols.tsv.gz;
+        echo "here 1";
+
+        n_cols=\$(zcat ${prefix}.depths.tsv.gz | head -1 | awk '{print NF-2}');
+        echo \$n_cols;
+        n_rows=\$(zcat ${prefix}.depths.tsv.gz | tail -n +2 | wc -l);
+        echo \$n_rows;
+
+        yes "100" | tr '\n' ' ' | fold -w \$((4 * \$n_cols)) \\
+        | head -n \$n_rows | paste -d '\t' <(gzip -c ${prefix}.depths.2cols.tsv) - \\
+        | tr " " "\t"| gzip -c > ${prefix}.uniform.depths.tsv.gz;
+        echo "here 2";
+
+        zcat ${prefix}.depths.tsv.gz | head -1 | gzip -c > ${prefix}.depths.tsv.gz;
+        echo "here 3";
+        zcat ${prefix}.uniform.depths.tsv.gz | gzip -c >> ${prefix}.depths.tsv.gz;
+        echo "here 4";
+        rm ${prefix}.depths.2cols.tsv ${prefix}.uniform.depths.tsv.gz;
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
