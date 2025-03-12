@@ -17,7 +17,6 @@ process MUTATED_CELLS_FROM_VAF {
     task.ext.when == null || task.ext.when
 
     script:
-    // def separator = task.ext.separator ?: "comma"
     """
     mutgenomes_summary_tables.py \\
         --metadata-file ${clinical_features} ;
@@ -40,12 +39,3 @@ process MUTATED_CELLS_FROM_VAF {
     """
 
 }
-
-// this could be used to define the way sex is encodedand which is the sample id column
-//     def features = task.ext.features ?: ""
-//     """
-//     cat > features_table_information.json << EOF
-//     {
-//         ${features}
-//     }
-//     EOF

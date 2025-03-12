@@ -74,11 +74,11 @@ def snv_am(sample, somatic_mutations_file, omega_file):
     # parse mutations
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
     mutations = somatic_mutations[(somatic_mutations['TYPE'] == 'SNV')
-                                    & (somatic_mutations['canonical_Consequence_broader'].isin(['missense', 'nonsense']))
+                                    & (somatic_mutations['Consequence_broader'].isin(['missense', 'nonsense']))
                                     ].reset_index(drop = True)
     mutations['VAF_AM'] = mutations.apply(lambda r: r['ALT_DEPTH_AM'] / r['DEPTH_AM'], axis=1)
 
-    gene_chr_dict = {x: y  for x, y in somatic_mutations[['canonical_SYMBOL', 'CHROM']].drop_duplicates().values}
+    gene_chr_dict = {x: y  for x, y in somatic_mutations[['GENE', 'CHROM']].drop_duplicates().values}
 
     # parse dN/dS excess
     excess_dict = compute_excess(omega_file)
@@ -92,7 +92,7 @@ def snv_am(sample, somatic_mutations_file, omega_file):
     for suffix in ['TOTAL', 'UPPER', 'MEAN', 'LOWER']:
         res_dict[f'GENOMES_SNV_AM_{suffix}'] = []
 
-    genes_with_mutations_n_omega = sorted(set(genes_with_omega).intersection(set(mutations['canonical_SYMBOL'].unique())))
+    genes_with_mutations_n_omega = sorted(set(genes_with_omega).intersection(set(mutations['GENE'].unique())))
 
     for gene in genes_with_mutations_n_omega:
 
@@ -100,7 +100,7 @@ def snv_am(sample, somatic_mutations_file, omega_file):
 
             # total
 
-            df_all = mutations[(mutations['canonical_SYMBOL'] == gene) & (mutations['canonical_Consequence_broader'] == csqn)]
+            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'] == csqn)]
             df_all = df_all.sort_values(by=['VAF_AM'], ascending=False)
             df_all.reset_index(drop=True, inplace=True)
 
@@ -161,7 +161,7 @@ def indel_am(sample, somatic_mutations_file):
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
     mutations = somatic_mutations[(somatic_mutations['TYPE'].isin(['INSERTION', 'DELETION']))].reset_index(drop = True)
     mutations['VAF_AM'] = mutations.apply(lambda r: r['ALT_DEPTH_AM'] / r['DEPTH_AM'], axis=1)
-    gene_chr_dict = {x: y  for x, y in somatic_mutations[['canonical_SYMBOL', 'CHROM']].drop_duplicates().values}
+    gene_chr_dict = {x: y  for x, y in somatic_mutations[['GENE', 'CHROM']].drop_duplicates().values}
 
     # select mutations
 
@@ -171,7 +171,7 @@ def indel_am(sample, somatic_mutations_file):
     res_dict['impact'] = []
     res_dict['GENOMES_INDEL_AM_TOTAL'] = []
         
-    for gene in mutations['canonical_SYMBOL'].unique():
+    for gene in mutations['GENE'].unique():
 
         res_dict['gene'] = res_dict['gene'] + [gene]
         res_dict['chr'] = res_dict['chr'] + [gene_chr_dict[gene]]
@@ -179,7 +179,7 @@ def indel_am(sample, somatic_mutations_file):
 
         # total
 
-        df_all = mutations[(mutations['canonical_SYMBOL'] == gene)]
+        df_all = mutations[(mutations['GENE'] == gene)]
         df_all = df_all.sort_values(by=['VAF_AM'], ascending=False)
         df_all.reset_index(drop=True, inplace=True)
 
@@ -209,11 +209,11 @@ def snv_nd(sample, somatic_mutations_file, omega_file):
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
     mutations = somatic_mutations[
         (somatic_mutations['TYPE'] == 'SNV')
-        & (somatic_mutations['canonical_Consequence_broader'].isin(['missense', 'nonsense']))
+        & (somatic_mutations['Consequence_broader'].isin(['missense', 'nonsense']))
         ].reset_index(drop = True)
     mutations['VAF_ND'] = mutations.apply(lambda r: r['ALT_DEPTH_ND'] / r['DEPTH_ND'], axis=1)
 
-    gene_chr_dict = { x : y  for x, y in somatic_mutations[['canonical_SYMBOL', 'CHROM']].drop_duplicates().values }
+    gene_chr_dict = { x : y  for x, y in somatic_mutations[['GENE', 'CHROM']].drop_duplicates().values }
 
     mutations = mutations[mutations['ALT_DEPTH_ND'] > 0]
 
@@ -230,7 +230,7 @@ def snv_nd(sample, somatic_mutations_file, omega_file):
     for suffix in ['TOTAL', 'UPPER', 'MEAN', 'LOWER']:
         res_dict[f'GENOMES_SNV_ND_{suffix}'] = []
 
-    genes_with_mutations_n_omega = sorted(set(genes_with_omega).intersection(set(mutations['canonical_SYMBOL'].unique())))
+    genes_with_mutations_n_omega = sorted(set(genes_with_omega).intersection(set(mutations['GENE'].unique())))
     
     for gene in genes_with_mutations_n_omega:
 
@@ -238,7 +238,7 @@ def snv_nd(sample, somatic_mutations_file, omega_file):
 
             # total
 
-            df_all = mutations[(mutations['canonical_SYMBOL'] == gene) & (mutations['canonical_Consequence_broader'] == csqn)]
+            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'] == csqn)]
             df_all = df_all.sort_values(by=['VAF_ND'], ascending=False)
             df_all.reset_index(drop=True, inplace=True)
 

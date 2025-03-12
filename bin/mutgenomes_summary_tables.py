@@ -24,7 +24,18 @@ def gather(metadata_file):
     df_all = pd.concat(df_all, axis=0)
 
     # load clinical information
-    clinical_df = pd.read_csv(metadata_file, sep='\t')[['SAMPLE_ID', 'SEX']]
+    # Try reading the metadata file with different separators to find the correct one
+    for sep in ['\t', ',']:
+        try:
+            clinical_df_tmp = pd.read_csv(metadata_file, sep=sep)
+            if 'SAMPLE_ID' in clinical_df_tmp.columns and 'SEX' in clinical_df_tmp.columns:
+                clinical_df = clinical_df_tmp[['SAMPLE_ID', 'SEX']]
+                print(f"""Metadata file read with separator: {sep}""")
+                break
+        except Exception:
+            continue
+    else:
+        raise ValueError("Input file must contain 'SAMPLE_ID' and 'SEX' columns")
 
 
     df_all = df_all[~(df_all['SAMPLE'] == 'all_samples')]
