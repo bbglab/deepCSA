@@ -11,8 +11,8 @@ process MUTATED_CELLS_FROM_VAF {
     path (clinical_features)
 
     output:
-    tuple val(meta), path("*.sample.mutated_genomes_from_vaf.tsv") , emit: mutated_cells_sample
-    path  "versions.yml"                                           , topic: versions
+    tuple val(meta), path("*.tsv") , emit: mutated_cells_sample
+    path  "versions.yml" , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,9 +21,7 @@ process MUTATED_CELLS_FROM_VAF {
     // def separator = task.ext.separator ?: "comma"
     """
     mutgenomes_summary_tables.py \\
-                gather-all \\
-                --metadata-file ${clinical_features}
-                ;
+        --metadata-file ${clinical_features} ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
