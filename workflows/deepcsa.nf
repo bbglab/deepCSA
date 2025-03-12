@@ -146,12 +146,6 @@ workflow DEEPCSA{
                                 ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
                                 : Channel.fromPath(params.input)
 
-    // if the user wants to define hotspots for omega, import the hotspots definition BED file
-    // otherwise I am using the input csv as a dummy value channel
-    hotspots_bed_file   = params.omega_hotspots_bedfile
-                                ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first()
-                                : Channel.fromPath(params.input)
-
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutrate         = (params.mutationrate || params.omega)
@@ -222,12 +216,8 @@ workflow DEEPCSA{
                         )
     positive_selection_results = MUT_PREPROCESSING.out.somatic_mafs
 
-    Channel.of([["id": "all_samples"]])
-    .join(MUT_PREPROCESSING.out.somatic_mafs).first()
-    .set{mutations_all}
-
     if (params.vep_species == 'homo_sapiens'){
-        DNA2PROTEINMAPPING(mutations_all, CREATEPANELS.out.exons_consensus_panel)
+        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples, CREATEPANELS.out.exons_consensus_panel)
     }
 
 
@@ -435,7 +425,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
-                    hotspots_bed_file,
+                    CREATEPANELS.out.domains_panel_bed,
                     SYNMUTRATE.out.mutrate,
                     CREATEPANELS.out.panel_annotated_rich
                     )
@@ -449,7 +439,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_bed,
                         CREATEPANELS.out.exons_consensus_panel,
                         custom_groups_table,
-                        hotspots_bed_file,
+                        CREATEPANELS.out.domains_panel_bed,
                         SYNMUTREADSRATE.out.mutrate,
                         CREATEPANELS.out.panel_annotated_rich
                         )
@@ -463,7 +453,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
-                            hotspots_bed_file,
+                            CREATEPANELS.out.domains_panel_bed,
                             SYNMUTRATE.out.mutrate,
                             CREATEPANELS.out.panel_annotated_rich
                             )
@@ -474,7 +464,7 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_bed,
                                 CREATEPANELS.out.exons_consensus_panel,
                                 custom_groups_table,
-                                hotspots_bed_file,
+                                CREATEPANELS.out.domains_panel_bed,
                                 SYNMUTREADSRATE.out.mutrate,
                                 CREATEPANELS.out.panel_annotated_rich
                                 )
@@ -508,7 +498,7 @@ workflow DEEPCSA{
 
         // Signature Analysis
         if (params.profileall){
-            SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
 
             MUT_PREPROCESSING.out.somatic_mafs
             .join(SIGNATURESALL.out.mutation_probs)
@@ -518,13 +508,13 @@ workflow DEEPCSA{
 
         }
         if (params.profilenonprot){
-            SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileexons){
-            SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileintrons){
-            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
     }
 
