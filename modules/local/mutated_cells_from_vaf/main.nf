@@ -4,7 +4,6 @@ process MUTATED_CELLS_FROM_VAF {
     label 'memory_medium'
 
     container 'docker.io/ferranmuinos/test_mutated_genomes'
-    // conda activate probabilistic
 
     input:
     tuple val(meta), path (mutated_genomes_results)
@@ -31,7 +30,6 @@ process MUTATED_CELLS_FROM_VAF {
 
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
     touch ${prefix}.sample.mutated_genomes_from_vaf.tsv
 
