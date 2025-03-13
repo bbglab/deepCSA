@@ -317,11 +317,6 @@
                     "description": "Do you want to run indels?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutated_cells_reads": {
-                    "type": "boolean",
-                    "description": "Do you want to run mutated_cells_reads?",
-                    "fa_icon": "fas fa-book"
-                },
                 "mutated_cells_vaf": {
                     "type": "boolean",
                     "description": "Do you want to run mutated_cells_reads using the VAFs?",
@@ -415,7 +410,6 @@
                 "create_sample_panels": {
                     "type": "boolean",
                     "description": "Do you want to generate the sample panels?",
-                    "default": false,
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to generate the sample panels?"
                 },
@@ -758,6 +752,9 @@
         },
         {
             "$ref": "#/$defs/custom_bedfile_configs"
+        },
+        {
+            "$ref": "#/$defs/custom_annotation_configs"
         },
         {
             "$ref": "#/$defs/omega_bedfile_configs"

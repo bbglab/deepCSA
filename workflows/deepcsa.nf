@@ -56,7 +56,6 @@ include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkfl
 
 include { INDELS_SELECTION          as INDELSSELECTION      } from '../subworkflows/local/indels/main'
 
-// include { MUTATED_CELLS_READS        as MUTATEDCELLS    } from '../subworkflows/local/mutatedcells/reads/main'
 include { MUTATED_CELLS_VAF         as MUTATEDCELLSVAF      } from '../subworkflows/local/mutatedcells/vaf/main'
 
 include { EXPECTED_MUTATED_CELLS    as EXPECTEDMUTATEDCELLS } from '../subworkflows/local/mutatedcells/expected/main'
@@ -311,65 +310,6 @@ workflow DEEPCSA{
     }
 
 
-
-    // if (params.mutated_cells_reads){
-
-    //     INPUT_CHECK.out.mutations
-    //     .map{ it -> [it[0], it[3], it[4]]}
-    //     .set{ meta_pileupbamindex_alone }
-
-    //     MUT_PREPROCESSING.out.somatic_mafs
-    //     .join(meta_samples_alone)
-    //     .set{ sample_mutations_only }
-
-    //     MUTATEDCELLS(sample_mutations_only,
-    //                         CREATEPANELS.out.exons_consensus_bed,
-    //                         CREATEPANELS.out.exons_consensus_panel,
-    //                         meta_pileupbamindex_alone,
-    //                         params.fasta
-    //                         )
-
-    //     if (params.pileup_all_duplex) {
-    //         // Concatenate all outputs into a single file
-    //         mut_epithelium_empty = Channel.empty()
-    //         mut_epithelium_empty
-    //         .concat(MUTATEDCELLS.out.mut_epi_exon.map{ it -> it[1]}.flatten())
-    //         .set{ all_mutepiexon }
-    //         all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
-
-    //         mut_epithelium_empty2 = Channel.empty()
-    //         mut_epithelium_empty2
-    //         .concat(MUTATEDCELLS.out.mut_epi_gene.map{ it -> it[1]}.flatten())
-    //         .set{ all_mutepigene }
-    //         all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
-
-    //         mut_epithelium_empty3 = Channel.empty()
-    //         mut_epithelium_empty3
-    //         .concat(MUTATEDCELLS.out.mut_epi_sample.map{ it -> it[1]}.flatten())
-    //         .set{ all_mutepisample }
-    //         all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
-    //     } else {
-    //         // Concatenate all outputs into a single file
-    //         mut_epithelium_empty = Channel.empty()
-    //         mut_epithelium_empty
-    //         .concat(MUTATEDCELLS.out.mut_epi_exon.map{ it -> it[1]}.flatten())
-    //         .set{ all_mutepiexon }
-    //         all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
-
-    //         mut_epithelium_empty2 = Channel.empty()
-    //         mut_epithelium_empty2
-    //         .concat(MUTATEDCELLS.out.mut_epi_gene.map{ it -> it[1]}.flatten())
-    //         .set{ all_mutepigene }
-    //         all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
-
-    //         mut_epithelium_empty3 = Channel.empty()
-    //         mut_epithelium_empty3
-    //         .concat(MUTATEDCELLS.out.mut_epi_sample.map{ it -> it[1]}.flatten())
-    //         .set{ all_mutepisample }
-    //         all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
-
-    //     }
-    // }
 
 
 
