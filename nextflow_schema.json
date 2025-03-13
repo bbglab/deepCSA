@@ -407,7 +407,6 @@
                 "random_effects_vars_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "default": "",
                     "description": "Variable to be used as random effect in all the models",
                     "help_text": "If you want to run a mixed-effects linear model, provide here the variable to use as random effect",
                     "fa_icon": "far fa-file-code"
@@ -415,7 +414,6 @@
                 "multipletesting_join_regressions": {
                     "type": "object",
                     "mimetype": "text/plain",
-                    "default": "",
                     "description": "Rules to join metrics tables for its p-values to be corrected together after multiple testing",
                     "help_text": "If you need to correct for multiple testing metrics coming in independent tables, include the multiple testing rules here. Format: {multipletest_rule#: []}",
                     "fa_icon": "far fa-file-code"
@@ -423,7 +421,6 @@
                 "multivariate_rules_regressions": {
                     "type": "object",
                     "mimetype": "text/plain",
-                    "default": "",
                     "description": "User rules to choose which variables to run together in the multivariate regressions",
                     "help_text": "Provide here any rules you would like to additionally apply to test variables together in the multivariate model. Otherwise, only significant variables in the univariate analysis will be included. Format: {multirule#: 'variable1, variable2'}",
                     "fa_icon": "far fa-file-code"
@@ -581,7 +578,7 @@
                 "downsample": {
                     "type": "boolean",
                     "description": "Decide if you want to do downsampling of the mutations and depth to a given proportion of the maximum. Uniform across samples.",
-                    "fa_icon": "fas fa-book",
+                    "fa_icon": "fas fa-book"
                 },
                 "downsample_proportion": {
                     "type": "number",

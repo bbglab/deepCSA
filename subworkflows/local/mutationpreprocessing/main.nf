@@ -15,6 +15,7 @@ include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    } from '../../../mod
 include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_MUTATIONS                as PLOTSOMATICMAF   } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
+include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   } from '../../../modules/local/downsample/mutations/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -79,10 +80,19 @@ workflow MUTATION_PREPROCESSING {
     if (params.blacklist_mutations) {
         blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
         BLACKLISTMUTS(SOMATICMUTATIONS.out.mutations, blacklist_mutations)
-        somatic_mutations = BLACKLISTMUTS.out.mutations
+        _somatic_mutations = BLACKLISTMUTS.out.mutations
     } else {
-        somatic_mutations = SOMATICMUTATIONS.out.mutations
+        _somatic_mutations = SOMATICMUTATIONS.out.mutations
     }
+
+    // if (params.downsample && params.downsample_proportion < 1) {
+    if (params.downsample) {
+        DOWNSAMPLEMUTS(_somatic_mutations)
+        somatic_mutations = DOWNSAMPLEMUTS.out.downsampled_muts
+    } else {
+        somatic_mutations = _somatic_mutations
+    }
+
 
     Channel.of([["id": "all_samples"]])
     .join(somatic_mutations).first()

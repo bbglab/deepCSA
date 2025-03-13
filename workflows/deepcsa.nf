@@ -102,7 +102,6 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 
 include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS       } from '../modules/local/annotatedepth/main'
 include { DOWNSAMPLE_DEPTHS         as DOWNSAMPLEDEPTHS     } from '../modules/local/downsample/depths/main'
-include { DOWNSAMPLE_MUTATIONS      as DOWNSAMPLEMUTS       } from '../modules/local/downsample/mutations/main'
 include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
 include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/local/mutations2sbs/main'
 
@@ -196,6 +195,7 @@ workflow DEEPCSA{
     TABLE2GROUP(features_table)
 
 
+    // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
     DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
 
@@ -204,7 +204,9 @@ workflow DEEPCSA{
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
-    if (params.downsample){
+
+    // if (params.downsample && params.downsample_proportion < 1) {
+    if (params.downsample ){
         DOWNSAMPLEDEPTHS(annotated_depths_full)
         annotated_depths = DOWNSAMPLEDEPTHS.out.downsampled_depths
     } else {
@@ -225,19 +227,9 @@ workflow DEEPCSA{
                         seqinfo_df,
                         CREATEPANELS.out.added_custom_regions
                         )
-    if (params.downsample){
-        DOWNSAMPLEMUTS(MUT_PREPROCESSING.out.somatic_mafs)
-        somatic_mutations = DOWNSAMPLEMUTS.out.downsampled_muts
-    } else {
-        somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-    }
-
+    somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
 
     positive_selection_results = somatic_mutations
-
-    Channel.of([["id": "all_samples"]])
-    .join(somatic_mutations).first()
-    .set{mutations_all}
 
 
     if (params.vep_species == 'homo_sapiens'){

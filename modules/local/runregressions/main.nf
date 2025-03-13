@@ -19,7 +19,7 @@ process RUNREGRESSIONS {
     val  (multivariate_rules_regressions)
 
     output:
-    path ("inputs/*")          , emit: regression_inputs
+    path ("inputs/*")       , emit: regression_inputs
     path (metric_name)      , emit: res_tables
     path ("*.pdf")          , emit: res_pdf
     path "versions.yml"     , topic: versions
