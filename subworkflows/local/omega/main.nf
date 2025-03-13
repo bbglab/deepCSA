@@ -33,12 +33,22 @@ workflow OMEGA_ANALYSIS{
     bedfile
     panel
     custom_gene_groups
-    hotspots_file
+    domains_file
     mutationrates
     complete_panel
 
 
     main:
+
+    // Create a channel for the domains file if omega_autodomains is true
+    domains_ch = params.omega_autodomains ? domains_file : Channel.empty()
+
+    // Create a channel for the hotspots bedfile if provided
+    hotspots_ch = params.omega_hotspots_bedfile ? Channel.fromPath(params.omega_hotspots_bedfile) : Channel.empty()
+
+    // Combine both channels
+    hotspots_bed_file = domains_ch.mix(hotspots_ch).collect().ifEmpty { file(params.input) }
+
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
@@ -58,8 +68,8 @@ workflow OMEGA_ANALYSIS{
     .set{ all_samples_mut_profile }
 
 
-    if (params.omega_hotspots){
-        EXPANDREGIONS(panel, hotspots_file)
+    if (params.omega_withingene){
+        EXPANDREGIONS(panel, hotspots_bed_file)
         expanded_panel = EXPANDREGIONS.out.panel_increased.first()
         json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
     } else {

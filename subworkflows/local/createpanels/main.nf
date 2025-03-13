@@ -6,6 +6,9 @@ include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '
 include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING             } from '../../../modules/local/process_annotation/panelcustom/main'
 include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH         } from '../../../modules/local/process_annotation/panelcustom/main'
 
+include { DOMAIN_ANNOTATION             as DOMAINANNOTATION             } from '../../../modules/local/process_annotation/domain/main'
+
+
 include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
 
 include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL                  } from '../../../modules/local/createpanels/sample/main'
@@ -86,6 +89,10 @@ workflow CREATE_PANELS {
         added_regions = Channel.empty()
     }
 
+    // Generate BED file with genomic coordinates of sequenced domains
+    domains_file = file("${params.annotations3d}/pfam.tsv")
+    DOMAINANNOTATION(rich_annotated, domains_file)
+
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
 
@@ -102,13 +109,15 @@ workflow CREATE_PANELS {
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous).set{synonymous_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous_bed).set{synonymous_bed}
 
-    // Create sample-specific panels: all modalities
-    CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSEXONS(exons_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSSYNONYMOUS(synonymous_panel, depths, params.sample_panel_min_depth)
+    if (params.create_sample_panels){
+        // Create sample-specific panels: all modalities
+        CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSEXONS(exons_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSSYNONYMOUS(synonymous_panel, depths, params.sample_panel_min_depth)
+    }
 
 
     // Create consensus panel: all modalities
@@ -150,6 +159,7 @@ workflow CREATE_PANELS {
 
     panel_annotated_rich        = rich_annotated
     added_custom_regions        = added_regions
+    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())

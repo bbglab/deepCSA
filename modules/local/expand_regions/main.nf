@@ -3,16 +3,11 @@ process EXPAND_REGIONS {
     tag "$meta.id"
     label 'process_high'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
     container 'docker.io/ferriolcalvet/bgreference'
 
     input:
-    tuple val(meta)     , path(panel)
+    tuple val(meta), path(panel)
     path (bedfile)
-    // tuple val(meta2)    , path(bedfile)
 
     output:
     tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
@@ -23,10 +18,15 @@ process EXPAND_REGIONS {
     task.ext.when == null || task.ext.when
 
     script:
-    def expansion = task.ext.expansion ?: 30
-    def configuration = task.ext.use_hotspot_bed ? "${bedfile} ${expansion} 1" : 'None 0 0'
+    def expansion = task.ext.expansion ?: 0
+    def bedfile_to_use = task.ext.using_bedfile ? "custom_regions_bedfiles.bed" : "None"
+    def autoexons = params.omega_autoexons ? "1" : "0"
     """
-    add_hotspots.py ${panel} ${configuration}
+    cat ${bedfile} >> custom_regions_bedfiles.bed
+    add_hotspots.py ${panel} \\
+                    ${bedfile_to_use} \\
+                    ${expansion} \\
+                    ${autoexons}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

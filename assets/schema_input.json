@@ -33,6 +33,6 @@
                 "errorMessage": "BAM index pilup file for sample must be provided, cannot contain spaces and must have extension '.bam.csi'"
             }
         },
-        "required": ["sample", "vcf", "bam", "pileup_bam", "pileup_ind"]
+        "required": ["sample", "vcf", "bam"]
     }
 }

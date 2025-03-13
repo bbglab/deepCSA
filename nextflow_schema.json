@@ -31,30 +31,6 @@
                 }
             }
         },
-        "bed_files_options": {
-            "title": "BED file options",
-            "type": "object",
-            "description": "BED files used for filtering mutations or genomic regions.",
-            "default": "",
-            "properties": {
-                "low_mappability_file": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "BED file with the low mappability regions.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "GRCh38.encode.blacklist.bed"
-                },
-                "low_complex_file": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "BED file with the low complex regions.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "BED file that contains the regions to be discarded in the analysis.",
-                    "default": "hg38_lowcomplexity_repetitive_regions.mutcoords.bed"
-                }
-            }
-        },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
@@ -212,13 +188,13 @@
                 }
             }
         },
-        "hotspot_bedfile_configs": {
+        "omega_bedfile_configs": {
             "title": "Definition of hotspot regions configuration",
             "type": "object",
             "fa_icon": "fas fa-dna",
             "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
             "properties": {
-                "omega_hotspots": {
+                "omega_withingene": {
                     "type": "boolean",
                     "description": "Do you want to analyze omega hotspots independently?",
                     "fa_icon": "fas fa-book",
@@ -239,6 +215,18 @@
                     "default": 30,
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
+                },
+                "omega_autodomains": {
+                    "type": "boolean",
+                    "description": "Do you want to automatically generate the domains for omega?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to automatically generate the domains for omega?"
+                },
+                "omega_autoexons": {
+                    "type": "boolean",
+                    "description": "Do you want to automatically generate the theoretical exons from the panel for omega?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to automatically generate the theoretical exons from the panel for omega?"
                 }
             }
         },
@@ -291,11 +279,6 @@
                     "description": "Do you want to run omega with the globalloc mode?",
                     "fa_icon": "fas fa-book"
                 },
-                "omega_vaf_distorsioned": {
-                    "type": "boolean",
-                    "description": "Do you want to run omega with the different VAF distorsioned gropus?",
-                    "fa_icon": "fas fa-book"
-                },
                 "omega_plot": {
                     "type": "boolean",
                     "description": "Do you want to plot omega results?",
@@ -334,19 +317,14 @@
                     "description": "Do you want to run indels?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutated_epithelium": {
+                "mutated_cells_vaf": {
                     "type": "boolean",
-                    "description": "Do you want to run mutated_epithelium?",
+                    "description": "Do you want to run mutated_cells_reads using the VAFs?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutated_epithelium_vaf": {
+                "expected_mutated_cells": {
                     "type": "boolean",
-                    "description": "Do you want to run mutated_epithelium using the VAFs?",
-                    "fa_icon": "fas fa-book"
-                },
-                "expected_mutation_rate": {
-                    "type": "boolean",
-                    "description": "Do you want to run expected_mutation_rate?",
+                    "description": "Do you want to run expected_mutated_cells?",
                     "fa_icon": "fas fa-book"
                 },
                 "plot_depths": {
@@ -566,6 +544,12 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "create_sample_panels": {
+                    "type": "boolean",
+                    "description": "Do you want to generate the sample panels?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to generate the sample panels?"
+                },
                 "germline_threshold": {
                     "type": "number",
                     "description": "VAF threshold for definition of somatic variants.",
@@ -605,6 +589,14 @@
                     "default": 1,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
+                },
+                "blacklist_mutations": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "description": "Path to TXT with the IDs of the mutations to remove.",
+                    "fa_icon": "far fa-file-code"
                 }
             }
         },
@@ -899,9 +891,6 @@
             "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/$defs/bed_files_options"
-        },
-        {
             "$ref": "#/$defs/reference_genome_options"
         },
         {
@@ -914,7 +903,10 @@
             "$ref": "#/$defs/custom_bedfile_configs"
         },
         {
-            "$ref": "#/$defs/hotspot_bedfile_configs"
+            "$ref": "#/$defs/custom_annotation_configs"
+        },
+        {
+            "$ref": "#/$defs/omega_bedfile_configs"
         },
         {
             "$ref": "#/$defs/hotspot_annotation_options"

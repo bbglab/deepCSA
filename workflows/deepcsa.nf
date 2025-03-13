@@ -56,10 +56,9 @@ include { OMEGA_ANALYSIS            as OMEGANONPROTMULTI    } from '../subworkfl
 
 include { INDELS_SELECTION          as INDELSSELECTION      } from '../subworkflows/local/indels/main'
 
-include { MUTATED_EPITHELIUM        as MUTATEDEPITHELIUM    } from '../subworkflows/local/mutatedepithelium/reads/main'
-include { MUTATED_EPITHELIUM_VAF    as MUTATEDEPITHELIUMVAF } from '../subworkflows/local/mutatedepithelium/vaf/main'
+include { MUTATED_CELLS_VAF         as MUTATEDCELLSVAF      } from '../subworkflows/local/mutatedcells/vaf/main'
 
-include { EXPECTED_MUTRATE          as EXPECTEDMUTRATE      } from '../subworkflows/local/mutatedepithelium/expected/main'
+include { EXPECTED_MUTATED_CELLS    as EXPECTEDMUTATEDCELLS } from '../subworkflows/local/mutatedcells/expected/main'
 
 include { SIGNATURES                as SIGNATURESALL        } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkflows/local/signatures/main'
@@ -153,12 +152,6 @@ workflow DEEPCSA{
                                 ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
                                 : Channel.fromPath(params.input)
 
-    // if the user wants to define hotspots for omega, import the hotspots definition BED file
-    // otherwise I am using the input csv as a dummy value channel
-    hotspots_bed_file   = params.omega_hotspots_bedfile
-                                ? Channel.fromPath( params.omega_hotspots_bedfile, checkIfExists: true).first()
-                                : Channel.fromPath(params.input)
-
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutrate         = (params.mutationrate || params.omega)
@@ -175,16 +168,16 @@ workflow DEEPCSA{
     // Separate input BAMs and VCFs
     //
     INPUT_CHECK.out.mutations
+    .map{ it -> [ "id" : it[0].id ]}
+    .set{ meta_samples_alone }
+
+    INPUT_CHECK.out.mutations
     .map{ it -> [it[0], it[1]]}
     .set{ meta_vcfs_alone }
 
     INPUT_CHECK.out.mutations
     .map{ it -> [it[0], it[2]]}
     .set{ meta_bams_alone }
-
-    INPUT_CHECK.out.mutations
-    .map{ it -> [it[0], it[3], it[4]]}
-    .set{ meta_pileupbamindex_alone }
 
 
     // TODO: test if downloading VEP cache works
@@ -246,8 +239,9 @@ workflow DEEPCSA{
     .join(somatic_mutations).first()
     .set{mutations_all}
 
+
     if (params.vep_species == 'homo_sapiens'){
-        DNA2PROTEINMAPPING(mutations_all, CREATEPANELS.out.exons_consensus_panel)
+        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples, CREATEPANELS.out.exons_consensus_panel)
     }
 
 
@@ -330,81 +324,13 @@ workflow DEEPCSA{
         positive_selection_results = positive_selection_results.join(INDELSSELECTION.out.indels, remainder: true)
     }
 
-    if (params.expected_mutation_rate){
-
-        EXPECTEDMUTRATE(mutations_all,
-                        CREATEPANELS.out.exons_consensus_bed,
-                        CREATEPANELS.out.exons_consensus_panel,
-                        ANNOTATEDEPTHS.out.all_samples_depths,
-                        CREATEPANELS.out.full_panel_annotated
-                        )
-    }
-
-
-
-    if (params.mutated_epithelium_vaf){
-        somatic_mutations
-        .join(meta_vcfs_alone.map{it -> [ ["id" : it[0].id] , it[1] ] })
-        .map{it -> [ it[0] , it[1] ]  }
-        .set{ sample_mutations_only }
-
-        MUTATEDEPITHELIUMVAF(sample_mutations_only,
-                                CREATEPANELS.out.exons_consensus_bed)
-    }
-
-    if (params.mutated_epithelium){
-        somatic_mutations
-        .join(meta_vcfs_alone.map{it -> [ ["id" : it[0].id] , it[1] ] })
-        .map{it -> [ it[0] , it[1] ]  }
-        .set{ sample_mutations_only }
-
-        MUTATEDEPITHELIUM(sample_mutations_only,
-                            CREATEPANELS.out.exons_consensus_bed,
-                            CREATEPANELS.out.exons_consensus_panel,
-                            meta_pileupbamindex_alone,
-                            params.fasta
-                            )
-
-        if (params.pileup_all_duplex) {
-            // Concatenate all outputs into a single file
-            mut_epithelium_empty = Channel.empty()
-            mut_epithelium_empty
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_exon.map{ it -> it[1]}.flatten())
-            .set{ all_mutepiexon }
-            all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
-
-            mut_epithelium_empty2 = Channel.empty()
-            mut_epithelium_empty2
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_gene.map{ it -> it[1]}.flatten())
-            .set{ all_mutepigene }
-            all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
-
-            mut_epithelium_empty3 = Channel.empty()
-            mut_epithelium_empty3
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_sample.map{ it -> it[1]}.flatten())
-            .set{ all_mutepisample }
-            all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreadsam", skip: 1, keepHeader: true)
-        } else {
-            // Concatenate all outputs into a single file
-            mut_epithelium_empty = Channel.empty()
-            mut_epithelium_empty
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_exon.map{ it -> it[1]}.flatten())
-            .set{ all_mutepiexon }
-            all_mutepiexon.collectFile(name: "all_mutepithelium_exon.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
-
-            mut_epithelium_empty2 = Channel.empty()
-            mut_epithelium_empty2
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_gene.map{ it -> it[1]}.flatten())
-            .set{ all_mutepigene }
-            all_mutepigene.collectFile(name: "all_mutepithelium_gene.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
-
-            mut_epithelium_empty3 = Channel.empty()
-            mut_epithelium_empty3
-            .concat(MUTATEDEPITHELIUM.out.mut_epi_sample.map{ it -> it[1]}.flatten())
-            .set{ all_mutepisample }
-            all_mutepisample.collectFile(name: "all_mutepithelium_sample.tsv", storeDir:"${params.outdir}/mutatedgenomesfromreads", skip: 1, keepHeader: true)
-
-        }
+    if (params.expected_mutated_cells){
+        EXPECTEDMUTATEDCELLS(MUT_PREPROCESSING.out.mutations_all_samples,
+                                CREATEPANELS.out.exons_consensus_bed,
+                                CREATEPANELS.out.exons_consensus_panel,
+                                ANNOTATEDEPTHS.out.all_samples_depths,
+                                CREATEPANELS.out.full_panel_annotated
+                                )
     }
 
     //
@@ -447,7 +373,7 @@ workflow DEEPCSA{
         }
     }
 
-    // if (params.expected_mutation_rate & params.dnds){
+    // if (params.expected_mutated_cells & params.dnds){
     if (params.dnds){
         covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
         ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
@@ -472,7 +398,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
-                    hotspots_bed_file,
+                    CREATEPANELS.out.domains_panel_bed,
                     SYNMUTRATE.out.mutrate,
                     CREATEPANELS.out.panel_annotated_rich
                     )
@@ -492,7 +418,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
-                            hotspots_bed_file,
+                            CREATEPANELS.out.domains_panel_bed,
                             SYNMUTREADSRATE.out.mutrate,
                             CREATEPANELS.out.panel_annotated_rich
                             )
@@ -511,7 +437,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_bed,
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
-                            hotspots_bed_file,
+                            CREATEPANELS.out.domains_panel_bed,
                             SYNMUTRATE.out.mutrate,
                             CREATEPANELS.out.panel_annotated_rich
                             )
@@ -527,7 +453,7 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.exons_consensus_bed,
                                     CREATEPANELS.out.exons_consensus_panel,
                                     custom_groups_table,
-                                    hotspots_bed_file,
+                                    CREATEPANELS.out.domains_panel_bed,
                                     SYNMUTREADSRATE.out.mutrate,
                                     CREATEPANELS.out.panel_annotated_rich
                                     )
@@ -537,9 +463,24 @@ workflow DEEPCSA{
                     omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGANONPROTMULTI.out.results_global.map{ it -> it[1] })
                 }
             }
+
         }
 
     }
+
+    if (params.mutated_cells_vaf){
+        MUT_PREPROCESSING.out.somatic_mafs
+        .join(meta_samples_alone)
+        .set{ sample_mutations_only }
+
+        MUTATEDCELLSVAF(sample_mutations_only,
+                                CREATEPANELS.out.exons_consensus_bed,
+                                OMEGA.out.results_global,
+                                features_table
+                                // OMEGAMULTI.out.results_global
+                                )
+    }
+
 
     if (params.oncodriveclustl){
         // OncodriveClustl
@@ -553,7 +494,7 @@ workflow DEEPCSA{
 
         // Signature Analysis
         if (params.profileall){
-            SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESALL(MUTPROFILEALL.out.matrix_sigprof, MUTPROFILEALL.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
 
             somatic_mutations
             .join(SIGNATURESALL.out.mutation_probs)
@@ -563,13 +504,13 @@ workflow DEEPCSA{
 
         }
         if (params.profilenonprot){
-            SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESNONPROT(MUTPROFILENONPROT.out.matrix_sigprof, MUTPROFILENONPROT.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileexons){
-            SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESEXONS(MUTPROFILEEXONS.out.matrix_sigprof, MUTPROFILEEXONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileintrons){
-            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, params.cosmic_ref_signatures, TABLE2GROUP.out.json_samples)
+            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.matrix_sigprof, MUTPROFILEINTRONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
     }
 
