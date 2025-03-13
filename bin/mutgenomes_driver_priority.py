@@ -10,8 +10,7 @@ import pandas as pd
 from scipy import stats
 
 from utils import inclusion_exclusion
-
-
+from utils_impacts import broadimpact_grouping_dict
 
 def compute_prior(alt_read_count, depth):
 
@@ -19,10 +18,14 @@ def compute_prior(alt_read_count, depth):
     return {'alpha': 1.0, 'beta': 1 / mean_p}
 
 
-def compute_excess(omega_file):
+def compute_excess(omega_file, chosen_impacts_omega=['missense', 'truncating']):
+    """
+    intent:
+    function that computes the excess of dN/dS for each gene and each impact
+    """
 
     omega_df = pd.read_csv(omega_file, sep='\t')
-    omega_df = omega_df[omega_df['impact'].isin(['missense', 'nonsense'])]
+    omega_df = omega_df[omega_df['impact'].isin(chosen_impacts_omega)]
     omega_df['excess_dnds'] = omega_df['dnds'].apply(lambda w: (w - 1) / w if w >= 1 else 0)
     omega_df['excess_lower'] = omega_df['lower'].apply(lambda w: (w - 1) / w if w >= 1 else 0)
     omega_df['excess_upper'] = omega_df['upper'].apply(lambda w: (w - 1) / w if w >= 1 else 0)
@@ -30,7 +33,7 @@ def compute_excess(omega_file):
     res = {}
     for gene in omega_df['gene']:
         res[gene] = {}
-        for csqn in ['missense', 'nonsense']:
+        for csqn in chosen_impacts_omega:
             try:
                 res[gene][csqn] = tuple(omega_df[(omega_df['impact'] == csqn) & (omega_df['gene'] == gene)][['excess_lower', 'excess_dnds', 'excess_upper']].values[0])
             except:
@@ -69,19 +72,21 @@ def compute_covered_genomes(alt_read_count, depth):
     return res
 
 
-def snv_am(sample, somatic_mutations_file, omega_file):
+def snv_am(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense', 'truncating']):
 
     # parse mutations
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
+    consequences_of_interest = [ broadimpact_grouping_dict[csqn] for csqn in chosen_impacts]
+    consequences_of_interest = set([item for sublist in consequences_of_interest for item in sublist])
+
     mutations = somatic_mutations[(somatic_mutations['TYPE'] == 'SNV')
-                                    & (somatic_mutations['Consequence_broader'].isin(['missense', 'nonsense']))
+                                    & (somatic_mutations['Consequence_broader'].isin(consequences_of_interest))
                                     ].reset_index(drop = True)
-    mutations['VAF_AM'] = mutations.apply(lambda r: r['ALT_DEPTH_AM'] / r['DEPTH_AM'], axis=1)
 
     gene_chr_dict = {x: y  for x, y in somatic_mutations[['GENE', 'CHROM']].drop_duplicates().values}
 
     # parse dN/dS excess
-    excess_dict = compute_excess(omega_file)
+    excess_dict = compute_excess(omega_file, chosen_impacts_omega = chosen_impacts)
     genes_with_omega = list(excess_dict.keys())
 
     # select mutations
@@ -100,7 +105,7 @@ def snv_am(sample, somatic_mutations_file, omega_file):
 
             # total
 
-            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'] == csqn)]
+            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'].isin(broadimpact_grouping_dict[csqn]))]
             df_all = df_all.sort_values(by=['VAF_AM'], ascending=False)
             df_all.reset_index(drop=True, inplace=True)
 
@@ -160,7 +165,6 @@ def indel_am(sample, somatic_mutations_file):
     # parse mutations
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
     mutations = somatic_mutations[(somatic_mutations['TYPE'].isin(['INSERTION', 'DELETION']))].reset_index(drop = True)
-    mutations['VAF_AM'] = mutations.apply(lambda r: r['ALT_DEPTH_AM'] / r['DEPTH_AM'], axis=1)
     gene_chr_dict = {x: y  for x, y in somatic_mutations[['GENE', 'CHROM']].drop_duplicates().values}
 
     # select mutations
@@ -203,22 +207,24 @@ def indel_am(sample, somatic_mutations_file):
     return df
     
 
-def snv_nd(sample, somatic_mutations_file, omega_file):
+def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense', 'truncating']):
 
     # parse mutations
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
+    consequences_of_interest = [ broadimpact_grouping_dict[csqn] for csqn in chosen_impacts]
+    consequences_of_interest = set([item for sublist in consequences_of_interest for item in sublist])
+
     mutations = somatic_mutations[
         (somatic_mutations['TYPE'] == 'SNV')
-        & (somatic_mutations['Consequence_broader'].isin(['missense', 'nonsense']))
+        & (somatic_mutations['Consequence_broader'].isin(consequences_of_interest))
         ].reset_index(drop = True)
-    mutations['VAF_ND'] = mutations.apply(lambda r: r['ALT_DEPTH_ND'] / r['DEPTH_ND'], axis=1)
 
     gene_chr_dict = { x : y  for x, y in somatic_mutations[['GENE', 'CHROM']].drop_duplicates().values }
 
     mutations = mutations[mutations['ALT_DEPTH_ND'] > 0]
 
     # parse dN/dS excess
-    excess_dict = compute_excess(omega_file)
+    excess_dict = compute_excess(omega_file, chosen_impacts_omega = chosen_impacts)
     genes_with_omega = list(excess_dict.keys())
 
     # select mutations
@@ -234,11 +240,11 @@ def snv_nd(sample, somatic_mutations_file, omega_file):
     
     for gene in genes_with_mutations_n_omega:
 
-        for csqn in ['missense', 'nonsense']:
+        for csqn in chosen_impacts:
 
             # total
 
-            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'] == csqn)]
+            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'].isin(broadimpact_grouping_dict[csqn]))]
             df_all = df_all.sort_values(by=['VAF_ND'], ascending=False)
             df_all.reset_index(drop=True, inplace=True)
 
