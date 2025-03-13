@@ -109,13 +109,15 @@ workflow CREATE_PANELS {
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous).set{synonymous_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous_bed).set{synonymous_bed}
 
-    // Create sample-specific panels: all modalities
-    CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSEXONS(exons_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
-    CREATESAMPLEPANELSSYNONYMOUS(synonymous_panel, depths, params.sample_panel_min_depth)
+    if (params.create_sample_panels){
+        // Create sample-specific panels: all modalities
+        CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSEXONS(exons_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
+        CREATESAMPLEPANELSSYNONYMOUS(synonymous_panel, depths, params.sample_panel_min_depth)
+    }
 
 
     // Create consensus panel: all modalities

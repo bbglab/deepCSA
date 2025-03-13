@@ -279,11 +279,6 @@
                     "description": "Do you want to run omega with the globalloc mode?",
                     "fa_icon": "fas fa-book"
                 },
-                "omega_vaf_distorsioned": {
-                    "type": "boolean",
-                    "description": "Do you want to run omega with the different VAF distorsioned gropus?",
-                    "fa_icon": "fas fa-book"
-                },
                 "omega_plot": {
                     "type": "boolean",
                     "description": "Do you want to plot omega results?",
@@ -416,6 +411,13 @@
                     "default": 500,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
+                },
+                "create_sample_panels": {
+                    "type": "boolean",
+                    "description": "Do you want to generate the sample panels?",
+                    "default": false,
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to generate the sample panels?"
                 },
                 "germline_threshold": {
                     "type": "number",
