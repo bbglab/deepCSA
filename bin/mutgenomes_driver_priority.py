@@ -101,7 +101,7 @@ def snv_am(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
 
     for gene in genes_with_mutations_n_omega:
 
-        for csqn in ['missense', 'nonsense']:
+        for csqn in chosen_impacts:
 
             # total
 
@@ -156,9 +156,10 @@ def snv_am(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
                     res_dict[f'GENOMES_SNV_AM_{suffix}'] = res_dict[f'GENOMES_SNV_AM_{suffix}'] + [res['GENOMES']]
 
     df = pd.DataFrame(res_dict)
+    all_columnss = list(df.columns)
     df['SAMPLE'] = sample
-    return df
-    
+    return df[['SAMPLE'] + all_columnss]
+
 
 def indel_am(sample, somatic_mutations_file):
 
@@ -174,7 +175,7 @@ def indel_am(sample, somatic_mutations_file):
     res_dict['chr'] = []
     res_dict['impact'] = []
     res_dict['GENOMES_INDEL_AM_TOTAL'] = []
-        
+
     for gene in mutations['GENE'].unique():
 
         res_dict['gene'] = res_dict['gene'] + [gene]
@@ -203,9 +204,10 @@ def indel_am(sample, somatic_mutations_file):
             res_dict[f'GENOMES_INDEL_AM_TOTAL'] = res_dict[f'GENOMES_INDEL_AM_TOTAL'] + [res['GENOMES']]
 
     df = pd.DataFrame(res_dict)
+    all_columnss = list(df.columns)
     df['SAMPLE'] = sample
-    return df
-    
+    return df[['SAMPLE'] + all_columnss]
+
 
 def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense', 'truncating']):
 
@@ -237,7 +239,7 @@ def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
         res_dict[f'GENOMES_SNV_ND_{suffix}'] = []
 
     genes_with_mutations_n_omega = sorted(set(genes_with_omega).intersection(set(mutations['GENE'].unique())))
-    
+
     for gene in genes_with_mutations_n_omega:
 
         for csqn in chosen_impacts:
@@ -297,9 +299,10 @@ def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
                     res_dict[f'GENOMES_SNV_ND_{suffix}'] = res_dict[f'GENOMES_SNV_ND_{suffix}'] + [res['GENOMES']]
 
     df = pd.DataFrame(res_dict)
+    all_columnss = list(df.columns)
     df['SAMPLE'] = sample
-    return df
-    
+    return df[['SAMPLE'] + all_columnss]
+
 
 @click.command()
 @click.option('--sample')
@@ -307,12 +310,12 @@ def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
 @click.option('--omega-file')
 def run_all(sample, somatic_mutations_file, omega_file):
     """
-    intent: 
-    script that combines the 3 covered epithelium functions, 
-    merges the output in a standardized way, so that we just 
-    get one output in the mutated_genomes_from_vaf/main.nf 
+    intent:
+    script that combines the 3 covered epithelium functions,
+    merges the output in a standardized way, so that we just
+    get one output in the mutated_genomes_from_vaf/main.nf
     nextflow module
-    
+
     """
 
     df_snv_am = snv_am(sample, somatic_mutations_file, omega_file)
