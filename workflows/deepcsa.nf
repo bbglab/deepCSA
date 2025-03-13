@@ -302,18 +302,18 @@ workflow DEEPCSA{
     }
 
     if (params.expected_mutated_cells){
-        EXPECTEDMUTATEDCELLS(mutations_all,
-                        CREATEPANELS.out.exons_consensus_bed,
-                        CREATEPANELS.out.exons_consensus_panel,
-                        ANNOTATEDEPTHS.out.all_samples_depths,
-                        CREATEPANELS.out.full_panel_annotated
-                        )
+        EXPECTEDMUTATEDCELLS(MUT_PREPROCESSING.out.mutations_all_samples,
+                                CREATEPANELS.out.exons_consensus_bed,
+                                CREATEPANELS.out.exons_consensus_panel,
+                                ANNOTATEDEPTHS.out.all_samples_depths,
+                                CREATEPANELS.out.full_panel_annotated
+                                )
     }
 
 
 
     // if (params.mutated_cells_reads){
-    
+
     //     INPUT_CHECK.out.mutations
     //     .map{ it -> [it[0], it[3], it[4]]}
     //     .set{ meta_pileupbamindex_alone }
