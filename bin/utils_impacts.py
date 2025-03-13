@@ -201,3 +201,15 @@ def most_deleterious_within_variant(impact_vep_string):
         return rank_consequence_dict_within[min(all_consequences_ranks)]
     except:
         return '-'
+
+
+broadimpact_grouping_dict = {
+        "missense": ["missense"],
+        "nonsense": ["nonsense"],
+        "essential_splice": ["essential_splice"],
+        "splice_region_variant": ["splice_region_variant"],
+        "truncating": ["nonsense", "essential_splice"],
+        "essential_splice_plus": ["essential_splice", "splice_region_variant"],
+        "truncating_plus": ["nonsense", "essential_splice", "splice_region_variant"],
+        "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"]
+    }

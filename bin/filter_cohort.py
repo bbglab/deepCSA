@@ -72,9 +72,9 @@ else:
     n_rich_vars_df = maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")].groupby("MUT_ID")[
                                             ['SAMPLE_ID', 'VAF_Ns']
                                         ].agg({'SAMPLE_ID' : len, 'VAF_Ns' : min})
-    n_rich_vars_df = n_rich_vars_df.rename({'SAMPLE_ID' : 'frequency', 'VAF_Ns' : 'VAF_Ns_threshold'}, axis = 'columns')
+    n_rich_vars_df = n_rich_vars_df.rename({'SAMPLE_ID' : 'N_rich_frequency', 'VAF_Ns' : 'VAF_Ns_threshold'}, axis = 'columns')
 
-    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df['frequency'] >= number_of_samples].index)
+    n_rich_vars = list(n_rich_vars_df[n_rich_vars_df['N_rich_frequency'] >= number_of_samples].index)
 
     maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
 
@@ -86,7 +86,7 @@ else:
 
 
     # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
-    n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df['frequency'] > 0].index)
+    n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df['N_rich_frequency'] > 0].index)
 
     maf_df["cohort_n_rich_uni"] = maf_df["MUT_ID"].isin(n_rich_vars_uni)
 
@@ -98,7 +98,7 @@ else:
 
     # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
     maf_df = maf_df.merge(n_rich_vars_df, on = 'MUT_ID', how = 'left')
-    maf_df['frequency'] = maf_df['frequency'].fillna(0)
+    maf_df['N_rich_frequency'] = maf_df['N_rich_frequency'].fillna(0)
     maf_df['VAF_Ns_threshold'] = maf_df['VAF_Ns_threshold'].fillna(1.1)
 
     maf_df["cohort_n_rich_threshold"] = maf_df["VAF_Ns"] >= maf_df['VAF_Ns_threshold']

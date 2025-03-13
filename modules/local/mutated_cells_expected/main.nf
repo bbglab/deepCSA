@@ -1,4 +1,4 @@
-process EXP_MUTRATE {
+process EXPECTED_MUTATED_CELLS {
     tag "$meta.id"
     label 'process_medium'
 
@@ -25,19 +25,17 @@ process EXP_MUTRATE {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     def metadata_file = task.ext.metadata_file ? "${features_table}": ""
     """
     mkdir expected_mutrate
-    mutrisk_deepCSA.R \\
-            ${regions} \\
-            ${mutations} \\
-            ${depths} \\
-            ${annotated_panel} \\
-            expected_mutrate \\
-            ${annotated_bed_file} \\
-            ${metadata_file}
+    mutgenomes_expected_mutrisk.R \\
+                        ${regions} \\
+                        ${mutations} \\
+                        ${depths} \\
+                        ${annotated_panel} \\
+                        expected_mutrate \\
+                        ${annotated_bed_file} \\
+                        ${metadata_file}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -47,7 +45,6 @@ process EXP_MUTRATE {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.pdf
