@@ -21,7 +21,8 @@ process MUTATED_GENOMES_FROM_VAF {
     mutgenomes_driver_priority.py \\
                 --sample ${prefix} \\
                 --somatic-mutations-file ${mutations} \\
-                --omega-file ${omegas} ;
+                --omega-file ${omegas} \\
+                --recoded-genes TERT ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
