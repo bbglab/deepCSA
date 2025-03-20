@@ -17,11 +17,13 @@ process MUTATED_GENOMES_FROM_VAF {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def recode = task.ext.recode_list ? "--recoded-genes ${task.ext.recode_list}" : ""
     """
     mutgenomes_driver_priority.py \\
                 --sample ${prefix} \\
                 --somatic-mutations-file ${mutations} \\
-                --omega-file ${omegas} ;
+                --omega-file ${omegas} \\
+                ${recode} ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
