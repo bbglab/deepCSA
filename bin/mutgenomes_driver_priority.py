@@ -118,7 +118,7 @@ def snv_am(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
 
             df_dict = {}
 
-            df_all = mutations[(mutations['canonical_SYMBOL'] == gene) & (mutations['canonical_Consequence_broader'] == csqn)]
+            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'] == csqn)]
             df_all = df_all.sort_values(by=['VAF_AM'], ascending=False)
             df_all.reset_index(drop=True, inplace=True)
             df_dict['TOTAL'] = df_all
