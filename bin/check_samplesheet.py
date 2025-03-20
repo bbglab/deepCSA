@@ -39,6 +39,7 @@ class RowChecker:
         bam_col="bam",
         pileupbam_col="pileup_bam",
         pileupind_col="pileup_ind",
+        s3startingPoint=None,
         **kwargs,
     ):
         """
@@ -63,6 +64,7 @@ class RowChecker:
         self._bam_col = bam_col
         self._pileupbam_col = pileupbam_col
         self._pileupind_col = pileupind_col
+        self.s3startingPoint = s3startingPoint
         self._seen = set()
         self.modified = []
 
@@ -78,6 +80,12 @@ class RowChecker:
         self._validate_sample(row)
         self._validate_vcf(row)
         self._validate_bam(row)
+
+        # Replace all S3 paths in the row
+        for key, value in row.items():
+            if isinstance(value, str) and value.startswith("s3://"):
+                row[key] = value.replace("s3://", self.s3startingPoint)
+
         self._seen.add((row[self._sample_col], row[self._vcf_col]))
         self.modified.append(row)
 
@@ -167,7 +175,7 @@ def sniff_format(handle):
     return dialect
 
 
-def check_samplesheet(file_in, file_out):
+def check_samplesheet(file_in, file_out, s3startingPoint):
     """
     Check that the tabular samplesheet has the structure expected by nf-core pipelines.
 
@@ -203,7 +211,7 @@ def check_samplesheet(file_in, file_out):
             logger.critical(f"The sample sheet **must** contain these column headers: {req_cols}.")
             sys.exit(1)
         # Validate each row.
-        checker = RowChecker()
+        checker = RowChecker(s3startingPoint=s3startingPoint)
         for i, row in enumerate(reader):
             try:
                 checker.validate_and_transform(row)
@@ -245,6 +253,12 @@ def parse_args(argv=None):
         choices=("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
         default="WARNING",
     )
+    parser.add_argument(
+        "--s3startingPoint",
+        type=str,
+        required=False,
+        help="The base path to replace 's3://' paths in the input file.",
+    )
     return parser.parse_args(argv)
 
 
@@ -256,7 +270,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     args.file_out.parent.mkdir(parents=True, exist_ok=True)
-    check_samplesheet(args.file_in, args.file_out)
+    check_samplesheet(args.file_in, args.file_out, args.s3startingPoint)
 
 
 if __name__ == "__main__":

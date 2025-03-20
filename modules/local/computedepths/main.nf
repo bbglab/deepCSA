@@ -2,10 +2,10 @@ process COMPUTEDEPTHS {
     tag "$meta.id"
     label 'process_high'
 
-    conda "${moduleDir}/environment.yml"
+    conda "bioconda::samtools=1.18 conda-forge::rclone=1.62.2"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/samtools:1.18--h50ea8bc_1' :
-        'biocontainers/samtools:1.18--h50ea8bc_1' }"
+        'https://depot.galaxyproject.org/singularity/mulled-v2-9d3a822b618cdccd4ac2b79a1c60d1a8a0fecf92:3f3c4e6d9d7e6c4b6d2c6d3c4e6d9d7e6c4b6d2c' :
+        'quay.io/biocontainers/mulled-v2-9d3a822b618cdccd4ac2b79a1c60d1a8a0fecf92:3f3c4e6d9d7e6c4b6d2c6d3c4e6d9d7e6c4b6d2c' }"
 
     input:
     tuple val(meta), path(bam)
@@ -28,7 +28,16 @@ process COMPUTEDEPTHS {
     // positions with a mean depth above a given value
     // if the provided value is 0 this is not used
     def minimum_depth = task.ext.minimum_depth ? "| awk 'NR == 1 {print; next}  {sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
+    
+    // Add rclone mount command if mountS3 is true
+    // TODO: Include the option to have multiple buckets?
+    def mount_command = params.mountS3 ? "rclone mount ${params.s3remoteName}:${params.s3bucketName} ${params.s3startingPoint} --vfs-cache-mode off --read-only & sleep 10" : ""
+    def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
+    
     """
+    # Mount S3 if required
+    ${mount_command}
+
     ls -1 *.bam > bam_files_list.txt;
     samtools \\
         depth \\
@@ -44,6 +53,9 @@ process COMPUTEDEPTHS {
     "${task.process}":
         samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' ))
     END_VERSIONS
+
+    # Unmount S3 if it was mounted
+    ${unmount_command}
     """
 
     stub:
