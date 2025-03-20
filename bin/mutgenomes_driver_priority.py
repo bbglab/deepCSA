@@ -12,6 +12,7 @@ from scipy import stats
 from utils import inclusion_exclusion
 from utils_impacts import broadimpact_grouping_dict
 
+
 def compute_prior(alt_read_count, depth):
 
     mean_p = (1 + alt_read_count.sum()) / depth.sum()
@@ -72,13 +73,25 @@ def compute_covered_genomes(alt_read_count, depth):
     return res
 
 
-def snv_am(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense', 'truncating']):
+def recode_csqn_type(df, gene, new_csqn_type):
+    
+    df['Consequence_broader'] = df.apply(lambda s: \
+        new_csqn_type if s['GENE'] == gene \
+        else s['Consequence_broader'], 
+        axis=1)
+    return df
+def snv_am(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense', 'truncating'], recoded_genes=[]):
 
     # parse mutations
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
     consequences_of_interest = [ broadimpact_grouping_dict[csqn] for csqn in chosen_impacts]
     consequences_of_interest = set([item for sublist in consequences_of_interest for item in sublist])
 
+    # recode csqn type
+    for gene in recoded_genes:
+        somatic_mutations = recode_csqn_type(somatic_mutations, gene, 'missense')
+        print(gene, somatic_mutations[somatic_mutations['GENE'] == gene]['Consequence_broader'].unique())
+    
     mutations = somatic_mutations[(somatic_mutations['TYPE'] == 'SNV')
                                     & (somatic_mutations['Consequence_broader'].isin(consequences_of_interest))
                                     ].reset_index(drop = True)
@@ -103,46 +116,25 @@ def snv_am(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
 
         for csqn in chosen_impacts:
 
-            # total
+            df_dict = {}
 
-            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'].isin(broadimpact_grouping_dict[csqn]))]
+            df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'] == csqn)]
             df_all = df_all.sort_values(by=['VAF_AM'], ascending=False)
             df_all.reset_index(drop=True, inplace=True)
+            df_dict['TOTAL'] = df_all
 
-            # upper
-
-            ind = int(excess_dict[gene][csqn][2] * df_all.shape[0])
-            try:
-                assert(ind >= 1)
-                df_upper = df_all.loc[:ind - 1].copy()
-            except:
-                df_upper = pd.DataFrame(columns=df_all.columns)
-
-            # mean
-
-            ind = int(excess_dict[gene][csqn][1] * df_all.shape[0])
-            try:
-                assert(ind >= 1)
-                df_mean = df_all.loc[:ind - 1].copy()
-            except:
-                df_mean = pd.DataFrame(columns=df_all.columns)
-
-            # lower
-
-            ind = int(excess_dict[gene][csqn][0] * df_all.shape[0])
-            try:
-                assert(ind >= 1)
-                df_lower = df_all.loc[:ind - 1].copy()
-            except:
-                df_lower = pd.DataFrame(columns=df_all.columns)
+            for i, bound in enumerate(['LOWER', 'MEAN', 'UPPER']):
+                ind = int(excess_dict[gene][csqn][i] * df_all.shape[0])
+                try:
+                    assert(ind >= 1)
+                    dg = df_all.loc[:ind - 1].copy()
+                except:
+                    dg = pd.DataFrame(columns=df_all.columns)
+                df_dict[bound] = dg
 
             res_dict['gene'] = res_dict['gene'] + [gene]
             res_dict['impact'] = res_dict['impact'] + [csqn]
             res_dict['chr'] = res_dict['chr'] + [gene_chr_dict[gene]]
-
-            # summarize in a dictionary
-
-            df_dict = {'TOTAL': df_all, 'UPPER': df_upper, 'MEAN': df_mean, 'LOWER': df_lower}
 
             for suffix in ['TOTAL', 'UPPER', 'MEAN', 'LOWER']:
 
@@ -209,18 +201,23 @@ def indel_am(sample, somatic_mutations_file):
     return df[['SAMPLE'] + all_columnss]
 
 
-def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense', 'truncating']):
+def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense', 'truncating'], recoded_genes=[]):
 
     # parse mutations
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
     consequences_of_interest = [ broadimpact_grouping_dict[csqn] for csqn in chosen_impacts]
     consequences_of_interest = set([item for sublist in consequences_of_interest for item in sublist])
 
+    # recode csqn type
+    for gene in recoded_genes:
+        somatic_mutations = recode_csqn_type(somatic_mutations, gene, 'missense')
+        print(gene, somatic_mutations[somatic_mutations['GENE'] == gene]['Consequence_broader'].unique())
+    
     mutations = somatic_mutations[
         (somatic_mutations['TYPE'] == 'SNV')
         & (somatic_mutations['Consequence_broader'].isin(consequences_of_interest))
         ].reset_index(drop = True)
-
+    
     gene_chr_dict = { x : y  for x, y in somatic_mutations[['GENE', 'CHROM']].drop_duplicates().values }
 
     mutations = mutations[mutations['ALT_DEPTH_ND'] > 0]
@@ -244,46 +241,25 @@ def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
 
         for csqn in chosen_impacts:
 
-            # total
+            df_dict = {}
 
             df_all = mutations[(mutations['GENE'] == gene) & (mutations['Consequence_broader'].isin(broadimpact_grouping_dict[csqn]))]
             df_all = df_all.sort_values(by=['VAF_ND'], ascending=False)
             df_all.reset_index(drop=True, inplace=True)
+            df_dict['TOTAL'] = df_all
 
-            # upper
-
-            ind = int(excess_dict[gene][csqn][2] * df_all.shape[0])
-            try:
-                assert(ind >= 1)
-                df_upper = df_all.loc[:ind - 1].copy()
-            except:
-                df_upper = pd.DataFrame(columns=df_all.columns)
-
-            # mean
-
-            ind = int(excess_dict[gene][csqn][1] * df_all.shape[0])
-            try:
-                assert(ind >= 1)
-                df_mean = df_all.loc[:ind - 1].copy()
-            except:
-                df_mean = pd.DataFrame(columns=df_all.columns)
-
-            # lower
-
-            ind = int(excess_dict[gene][csqn][0] * df_all.shape[0])
-            try:
-                assert(ind >= 1)
-                df_lower = df_all.loc[:ind - 1].copy()
-            except:
-                df_lower = pd.DataFrame(columns=df_all.columns)
+            for i, bound in enumerate(['LOWER', 'MEAN', 'UPPER']):
+                ind = int(excess_dict[gene][csqn][i] * df_all.shape[0])
+                try:
+                    assert(ind >= 1)
+                    dg = df_all.loc[:ind - 1].copy()
+                except:
+                    dg = pd.DataFrame(columns=df_all.columns)
+                df_dict[bound] = dg
 
             res_dict['gene'] = res_dict['gene'] + [gene]
             res_dict['impact'] = res_dict['impact'] + [csqn]
             res_dict['chr'] = res_dict['chr'] + [gene_chr_dict[gene]]
-
-            # summarize in a dictionary
-
-            df_dict = {'TOTAL': df_all, 'UPPER': df_upper, 'MEAN': df_mean, 'LOWER': df_lower}
 
             for suffix in ['TOTAL', 'UPPER', 'MEAN', 'LOWER']:
 
@@ -308,7 +284,8 @@ def snv_nd(sample, somatic_mutations_file, omega_file, chosen_impacts=['missense
 @click.option('--sample')
 @click.option('--somatic-mutations-file')
 @click.option('--omega-file')
-def run_all(sample, somatic_mutations_file, omega_file):
+@click.option('--recoded-genes', default='', type=str)
+def run_all(sample, somatic_mutations_file, omega_file, recoded_genes):
     """
     intent:
     script that combines the 3 covered epithelium functions,
@@ -317,10 +294,12 @@ def run_all(sample, somatic_mutations_file, omega_file):
     nextflow module
 
     """
+    # recodification of csqn type is only applied to SNVs
+    recoded_genes = recoded_genes.split(',')
 
-    df_snv_am = snv_am(sample, somatic_mutations_file, omega_file)
+    df_snv_am = snv_am(sample, somatic_mutations_file, omega_file, recoded_genes= recoded_genes)
     df_indel_am = indel_am(sample, somatic_mutations_file)
-    df_snv_nd = snv_nd(sample, somatic_mutations_file, omega_file)
+    df_snv_nd = snv_nd(sample, somatic_mutations_file, omega_file, recoded_genes= recoded_genes)
 
     all_dataframes = [df_snv_am, df_indel_am, df_snv_nd]
     df_merged = reduce(lambda  left, right: pd.merge(left, right, on=['chr', 'gene', 'impact', 'SAMPLE'], how='outer'), all_dataframes)
