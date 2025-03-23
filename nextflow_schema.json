@@ -319,9 +319,14 @@
                 },
                 "mutated_cells_vaf": {
                     "type": "boolean",
-                    "description": "Do you want to run mutated epithelium using the VAFs?",
+                    "description": "Do you want to compute the proportion of mutated cells using the VAFs?",
                     "fa_icon": "fas fa-book"
                 },
+                "mutepi_genes_to_recode": {
+                    "type": "string",
+                    "description": "Do you want to consider all mutations in a gene for the mutated epithelium from VAF?",
+                    "fa_icon": "fas fa-book"
+                },                
                 "expected_mutated_cells": {
                     "type": "boolean",
                     "description": "Do you want to run expected_mutated_cells?",
