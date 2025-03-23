@@ -16,7 +16,11 @@ snv_color = {
     'T>G' : '#ebc6c4'
 }
 
-def plot_profile(frequencies, title='title', ylabels=[0, 0.1], ymax=0.3, output_f=None):
+def plot_profile(frequencies, title='Mutational profile',
+                        yticks=[0, 0.1],
+                        ymax=0.3,
+                        yaxis_name = "% SBS",
+                        output_f=None):
 
     # Plot params
     fig, ax = plt.subplots(
@@ -89,21 +93,25 @@ def plot_profile(frequencies, title='title', ylabels=[0, 0.1], ymax=0.3, output_
     ax[axis_key].bar(list(range(0, 96)), probabilities, width=0.8, bottom=None, align='center', color=colors)
 
 
-    ########## Y axis
-    ylabels_dict = {
-        0: '',
-        1: 'Frequency'
-    }
+    ax[axis_key].set_xlim(xmin=-1, xmax=96)
+    # ax[axis_key].set_ylim(ymin=0, ymax=ymax)
 
-    ax[axis_key].set_yticks(ylabels)
-    ax[axis_key].set_yticklabels(ylabels, fontsize=3.5, color='black', va="top", ha="center")
     ax[axis_key].set_xticks([])
     ax[axis_key].set_xticks(list(range(0, 96)))
     ax[axis_key].set_xticklabels(labels, fontsize=3.5, color='black', va="top", ha="center")
     plt.xticks(rotation=90)
 
+    ax[axis_key].set_ylabel(yaxis_name, fontsize = 6)
+    ax[axis_key].set_yticklabels(ax[axis_key].get_yticklabels(), fontsize=3.5, color='black', va="center", ha="center")
+
+
+    ########## Y axis
+    ylabels_dict = {
+        0: '',
+        1: yaxis_name
+    }
     for key, value in ylabels_dict.items():
-        ax[key].set_ylabel(value, fontsize=4, rotation=90, labelpad=2)
+        # ax[key].set_ylabel(value, fontsize=4, rotation=90, labelpad=2)
         ax[key].set_axisbelow(True)
         for tick in ax[key].yaxis.get_major_ticks():
             tick.label1.set_fontsize(3.5)
@@ -113,11 +121,8 @@ def plot_profile(frequencies, title='title', ylabels=[0, 0.1], ymax=0.3, output_
 
         ax[key].tick_params(axis = "x", which = "both", bottom=False)
         ax[key].tick_params(axis = "y", which = "both", left=False)
-        ax[key].tick_params(axis='y', which='major', pad=0)
+        ax[key].tick_params(axis='y', which='major', pad=2)
         ax[key].tick_params(axis='x', which='major', pad=0)
-
-    ax[axis_key].set_xlim(xmin=-1, xmax=96)
-    ax[axis_key].set_ylim(ymin=0, ymax=ymax)
 
     if output_f:
         plt.savefig(output_f, bbox_inches='tight', dpi=600)
