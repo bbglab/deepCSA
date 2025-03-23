@@ -319,7 +319,7 @@
                 },
                 "mutated_cells_vaf": {
                     "type": "boolean",
-                    "description": "Do you want to run mutated_cells_reads using the VAFs?",
+                    "description": "Do you want to run mutated epithelium using the VAFs?",
                     "fa_icon": "fas fa-book"
                 },
                 "expected_mutated_cells": {
