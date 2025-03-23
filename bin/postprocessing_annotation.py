@@ -179,7 +179,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
             annotated_variants_only_canonical_cleaned = _annotated_variants_only_canonical_cleaned.drop(["canonical_Existing_variation", "canonical_PHENO", "canonical_SOMATIC"], axis = 'columns')
         except:
             annotated_variants_only_canonical_cleaned = _annotated_variants_only_canonical_cleaned
-        
+
         annotated_variants = annotated_variants.merge(annotated_variants_only_canonical_cleaned, on = "MUT_ID", how = 'left')
         annotated_variants['canonical_Consequence_single'] = annotated_variants['canonical_Consequence'].apply(most_deleterious_within_variant)
         annotated_variants['canonical_Consequence_broader'] = annotated_variants['canonical_Consequence_single'].apply(lambda x: GROUPING_DICT[x])
@@ -206,9 +206,12 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     annotated_variants_columns = [x for x in annotated_variants.columns if x.replace("canonical_", "") not in ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'CHROM:POS', 'MUT'] ]
     annotated_variants_reduced = annotated_variants.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
 
-    if any("gnomAD" in x for x in annotated_variants.columns):
+    if any("gnomAD" in x for x in annotated_variants_reduced.columns):
+        gnomad_columns = [x for x in annotated_variants_reduced.columns if 'gnomAD' in x ]
+        annotated_variants_reduced[gnomad_columns] = annotated_variants_reduced[gnomad_columns].replace("-", 0).astype(float)
+
         # add a column to flag the variants considered to be SNPs based on gnomad information
-        annotated_variants["gnomAD_SNP"] = (annotated_variants['gnomADe_AF'] > 0.1) | (annotated_variants['gnomADg_AF'] > 0.1)
+        annotated_variants_reduced["gnomAD_SNP"] = (annotated_variants_reduced['gnomADe_AF'] > 0.1) | (annotated_variants_reduced['gnomADg_AF'] > 0.1)
         annotated_variants_columns += ["gnomAD_SNP"]
 
 
