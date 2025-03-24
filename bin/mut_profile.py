@@ -98,7 +98,7 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method
                                             sep = "\t")
 
 
-def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_counts_file, json_output, plot,
+def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_counts_file, plot,
                                 wgs = False, wgs_trinucleotide_counts = False, sigprofiler = False):
     """
     Compute mutational profile from the input data
@@ -114,6 +114,14 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     mutation_matrix = pd.read_csv(mutation_matrix_file, sep = "\t", header = 0)
     mutation_matrix = mutation_matrix.set_index("CONTEXT_MUT")
     total_mutations = np.sum(mutation_matrix[sample_name])
+
+    # proportion of SBS mutations per trinucleotide in panel
+    mutation_matrix[sample_name] = mutation_matrix[sample_name] / total_mutations
+    mutation_matrix.to_csv(f"{sample_name}.proportion_mutations.tsv",
+                                header = True,
+                                index = True,
+                                sep = "\t")
+
 
     # Load the trinucleotide counts
     trinucleotide_counts = pd.read_csv(trinucleotide_counts_file, sep = "\t", header = 0)
@@ -149,7 +157,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     mut_probability.index.name = "CONTEXT_MUT"
     mut_probability = mut_probability.reset_index()
 
-    mut_probability.to_csv(json_output,
+    mut_probability.to_csv(f"{sample_name}.profile.tsv",
                             header = True,
                             index = False,
                             sep = "\t")
@@ -163,7 +171,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                         output_f = f'{sample_name}.profile.pdf')
 
         # plot the profile as a percentage of SBS mutations seen in our sequenced panel
-        plot_profile(dict(zip(mutation_matrix.index, [x[0].item() for x in (mutation_matrix / mutation_matrix.sum()).values])),
+        plot_profile(dict(zip(mutation_matrix.index, mutation_matrix[sample_name])),
                         title=f'{sample_name} ({round(total_mutations)} muts)',
                         output_f = f'{sample_name}.profile.percentage.pdf')
 
@@ -185,14 +193,22 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
         profile_trinuc_clean = profile_trinuc_clean.reindex(contexts_formatted)
         profile_trinuc_clean.columns = [sample_name]
 
-        profile_trinuc_clean.to_csv(f"{json_output}.matrix.WGS",
+        profile_trinuc_clean.to_csv(f"{sample_name}.matrix.WGS.tsv",
                                     header = True,
                                     index = True,
                                     sep = "\t")
 
+        profile_trinuc_clean_proportion = profile_trinuc_clean.copy()
+        profile_trinuc_clean_proportion[sample_name] = profile_trinuc_clean_proportion[sample_name] / profile_trinuc_clean_proportion[sample_name].sum()
+        profile_trinuc_clean_proportion.to_csv(f"{sample_name}.proportion_mutations.WGS.tsv",
+                                                header = True,
+                                                index = True,
+                                                sep = "\t")
+
+
         # plot the profile as a percentage of SBS mutations seen after sequencing one WGS
         # if mutations were occuring with the same probabilities as they occur in our sequenced panel
-        plot_profile(dict(zip(profile_trinuc_clean.index.values, (profile_trinuc_clean[sample_name] / profile_trinuc_clean[sample_name].sum()).values)),
+        plot_profile(dict(zip(profile_trinuc_clean_proportion.index.values, profile_trinuc_clean_proportion[sample_name].values)),
                         title=f'{sample_name} ({round(total_mutations)} muts)',
                         output_f = f'{sample_name}.profile.percentage_WGS.pdf')
 
@@ -200,7 +216,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
             profile_trinuc_clean.index = contexts_formatted_sigprofiler
             profile_trinuc_clean.index.name = "CONTEXT_MUT"
             profile_trinuc_clean = profile_trinuc_clean.reset_index().sort_values(by = "CONTEXT_MUT")
-            profile_trinuc_clean.to_csv(f"{json_output}.matrix.WGS.sigprofiler",
+            profile_trinuc_clean.to_csv(f"{sample_name}.matrix.WGS.sigprofiler.tsv",
                                             header = True,
                                             index = False,
                                             sep = "\t")
@@ -220,7 +236,6 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 
 @click.option('--mutation_matrix', type=click.Path(exists=True), help='Mutation matrix file (for profile mode)')
 @click.option('--trinucleotide_counts', type=click.Path(exists=True), help='Trinucleotide counts file (for profile mode)')
-@click.option('--out_profile', type=click.Path(), help='JSON output file (for profile mode)')
 @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 @click.option('--wgs', is_flag=True, help='Store matrix of mutation counts at WGS level')
 @click.option('--wgs_trinucleotide_counts', type=click.Path(exists=True), help='Trinucleotide counts file of the WGS (for profile mode if WGS active)')
@@ -229,7 +244,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 @click.option('--sigprofiler', is_flag=True, help='Store the index column using the SigProfiler format')
 
 def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, per_sample, mutation_matrix,
-            trinucleotide_counts, out_profile, plot, wgs, wgs_trinucleotide_counts):
+            trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts):
 
     if mode == 'matrix':
         click.echo(f"Running in matrix mode...")
@@ -239,7 +254,7 @@ def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, pe
 
     elif mode == 'profile':
         click.echo(f"Running in profile mode...")
-        compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts, out_profile, plot, wgs, wgs_trinucleotide_counts, sigprofiler)
+        compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, sigprofiler)
         click.echo("Profile computation completed.")
 
     else:
