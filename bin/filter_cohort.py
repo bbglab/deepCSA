@@ -141,6 +141,18 @@ maf_df["FILTER"] = maf_df[["FILTER","other_sample_SNP"]].apply(
 maf_df = maf_df.drop("other_sample_SNP", axis = 1)
 
 
+
+#######
+###  Filter gnomad SNP
+#######
+
+if "gnomAD_SNP" in maf_df.columns:
+    maf_df["FILTER"] = maf_df[["FILTER","gnomAD_SNP"]].apply(
+                                                                lambda x: add_filter(x["FILTER"], x["gnomAD_SNP"], "gnomAD_SNP"),
+                                                                axis = 1
+                                                            )
+
+
 for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
     maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))
 

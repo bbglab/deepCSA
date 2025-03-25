@@ -326,7 +326,7 @@
                     "type": "string",
                     "description": "Do you want to consider all mutations in a gene for the mutated epithelium from VAF?",
                     "fa_icon": "fas fa-book"
-                },                
+                },
                 "expected_mutated_cells": {
                     "type": "boolean",
                     "description": "Do you want to run expected_mutated_cells?",
@@ -452,6 +452,11 @@
                     "exists": true,
                     "mimetype": "text/plain",
                     "description": "Path to TXT with the IDs of the mutations to remove.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "filter_criteria": {
+                    "type": "array",
+                    "description": "List of filters to apply for the somatic mutations.",
                     "fa_icon": "far fa-file-code"
                 }
             }
