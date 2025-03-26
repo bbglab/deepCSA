@@ -147,6 +147,8 @@ maf_df = maf_df.drop("other_sample_SNP", axis = 1)
 #######
 
 if "gnomAD_SNP" in maf_df.columns:
+    maf_df["gnomAD_SNP"] = maf_df["gnomAD_SNP"].replace({"True": True, "False": False, '-' : False}).fillna(False).astype(bool)
+    print("Out of ", maf_df["gnomAD_SNP"].shape[0], "positions", maf_df["gnomAD_SNP"].sum(), "are gnomAD SNPs (>0.1)")
     maf_df["FILTER"] = maf_df[["FILTER","gnomAD_SNP"]].apply(
                                                                 lambda x: add_filter(x["FILTER"], x["gnomAD_SNP"], "gnomAD_SNP"),
                                                                 axis = 1
