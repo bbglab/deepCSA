@@ -646,6 +646,34 @@
                 }
             }
         },
+        "s3_options": {
+            "title": "S3 Options",
+            "type": "object",
+            "description": "Options for S3 storage integration",
+            "default": "",
+            "properties": {
+                "mountS3": {
+                    "type": "boolean",
+                    "description": "Whether to mount S3 storage",
+                    "default": true
+                },
+                "s3startingPoint": {
+                    "type": "string",
+                    "description": "Starting point path in S3 storage",
+                    "default": "/my/path/to/s3/"
+                },
+                "s3remoteName": {
+                    "type": "string",
+                    "description": "Name of the S3 remote",
+                    "default": "irb-minio"
+                },
+                "s3bucketName": {
+                    "type": "string",
+                    "description": "Name of the S3 bucket",
+                    "default": "bucket-scratch"
+                }
+            }
+        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -788,6 +816,9 @@
         },
         {
             "$ref": "#/$defs/generic_options"
+        },
+        {
+            "$ref": "#/$defs/s3_options"
         }
     ],
     "properties": {
@@ -799,6 +830,30 @@
         },
         "email": {
             "type": "string"
+        },
+        "mountS3": {
+            "type": "boolean",
+            "description": "Whether to mount S3 storage",
+            "default": true,
+            "fa_icon": "fas fa-hdd"
+        },
+        "s3startingPoint": {
+            "type": "string",
+            "description": "Starting point path in S3 storage",
+            "default": "/my/path/to/s3/",
+            "fa_icon": "fas fa-folder-open"
+        },
+        "s3remoteName": {
+            "type": "string",
+            "description": "Name of the S3 remote",
+            "default": "irb-minio",
+            "fa_icon": "fas fa-cloud"
+        },
+        "s3bucketName": {
+            "type": "string",
+            "description": "Name of the S3 bucket",
+            "default": "bucket-scratch",
+            "fa_icon": "fas fa-bucket"
         }
     }
 }
