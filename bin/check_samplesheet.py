@@ -40,6 +40,7 @@ class RowChecker:
         pileupbam_col="pileup_bam",
         pileupind_col="pileup_ind",
         s3startingPoint=None,
+        s3bucketName=None,
         **kwargs,
     ):
         """
@@ -56,7 +57,8 @@ class RowChecker:
             single_col (str): The name of the new column that will be inserted and
                 records whether the sample contains single- or paired-end sequencing
                 reads (default "single_end").
-
+            s3startingPoint (str): The base path to replace 's3://' paths in the input file.
+            s3bucketName (str): The name of the S3 bucket.
         """
         super().__init__(**kwargs)
         self._sample_col = sample_col
@@ -65,6 +67,7 @@ class RowChecker:
         self._pileupbam_col = pileupbam_col
         self._pileupind_col = pileupind_col
         self.s3startingPoint = s3startingPoint
+        self.s3bucketName = s3bucketName
         self._seen = set()
         self.modified = []
 
@@ -84,7 +87,7 @@ class RowChecker:
         # Replace all S3 paths in the row
         for key, value in row.items():
             if isinstance(value, str) and value.startswith("s3://"):
-                row[key] = value.replace("s3://", self.s3startingPoint)
+                row[key] = value.replace(f"s3://{self.s3bucketName}", self.s3startingPoint)
 
         self._seen.add((row[self._sample_col], row[self._vcf_col]))
         self.modified.append(row)
@@ -175,7 +178,7 @@ def sniff_format(handle):
     return dialect
 
 
-def check_samplesheet(file_in, file_out, s3startingPoint):
+def check_samplesheet(file_in, file_out, s3startingPoint, s3bucketName):
     """
     Check that the tabular samplesheet has the structure expected by nf-core pipelines.
 
@@ -187,6 +190,8 @@ def check_samplesheet(file_in, file_out, s3startingPoint):
             CSV, TSV, or any other format automatically recognized by ``csv.Sniffer``.
         file_out (pathlib.Path): Where the validated and transformed samplesheet should
             be created; always in CSV format.
+        s3startingPoint (str): The base path to replace 's3://' paths in the input file.
+        s3bucketName (str): The name of the S3 bucket.
 
     Example:
         This function checks that the samplesheet follows the following structure,
@@ -211,7 +216,7 @@ def check_samplesheet(file_in, file_out, s3startingPoint):
             logger.critical(f"The sample sheet **must** contain these column headers: {req_cols}.")
             sys.exit(1)
         # Validate each row.
-        checker = RowChecker(s3startingPoint=s3startingPoint)
+        checker = RowChecker(s3startingPoint=s3startingPoint, s3bucketName=s3bucketName)
         for i, row in enumerate(reader):
             try:
                 checker.validate_and_transform(row)
@@ -259,6 +264,12 @@ def parse_args(argv=None):
         required=False,
         help="The base path to replace 's3://' paths in the input file.",
     )
+    parser.add_argument(
+        "--s3bucketName",
+        type=str,
+        required=False,
+        help="The name of the S3 bucket.",
+    )
     return parser.parse_args(argv)
 
 
@@ -270,7 +281,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     args.file_out.parent.mkdir(parents=True, exist_ok=True)
-    check_samplesheet(args.file_in, args.file_out, args.s3startingPoint)
+    check_samplesheet(args.file_in, args.file_out, args.s3startingPoint, args.s3bucketName)
 
 
 if __name__ == "__main__":

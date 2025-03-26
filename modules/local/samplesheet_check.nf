@@ -18,12 +18,13 @@ process SAMPLESHEET_CHECK {
     task.ext.when == null || task.ext.when
 
     script: // This script is bundled with the pipeline, in bbglab/deepCSA/bin/
-    def s3_param = params.mountS3 ? "--s3startingPoint ${params.s3startingPoint}" : ""
+    def s3_params = params.mountS3 ? "--s3startingPoint ${params.s3startingPoint} --s3bucketName ${params.s3bucketName}" : ""
+
 
     """
     check_samplesheet.py \\
         $samplesheet \\
-        samplesheet.valid.csv
+        samplesheet.valid.csv \\
         $s3_param
 
     cat <<-END_VERSIONS > versions.yml
