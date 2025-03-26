@@ -29,8 +29,8 @@
             },
             "pileup_ind": {
                 "type": "string",
-                "pattern": "^\\S+\\.bam.csi$",
-                "errorMessage": "BAM index pilup file for sample must be provided, cannot contain spaces and must have extension '.bam.csi'"
+                "pattern": "^\\S+\\.bam\\.(csi|bai)$",
+                "errorMessage": "BAM index pilup file for sample must be provided, cannot contain spaces and must have extension '.bam.csi/.bai'"
             }
         },
         "required": ["sample", "vcf", "bam"]
