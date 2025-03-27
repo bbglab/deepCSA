@@ -1,4 +1,6 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
+
+# TODO: bump pandas to 2.2.3
 
 import sys
 import pandas as pd

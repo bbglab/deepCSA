@@ -1,8 +1,9 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import re
 import sys
-import tabix
+from pysam import TabixFile
+
 import multiprocessing
 import pandas as pd
 import numpy as np
@@ -179,12 +180,11 @@ def compute_exons_info(sub_regions, tabix_file, frag_data):
     '''
 
     chunk_exons_info = {}
-    tb = tabix.open(tabix_file)
+    tb = TabixFile(filename=tabix_file)
 
     for ind, int_row in sub_regions.iterrows():
-        query = f"{int_row['CHROM']}:{int_row['START']}-{int_row['END']}"
         try :
-            records = tb.querys(query)
+            records = tb.fetch(f"{int_row['CHROM']}", start=int_row['START'], end=int_row['END'])
 
             # Collect records into a list
             records_list = []

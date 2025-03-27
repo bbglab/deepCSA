@@ -1,8 +1,10 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import sys
 import pandas as pd
 from read_utils import custom_na_values
+
+# TODO: bump pandas to 2.2.3
 
 # -- Auxiliary functions -- #
 
