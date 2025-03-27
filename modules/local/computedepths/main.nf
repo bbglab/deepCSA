@@ -2,17 +2,10 @@ process COMPUTEDEPTHS {
     tag "$meta.id"
     label 'process_high'
 
-    container { 
-        def samtools = "https://depot.galaxyproject.org/singularity/samtools:1.18--h50ea8bc_1"
-        def rclone = "https://depot.galaxyproject.org/singularity/rclone:1.62.2--h3448a6d_0"
-        
-        if (workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container) {
-            "singularity exec ${samtools} singularity exec ${rclone} /bin/bash"
-        } else {
-            [ "quay.io/biocontainers/samtools:1.18--h50ea8bc_1", 
-              "quay.io/biocontainers/rclone:1.62.2--h3448a6d_0" ]
-        }
-    }
+    conda "bioconda::samtools=1.18 conda-forge::rclone=1.62.2"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    'docker://bbglab/rclone-samtools:latest' :
+    'bbglab/rclone-samtools:latest' }"
 
     input:
     tuple val(meta), path(bam)
