@@ -2,11 +2,7 @@ process INDELS_COMPARISON {
     tag "$meta.id"
     label 'process_single'
 
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
-
-    container 'docker.io/ferranmuinos/test_mutated_genomes'
+    container 'docker.io/bbglab/deepcsa-core:0.0.1-alpha' // TODO: what is this????????
 
     input:
     tuple val(meta), path(mutations)

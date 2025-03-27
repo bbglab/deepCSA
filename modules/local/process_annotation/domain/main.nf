@@ -6,7 +6,7 @@ process DOMAIN_ANNOTATION {
     label 'time_low'
     label 'process_high_memory'
 
-    container "docker.io/ferriolcalvet/bgreference"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(panel_annotated)

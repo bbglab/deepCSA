@@ -6,10 +6,7 @@ process SITESFROMPOSITIONS {
     label 'time_low'
     label 'process_low_memory'
 
-    container "docker.io/ferriolcalvet/bgreference"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //         'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //         'biocontainers/pandas:1.5.2' }"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
 
     input:

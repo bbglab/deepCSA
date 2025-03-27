@@ -6,8 +6,7 @@ process READS_PER_REGION {
     label 'time_low'
 
 
-    // TODO revise if we want a custom container
-    container 'docker.io/ferriolcalvet/oncodrivefml:latest'
+    container 'docker.io/bbglab/deepcsa-core:0.0.1-alpha'
 
     input:
     tuple val(meta) , path(pileup), path(pileupindex), path(fragments_coords)
