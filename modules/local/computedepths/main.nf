@@ -2,10 +2,10 @@ process COMPUTEDEPTHS {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::samtools=1.18 conda-forge::rclone=1.62.2"
+   conda "bioconda::samtools=1.18 conda-forge::rclone=1.62.2"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-9d3a822b618cdccd4ac2b79a1c60d1a8a0fecf92:3f3c4e6d9d7e6c4b6d2c6d3c4e6d9d7e6c4b6d2c' :
-        'quay.io/biocontainers/mulled-v2-9d3a822b618cdccd4ac2b79a1c60d1a8a0fecf92:3f3c4e6d9d7e6c4b6d2c6d3c4e6d9d7e6c4b6d2c' }"
+        ['https://depot.galaxyproject.org/singularity/samtools:1.18--h50ea8bc_1', 'https://depot.galaxyproject.org/singularity/rclone:1.62.2--h3448a6d_0'] :
+        ['quay.io/biocontainers/samtools:1.18--h50ea8bc_1', 'quay.io/biocontainers/rclone:1.62.2--h3448a6d_0'] }"
 
     input:
     tuple val(meta), path(bam)
