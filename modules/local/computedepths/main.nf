@@ -23,7 +23,6 @@ process COMPUTEDEPTHS {
     // Add rclone mount command if mountS3 is true
     // TODO: Include the option to have multiple buckets?
     def mount_command = params.mountS3 ? "rclone mount ${params.s3remoteName}:${params.s3bucketName} ${params.s3startingPoint} --vfs-cache-mode off --read-only & sleep 10" : ""
-    def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
     
     # Mount S3 if required
     ${mount_command}
@@ -33,6 +32,8 @@ process COMPUTEDEPTHS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def restrict_to_region = task.ext.restrict_panel ? "-b ${custombed}" : ""
+
+    def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
 
 
     // this variable is used for subsetting the output depths table to only
