@@ -32,7 +32,7 @@ process COMPUTEDEPTHS {
     // if the provided value is 0 this is not used
     def minimum_depth = task.ext.minimum_depth ? "| awk 'NR == 1 {print; next}  {sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
     """
-    // TODO: Include the option to have multiple buckets?
+    #TODO: Include the option to have multiple buckets?
 
     # Mount S3 if required
     ${mount_command}
