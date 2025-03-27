@@ -137,3 +137,18 @@ contexts_formatted_sigprofiler = ['A[C>A]A', 'A[C>A]C', 'A[C>A]G', 'A[C>A]T', 'C
 # contexts_unformatted = sorted([(a, b) for a, b in itertools.product(subs, flanks)], key=lambda x: (x[0], x[1]))
 # contexts_no_change = [b[0]+a[0]+b[1] for a, b in contexts_unformatted]
 # contexts_formatted = [b[0]+a[0]+b[1]+'>'+a[1] for a, b in contexts_unformatted]
+
+
+def inclusion_exclusion(plist):
+
+    """A more efficient version of the algorithm"""
+
+    n = len(plist)
+    if n > 2:
+        p1 = inclusion_exclusion(plist[: n // 2])
+        p2 = inclusion_exclusion(plist[n // 2: ])
+        return inclusion_exclusion([p1, p2])
+    if n == 2:
+        return plist[0] + plist[1] - plist[0] * plist[1]
+    if n == 1:
+        return plist[0]

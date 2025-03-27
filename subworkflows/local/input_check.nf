@@ -34,13 +34,8 @@ def create_input_channel(LinkedHashMap row) {
     if (!file(row.bam).exists()) {
         exit 1, "ERROR: Please check input samplesheet -> BAM file does not exist!\n${row.bam}"
     }
-    if (!file(row.pileup_bam).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> BAM file for pileup does not exist!\n${row.pileup_bam}"
-    }
-    if (!file(row.pileup_ind).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> Index of the BAM file for pileup does not exist!\n${row.pileup_ind}"
-    }
-    vcf_bam_meta = [ meta, file(row.vcf), file(row.bam), file(row.pileup_bam), file(row.pileup_ind) ]
+
+    vcf_bam_meta = [ meta, file(row.vcf), file(row.bam) ]
 
     return vcf_bam_meta
 }

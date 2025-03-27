@@ -279,11 +279,6 @@
                     "description": "Do you want to run omega with the globalloc mode?",
                     "fa_icon": "fas fa-book"
                 },
-                "omega_vaf_distorsioned": {
-                    "type": "boolean",
-                    "description": "Do you want to run omega with the different VAF distorsioned gropus?",
-                    "fa_icon": "fas fa-book"
-                },
                 "omega_plot": {
                     "type": "boolean",
                     "description": "Do you want to plot omega results?",
@@ -322,19 +317,19 @@
                     "description": "Do you want to run indels?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutated_epithelium": {
+                "mutated_cells_vaf": {
                     "type": "boolean",
-                    "description": "Do you want to run mutated_epithelium?",
+                    "description": "Do you want to compute the proportion of mutated cells using the VAFs?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutated_epithelium_vaf": {
-                    "type": "boolean",
-                    "description": "Do you want to run mutated_epithelium using the VAFs?",
+                "mutepi_genes_to_recode": {
+                    "type": "string",
+                    "description": "Do you want to consider all mutations in a gene for the mutated epithelium from VAF?",
                     "fa_icon": "fas fa-book"
                 },
-                "expected_mutation_rate": {
+                "expected_mutated_cells": {
                     "type": "boolean",
-                    "description": "Do you want to run expected_mutation_rate?",
+                    "description": "Do you want to run expected_mutated_cells?",
                     "fa_icon": "fas fa-book"
                 },
                 "plot_depths": {
@@ -417,6 +412,12 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "create_sample_panels": {
+                    "type": "boolean",
+                    "description": "Do you want to generate the sample panels?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to generate the sample panels?"
+                },
                 "germline_threshold": {
                     "type": "number",
                     "description": "VAF threshold for definition of somatic variants.",
@@ -451,6 +452,11 @@
                     "exists": true,
                     "mimetype": "text/plain",
                     "description": "Path to TXT with the IDs of the mutations to remove.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "filter_criteria": {
+                    "type": "array",
+                    "description": "List of filters to apply for the somatic mutations.",
                     "fa_icon": "far fa-file-code"
                 }
             }
@@ -756,6 +762,9 @@
         },
         {
             "$ref": "#/$defs/custom_bedfile_configs"
+        },
+        {
+            "$ref": "#/$defs/custom_annotation_configs"
         },
         {
             "$ref": "#/$defs/omega_bedfile_configs"

@@ -72,9 +72,8 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
                             'gnomADg_AMI_AF', 'gnomADg_AMR_AF', 'gnomADg_ASJ_AF', 'gnomADg_EAS_AF',
                             'gnomADg_FIN_AF', 'gnomADg_MID_AF', 'gnomADg_NFE_AF', 'gnomADg_OTH_AF',
                             'gnomADg_SAS_AF', 'CLIN_SIG', 'SOMATIC', 'PHENO',
-                            'canonical_Location', 'canonical_Allele',
-                            'canonical_Existing_variation', 'canonical_IMPACT',
-                            'canonical_CLIN_SIG', 'canonical_SOMATIC', 'canonical_PHENO',
+                            'canonical_Location', 'canonical_Allele', 'canonical_IMPACT',
+                            'canonical_CLIN_SIG',
                             'CONTEXT_MUT', 'MUTTYPE', 'CONTEXT_MUT_SIGPRO',
         ]
 
