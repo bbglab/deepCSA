@@ -8,7 +8,7 @@ import pandas as pd
 
 def process_signatures(signature_probabilities_files):
     """
-    INFO
+    Processes mutation probability signature files and outputs per-sample probability files.
     """
 
     sig_probs_matrix = pd.concat((pd.read_csv(file.strip(), sep='\t', header=0) for file in open(signature_probabilities_files, 'r')), axis=0)
@@ -22,10 +22,13 @@ def process_signatures(signature_probabilities_files):
     sig_probs_matrix = sig_probs_matrix.fillna(0)
 
     for sample in sig_probs_matrix["Sample Names"].unique():
-        sig_probs_matrix[sig_probs_matrix["Sample Names"] == sample].drop(["Sample Names"], axis = 1).to_csv(f"{sample}.decomposed_probabilities.tsv",
-                                                                                                header=True,
-                                                                                                index=False,
-                                                                                                sep="\t")
+        sample_df = sig_probs_matrix[sig_probs_matrix["Sample Names"] == sample].drop(["Sample Names"], axis = 1).copy()
+
+        sample_df.to_csv(f"{sample}.decomposed_probabilities.tsv_test",
+                            header=True,
+                            index=False,
+                            float_format=None,
+                            sep="\t")
 
 
 
@@ -33,9 +36,8 @@ def process_signatures(signature_probabilities_files):
 @click.option('--signature-probabilities', type=click.Path(exists=True), help='File listing decomposed mutation probability files.')
 
 def main(signature_probabilities):
-    click.echo(f"Combining signature probabilities of all samples and groups...")
+    click.echo("Combining signature probabilities of all samples and groups...")
     process_signatures(signature_probabilities)
 
 if __name__ == '__main__':
     main()
-
