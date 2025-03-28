@@ -2,9 +2,7 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     tag "$meta.id"
     label 'process_medium'
 
-    // FIXME we should remove this
-    queue 'bigmem'     // For some reason in the normal nodes libQt6Core.so.6 can't get imported and returns an error
-
+    
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
     //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
