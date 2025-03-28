@@ -24,8 +24,11 @@ process COMPUTEDEPTHS {
     // TODO: Include the option to have multiple buckets?
     def mount_command = params.mountS3 ? "rclone mount ${params.s3remoteName}:${params.s3bucketName} ${params.s3startingPoint} --vfs-cache-mode off --read-only & sleep 10" : ""
     
+    echo "Hey you!"
+    
     # Mount S3 if required
     ${mount_command}
+
     '''
 
     afterScript
