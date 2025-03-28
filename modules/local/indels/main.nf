@@ -2,7 +2,7 @@ process INDELS_COMPARISON {
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/bbglab/deepcsa-core:0.0.1-alpha' // TODO: what is this????????
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(mutations)
