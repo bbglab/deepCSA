@@ -4,9 +4,7 @@ process PLOT_DEPTHS {
     label 'time_low'
     label 'process_high_memory'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/seaborn:0.12.2_cv1' :
-        'biocontainers/seaborn:0.12.2_cv1' }"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(depth)

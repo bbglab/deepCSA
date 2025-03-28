@@ -24,7 +24,7 @@ def process_signatures(signature_probabilities_files):
     for sample in sig_probs_matrix["Sample Names"].unique():
         sample_df = sig_probs_matrix[sig_probs_matrix["Sample Names"] == sample].drop(["Sample Names"], axis = 1).copy()
 
-        sample_df.to_csv(f"{sample}.decomposed_probabilities.tsv_test",
+        sample_df.to_csv(f"{sample}.decomposed_probabilities.tsv",
                             header=True,
                             index=False,
                             float_format=None,
