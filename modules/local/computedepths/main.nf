@@ -18,26 +18,24 @@ process COMPUTEDEPTHS {
     when:
     task.ext.when == null || task.ext.when
 
-    beforeScript 
-    '''
+    beforeScript """
     // Add rclone mount command if mountS3 is true
     // TODO: Include the option to have multiple buckets?
     def mount_command = params.mountS3 ? "rclone mount ${params.s3remoteName}:${params.s3bucketName} ${params.s3startingPoint} --vfs-cache-mode off --read-only & sleep 10" : ""
     
     echo "Hey you!"
-    
+
     # Mount S3 if required
-    ${mount_command}
+    \${mount_command}
 
-    '''
+    """
 
-    afterScript
-    '''
+    afterScript """
     def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
     
     # Unmount S3 if it was mounted
-    ${unmount_command}
-    '''
+    \${unmount_command}
+    """
 
     script:
     def args = task.ext.args ?: ''
