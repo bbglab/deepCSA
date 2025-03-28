@@ -28,6 +28,14 @@ process COMPUTEDEPTHS {
     ${mount_command}
     '''
 
+    afterScript
+    '''
+    def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
+    
+    # Unmount S3 if it was mounted
+    ${unmount_command}
+    '''
+
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
@@ -53,18 +61,7 @@ process COMPUTEDEPTHS {
     "${task.process}":
         samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' ))
     END_VERSIONS
-
-    
     """
-
-    afterScript
-
-    '''
-    def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
-    
-    # Unmount S3 if it was mounted
-    ${unmount_command}
-    '''
 
     stub:
     def args = task.ext.args ?: ''
