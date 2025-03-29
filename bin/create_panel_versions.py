@@ -1,9 +1,10 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import pandas as pd
 import os
 import sys
 
+# TODO: check pandas version 2.0.3
 # -- Auxiliary functions -- #
 
 panel_impact_dict = {
