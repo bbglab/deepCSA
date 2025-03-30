@@ -1,3 +1,4 @@
+include { SIGPROFILEREXTRACTOR                                      } from '../../../modules/local/signatures/sigprofiler/extractor/main'
 include { SIGPROFILERASSIGNMENT                                     } from '../../../modules/local/signatures/sigprofiler/assignment/main'
 include { MATRIX_CONCAT                        as MATRIXCONCATWGS   } from '../../../modules/local/sig_matrix_concat/main'
 // include { MATRIX_CONCAT                        as MATRIXCONCAT      } from '../../../modules/local/sig_matrix_concat/main'
@@ -22,6 +23,8 @@ workflow SIGNATURES {
     ch_versions = ch_versions.mix(MATRIXCONCATWGS.out.versions)
 
     MATRIXCONCATWGS.out.wgs_tsv.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_matrices_wgs }
+
+    SIGPROFILEREXTRACTOR(named_matrices_wgs)
 
     SIGPROFILERASSIGNMENT(named_matrices_wgs, reference_signatures)
     ch_versions = ch_versions.mix(SIGPROFILERASSIGNMENT.out.versions)
