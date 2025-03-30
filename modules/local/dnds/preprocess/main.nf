@@ -4,7 +4,7 @@ process PREPROCESS_DNDS {
     label 'time_low'
     label 'process_high_memory'
 
-    container 'docker.io/ferriolcalvet/omega:latest'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(depths)
@@ -13,7 +13,7 @@ process PREPROCESS_DNDS {
 
     output:
     tuple val(meta), path("*.depths_input.tsv") , emit: depths
-    path "versions.yml"                         , emit: versions
+    path "versions.yml"                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

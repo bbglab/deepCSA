@@ -1,15 +1,12 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
-
-import pandas as pd
-import numpy as np
 import sys
+import pandas as pd
 
-from itertools import product
 from bgreference import hg38, hg19, mm10, mm39
 
 from utils import vartype
-from utils_context import canonical_channels, transform_context
+from utils_context import transform_context
 from utils_impacts import *
 from read_utils import custom_na_values
 
@@ -19,6 +16,21 @@ assembly_name2function = {"hg38": hg38,
                             "mm39": mm39}
 
 
+muttype_conversion_map = {
+                'G>A': 'C>T',
+                'G>C': 'C>G',
+                'G>T': 'C>A',
+                'A>G': 'T>C',
+                'A>T': 'T>A',
+                'A>C': 'T>G',
+            }
+
+
+def get_canonical_mutid(mutid):
+    elements__ = mutid.split("_")
+    mutation_change = elements__[-1]
+    upd_mutation_change = muttype_conversion_map.get(mutation_change, mutation_change)
+    return "_".join(elements__[:-1] + [upd_mutation_change])
 
 
 
@@ -128,8 +140,8 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 
 def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
-                             hotspots_file = None,
-                             all_ = False, assembly = 'hg38'):
+                                hotspots_file = None,
+                                all_ = False, assembly = 'hg38'):
     """
     # TODO
     explain what this function does
@@ -161,16 +173,24 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     annotated_variants_only_canonical = VEP_annotation_to_single_row_only_canonical(all_possible_sites)
     if annotated_variants_only_canonical is not None:
         gnomad_repeated_columns = [x for x in annotated_variants_only_canonical.columns if 'gnomAD' in x ]
-        annotated_variants_only_canonical_cleaned = annotated_variants_only_canonical.drop(gnomad_repeated_columns, axis = 'columns')
+        _annotated_variants_only_canonical_cleaned = annotated_variants_only_canonical.drop(gnomad_repeated_columns, axis = 'columns')
+
+        try :
+            annotated_variants_only_canonical_cleaned = _annotated_variants_only_canonical_cleaned.drop(["canonical_Existing_variation", "canonical_PHENO", "canonical_SOMATIC"], axis = 'columns')
+        except:
+            annotated_variants_only_canonical_cleaned = _annotated_variants_only_canonical_cleaned
+
         annotated_variants = annotated_variants.merge(annotated_variants_only_canonical_cleaned, on = "MUT_ID", how = 'left')
         annotated_variants['canonical_Consequence_single'] = annotated_variants['canonical_Consequence'].apply(most_deleterious_within_variant)
         annotated_variants['canonical_Consequence_broader'] = annotated_variants['canonical_Consequence_single'].apply(lambda x: GROUPING_DICT[x])
         annotated_variants['canonical_Protein_affecting'] = annotated_variants['canonical_Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
-
+        del annotated_variants_only_canonical
+        del _annotated_variants_only_canonical_cleaned
+        del annotated_variants_only_canonical_cleaned
 
 
     # TODO: agree on a consensus for these broader consequence types
-    # add a new column containing a broader  consequence per variant
+    # add a new column containing a broader consequence per variant
     annotated_variants['Consequence_single'] = annotated_variants['Consequence'].apply(most_deleterious_within_variant)
     annotated_variants['Consequence_broader'] = annotated_variants['Consequence_single'].apply(lambda x: GROUPING_DICT[x])
     annotated_variants['Protein_affecting'] = annotated_variants['Consequence_broader'].apply(lambda x: PROTEIN_AFFECTING_DICT[x])
@@ -186,14 +206,24 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     annotated_variants_columns = [x for x in annotated_variants.columns if x.replace("canonical_", "") not in ['CHROM', 'POS', 'REF', 'ALT', 'TYPE', 'CHROM:POS', 'MUT'] ]
     annotated_variants_reduced = annotated_variants.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] ).reset_index(drop = True)
 
+    if any("gnomAD" in x for x in annotated_variants_reduced.columns):
+        gnomad_columns = [x for x in annotated_variants_reduced.columns if 'gnomAD' in x ]
+        annotated_variants_reduced[gnomad_columns] = annotated_variants_reduced[gnomad_columns].replace("-", 0).astype(float)
+
+        # add a column to flag the variants considered to be SNPs based on gnomad information
+        annotated_variants_reduced["gnomAD_SNP"] = (annotated_variants_reduced['gnomADe_AF'] > 0.1) | (annotated_variants_reduced['gnomADg_AF'] > 0.1)
+        annotated_variants_columns += ["gnomAD_SNP"]
+
 
     if hotspots_file is not None:
         hotspots_def_df = pd.read_table(hotspots_file, header = 0, sep = '\t')
-        new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS'] ]
-        annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS'], how = 'left')
+        new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS', "MUTTYPE"] ]
+        annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS', "MUTTYPE"], how = 'left')
         annotated_variants_columns += new_hostpot_columns
 
     annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
+
+    annotated_variants_reduced["MUT_ID_pyr"] = annotated_variants_reduced["MUT_ID"].apply(lambda x : get_canonical_mutid(x))
 
     annotated_variants_reduced.to_csv(all_possible_sites_annotated_file,
                                         header = True,

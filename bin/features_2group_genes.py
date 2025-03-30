@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import sys
 import json
@@ -83,25 +83,26 @@ def filtered_groups_to_compressed(data):
 
 if __name__ == '__main__':
     panel_genes_file = sys.argv[1]
-    hotspot_genes = sys.argv[2]
+    hotspot_genes_flag = sys.argv[2]
     hotspot_genes_file = sys.argv[3]
     output_json_groups_2_names = sys.argv[4]
 
     custom_groups = False
 
-    add_hotspots = hotspot_genes == "1"
+    add_hotspots = hotspot_genes_flag == "1"
 
 
     if len(sys.argv) > 5:
         custom_groups = True
-        table_file = sys.argv[3]
-        separator = sys.argv[4]
-        output_json_groups = sys.argv[5]
+        table_file = sys.argv[5]
+        separator = sys.argv[6]
+        output_json_groups = sys.argv[7]
+        print(table_file, separator, output_json_groups)
 
 
     genes_to_keep = set(load_genes_from_file(panel_genes_file))
     genes_to_keep_dict = {x : [x] for x in genes_to_keep}
-    genes_to_keep_dict["ALL_GENES"] = list(genes_to_keep)
+    genes_to_keep_dict["ALL_GENES"] = [x for x in genes_to_keep if '--' not in x ]
 
 
     # handle custom gene groups table

@@ -13,25 +13,20 @@ workflow MUTATION_RATE{
     panel
 
     main:
-    ch_versions = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
     SUBSETMUTRATE(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSETMUTRATE.out.versions)
 
     SUBSETMUTRATE.out.mutations
     .join(depth)
     .set{ mutations_n_depth }
 
     MUTRATE(mutations_n_depth, panel)
-    ch_versions = ch_versions.mix(MUTRATE.out.versions)
 
     // PLOTMUTRATE()
 
     emit:
     mutrates = MUTRATE.out.mutrates
-    versions = ch_versions                // channel: [ versions.yml ]
 }

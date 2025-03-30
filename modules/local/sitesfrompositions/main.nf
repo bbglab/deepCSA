@@ -6,10 +6,7 @@ process SITESFROMPOSITIONS {
     label 'time_low'
     label 'process_low_memory'
 
-    container "docker.io/ferriolcalvet/bgreference"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //         'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //         'biocontainers/pandas:1.5.2' }"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
 
     input:
@@ -17,7 +14,7 @@ process SITESFROMPOSITIONS {
 
     output:
     tuple val(meta), path("*.sites4VEP.tsv")  , emit: annotated_panel_reg
-    path  "versions.yml"                      , emit: versions
+    path  "versions.yml"                      , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

@@ -4,11 +4,7 @@ process COMPUTE_MUTABILITY {
     label 'process_low_fixed_cpus'
     label 'process_high_memory'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(matrix), path(mut_profile), path(depths)
@@ -18,11 +14,11 @@ process COMPUTE_MUTABILITY {
     // TODO revise this to see which one is outputed and why
     tuple val(meta), path("*.mutability_per_site.tsv")                           , emit: mutability_not_adjusted
     tuple val(meta), path("*.mutability_per_site.tsv.adjusted")                  , emit: mutability
-    path "versions.yml"                                                          , emit: versions
+    path "versions.yml"                                                          , topic: versions
 
     // tuple val(meta), path("*.mutability_per_site.tsv")                           , emit: mutability
     // tuple val(meta), path("*.mutability_per_site.tsv.adjusted") , optional:true  , emit: mutability_adjusted
-    // path "versions.yml"                                                          , emit: versions
+    // path "versions.yml"                                                          , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

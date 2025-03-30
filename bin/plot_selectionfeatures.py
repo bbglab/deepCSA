@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 
 import pandas as pd
@@ -745,19 +745,13 @@ def preprocess_maf(maf_df):
 
     maf_df["CLEAN_SAMPLE_ID"] = maf_df["SAMPLE_ID"].apply(lambda x: "_".join(x.split("_")[1:3]))
 
-    # Reduce the number of samples and the number of mutations
-    samples_histo_findings = ['P19_0017_BDO_01', 'P19_0017_BTR_01',
-                          'P19_0032_BDO_01', 'P19_0032_BTR_01',
-                          'P19_0044_BDO_01', 'P19_0044_BTR_01']
     maf_df_f = maf_df.loc[(maf_df["VAF"] <= 0.35) &
-                          # (maf_df["FILTER.repetitive_variant"] == False) & # filter not well defined yet; may hide hotspots
-                          (~maf_df["FILTER.not_in_panel"]) &
-                          (~maf_df["FILTER.no_pileup_support"]) & # avoid variants w/o VAF recomputed
-                          (~maf_df["FILTER.n_rich"]) &
-                          (~maf_df["FILTER.low_mappability"]) &
-                          (~maf_df["FILTER.other_sample_SNP"]) &
-                          (~maf_df["SAMPLE_ID"].isin(samples_histo_findings))
-                         ].reset_index(drop = True)
+                            (~maf_df["FILTER.not_in_exons"]) &
+                            (~maf_df["FILTER.not_covered"]) &
+                            (~maf_df["FILTER.no_pileup_support"]) & # avoid variants w/o VAF recomputed
+                            (~maf_df["FILTER.n_rich"]) &
+                            (~maf_df["FILTER.low_mappability"])
+                        ].reset_index(drop = True)
 
     # SNV
     snvs_maf = maf_df_f[(maf_df_f["TYPE"] == 'SNV') &

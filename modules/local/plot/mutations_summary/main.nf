@@ -3,20 +3,14 @@ process PLOT_MUTATIONS {
     tag "$meta.id"
     label 'process_low'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/biocontainers/seaborn:0.12.2_cv1':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/seaborn:0.12.2_cv1' :
-        'biocontainers/seaborn:0.12.2_cv1' }"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(mut_files)
 
     output:
     tuple val(meta), path("*.pdf")  , emit: plots
-    path "versions.yml"             , emit: versions
+    path "versions.yml"             , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -63,6 +57,7 @@ process PLOT_MUTATIONS {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_prefix = task.ext.output_prefix ?: ""
     """
     touch ${prefix}${output_prefix}.pdf
 

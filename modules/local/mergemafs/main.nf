@@ -10,15 +10,14 @@ process MERGE_BATCH {
     label 'process_high_memory'
     label 'time_low'
 
-
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(mafs)
 
     output:
     tuple val(meta), path("*.cohort.tsv.gz") , emit: cohort_maf
-    path "versions.yml"                      , emit: versions
+    path "versions.yml"                      , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

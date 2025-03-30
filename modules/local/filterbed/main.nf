@@ -8,11 +8,7 @@ process FILTERBED {
     tag "$meta.id"
     label 'process_high'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta)     , path(maf)
@@ -20,16 +16,15 @@ process FILTERBED {
 
     output:
     tuple val(meta), path("*.tsv.gz")  , emit: maf
-    path "versions.yml"                , emit: versions
+    path "versions.yml"                , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def filtername = task.ext.filtername ?: "covered"
     """
-    filterbed.py ${maf} ${bedfile} not_in_panel;
+    filterbed.py ${maf} ${bedfile} ${filtername};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
