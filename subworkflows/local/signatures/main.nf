@@ -5,6 +5,9 @@ include { SIGNATURES_PROBABILITIES              as SIGPROBS         } from '../.
 include { MSIGHDP                                                   } from '../../../modules/local/signatures/msighdp/main'
 include { RUN_HDP_WRAPPER                       as HDPRUN           } from '../../../modules/local/signatures/hdprun/main'
 
+// include { HDP_EXTRACTION                       as HDPEXTRACTION     } from '../signatures_hdp/main'
+
+//     HDPEXTRACTION(named_matrices_wgs_hdp, named_matrices_wgs, reference_signatures)
 
 
 workflow SIGNATURES {

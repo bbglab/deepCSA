@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 ###########################################################
 ######        HDP Signature Extraction Wrapper       ######
@@ -8,10 +8,9 @@
 #create set output directory which need to include a folder called input_files that contains the mutation count matrices and treeLayer files from the setup file
 
 
-outputBase="."
-
 setUpFile=$1                           #file located in outputBase/input_files/ that contains set up for which input matrix should be run with which treeLayer file
 refFile=$2        #reference file to compare the extracted signatures to --> needs to be changed when other types of signatures than SBS are analysed
+outputBase=$3
 normFile="NA"                          #if normalisation of  signatures should be applied the a normFile needs to be provided, otherwise set NA
 priorFile="NA"                         #if priors included in the run the a priorFile needs to be provided, otherwise set NA
 nMutCutoff=50                          #samples with less mutations that specified in this parameter will be excluded from the analysis
@@ -33,7 +32,7 @@ maxiterEM=1000
 EMfracThreshold=0.1
 
 #script directory
-scriptDir='./R/'
+scriptDir='/home/fcalvet/dev/HDP/HDP_sigExtraction/R/'
 
 
 #####################
@@ -43,8 +42,8 @@ scriptDir='./R/'
 while read l;
 	do
 		lineArray=( $l )
-		countMatrix=${lineArray[0]} 
-		treeLayers=${lineArray[1]} 
+		countMatrix=${lineArray[0]}
+		treeLayers=${lineArray[1]}
 
 		#input files
 		input_96matrix_file="$countMatrix"
@@ -57,7 +56,7 @@ while read l;
 		### create outputDir based on input parameters ###
 		priorsName="with_priors"
 		if [ ${priorFile} == "NA" ]
-		then 
+		then
 			priorsName="without_priors"
 		fi
 
@@ -75,12 +74,12 @@ while read l;
 		logDir="$outputDir/logs/"
 
 		if [ ! -d "$iterationDir" ]
-		then 
+		then
 			mkdir -p $iterationDir
 		fi
 
 		if [ ! -d "$logDir" ]
-		then 
+		then
 			mkdir $logDir
 		fi
 
@@ -102,14 +101,14 @@ while read l;
 		if [ ${normFile} != "NA" ]
 		then
 			stdout="$logDir/hdp_sigNormalising.stdout"
-		  stderr="$logDir/hdp_sigNormalising.stderr"
+            stderr="$logDir/hdp_sigNormalising.stderr"
 
-		  jobid3=$(sbatch --parsable --dependency="afterok:$jobid2" --time=01:00:00 -c 2 --mem 8G -J HDPnorm -o $stdout -e $stderr $scriptDir/run_HDP_sigNormalising.R $outputDir $normFile) 
-		    
+            jobid3=$(sbatch --parsable --dependency="afterok:$jobid2" --time=01:00:00 -c 2 --mem 8G -J HDPnorm -o $stdout -e $stderr $scriptDir/run_HDP_sigNormalising.R $outputDir $normFile)
 
-      stdout="$logDir/hdp_normSigs_comparingCOSMIC.stdout"
+
+            stdout="$logDir/hdp_normSigs_comparingCOSMIC.stdout"
 			stderr="$logDir/hdp_normSigs_comparingCOSMIC.stderr"
-			  
+
 			jobid4=$(sbatch --parsable --dependency="afterok:$jobid3" --time=1-00:00:00 -c 2 --mem 8G -J HDPcompare -o $stdout -e $stderr $scriptDir/run_HDP_comparing.R $outputDir $cosineSimThreshold $maxiterEM $EMfracThreshold $refFile "NA" "TRUE")
 		fi
 
@@ -118,15 +117,15 @@ while read l;
 		### compare hdp to comsic ###
 		stdout="$logDir/hdp_comparingCOSMIC.stdout"
 		stderr="$logDir/hdp_comparingCOSMIC.stderr"
-			  
+
 		jobid5=$(sbatch --parsable --dependency="afterok:$jobid2" --time=1-00:00:00 -c 2 --mem 8G -J HDPcompare -o $stdout -e $stderr $scriptDir/run_HDP_comparing.R $outputDir $cosineSimThreshold $maxiterEM $EMfracThreshold $refFile "NA" "FALSE")
-		
+
 
 		stdout="$logDir/hdp_comparingCOSMIC_cancerSigs.stdout"
 		stderr="$logDir/hdp_comparingCOSMIC_cancerSigs.stderr"
 
 		jobid6=$(sbatch --parsable --dependency="afterok:$jobid5" --time=1-00:00:00 -c 2 --mem 8G -J HDPcompare -o $stdout -e $stderr $scriptDir/run_HDP_comparing.R $outputDir $cosineSimThreshold $maxiterEM $EMfracThreshold $refFile $cancerSigsFile "FALSE")
-		
+
 
 	done < $setUpFile
 

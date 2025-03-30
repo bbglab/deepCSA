@@ -10,9 +10,9 @@ process RUN_HDP_WRAPPER {
     path(ref_signatures)
 
     output:
-    tuple val(meta), path("**.pdf")     , emit: plots
-    tuple val(meta), path("**.csv")     , emit: stats
-    path "versions.yml"                 , emit: versions
+    tuple val(meta), path("*.hdp.rds"), path("*treelayer.rds")  , emit: rds_data
+    path("**.pdf")                                              , emit: plots
+    path "versions.yml"                                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,7 +21,7 @@ process RUN_HDP_WRAPPER {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-     # First, create an R script
+    # First, create an R script
     cat <<EOF > process_data.R
     data = read.table("${matrix}", header = FALSE)
     rownames(data) <- data[,c(1)]
@@ -35,20 +35,34 @@ process RUN_HDP_WRAPPER {
     # Run the R script
     Rscript process_data.R
 
+    cat <<EOFF > process_metadata.R
+    data = read.table("${matrix}", header = FALSE)
+    data = data[,c(1, 1)]
+    data <- data[-c(1),]
+    colnames(data) <- c("sample", "individual")
+    data\\\$group = "L"
+    saveRDS(data, file = "${prefix}.hdp.treelayer.rds")
+    EOFF
+
+
+    # Run the R script
+    Rscript process_metadata.R
+
 
     cat <<-END_INPUT > input.txt
-    ${prefix}.hdp.rds\t${treelayers}
+    ${prefix}.hdp.rds\t${prefix}.hdp.treelayer.rds
     END_INPUT
-    
+
     HDP_wrapper.sh \\
                 input.txt \\
                 ${ref_signatures} \\
+                ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         R       : \$(Rscript --version | sed -e 's/.*version //g')
         Rscript : \$(Rscript --version | sed -e 's/.*version //g')
-        mSigHdp : 2.1.2
+        HDP     : original
     END_VERSIONS
     """
 
@@ -62,7 +76,7 @@ process RUN_HDP_WRAPPER {
     "${task.process}":
         R       : \$(Rscript --version | sed -e 's/.*version //g')
         Rscript : \$(Rscript --version | sed -e 's/.*version //g')
-        mSigHdp : 2.1.2
+        HDP     : original
     END_VERSIONS
     """
 }
