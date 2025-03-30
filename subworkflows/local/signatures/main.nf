@@ -1,8 +1,9 @@
 include { SIGPROFILERASSIGNMENT                                     } from '../../../modules/local/signatures/sigprofiler/assignment/main'
-include { MATRIX_CONCAT                        as MATRIXCONCATWGS   } from '../../../modules/local/sig_matrix_concat/main'
+include { MATRIX_CONCAT                         as MATRIXCONCATWGS  } from '../../../modules/local/sig_matrix_concat/main'
 // include { MATRIX_CONCAT                        as MATRIXCONCAT      } from '../../../modules/local/sig_matrix_concat/main'
-include { SIGNATURES_PROBABILITIES             as SIGPROBS     } from '../../../modules/local/combine_sbs/main'
+include { SIGNATURES_PROBABILITIES              as SIGPROBS         } from '../../../modules/local/combine_sbs/main'
 include { MSIGHDP                                                   } from '../../../modules/local/signatures/msighdp/main'
+include { RUN_HDP_WRAPPER                       as HDPRUN           } from '../../../modules/local/signatures/hdprun/main'
 
 
 
@@ -22,6 +23,7 @@ workflow SIGNATURES {
     ch_versions = ch_versions.mix(MATRIXCONCATWGS.out.versions)
 
     MATRIXCONCATWGS.out.wgs_tsv.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_matrices_wgs }
+    MATRIXCONCATWGS.out.wgs_tsv_hdp.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_matrices_wgs_hdp }
 
     SIGPROFILERASSIGNMENT(named_matrices_wgs, reference_signatures)
     ch_versions = ch_versions.mix(SIGPROFILERASSIGNMENT.out.versions)
@@ -31,6 +33,7 @@ workflow SIGNATURES {
     ch_versions = ch_versions.mix(SIGPROBS.out.versions)
     SIGPROBS.out.signature_probs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ signature_probs_samples }
 
+    HDPRUN(named_matrices_wgs_hdp, named_matrices_wgs, reference_signatures)
 
     // matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ all_matrices }
     // MATRIXCONCAT(all_matrices, samples)

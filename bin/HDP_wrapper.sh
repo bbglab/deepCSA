@@ -7,15 +7,14 @@
 ### paramters ###
 #create set output directory which need to include a folder called input_files that contains the mutation count matrices and treeLayer files from the setup file
 
-#outputBase="/data/bbg/nobackup/prominent/kidney/analysis/2024-09-30_deepCSA_LCMs/input_for_signature_extraction/results"
-#outputBase="/data/bbg/nobackup/prominent/kidney/analysis/2024-11-18_LCMs/input_for_signature_extraction/results"
-outputBase="/data/bbg/nobackup/lung_duplex/analysis/fullcohortnormal/2024-12-30_run_all/input_for_signature_extraction/results"
 
-setUpFile='runSetup.txt'                           #file located in outputBase/input_files/ that contains set up for which input matrix should be run with which treeLayer file
-refFile="/data/bbg/datasets/transfer/ferriol_deepcsa/COSMIC_v3.4_SBS_GRCh38.txt"        #reference file to compare the extracted signatures to --> needs to be changed when other types of signatures than SBS are analysed
-normFile="NA"                                      #if normalisation of  signatures should be applied the a normFile needs to be provided, otherwise set NA
-priorFile="NA"                                     #if priors included in the run the a priorFile needs to be provided, otherwise set NA
-nMutCutoff=50                                      #samples with less mutations that specified in this parameter will be excluded from the analysis
+outputBase="."
+
+setUpFile=$1                           #file located in outputBase/input_files/ that contains set up for which input matrix should be run with which treeLayer file
+refFile=$2        #reference file to compare the extracted signatures to --> needs to be changed when other types of signatures than SBS are analysed
+normFile="NA"                          #if normalisation of  signatures should be applied the a normFile needs to be provided, otherwise set NA
+priorFile="NA"                         #if priors included in the run the a priorFile needs to be provided, otherwise set NA
+nMutCutoff=50                          #samples with less mutations that specified in this parameter will be excluded from the analysis
 
 # signature activity
 sigActivityThreshold=0                             #minimum signature exposure cutoff
@@ -48,12 +47,11 @@ while read l;
 		treeLayers=${lineArray[1]} 
 
 		#input files
-		input_96matrix_file="$outputBase/input_files/$countMatrix"
-		treeLayer_file="$outputBase/input_files/$treeLayers"
+		input_96matrix_file="$countMatrix"
+		treeLayer_file="$treeLayers"
 
 		#cancer signature file
 		cancerSigsFile=""
-		#cancerSigsFile="$outputBase/input_files/lungSigs_list.rds"
 
 
 		### create outputDir based on input parameters ###
@@ -71,7 +69,8 @@ while read l;
 
 		hdpParamsName="burnin${burnin}_n${nPosterior}_space${space}_cpiter${cpiter}"
 
-		outputDir="$outputBase/$treeLayers/$priorsName/$nMutName/$hdpParamsName/"
+		# outputDir="$outputBase/$treeLayers/$priorsName/$nMutName/$hdpParamsName/"
+		outputDir="$outputBase/$treeLayers/$hdpParamsName/"
 		iterationDir="$outputDir/iterations/"
 		logDir="$outputDir/logs/"
 
@@ -129,7 +128,7 @@ while read l;
 		jobid6=$(sbatch --parsable --dependency="afterok:$jobid5" --time=1-00:00:00 -c 2 --mem 8G -J HDPcompare -o $stdout -e $stderr $scriptDir/run_HDP_comparing.R $outputDir $cosineSimThreshold $maxiterEM $EMfracThreshold $refFile $cancerSigsFile "FALSE")
 		
 
-	done < $outputBase/input_files/$setUpFile
+	done < $setUpFile
 
 
 
