@@ -3,7 +3,7 @@ process PLOT_SELECTION_METRICS {
     tag "$meta.id"
     label 'process_low'
 
-    container 'docker.io/ferriolcalvet/deepcsa_python:20240724_latest'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(results_files)
@@ -11,7 +11,7 @@ process PLOT_SELECTION_METRICS {
 
     output:
     tuple val(meta), path("**.pdf")  , emit: plots
-    path "versions.yml"              , emit: versions
+    path "versions.yml"              , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -39,6 +39,7 @@ process PLOT_SELECTION_METRICS {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_prefix = task.ext.output_prefix ?: ""
     """
     touch ${prefix}${output_prefix}.pdf
 

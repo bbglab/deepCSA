@@ -5,7 +5,7 @@ process OMEGA_ESTIMATOR {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:20241217'
+    container 'docker.io/ferriolcalvet/omega:20250113'
 
     input:
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
@@ -14,7 +14,7 @@ process OMEGA_ESTIMATOR {
 
     output:
     tuple val(meta), path("output_*.tsv"), emit: results
-    path "versions.yml"                  , emit: versions
+    path "versions.yml"                  , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

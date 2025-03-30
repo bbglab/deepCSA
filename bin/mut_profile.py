@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 
 import sys
@@ -149,10 +149,6 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     mut_probability.index.name = "CONTEXT_MUT"
     mut_probability = mut_probability.reset_index()
 
-    # # Load the filter criteria from the JSON file
-    # with open("sample.json", "w") as outfile:
-    #     json.dump(dictionary, outfile)
-
     mut_probability.to_csv(json_output,
                             header = True,
                             index = False,
@@ -160,26 +156,17 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 
     if plot:
 
-        # TODO
-        # revise if we can find a better way of defining the y axis labels
-        max_freq = max(mut_probability[sample_name]) * 1.1
-
-        order_mag = 100
-        size_step = 10
-        ylabs = []
-        while len(ylabs) < 2:
-            ylabs = [ x/order_mag for x in range(0, round(max_freq * order_mag) + 1 ) if (x % size_step) == 0 ]
-            if size_step == 10:
-                size_step = 5
-            else:
-                order_mag *= 10
-                size_step = 10
-
+        # plot the profile as the relative probability of each trinucleotide change to mutate vs the others
         plot_profile(dict(zip(mut_probability["CONTEXT_MUT"], mut_probability[sample_name])),
                         title=f'{sample_name} ({round(total_mutations)} muts)',
-                        ylabels = ylabs,
-                        ymax = max_freq,
+                        yaxis_name= "Relative mutation\nprobability",
                         output_f = f'{sample_name}.profile.pdf')
+
+        # plot the profile as a percentage of SBS mutations seen in our sequenced panel
+        plot_profile(dict(zip(mutation_matrix.index, [x[0].item() for x in (mutation_matrix / mutation_matrix.sum()).values])),
+                        title=f'{sample_name} ({round(total_mutations)} muts)',
+                        output_f = f'{sample_name}.profile.percentage.pdf')
+
 
     if wgs:
         if not wgs_trinucleotide_counts:
@@ -203,29 +190,11 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                     index = True,
                                     sep = "\t")
 
-        # if plot:
-
-        #     profile_trinuc_merge["WGS_MUT_PROFILE"] = profile_trinuc_merge["SAMPLE_MUTS_WGS"] / profile_trinuc_merge["COUNT"]
-        #     profile_trinuc_merge["WGS_MUT_PROFILE"] = profile_trinuc_merge["WGS_MUT_PROFILE"] / profile_trinuc_merge["WGS_MUT_PROFILE"].sum()
-
-        #     max_freq = max(profile_trinuc_merge["WGS_MUT_PROFILE"]) * 1.1
-
-        #     order_mag = 100
-        #     size_step = 10
-        #     ylabs = []
-        #     while len(ylabs) < 2:
-        #         ylabs = [ x/order_mag for x in range(0, round(max_freq * order_mag) + 1 ) if (x % size_step) == 0 ]
-        #         if size_step == 10:
-        #             size_step = 5
-        #         else:
-        #             order_mag *= 10
-        #             size_step = 10
-
-        #     plot_profile(dict(zip(profile_trinuc_merge["CONTEXT_MUT"], profile_trinuc_merge["WGS_MUT_PROFILE"])),
-        #                     title=f'{sample_name} ({round(total_mutations)} muts)',
-        #                     ylabels = ylabs,
-        #                     ymax = max_freq,
-        #                     output_f = f'{sample_name}.profile.WGS.pdf')
+        # plot the profile as a percentage of SBS mutations seen after sequencing one WGS
+        # if mutations were occuring with the same probabilities as they occur in our sequenced panel
+        plot_profile(dict(zip(profile_trinuc_clean.index.values, (profile_trinuc_clean[sample_name] / profile_trinuc_clean[sample_name].sum()).values)),
+                        title=f'{sample_name} ({round(total_mutations)} muts)',
+                        output_f = f'{sample_name}.profile.percentage_WGS.pdf')
 
         if sigprofiler:
             profile_trinuc_clean.index = contexts_formatted_sigprofiler

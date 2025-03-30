@@ -2,11 +2,7 @@ process GROUP_GENES {
     tag "groups"
     label 'process_low'
 
-    // TODO revise this conda package name
-    conda "pandas:1.5.2"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-        'biocontainers/pandas:1.5.2' }"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(mutations_table)
@@ -16,14 +12,12 @@ process GROUP_GENES {
     output:
     path("genes2group_out.json")                        , emit: json_genes
     path("pathway_groups_out.json") , optional : true   , emit: json_pathways
-    path "versions.yml"                                 , emit: versions
+    path "versions.yml"                                 , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "groups"
     def separator = task.ext.separator ?: "tab"
     def hotspots = task.ext.hotspots ? 1 : 0
     def cmd_custom = task.ext.custom ? "${features_table} ${separator} pathway_groups_out.json" : ""
@@ -39,8 +33,6 @@ process GROUP_GENES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "groups"
     """
     touch genes2group_out.json
 

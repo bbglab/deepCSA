@@ -8,55 +8,58 @@
 */
 
 nextflow.enable.dsl = 2
+nextflow.preview.topic = true
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    VALIDATE & PRINT PARAMETER SUMMARY
+    IMPORTS: NEXTFLOW MODULES, WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 include { validateParameters; paramsHelp; paramsSummaryLog } from 'plugin/nf-schema'
 
-// Print help message if needed
-if (params.help) {
-    def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
-    def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
-    def String command = "nextflow run ${workflow.manifest.name} --input samplesheet.csv --genome GRCh37 -profile docker"
-    log.info logo + paramsHelp(command) + citation + NfcoreTemplate.dashedLine(params.monochrome_logs)
-    // log.info paramsHelp("nextflow run my_pipeline --input input_file.csv")
-    exit 0
-}
-
-// Validate input parameters
-if (params.validate_params) {
-    validateParameters()
-}
-
-// Print summary of supplied parameters
-log.info paramsSummaryLog(workflow)
-
-WorkflowMain.initialise(workflow, params, log)
+include { DEEPCSA                 } from './workflows/deepcsa'
+include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_deepcsa'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    NAMED WORKFLOW FOR PIPELINE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-include { DEEPCSA  as BBG_DEEPCSA} from './workflows/deepcsa'
-
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    RUN ALL WORKFLOWS
+    NAMED WORKFLOWS FOR PIPELINE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
-// WORKFLOW: Run main bbglab/deepCSA analysis pipeline
+// WORKFLOW: Run main analysis pipeline depending on type of input
 //
+workflow BBGTOOLS {
+    main:
+    
+    DEEPCSA ()
+}
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RUN MAIN WORKFLOW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
 workflow {
-    BBG_DEEPCSA ()
+
+    main:
+
+    // SUBWORKFLOW: Run initialisation tasks
+    PIPELINE_INITIALISATION (
+        params.version,
+        params.help,
+        params.validate_params,
+        params.monochrome_logs,
+        args,
+        params.outdir,
+    )
+
+    //
+    // WORKFLOW: Run main workflow
+    //
+    BBGTOOLS()
+
 }
 
 /*

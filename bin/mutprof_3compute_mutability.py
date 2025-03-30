@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import sys
 import click
@@ -150,8 +150,9 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
     all_samples_mutability_per_site = all_samples_mutability_per_site.sort_values(
                                                                 by = ['CHROM', 'POS', 'REF', 'ALT']).reset_index(drop = True)
     sample_mutability_info = all_samples_mutability_per_site[['CHROM', 'POS', 'REF', 'ALT', 'GENE', f"{sample_name}_adjusted_probability"]]
-    sample_mutability_info[f"{sample_name}_adjusted_probability"] /= (sample_mutability_info[f"{sample_name}_adjusted_probability"].min() * 100)
 
+    normalization_factor = sample_mutability_info[sample_mutability_info[f"{sample_name}_adjusted_probability"] > 0][f"{sample_name}_adjusted_probability"].min() * 100
+    sample_mutability_info[f"{sample_name}_adjusted_probability"] /= normalization_factor
 
     sample_mutability_info_store = sample_mutability_info.drop_duplicates(subset=['CHROM', 'POS', 'REF', 'ALT'],
                                                         keep='first').drop("GENE", axis = 1)

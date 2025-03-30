@@ -4,8 +4,7 @@ process VCF2MAF {
     label 'cpu_low'
     label 'process_high_memory'
 
-
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(vcf)
@@ -13,7 +12,7 @@ process VCF2MAF {
 
     output:
     tuple val(meta), path("*.tsv.gz")  , emit: maf
-    path "versions.yml"                , emit: versions
+    path "versions.yml"                , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

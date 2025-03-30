@@ -2,18 +2,14 @@ process SELECT_MUTRATES {
     tag "$meta.id"
     label 'process_single'
 
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
-    container 'docker.io/ferriolcalvet/bgreference'
-
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(mutation_rates)
 
     output:
     tuple val(meta), path("*.gene_mutrates.tsv") , emit: mutrate
-    path  "versions.yml"                         , emit: versions
+    path  "versions.yml"                         , topic: versions
 
 
     when:

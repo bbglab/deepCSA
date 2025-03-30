@@ -16,13 +16,10 @@ workflow ONCODRIVEFML_ANALYSIS{
     cadd_scores
 
     main:
-    ch_versions = Channel.empty()
 
     ONCODRIVEFMLBED(panel_file)
-    ch_versions = ch_versions.mix(ONCODRIVEFMLBED.out.versions)
 
     SUBSETONCODRIVEFML(mutations)
-    ch_versions = ch_versions.mix(SUBSETONCODRIVEFML.out.versions)
 
     SUBSETONCODRIVEFML.out.mutations
     .join( mutabilities )
@@ -30,10 +27,8 @@ workflow ONCODRIVEFML_ANALYSIS{
 
     ONCODRIVEFML(muts_n_mutability,  ONCODRIVEFMLBED.out.bed, cadd_scores)
     ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed, cadd_scores)
-    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
 
     emit:
     results         = ONCODRIVEFML.out.tsv          // channel: [ val(meta), file(results) ]
     results_snvs    = ONCODRIVEFMLSNVS.out.tsv      // channel: [ val(meta), file(results) ]
-    versions        = ch_versions                   // channel: [ versions.yml ]
 }

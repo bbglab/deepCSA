@@ -3,11 +3,7 @@ process ANNOTATE_DEPTHS {
     label 'process_low'
     label 'time_low'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(depths)
@@ -19,7 +15,7 @@ process ANNOTATE_DEPTHS {
     // tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
     path("*.depths.annotated.tsv.gz")                           , emit: annotated_depths
     tuple val(meta), path("all_samples_indv.depths.tsv.gz")     , emit: all_samples_depths
-    path "versions.yml"                                         , emit: versions
+    path "versions.yml"                                         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
