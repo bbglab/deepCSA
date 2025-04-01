@@ -18,8 +18,7 @@ process COMPUTEDEPTHS
     when:
     task.ext.when == null || task.ext.when
 
-    beforeScript """echo "Executing beforeScript"
-    """
+    beforeScript """echo 'Executing beforeScript'"""
 
     afterScript """
     def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
