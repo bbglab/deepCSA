@@ -1,4 +1,4 @@
-process COMPUTEDEPTHS 
+process COMPUTEDEPTHS {
     tag "$meta.id"
     label 'process_high'
 
@@ -18,7 +18,27 @@ process COMPUTEDEPTHS
     when:
     task.ext.when == null || task.ext.when
 
-    beforeScript """echo 'Executing beforeScript'"""
+    beforeScript """
+    echo "Executing beforeScript"
+    // Add rclone mount command if mountS3 is true
+    // TODO: Include the option to have multiple buckets?
+    def mount_command = params.mountS3 ? "rclone mount ${params.s3remoteName}:${params.s3bucketName} ${params.s3startingPoint} --vfs-cache-mode off --read-only & sleep 10" : ""
+    
+    echo "Hey you!"
+
+    # Mount S3 if required
+    \${mount_command}
+
+    # Check if the mount was successful (if mounting was requested)
+    if [ "${params.mountS3}" = "true" ]; then
+        if mountpoint -q ${params.s3startingPoint}; then
+            echo "S3 bucket successfully mounted at ${params.s3startingPoint}"
+        else
+            echo "Failed to mount S3 bucket at ${params.s3startingPoint}"
+            exit 1
+        fi
+    fi
+    """
 
     afterScript """
     def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
@@ -65,7 +85,7 @@ process COMPUTEDEPTHS
         samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//' ))
     END_VERSIONS
     """
-
+}
 
 
 
