@@ -1,6 +1,7 @@
 process COMPUTEDEPTHS {
     tag "$meta.id"
     label 'process_high'
+    debug true
 
     conda "bioconda::samtools=1.18 conda-forge::rclone=1.62.2"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -14,13 +15,14 @@ process COMPUTEDEPTHS {
     output:
     tuple val(meta), path("*.tsv.gz")   , emit: depths
     path "versions.yml"                 , topic: versions
+    path "beforescript.log"             , emit: beforelog  // Add this line
 
     when:
     task.ext.when == null || task.ext.when
 
     beforeScript """
-    echo "Ejecutando beforeScript" > beforescript.log
-    date >> beforescript.log
+    echo "Ejecutando beforeScript" > ${workflow.workDir}/beforescript_${task.index}.log
+    date >> ${workflow.workDir}/beforescript_${task.index}.log
     """
 
     afterScript """
@@ -50,6 +52,9 @@ process COMPUTEDEPTHS {
         | tail -c +2 \\
         ${minimum_depth} \\
         | gzip -c > ${prefix}.depths.tsv.gz;
+
+    echo "Contents of beforescript.log:"
+    cat beforescript.log || echo "beforescript.log not found"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
