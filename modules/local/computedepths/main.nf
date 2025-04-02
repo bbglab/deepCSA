@@ -21,8 +21,8 @@ process COMPUTEDEPTHS {
     task.ext.when == null || task.ext.when
 
     beforeScript """
-    echo "Ejecutando beforeScript" > ${workflow.workDir}/beforescript_${task.index}.log
-    date >> ${workflow.workDir}/beforescript_${task.index}.log
+    echo "Ejecutando beforeScript" > \$PWD/beforescript.log
+    date >> \$PWD/beforescript.log
     """
 
     afterScript """
@@ -52,6 +52,10 @@ process COMPUTEDEPTHS {
         | tail -c +2 \\
         ${minimum_depth} \\
         | gzip -c > ${prefix}.depths.tsv.gz;
+
+    if [ -f \$PWD/beforescript.log ]; then
+        cp \$PWD/beforescript.log .
+    fi
 
     echo "Contents of beforescript.log:"
     cat beforescript.log || echo "beforescript.log not found"
