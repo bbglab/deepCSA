@@ -1,7 +1,6 @@
 process COMPUTEDEPTHS {
     tag "$meta.id"
     label 'process_high'
-    debug true
 
     conda "bioconda::samtools=1.18 conda-forge::rclone=1.62.2"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -15,22 +14,9 @@ process COMPUTEDEPTHS {
     output:
     tuple val(meta), path("*.tsv.gz")   , emit: depths
     path "versions.yml"                 , topic: versions
-    path "beforescript.log"             , emit: beforelog  // Add this line
 
     when:
     task.ext.when == null || task.ext.when
-
-    beforeScript """
-    echo "Ejecutando beforeScript" > \$PWD/beforescript.log
-    date >> \$PWD/beforescript.log
-    """
-
-    afterScript """
-    def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
-    
-    # Unmount S3 if it was mounted
-    \${unmount_command}
-    """
 
     script:
     def args = task.ext.args ?: ''
@@ -41,7 +27,14 @@ process COMPUTEDEPTHS {
     // positions with a mean depth above a given value
     // if the provided value is 0 this is not used
     def minimum_depth = task.ext.minimum_depth ? "| awk 'NR == 1 {print; next}  {sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
+    // Add rclone mount command if mountS3 is true
+    // TODO: Include the option to have multiple buckets?
+    def mount_command = params.mountS3 ? "rclone mount ${params.s3remoteName}:${params.s3bucketName} ${params.s3startingPoint} --vfs-cache-mode off --read-only -vvv & sleep 10" : ""
+    def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
     """
+    # Mount S3 if required
+    {mount_command}
+
     ls -1 *.bam > bam_files_list.txt;
     samtools \\
         depth \\
@@ -53,12 +46,7 @@ process COMPUTEDEPTHS {
         ${minimum_depth} \\
         | gzip -c > ${prefix}.depths.tsv.gz;
 
-    if [ -f \$PWD/beforescript.log ]; then
-        cp \$PWD/beforescript.log .
-    fi
-
-    echo "Contents of beforescript.log:"
-    cat beforescript.log || echo "beforescript.log not found"
+    {unmount_command}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
