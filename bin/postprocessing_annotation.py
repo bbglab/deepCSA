@@ -211,7 +211,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
         annotated_variants_reduced[gnomad_columns] = annotated_variants_reduced[gnomad_columns].replace("-", 0).astype(float)
 
         # add a column to flag the variants considered to be SNPs based on gnomad information
-        annotated_variants_reduced["gnomAD_SNP"] = (annotated_variants_reduced['gnomADe_AF'] > 0.1) | (annotated_variants_reduced['gnomADg_AF'] > 0.1)
+        annotated_variants_reduced["gnomAD_SNP"] = (annotated_variants_reduced['gnomADe_AF'] > 0.01) | (annotated_variants_reduced['gnomADg_AF'] > 0.01)
         annotated_variants_columns += ["gnomAD_SNP"]
 
 
