@@ -81,7 +81,7 @@ def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
     return returned_df
 
 
-def safe_transform_context(row):
+def safe_transform_context(row, chosen_assembly):
     if pd.isna(row["POS"]) or pd.isna(row["CHROM"]) or pd.isna(row["REF"]) or pd.isna(row["ALT"]):
         return "UNKNOWN"
     return transform_context(row["CHROM"], row["POS"], f'{row["REF"]}/{row["ALT"]}', chosen_assembly)
