@@ -46,8 +46,8 @@ process ENSEMBLVEP_VEP {
     """
     # Copy VEP cache to TMPDIR
     if [ -n "$cache" ]; then
-        mkdir -p \${TMPDIR}/vep_cache
-        cp -R $cache/* \${TMPDIR}/vep_cache/
+        mkdir -p \${TMPDIR}/vep_cache/${species}/${cache_version}_${genome}/
+        cp -R $cache/${species}/${cache_version}_${genome}/* \${TMPDIR}/vep_cache/${species}/${cache_version}_${genome}/
     fi
 
     # this is to ensure that we will be able to match the tab and vcf files afterwards
