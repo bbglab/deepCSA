@@ -40,10 +40,16 @@ process ENSEMBLVEP_VEP {
     def file_extension = args.contains("--vcf") ? 'vcf' : args.contains("--json")? 'json' : args.contains("--tab")? 'tab' : 'vcf'
     def compress_cmd = args.contains("--compress_output") ? '' : '--compress_output bgzip'
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def dir_cache = cache ? "\${PWD}/${cache}" : "/.vep"
+    def dir_cache = cache ? "\${TMPDIR}/vep_cache" : "/.vep"
     def reference = fasta ? "--fasta $fasta" : ""
 
     """
+    # Copy VEP cache to TMPDIR
+    if [ -n "$cache" ]; then
+        mkdir -p \${TMPDIR}/vep_cache
+        cp -R $cache/* \${TMPDIR}/vep_cache/
+    fi
+
     # this is to ensure that we will be able to match the tab and vcf files afterwards
     # the structure of the ID is the following:
     vep \\
@@ -57,6 +63,7 @@ process ENSEMBLVEP_VEP {
         --cache \\
         --cache_version $cache_version \\
         --dir_cache $dir_cache \\
+        --no_stats --no_progress --quiet\\
         --fork $task.cpus
 
 
