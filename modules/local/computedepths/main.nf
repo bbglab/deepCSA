@@ -33,7 +33,7 @@ process COMPUTEDEPTHS {
     def unmount_command = params.mountS3 ? "fusermount -u ${params.s3startingPoint}" : ""
     """
     # Mount S3 if required
-    {mount_command}
+    ${mount_command}
 
     ls -1 *.bam > bam_files_list.txt;
     samtools \\
@@ -46,7 +46,7 @@ process COMPUTEDEPTHS {
         ${minimum_depth} \\
         | gzip -c > ${prefix}.depths.tsv.gz;
 
-    {unmount_command}
+    ${unmount_command}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
