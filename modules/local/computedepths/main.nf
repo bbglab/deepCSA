@@ -8,6 +8,7 @@ process COMPUTEDEPTHS {
     'bbglab/rclone-samtools:latest' }"
 
     runOptions = '--fakeroot --no-home -B /data/bbg/software/tower -B /data/bbg/datasafe/prominent/data/mount'
+    clusterOptions '--nodelist=irbccn23'
 
     input:
     tuple val(meta), path(bam)
