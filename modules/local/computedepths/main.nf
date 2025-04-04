@@ -7,6 +7,8 @@ process COMPUTEDEPTHS {
     'docker://bbglab/rclone-samtools:latest' :
     'bbglab/rclone-samtools:latest' }"
 
+    runOptions = '--fakeroot --no-home -B /data/bbg/software/tower -B /data/bbg/datasafe/prominent/data/mount'
+
     input:
     tuple val(meta), path(bam)
     path (custombed)
