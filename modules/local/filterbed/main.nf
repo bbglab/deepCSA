@@ -1,9 +1,4 @@
 process FILTERBED {
-    // TODO
-    // reimplement it in a way that uses a BED file to know which mutations are inside
-    // the regions and which ones are outside this way we avoid having to load too many
-    // things in python that might slow things down
-    // Look at the low mappability or low complexity filtering of the deepUMIcaller pipeline
 
     tag "$meta.id"
     label 'process_high'
@@ -23,6 +18,7 @@ process FILTERBED {
 
     script:
     def filtername = task.ext.filtername ?: "covered"
+    // TODO reimplement it with click
     """
     filterbed.py ${maf} ${bedfile} ${filtername};
 
@@ -33,7 +29,6 @@ process FILTERBED {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.vep.summary.tab.gz

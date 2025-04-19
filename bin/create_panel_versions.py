@@ -87,6 +87,7 @@ def create_panel_versions(compact_annot_panel_path, output_path):
     compact_annot_panel_df.to_csv(f"{output_path}.{version}.tsv",
                                     sep = "\t", index = False)
 
+## TODO reimplement with click
 if __name__ == '__main__':
     compact_annot_panel_path = sys.argv[1]
     output_path = sys.argv[2]
