@@ -27,11 +27,11 @@ process PLOT_DEPTHS {
     def plot_within_gene = task.ext.withingene ? "True" : "False"
     """
     plot_depths.py \\
-                ${prefix} \\
-                ${depth} \\
-                ${panel} \\
-                ${panel_version} \\
-                ${plot_within_gene};
+                --sample_name ${prefix} \\
+                --depth_file ${depth} \\
+                --panel_bed6_file ${panel} \\
+                --panel_name ${panel_version} \\
+                --plot_within_gene ${plot_within_gene};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

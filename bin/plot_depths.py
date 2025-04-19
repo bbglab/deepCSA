@@ -30,7 +30,7 @@ def annotate_depth_region(row, dp_df):
 
 
 
-def process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list):
+def process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names):
     """
     Function to process and plot within-gene depths.
     """
@@ -247,14 +247,14 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
     samples_list = depth_df.columns[~depth_df.columns.isin(["CHROM", "POS"])]
 
     stats_per_sample = pd.DataFrame(depth_df[samples_list].describe())
-    stats_per_sample.to_csv(f"{sample_name}.depth_per_sample.stats.tsv", sep='\t', header=True, index=True)
+    stats_per_sample.to_csv(f"{sample_name}.depth_per_sample.stats.tsv", sep='\t', float_format="%.3f", header=True, index=True)
 
     avgdepth_per_sample_names = pd.DataFrame(depth_df[samples_list].mean().T).reset_index()
     avgdepth_per_sample_names.columns = ["SAMPLE_ID", "avg_depth_sample"]
-    avgdepth_per_sample_names.to_csv(f"{sample_name}.avgdepth_per_sample.tsv", sep='\t', header=True, index=False)
+    avgdepth_per_sample_names.to_csv(f"{sample_name}.avgdepth_per_sample.tsv", sep='\t', float_format="%.3f", header=True, index=False)
 
     # Sort the list of samples by depth, ascending
-    samples_list = list(avgdepth_per_sample_names.sort_values(by=["avg_depth_sample"], ascending=True)["SAMPLE_ID"].values)
+    samples_list = list(avgdepth_per_sample_names.sort_values(by=["avg_depth_sample"], ascending=False)["SAMPLE_ID"].values)
 
     # Load BED file with probes info
     bed6_probes_df = pd.read_csv(panel_bed6_file, sep="\t", header=0).reset_index()
@@ -264,27 +264,25 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
     bed6_probes_df["CHROM"] = 'chr' + bed6_probes_df["CHROM"].astype(str)
 
     # Store bed6_probes_df
-    bed6_probes_df.to_csv(f"{sample_name}.bed6_probes_df.tsv", sep='\t', header=True, index=False)
+    bed6_probes_df.to_csv(f"{sample_name}.bed6_probes_df.tsv", sep='\t', float_format="%.3f", header=True, index=False)
 
 
     bed6_probes_df = bed6_probes_df.apply(lambda row: annotate_depth_region(row, depth_df), axis = 1)
-    bed6_probes_df = bed6_probes_df.drop(["START", "END"], axis = 'columns').explode(["SAMPLE_ID", "EXON_SEQ", "EXON_SIZE"])
+    bed6_probes_df = bed6_probes_df.explode(["SAMPLE_ID", "EXON_SEQ", "EXON_SIZE"])
     bed6_probes_df = bed6_probes_df.dropna().reset_index(drop = True)
-
-
 
     # compute mean depth per gene
     bed6_probesByGene_df = bed6_probes_df.groupby(["GENE", "SAMPLE_ID"]).agg({"EXON_SEQ" : 'sum', "EXON_SIZE" : 'sum'}).reset_index()
     bed6_probesByGene_df["MEAN_GENE_DEPTH"] = bed6_probesByGene_df["EXON_SEQ"] / bed6_probesByGene_df["EXON_SIZE"]
     bed6_probesByGene_df_to_store = bed6_probesByGene_df.copy()
     bed6_probesByGene_df_to_store.columns = ["GENE", "SAMPLE_ID", "GENE_SEQ", "GENE_SIZE", "MEAN_GENE_DEPTH"]
-    bed6_probesByGene_df_to_store.to_csv(f"{sample_name}.depth_per_gene_per_sample.tsv", sep = '\t', header = True, index = False)
+    bed6_probesByGene_df_to_store.to_csv(f"{sample_name}.depth_per_gene_per_sample.tsv", sep = '\t', float_format="%.3f", header = True, index = False)
 
     bed6_probesByGene_df = bed6_probesByGene_df.drop(["EXON_SEQ", "EXON_SIZE"], axis = 'columns')
 
     average_depth_per_gene = bed6_probesByGene_df_to_store.groupby(by = ["GENE"] )[["GENE_SIZE", "MEAN_GENE_DEPTH"]].mean().reset_index()
     genes_list = list(average_depth_per_gene.sort_values(by = ["MEAN_GENE_DEPTH"], ascending = False)["GENE"].values)
-    average_depth_per_gene.to_csv(f"{sample_name}.avgdepth_per_gene.tsv", sep = '\t', header = True, index = False)
+    average_depth_per_gene.to_csv(f"{sample_name}.avgdepth_per_gene.tsv", sep = '\t', float_format="%.3f", header = True, index = False)
 
 
 
@@ -323,7 +321,7 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
         sns.stripplot(data = bed6_probesByGene_df,
                     x = "GENE", y = "MEAN_GENE_DEPTH",
                     ax = ax2,
-                        # order = panel, palette = colors
+                    # order = panel, palette = colors
                     # hue = "PROJECT_NAME",
                     # palette = colors,
                     jitter = True,
@@ -379,7 +377,7 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
         else:
             # If the number of SAMPLE_ID values does not exceed the maximum, plot all SAMPLE_ID values in a single plot
             fig, ax = plt.subplots(figsize=(15, 5))
-            sns.boxplot(data=bed6_probesByGene_df, x="SAMPLE_ID", y="MEAN_GENE_DEPTH", ax=ax, order=samples_list)
+            sns.boxplot(data=bed6_probesByGene_df, x="SAMPLE_ID", y="MEAN_GENE_DEPTH", ax=ax, order=samples_list, showfliers = False)
             sns.stripplot(data=bed6_probesByGene_df, x="SAMPLE_ID", y="MEAN_GENE_DEPTH", ax=ax, order=samples_list,
                         jitter=True, alpha=0.5, size=4)
             ax.set_title("Depth per SAMPLE_ID")
@@ -450,8 +448,9 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
         ## Mean depth per gene
         ######
         plt.figure(figsize = (14,6))
-        ax = sns.lineplot(data = bed6_probesByGene_df, x = "GENE", y = "MEAN_GENE_DEPTH", alpha = .7,
-                        order = genes_list,
+        bed6_probesByGene_df_per_gene = bed6_probesByGene_df.copy()
+        bed6_probesByGene_df_per_gene["GENE"] = pd.Categorical(bed6_probesByGene_df_per_gene["GENE"], categories=genes_list, ordered=True)
+        ax = sns.lineplot(data = bed6_probesByGene_df_per_gene, x = "GENE", y = "MEAN_GENE_DEPTH", alpha = .7,
                         hue = "SAMPLE_ID",
                         hue_order = samples_list,
                         legend = False
@@ -462,15 +461,16 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
         plt.show()
         pdf.savefig()
         plt.close()
-
+        del bed6_probesByGene_df_per_gene
 
 
         ######
         ## Mean depth per sample
         ######
         plt.figure(figsize = (14,6))
-        ax = sns.lineplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", alpha = .7,
-                        order = samples_list,
+        bed6_probesByGene_df_per_sample = bed6_probesByGene_df.copy()
+        bed6_probesByGene_df_per_sample["SAMPLE_ID"] = pd.Categorical(bed6_probesByGene_df_per_sample["SAMPLE_ID"], categories=samples_list, ordered=True)
+        ax = sns.lineplot(data = bed6_probesByGene_df_per_sample, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", alpha = .7,
                         hue = "GENE",
                         hue_order = genes_list,
                         legend = False
@@ -481,6 +481,7 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
         plt.show()
         pdf.savefig()
         plt.close()
+        del bed6_probesByGene_df_per_sample
 
 
 
@@ -507,7 +508,7 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
     # Now it starts to contain within gene information, exons, normalized scores, ...
     ####
     if plot_within_gene:
-        process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list)
+        process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names)
 
 
 
