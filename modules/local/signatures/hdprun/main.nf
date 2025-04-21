@@ -29,7 +29,10 @@ process RUN_HDP_WRAPPER {
     data <- data[-c(1),]
     data[,-c(1)] <- sapply(data[,-c(1)], as.numeric)
     data <- data[,-c(1)]
+    write.table(data, file = "${prefix}.before_round.hdp.csv")
+    data <- round(data)
     saveRDS(data, file = "${prefix}.hdp.rds")
+    write.table(data, file = "${prefix}.hdp.csv")
     EOF
 
     # Run the R script
@@ -42,6 +45,7 @@ process RUN_HDP_WRAPPER {
     colnames(data) <- c("sample", "individual")
     data\\\$group = "L"
     saveRDS(data, file = "${prefix}.hdp.treelayer.rds")
+    write.table(data, file = "${prefix}.hdp.treelayer.csv")
     EOFF
 
 
