@@ -2,17 +2,12 @@ include { SIGPROFILERASSIGNMENT                                     } from '../.
 include { MATRIX_CONCAT                         as MATRIXCONCATWGS  } from '../../../modules/local/sig_matrix_concat/main'
 // include { MATRIX_CONCAT                        as MATRIXCONCAT      } from '../../../modules/local/sig_matrix_concat/main'
 include { SIGNATURES_PROBABILITIES              as SIGPROBS         } from '../../../modules/local/combine_sbs/main'
-include { MSIGHDP                                                   } from '../../../modules/local/signatures/msighdp/main'
-include { RUN_HDP_WRAPPER                       as HDPRUN           } from '../../../modules/local/signatures/hdprun/main'
-
-// include { HDP_EXTRACTION                       as HDPEXTRACTION     } from '../signatures_hdp/main'
-
-//     HDPEXTRACTION(named_matrices_wgs_hdp, named_matrices_wgs, reference_signatures)
+// include { MSIGHDP                                                   } from '../../../modules/local/signatures/msighdp/main'
+include { HDP_EXTRACTION                        as HDPEXTRACTION    } from '../signatures_hdp/main'
 
 
 workflow SIGNATURES {
     take:
-    matrix
     matrix_wgs
     reference_signatures
     samples
@@ -32,7 +27,7 @@ workflow SIGNATURES {
     SIGPROBS(all_sigs_probs)
     SIGPROBS.out.signature_probs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ signature_probs_samples }
 
-    HDPRUN(named_matrices_wgs_hdp, named_matrices_wgs, reference_signatures)
+    HDPEXTRACTION(named_matrices_wgs_hdp, reference_signatures)
 
     // matrix.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ all_matrices }
     // MATRIXCONCAT(all_matrices, samples)

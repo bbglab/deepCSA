@@ -32,7 +32,7 @@ maxiterEM=1000
 EMfracThreshold=0.1
 
 #script directory
-scriptDir='/home/fcalvet/dev/HDP/HDP_sigExtraction/R/'
+scriptDir='/app/HDP_sigExtraction/R'
 
 
 #####################

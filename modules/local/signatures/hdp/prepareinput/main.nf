@@ -1,4 +1,6 @@
-process RUN_HDP_WRAPPER {
+
+process PREPARE_INPUT {
+
     tag "$meta.id"
     label 'process_medium'
 
@@ -6,12 +8,9 @@ process RUN_HDP_WRAPPER {
 
     input:
     tuple val(meta) , path(matrix)
-    tuple val(meta2), path(treelayers)
-    path(ref_signatures)
 
     output:
-    tuple val(meta), path("*.hdp.rds"), path("*treelayer.rds")  , emit: rds_data
-    path("**.pdf")                                              , emit: plots
+    tuple val(meta), path("*.hdp.rds"), path("*treelayer.rds")  , emit: input_data
     path "versions.yml"                                         , topic: versions
 
     when:
@@ -48,26 +47,8 @@ process RUN_HDP_WRAPPER {
     write.table(data, file = "${prefix}.hdp.treelayer.csv")
     EOFF
 
-
     # Run the R script
     Rscript process_metadata.R
-
-
-    cat <<-END_INPUT > input.txt
-    ${prefix}.hdp.rds\t${prefix}.hdp.treelayer.rds
-    END_INPUT
-
-    HDP_wrapper.sh \\
-                input.txt \\
-                ${ref_signatures} \\
-                ${prefix}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        R       : \$(Rscript --version | sed -e 's/.*version //g')
-        Rscript : \$(Rscript --version | sed -e 's/.*version //g')
-        HDP     : original
-    END_VERSIONS
     """
 
     stub:
@@ -83,4 +64,5 @@ process RUN_HDP_WRAPPER {
         HDP     : original
     END_VERSIONS
     """
+
 }
