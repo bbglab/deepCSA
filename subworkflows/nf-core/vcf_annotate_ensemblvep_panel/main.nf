@@ -5,6 +5,10 @@
 
 include { ENSEMBLVEP_VEP } from '../../../modules/nf-core/ensemblvep/veppanel/main'
 // include { TABIX_TABIX    } from '../../../modules/nf-core/tabix/tabix/main'
+include { SPLIT_TSV_BY_CHROM }    from '../../../modules/local/process_annotation/splittsvbychrom/main'
+include { MERGE_VEP }      from '../../../modules/local/process_annotation/mergevep/main'
+
+
 
 workflow VCF_ANNOTATE_ENSEMBLVEP {
     take:
@@ -18,17 +22,29 @@ workflow VCF_ANNOTATE_ENSEMBLVEP {
 
     main:
 
-    ENSEMBLVEP_VEP(vcf, vep_genome, vep_species, vep_cache_version, vep_cache, fasta, vep_extra_files)
-    // TABIX_TABIX(ENSEMBLVEP_VEP.out.vcf)
+    SPLIT_TSV_BY_CHROM(tsv)
+    // Run VEP on each chromosome in parallel
+    ENSEMBLVEP_VEP(
+        SPLIT_TSV_BY_CHROM.out.tsv_chunks.flatten(),
+        vep_genome,
+        vep_species,
+        vep_cache_version,
+        vep_cache,
+        fasta,
+        vep_extra_files
+    )
+    // Group the results by meta before merging
+    vcf_annotated = ENSEMBLVEP_VEP.out.vcf.groupTuple()
+    tab_annotated = ENSEMBLVEP_VEP.out.tab.groupTuple()
+    json_annotated = ENSEMBLVEP_VEP.out.json.groupTuple()
+    reports = ENSEMBLVEP_VEP.out.report.collect()
 
-    // ch_vcf_tbi = ENSEMBLVEP_VEP.out.vcf.join(TABIX_TABIX.out.tbi, failOnDuplicate: true, failOnMismatch: true)
-
-    // Gather versions of all tools used
+    // Merge the annotated tab files
+    MERGE_VEP(tab_annotated)
 
     emit:
-    // vcf_tbi  = ch_vcf_tbi                  // channel: [ val(meta), vcf.gz, vcf.gz.tbi ]
-    vcf      = ENSEMBLVEP_VEP.out.vcf      // channel: [ val(meta), vcf ]
-    json     = ENSEMBLVEP_VEP.out.json     // channel: [ val(meta), json ]
-    tab      = ENSEMBLVEP_VEP.out.tab      // channel: [ val(meta), tab ]
-    reports  = ENSEMBLVEP_VEP.out.report   // channel: [ *.html ]
+    vcf      = vcf_annotated      // channel: [ val(meta), [vcf1.gz, vcf2.gz, ...] ]
+    tab      = MERGE_VEP.out.tab  // channel: [ val(meta), merged.tab.gz ]
+    json     = json_annotated     // channel: [ val(meta), [json1.gz, json2.gz, ...] ]
+    reports  = reports            // channel: [ *.html ]
 }
