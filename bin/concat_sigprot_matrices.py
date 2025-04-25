@@ -62,3 +62,6 @@ def main(filename_of_matrices, samples_json_file, type_of_profile):
     concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_profile)
     click.echo("Matrices concatenation completed.")
 
+
+if __name__ == '__main__':
+    main()
