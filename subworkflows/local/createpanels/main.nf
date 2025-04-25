@@ -52,6 +52,11 @@ workflow CREATE_PANELS {
 
     main:
 
+    // temporary added for testing
+    withName: '.*' {
+        cache = false
+    }
+
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
 
