@@ -10,11 +10,10 @@ process ENSEMBLVEP_VEP {
             params.vep_cache_version == 111 ? 'bioconda::ensembl-vep=111.0' :  
             'bioconda::ensembl-vep=111.0' 
 
-    container params.vep_cache_version == 108 ? "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/ensembl-vep:108.2--pl5321h4a94de4_0' : 'biocontainers/ensembl-vep:108.2--pl5321h4a94de4_0' }" : 
-                params.vep_cache_version == 102 ? "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/ensembl-vep:102.0--pl526hecda079_0' : 'biocontainers/ensembl-vep:102.0--pl526hecda079_0' }" : 
-                params.vep_cache_version == 111 ? "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/ensembl-vep:111.0--pl5321h2a3209d_0' : 'biocontainers/ensembl-vep:111.0--pl5321h2a3209d_0' }" :
-                "biocontainers/ensembl-vep:111.0--pl5321h2a3209d_0"
-
+    container "${ params.vep_cache_version == 108 ? 'biocontainers/ensembl-vep:108.2--pl5321h4a94de4_0' :
+                  params.vep_cache_version == 102 ? 'biocontainers/ensembl-vep:102.0--pl526hecda079_0' :
+                  params.vep_cache_version == 111 ? 'biocontainers/ensembl-vep:111.0--pl5321h2a3209d_0' :
+                  'biocontainers/ensembl-vep:111.0--pl5321h2a3209d_0' }"
 
     input:
     tuple val(meta), path(vcf)
