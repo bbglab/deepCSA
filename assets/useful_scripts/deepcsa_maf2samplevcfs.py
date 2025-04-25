@@ -1,17 +1,57 @@
 #!/usr/bin/env python
 
+# if the maf is from deepCSA, use this one, otherwise use the one below
 # usage: python deepcsa_maf2vcf.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/ --maf-from-deepcsa
+
+# if the maf file is not from deepCSA, use this below
+# usage: python deepcsa_maf2vcf.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
 
 import click
 import pandas as pd
 
 
-def build_vcf_like_dataframe(mutations_dataframe):
+def build_vcf_like_dataframe(mutations_dataframe, samplee):
     """
     Build a VCF-like dataframe from the mutations dataframe.
+    input needs to have:
+        ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH']
+    output needs to have:
+        ['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']
     """
+    for col in ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH']:
+        if col not in mutations_dataframe.columns:
+            raise ValueError(f"Column {col} is missing from the mutations dataframe.")
+    
+    # fill FILTER and INFO columns with default values
+    if "FILTER" not in mutations_dataframe.columns:
+        print("WARNING: FILTER column is missing from the mutations dataframe. Setting it to 'PASS' for all mutations")
+        mutations_dataframe["FILTER"] = "PASS"
+    if "INFO" not in mutations_dataframe.columns:
+        print(f"WARNING: INFO column is missing from the mutations dataframe. Setting it to 'SAMPLE={samplee};'")
+        mutations_dataframe["INFO"] = f"SAMPLE={samplee};"
 
-    return "not implemented yet"
+    # Create a new dataframe with the required columns
+    vcf_like_df = mutations_dataframe[['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'DEPTH', 'ALT_DEPTH']].copy()
+    vcf_like_df["FORMAT"] = "GT:DP:VD:AD:AF:RD:ALD:CDP:CAD:NDP:CDPAM:CADAM:NDPAM"
+    vcf_like_df["SAMPLE"] = vcf_like_df[['DEPTH', 'ALT_DEPTH']].apply(
+        lambda x: "{GT}:{DP}:{VD}:{AD}:{AF}:{RD}:{ALD}:{CDP}:{CAD}:{NDP}:{CDPAM}:{CADAM}:{NDPAM}".format(
+            GT="0/1",
+            DP=x['DEPTH'],
+            VD=x['ALT_DEPTH'],
+            AD=f"{x['DEPTH'] - x['ALT_DEPTH']},{x['ALT_DEPTH']}",
+            AF=round(x['ALT_DEPTH'] / x['DEPTH'] , 5),
+            RD=f"{(x['DEPTH'] - x['ALT_DEPTH'])//2},{(x['DEPTH'] - x['ALT_DEPTH'])//2 if (x['DEPTH'] - x['ALT_DEPTH']) % 2 == 0 else (x['DEPTH'] - x['ALT_DEPTH'])//2 + 1}",
+            ALD=f"{x['ALT_DEPTH']//2},{x['ALT_DEPTH']//2 if x['ALT_DEPTH'] % 2 == 0 else x['ALT_DEPTH']//2 + 1}",
+            CDP=x['DEPTH'],
+            CAD=f"{x['DEPTH'] - x['ALT_DEPTH']},{x['ALT_DEPTH']}",
+            NDP="0",
+            CDPAM=x['DEPTH'],
+            CADAM=f"{x['DEPTH'] - x['ALT_DEPTH']},{x['ALT_DEPTH']}",
+            NDPAM="0" 
+        ),
+        axis=1
+    )
+    return vcf_like_df
 
 filters_to_remove = ["not_in_exons", "not_covered"]
 def remove_deepcsa_filters(old_filt, filters_to_removee):
@@ -120,7 +160,7 @@ def main(mutations_file, output_dir, maf_from_deepcsa):
         if maf_from_deepcsa:
             vcf_info_sample = sample_mutations[['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']].copy()
         else:
-            vcf_info_sample = build_vcf_like_dataframe(sample_mutations)
+            vcf_info_sample = build_vcf_like_dataframe(sample_mutations, sample)
             # mandatory columns should be: [['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'DEPTH', 'ALT_DEPTH']]
             # Ns can be assumed 0 and AM can be assumed to be the same as duplex
 
