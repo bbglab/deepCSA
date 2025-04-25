@@ -22,7 +22,7 @@ workflow VCF_ANNOTATE_ENSEMBLVEP {
 
     main:
 
-    SPLIT_TSV_BY_CHROM(tsv)
+    SPLIT_TSV_BY_CHROM(vcf)
     // Run VEP on each chromosome in parallel
     ENSEMBLVEP_VEP(
         SPLIT_TSV_BY_CHROM.out.tsv_chunks.flatten(),
