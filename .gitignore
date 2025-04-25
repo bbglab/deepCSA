@@ -10,3 +10,4 @@ nf-*-reports.tsv
 .nf*
 *.sif
 ste_notes.txt
+assets/HDP_files*
