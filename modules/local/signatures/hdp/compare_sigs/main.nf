@@ -3,15 +3,15 @@ process COMPARE_SIGNATURES {
     tag "$meta.id"
     label 'process_medium'
 
-    container 'docker.io/ferriolcalvet/hdp_stefano:latest'
+    container 'docker.io/ferriolcalvet/hdp_stefano:0.1.0'
 
     input:
     tuple val(meta), path(output_dir)
     path (reference_signatures)
 
     output:
-    tuple val(meta), path("compared_output_dir"), emit: compared_results
-    path "versions.yml"                         , topic: versions
+    tuple val(meta), path("*.compared_output_dir")  , emit: compared_results
+    path "versions.yml"                             , topic: versions
 
 
     // when:
@@ -21,17 +21,16 @@ process COMPARE_SIGNATURES {
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    Rscript run_HDP_comparing.R \\
-        $output_dir \\
-        ${params.cosine_sim_threshold} \\
-        ${params.max_iter_em} \\
-        ${params.em_frac_threshold} \\
+    Rscript /app/HDP_sigExtraction/R/run_HDP_comparing.R \\
+        output_dir/ \\
+        ${args} \\
         ${reference_signatures} \\
         "NA" \\
         "FALSE"
-    cp -r $output_dir compared_output_dir
+    cp -r output_dir ${prefix}.compared_output_dir
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

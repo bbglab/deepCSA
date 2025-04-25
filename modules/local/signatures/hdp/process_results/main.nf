@@ -2,11 +2,11 @@ process  PROCESS_HDP_RESULTS {
     tag "$meta.id"
     label 'process_medium'
 
-    container 'docker.io/ferriolcalvet/hdp_stefano:latest'
+    container 'docker.io/ferriolcalvet/hdp_stefano:0.1.0'
 
     input:
     tuple val(meta), path(count_matrix), path(tree_layers)
-    path iteration_dir
+    tuple val(meta2), path (iteration_dir)
 
     output:
     tuple val(meta), path("output_dir"), emit: processed_results
@@ -19,14 +19,13 @@ process  PROCESS_HDP_RESULTS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    Rscript run_HDP_processing.R \\
+    mkdir -p output_dir/iterations/
+    mv hdp_chains_*.RData output_dir/iterations/.
+    Rscript /app/HDP_sigExtraction/R/run_HDP_processing.R \\
         $count_matrix \\
-        output_dir \\
+        output_dir/ \\
         $tree_layers \\
-        ${params.prior_file} \\
-        ${params.n_mut_cutoff} \\
-        ${params.sig_activity_threshold} \\
-        ${params.cohort_threshold}
+        ${args}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

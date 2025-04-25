@@ -7,21 +7,6 @@ include { COMPARE_SIGNATURES as COMPARESIGNATURES               } from '../../..
 // include { COMPARE_SIGNATURES as COMPARECANCERSIGNATURES         } from '../../../modules/local/signatures/hdp/compare_sigs/main'
 
 
-params.norm_file = "NA"
-params.prior_file = "NA"
-params.n_mut_cutoff = 50
-params.sig_activity_threshold = 0
-params.cohort_threshold = 0
-params.burnin = 10000
-params.n_posterior = 100
-params.space = 200
-params.cpiter = 3
-params.iterations = 15
-params.cosine_sim_threshold = 0.9
-params.max_iter_em = 1000
-params.em_frac_threshold = 0.1
-
-
 
 
 workflow HDP_EXTRACTION {
@@ -32,7 +17,11 @@ workflow HDP_EXTRACTION {
 
     main:
 
-    PREPARE_INPUT(matrix)
+    Channel.of([ [ id: "samples_matrix" ] ])
+    .join( matrix )
+    .set{ samples_matrix }
+
+    PREPARE_INPUT(samples_matrix)
 
     // Create a channel with iter values from 1 to 15
     iter_ch = Channel.of(1..15)
@@ -46,15 +35,14 @@ workflow HDP_EXTRACTION {
     // Collect all iteration results
     all_iterations_ch = RUN_HDP_CHAIN_SAMPLING.out.iteration_results.groupTuple()
 
-
-    processed_results_ch = PROCESS_HDP_RESULTS(PREPARE_INPUT.out.input_data, all_iterations_ch)
+    PROCESS_HDP_RESULTS(PREPARE_INPUT.out.input_data, all_iterations_ch)
 
     // if (params.norm_file != "NA") {
     //     normalized_results_ch = NORMALIZE_SIGNATURES(processed_results_ch)
     //     compared_normalized_results_ch = COMPARENORMALIZEDSIGNATURES(normalized_results_ch, reference_signatures)
     // }
 
-    compared_results_ch = COMPARESIGNATURES(processed_results_ch, reference_signatures)
+    COMPARESIGNATURES(PROCESS_HDP_RESULTS.out.processed_results, reference_signatures)
 
     // final_results_ch = COMPARECANCERSIGNATURES(compared_results_ch, reference_signatures)
 

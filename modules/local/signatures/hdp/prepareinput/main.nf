@@ -4,14 +4,14 @@ process PREPARE_INPUT {
     tag "$meta.id"
     label 'process_medium'
 
-    container 'docker.io/ferriolcalvet/hdp_stefano:latest'
+    container 'docker.io/ferriolcalvet/hdp_stefano:0.1.0'
 
     input:
     tuple val(meta) , path(matrix)
 
     output:
-    tuple val(meta), path("*.hdp.rds"), path("*treelayer.rds")  , emit: input_data
-    path "versions.yml"                                         , topic: versions
+    tuple val(meta), path("*.hdp.rds"), path("*.hdp.treelayer.rds") , emit: input_data
+    path "versions.yml"                                             , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -49,6 +49,12 @@ process PREPARE_INPUT {
 
     # Run the R script
     Rscript process_metadata.R
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        R       : \$(Rscript --version | sed -e 's/.*version //g')
+        Rscript : \$(Rscript --version | sed -e 's/.*version //g')
+        HDP     : original
+    END_VERSIONS
     """
 
     stub:
