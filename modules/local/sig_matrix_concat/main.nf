@@ -9,18 +9,20 @@ process MATRIX_CONCAT {
     path (json_samples)
 
     output:
-    path("*_matrix.tsv")  , emit: wgs_tsv
+    path("*_matrix*.tsv")  , emit: wgs_tsv
     path "versions.yml"   , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    ls ${matrix_files} > all_files.txt
-    concat_sigprot_matrices.py all_files.txt ${json_samples}
+    ls ${matrix_files} > all_files.txt;
+    concat_sigprot_matrices.py \\
+                --filename_of_matrices all_files.txt \\
+                --samples_json_file ${json_samples} \\
+                --type_of_profile ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -29,11 +31,10 @@ process MATRIX_CONCAT {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch samples_matrix.tsv
-    touch groups_matrix.tsv
+    touch samples_matrix.${prefix}.tsv
+    touch groups_matrix.${prefix}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
