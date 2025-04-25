@@ -25,7 +25,9 @@ workflow VCF_ANNOTATE_ENSEMBLVEP {
     SPLIT_TSV_BY_CHROM(vcf)
     // Run VEP on each chromosome in parallel
     ENSEMBLVEP_VEP(
-        SPLIT_TSV_BY_CHROM.out.tsv_chunks.flatten(),
+        SPLIT_TSV_BY_CHROM.out.tsv_chunks.flatMap { meta, files -> 
+        files.collect { file -> [meta, file] }
+        },
         vep_genome,
         vep_species,
         vep_cache_version,
