@@ -1,9 +1,10 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import sys
 import pandas as pd
 import json
 
+## TODO reimplement with click
 filename_of_matrices = sys.argv[1]
 samples_json_file = sys.argv[2] # either tab or comma
 

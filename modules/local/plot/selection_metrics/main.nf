@@ -3,7 +3,7 @@ process PLOT_SELECTION_METRICS {
     tag "$meta.id"
     label 'process_low'
 
-    container 'docker.io/ferriolcalvet/deepcsa_python:20240724_latest'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(results_files)

@@ -1,5 +1,6 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
+# TODO: bump pandas to 2.2.3
 
 import click
 import pandas as pd
@@ -7,7 +8,7 @@ import pandas as pd
 
 def process_signatures(signature_probabilities_files):
     """
-    INFO
+    Processes mutation probability signature files and outputs per-sample probability files.
     """
 
     sig_probs_matrix = pd.concat((pd.read_csv(file.strip(), sep='\t', header=0) for file in open(signature_probabilities_files, 'r')), axis=0)
@@ -21,10 +22,13 @@ def process_signatures(signature_probabilities_files):
     sig_probs_matrix = sig_probs_matrix.fillna(0)
 
     for sample in sig_probs_matrix["Sample Names"].unique():
-        sig_probs_matrix[sig_probs_matrix["Sample Names"] == sample].drop(["Sample Names"], axis = 1).to_csv(f"{sample}.decomposed_probabilities.tsv",
-                                                                                                header=True,
-                                                                                                index=False,
-                                                                                                sep="\t")
+        sample_df = sig_probs_matrix[sig_probs_matrix["Sample Names"] == sample].drop(["Sample Names"], axis = 1).copy()
+
+        sample_df.to_csv(f"{sample}.decomposed_probabilities.tsv",
+                            header=True,
+                            index=False,
+                            float_format=None,
+                            sep="\t")
 
 
 
@@ -37,4 +41,3 @@ def main(signature_probabilities):
 
 if __name__ == '__main__':
     main()
-

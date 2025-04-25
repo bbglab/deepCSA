@@ -1,6 +1,4 @@
-#!/usr/local/bin/python
-
-
+#!/usr/bin/env python
 
 # TODO
 # add plotting modules to bgreference container

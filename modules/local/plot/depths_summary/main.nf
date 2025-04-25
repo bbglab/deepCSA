@@ -1,36 +1,37 @@
 process PLOT_DEPTHS {
+
     tag "$meta.id"
     label 'process_single'
     label 'time_low'
     label 'process_high_memory'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/seaborn:0.12.2_cv1' :
-        'biocontainers/seaborn:0.12.2_cv1' }"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(depth)
     tuple val(meta2), path(panel)
 
     output:
-    tuple val(meta), path("*.pdf")          , emit: plots
-    tuple val(meta), path("*depth*.tsv")    , emit: depths
-    path  "versions.yml"                    , topic: versions
+    tuple val(meta), path("*.pdf")                      , emit: plots
+    tuple val(meta), path("*.avgdepth_per_sample.tsv")  , emit: average_per_sample
+    tuple val(meta), path("*depth*.tsv")                , emit: depths
+    path  "versions.yml"                                , topic: versions
 
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
+    def plot_within_gene = task.ext.withingene ? "True" : "False"
     """
     plot_depths.py \\
-                ${prefix} \\
-                ${depth} \\
-                ${panel} \\
-                ${panel_version};
+                --sample_name ${prefix} \\
+                --depth_file ${depth} \\
+                --panel_bed6_file ${panel} \\
+                --panel_name ${panel_version} \\
+                --plot_within_gene ${plot_within_gene};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

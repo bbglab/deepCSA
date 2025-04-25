@@ -602,7 +602,12 @@
                 },
                 "filter_criteria": {
                     "type": "array",
-                    "description": "List of filters to apply for the somatic mutations.",
+                    "description": "List of filters to apply for removing the artifactual mutations.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "filter_criteria_somatic": {
+                    "type": "array",
+                    "description": "List of filters to apply for getting only somatic mutations.",
                     "fa_icon": "far fa-file-code"
                 }
             }

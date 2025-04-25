@@ -1,9 +1,7 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 
 
-# TODO
-# add plotting modules to bgreference container
 import sys
 import pandas as pd
 from utils import add_filter, to_int_if_possible
@@ -50,7 +48,7 @@ def filter_panel_regions(mutations_df, positions_df, filtername):
 
 
 
-
+## TODO reimplement with click
 sample_maf_file = sys.argv[1]
 bedfile = sys.argv[2]
 filtername = sys.argv[3]

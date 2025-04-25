@@ -1,9 +1,8 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 
-import pandas as pd
-import numpy as np
 import sys
+import pandas as pd
 
 from utils_impacts import *
 from read_utils import custom_na_values
@@ -14,8 +13,8 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
                             simple = True
                             ):
     """
-    # TODO
-    explain what this function does
+    # TODO explain what this function does
+
     """
     # simple = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID'          , 'GENE', 'IMPACT'                                              , 'CONTEXT_MUT', 'CONTEXT']
     # rich   = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'GENE', 'IMPACT', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']
@@ -110,6 +109,8 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
 
 
 if __name__ == '__main__':
+    ## TODO reimplement with click
+
     # Input
     # VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
     mutations_file = sys.argv[1]
