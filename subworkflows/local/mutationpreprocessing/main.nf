@@ -11,6 +11,7 @@ include { MERGE_BATCH                   as MERGEBATCH       } from '../../../mod
 include { FILTER_BATCH                  as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                    as WRITEMAF         } from '../../../modules/local/writemaf/main'
 include { SUBSET_MAF                    as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                    as CLEANMUTATIONS   } from '../../../modules/local/subsetmaf/main'
 include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    } from '../../../modules/local/blacklistmuts/main'
 include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_MUTATIONS                as PLOTSOMATICMAF   } from '../../../modules/local/plot/mutations_summary/main'
@@ -73,19 +74,24 @@ workflow MUTATION_PREPROCESSING {
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
-    
-    SOMATICMUTATIONS(named_mafs)
-    
+
+    // Remove mutations that are blacklisted
     if (params.blacklist_mutations) {
         blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
-        BLACKLISTMUTS(SOMATICMUTATIONS.out.mutations, blacklist_mutations)
-        somatic_mutations = BLACKLISTMUTS.out.mutations
+        BLACKLISTMUTS(named_mafs, blacklist_mutations)
+        all_clean_mutations = BLACKLISTMUTS.out.mutations
     } else {
-        somatic_mutations = SOMATICMUTATIONS.out.mutations
+        all_clean_mutations = named_mafs
     }
 
+    // Clean mutations based on artifact filtering decisions
+    CLEANMUTATIONS(all_clean_mutations)
+
+    // Keep only somatic mutations
+    SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
+
     Channel.of([["id": "all_samples"]])
-    .join(somatic_mutations).first()
+    .join(SOMATICMUTATIONS.out.mutations).first()
     .set{muts_all_samples}
 
     PLOTSOMATICMAF(muts_all_samples)
@@ -109,7 +115,8 @@ workflow MUTATION_PREPROCESSING {
 
     emit:
     mafs                    = named_mafs
-    somatic_mafs            = somatic_mutations
+    somatic_mafs            = SOMATICMUTATIONS.out.mutations
+    clean_mafs              = CLEANMUTATIONS.out.mutations
     mutations_all_samples   = muts_all_samples
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
     bedfile_clean           = bedfile_updated

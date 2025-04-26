@@ -23,6 +23,8 @@ process VCF2MAF {
     def batch = task.ext.batch ?: "${meta.batch}"
     def level = task.ext.level ?: "high"
     def all_molecules_dp = task.ext.all_molecules_dp ?: "false"
+    // TODO reimplement it with click
+    // TODO level and all_molecules can be defined in the modules.config file 
     """
     vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation} ${all_molecules_dp};
 

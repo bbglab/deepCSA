@@ -5,6 +5,7 @@ import pandas as pd
 from utils import add_filter
 from read_utils import custom_na_values
 
+## TODO reimplement with click
 maf_df_file = sys.argv[1]
 samp_name = sys.argv[2]
 repetitive_variant_threshold = int(sys.argv[3])
@@ -23,7 +24,6 @@ sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
 ###  Filter repetitive variants
 #######
 
-# TODO revise these numbers, the repetitive_variant_threshold is the boundary at which we start considering a mutation as "repetitive"
 max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
 
 n_samples = list(range(repetitive_variant_threshold, max_samples + 1))

@@ -1,9 +1,8 @@
-
 include { MATRIX_CONCAT                        as MATRIXCONCATWGS   } from '../../../modules/local/sig_matrix_concat/main'
 include { SIGPROFILERASSIGNMENT                                     } from '../../../modules/local/signatures/sigprofiler/assignment/main'
-include { SIGNATURES_PROBABILITIES              as SIGPROBS         } from '../../../modules/local/combine_sbs/main'
+include { SIGNATURES_PROBABILITIES             as SIGPROBS          } from '../../../modules/local/combine_sbs/main'
 // include { MSIGHDP                                                   } from '../../../modules/local/signatures/msighdp/main'
-include { HDP_EXTRACTION                        as HDPEXTRACTION    } from '../signatures_hdp/main'
+include { HDP_EXTRACTION                       as HDPEXTRACTION     } from '../signatures_hdp/main'
 
 
 workflow SIGNATURES {

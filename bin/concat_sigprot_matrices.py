@@ -16,11 +16,12 @@ def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_pro
     samples_only_matrix = None
     groups_matrix = None
 
+    # Read the list of matrix filenames
     with open(filename_of_matrices, 'r') as file:
         for line in file.readlines():
             filename = line.strip()
             sample_name = filename.split('.')[0]
-            sample_data = pd.read_table(filename, sep = '\t', header = 0)
+            sample_data = pd.read_table(filename, sep='\t', header=0)
             sample_data.columns = ["CONTEXT_MUT", sample_name]
             sample_data = sample_data.set_index("CONTEXT_MUT")
 
@@ -82,5 +83,3 @@ def main(filename_of_matrices, samples_json_file, type_of_profile):
 
 if __name__ == '__main__':
     main()
-
-
