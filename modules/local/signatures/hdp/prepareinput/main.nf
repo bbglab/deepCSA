@@ -7,7 +7,7 @@ process PREPARE_INPUT {
     container 'docker.io/ferriolcalvet/hdp_stefano:0.1.0'
 
     input:
-    tuple val(meta) , path(matrix)
+    tuple val(meta) , val(type), path(matrix)
 
     output:
     tuple val(meta), path("*.hdp.rds"), path("*.hdp.treelayer.rds") , emit: input_data
