@@ -16,6 +16,7 @@ include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    } from '../../../mod
 include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_MUTATIONS                as PLOTSOMATICMAF   } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
+include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   } from '../../../modules/local/downsample/mutations/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -79,9 +80,17 @@ workflow MUTATION_PREPROCESSING {
     if (params.blacklist_mutations) {
         blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
         BLACKLISTMUTS(named_mafs, blacklist_mutations)
-        all_clean_mutations = BLACKLISTMUTS.out.mutations
+        _all_clean_mutations = BLACKLISTMUTS.out.mutations
     } else {
-        all_clean_mutations = named_mafs
+        _all_clean_mutations = named_mafs
+    }
+
+    // if (params.downsample && params.downsample_proportion < 1) {
+    if (params.downsample) {
+        DOWNSAMPLEMUTS(_all_clean_mutations)
+        all_clean_mutations = DOWNSAMPLEMUTS.out.downsampled_muts
+    } else {
+        all_clean_mutations = _all_clean_mutations
     }
 
     // Clean mutations based on artifact filtering decisions
@@ -89,6 +98,7 @@ workflow MUTATION_PREPROCESSING {
 
     // Keep only somatic mutations
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
+
 
     Channel.of([["id": "all_samples"]])
     .join(SOMATICMUTATIONS.out.mutations).first()
