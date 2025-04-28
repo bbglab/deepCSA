@@ -1,7 +1,6 @@
 .nextflow*
 .vscode
 work/
-data/
 results/
 .DS_Store
 testing/
@@ -11,3 +10,4 @@ nf-*-reports.tsv
 .nf*
 *.sif
 ste_notes.txt
+assets/HDP_files*

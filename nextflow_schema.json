@@ -772,6 +772,68 @@
                 }
             }
         },
+        "signature_extraction_parameters": {
+            "title": "HDP signature extraction config options",
+            "type": "object",
+            "description": "Parameters for controlling the analysis behavior",
+            "properties": {
+                "n_mut_cutoff": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Mutation cutoff threshold"
+                },
+                "sig_activity_threshold": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Signature activity threshold"
+                },
+                "cohort_threshold": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Cohort threshold"
+                },
+                "burnin": {
+                    "type": "integer",
+                    "default": 10000,
+                    "description": "Number of burn-in iterations"
+                },
+                "n_posterior": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Number of posterior samples"
+                },
+                "space": {
+                    "type": "integer",
+                    "default": 200,
+                    "description": "Space parameter"
+                },
+                "cpiter": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "Number of CP iterations"
+                },
+                "iterations": {
+                    "type": "integer",
+                    "default": 15,
+                    "description": "Number of iterations"
+                },
+                "cosine_sim_threshold": {
+                    "type": "number",
+                    "default": 0.9,
+                    "description": "Cosine similarity threshold"
+                },
+                "max_iter_em": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Maximum number of EM iterations"
+                },
+                "em_frac_threshold": {
+                    "type": "number",
+                    "default": 0.1,
+                    "description": "EM fraction threshold"
+                }
+            }
+        },
         "max_job_request_options": {
             "title": "Max job request options",
             "type": "object",
@@ -948,6 +1010,9 @@
             "$ref": "#/$defs/institutional_config_options"
         },
         {
+            "$ref": "#/$defs/signature_extraction_parameters"
+        },
+        {   
             "$ref": "#/$defs/max_job_request_options"
         },
         {
