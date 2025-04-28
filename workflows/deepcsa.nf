@@ -238,9 +238,15 @@ workflow DEEPCSA{
     // Intersect BED of desired sites with samples' depths
     DEPTHSALLCONS(annotated_depths, CREATEPANELS.out.all_consensus_bed)
     DEPTHSEXONSCONS(annotated_depths, CREATEPANELS.out.exons_consensus_bed)
-    DEPTHSPROTCONS(annotated_depths, CREATEPANELS.out.prot_consensus_bed)
-    DEPTHSNONPROTCONS(annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
-    DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
+    if (run_mutrate || params.profilenonprot) {
+        DEPTHSNONPROTCONS(annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
+    }
+
+    if (run_mutrate) {
+        DEPTHSPROTCONS(annotated_depths, CREATEPANELS.out.prot_consensus_bed)
+        DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
+    }
+    
 
 
     if (run_mutrate){
