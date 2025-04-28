@@ -3,7 +3,7 @@ process RUNREGRESSIONS {
     tag "regressions"
     label 'process_single'
 
-    container 'docker.io/rblancomi/statsmodels:test'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     val  (metric_name)
@@ -24,10 +24,6 @@ process RUNREGRESSIONS {
     path ("*.pdf")          , emit: res_pdf
     path "versions.yml"     , topic: versions
 
-
-    when:
-    task.ext.when == null || task.ext.when
-
     script:
     def args = task.ext.args ?: ""
     def responses_excluded = "\'${groovy.json.JsonOutput.toJson(responses_excluded_regressions)}\'"
@@ -35,7 +31,6 @@ process RUNREGRESSIONS {
     def multipletesting_join = "\'${groovy.json.JsonOutput.toJson(multipletesting_join_regressions)}\'"
     def multivariate_rules = "\'${groovy.json.JsonOutput.toJson(multivariate_rules_regressions)}\'"
     def metric_data_str = metric_data.join(',')
-
     """
     regression_analysis.py \\
                 -pdf ${metric_name}.pdf \\

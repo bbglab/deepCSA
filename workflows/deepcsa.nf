@@ -336,7 +336,6 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_panel,
                                 cadd_scores, mode
                             )
-            // positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
 
             if (params.regressions){

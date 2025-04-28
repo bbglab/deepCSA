@@ -6,7 +6,7 @@ process DOWNSAMPLE_MUTATIONS {
     tag "$meta.id"
     label 'process_high'
 
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(mutations_file)
@@ -14,9 +14,6 @@ process DOWNSAMPLE_MUTATIONS {
     output:
     tuple val(meta), path("*.downsampled.mutations.tsv") , emit: downsampled_muts
     path "versions.yml"                                  , topic: versions
-
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

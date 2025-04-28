@@ -335,7 +335,6 @@
                 "plot_depths": {
                     "type": "boolean",
                     "description": "Do you want to run plot_depths?",
-
                     "fa_icon": "fas fa-book"
                 },
                 "regressions": {
