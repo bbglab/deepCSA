@@ -41,11 +41,29 @@ def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_pro
 
     # Save the groups matrix if it exists
     if groups_matrix is not None and groups_matrix.shape[0] > 0:
-        groups_matrix.reset_index().to_csv(f"groups_matrix.{type_of_profile}.tsv", sep='\t', header=True, index=False)
+        groups_matrix.reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
+
+        # HDP
+        groups_matrix = groups_matrix.transpose()
+        groups_matrix.index.name = None
+        hdp_sorted_contexts = sorted(groups_matrix.columns, key = lambda x : x[0] + x[2] + x[-1] + x[1:])
+        groups_matrix = groups_matrix[hdp_sorted_contexts]
+
+        groups_matrix.to_csv(f"groups_matrix.{type_of_profile}.hdp.tsv", sep = '\t', header = True, index = True, quoting=1)
+
 
     # Save the samples matrix if it exists
     if samples_only_matrix is not None and samples_only_matrix.shape[0] > 0:
-        samples_only_matrix.reset_index().to_csv(f"samples_matrix.{type_of_profile}.tsv", sep='\t', header=True, index=False)
+        samples_only_matrix.reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
+
+        # HDP
+        samples_only_matrix = samples_only_matrix.transpose()
+        samples_only_matrix.index.name = None
+        hdp_sorted_contexts = sorted(samples_only_matrix.columns, key = lambda x : x[0] + x[2] + x[-1] + x[1:])
+        samples_only_matrix = samples_only_matrix[hdp_sorted_contexts]
+        
+        # remove the index column name and change the order of the columns
+        samples_only_matrix.to_csv(f"samples_matrix.{type_of_profile}.hdp.tsv", sep = '\t', header = True, index = True, quoting=1)
 
 
 @click.command()

@@ -9,8 +9,9 @@ process MATRIX_CONCAT {
     path (json_samples)
 
     output:
-    path("*_matrix*.tsv")  , emit: wgs_tsv
-    path "versions.yml"   , topic: versions
+    path("*_matrix*.sp.tsv")    , emit: wgs_tsv
+    path("*_matrix*.hdp.tsv")   , emit: wgs_tsv_hdp
+    path "versions.yml"         , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,8 +34,10 @@ process MATRIX_CONCAT {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch samples_matrix.${prefix}.tsv
-    touch groups_matrix.${prefix}.tsv
+    touch samples_matrix.${prefix}.sp.tsv
+    touch groups_matrix.${prefix}.sp.tsv
+    touch samples_matrix.${prefix}.hdp.tsv
+    touch groups_matrix.${prefix}.hdp.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
