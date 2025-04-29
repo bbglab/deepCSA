@@ -216,7 +216,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
 
 
     if hotspots_file is not None:
-        hotspots_def_df = pd.read_table(hotspots_file, header = 0, sep = '\t')
+        hotspots_def_df = pd.read_table(hotspots_file, header = 0, sep = '\t').drop_duplicates()
         new_hostpot_columns = [x for x in hotspots_def_df.columns if x not in ['CHROM', 'POS', "MUTTYPE"] ]
         annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS', "MUTTYPE"], how = 'left')
         annotated_variants_columns += new_hostpot_columns
