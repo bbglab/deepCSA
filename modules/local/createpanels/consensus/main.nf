@@ -13,9 +13,10 @@ process CREATECONSENSUSPANELS {
     val(consensus_min_depth)
 
     output:
-    tuple val(meta), path("*.tsv")       , emit: consensus_panel
-    tuple val(meta), path("*.bed")       , emit: consensus_panel_bed
-    path "versions.yml"                  , emit: versions
+    tuple val(meta), path("consensus*.tsv")         , emit: consensus_panel
+    tuple val(meta), path("consensus*.bed")         , emit: consensus_panel_bed
+    tuple val(meta), path("failing_consensus*.tsv") , emit: failing_consensus_panel
+    path "versions.yml"                             , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,9 +34,8 @@ process CREATECONSENSUSPANELS {
     bedtools merge \\
             -i <(
             tail -n +2 consensus.${prefix}.tsv | \\
-            awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t' | uniq
-            ) | \\
-            awk 'BEGIN { FS = "\\t"; OFS = "\\t" } { if (\$2 != \$3) { \$2 += 1 ; \$3 -= 1 } else { \$2 = \$2 ; \$3 = \$3 }; print }' > consensus.${prefix}.bed;
+            awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | uniq
+            ) > consensus.${prefix}.bed;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

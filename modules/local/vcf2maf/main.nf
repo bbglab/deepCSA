@@ -4,8 +4,7 @@ process VCF2MAF {
     label 'cpu_low'
     label 'process_high_memory'
 
-
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta) , path(vcf)
@@ -13,7 +12,7 @@ process VCF2MAF {
 
     output:
     tuple val(meta), path("*.tsv.gz")  , emit: maf
-    path "versions.yml"                , emit: versions
+    path "versions.yml"                , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,6 +23,8 @@ process VCF2MAF {
     def batch = task.ext.batch ?: "${meta.batch}"
     def level = task.ext.level ?: "high"
     def all_molecules_dp = task.ext.all_molecules_dp ?: "false"
+    // TODO reimplement it with click
+    // TODO level and all_molecules can be defined in the modules.config file 
     """
     vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation} ${all_molecules_dp};
 

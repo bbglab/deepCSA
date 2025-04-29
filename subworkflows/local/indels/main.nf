@@ -1,7 +1,6 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS             } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSET_INDELS           } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETINDELS           } from '../../../modules/local/subsetmaf/main'
 
 include { INDELS_COMPARISON as INDELS } from '../../../modules/local/indels/main'
 
@@ -13,18 +12,13 @@ workflow INDELS_SELECTION {
     bedfile
 
     main:
-    ch_versions = Channel.empty()
 
     SUBSETMUTATIONS(mutations, bedfile)
-    ch_versions = ch_versions.mix(SUBSETMUTATIONS.out.versions)
 
-    SUBSET_INDELS(SUBSETMUTATIONS.out.subset)
-    ch_versions = ch_versions.mix(SUBSET_INDELS.out.versions)
+    SUBSETINDELS(SUBSETMUTATIONS.out.subset)
 
-    INDELS(SUBSET_INDELS.out.mutations)
-    ch_versions = ch_versions.mix(INDELS.out.versions)
+    INDELS(SUBSETINDELS.out.mutations)
 
     emit:
     indels = INDELS.out.indels
-    versions = ch_versions                // channel: [ versions.yml ]
 }

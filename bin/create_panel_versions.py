@@ -1,9 +1,10 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import pandas as pd
 import os
 import sys
 
+# TODO: check pandas version 2.0.3
 # -- Auxiliary functions -- #
 
 panel_impact_dict = {
@@ -12,7 +13,7 @@ panel_impact_dict = {
                             "essential_splice",
                             "protein_altering_variant",     # probably not appear
                             "transcript_amplification",     # probably not appear
-                            "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
+                            # "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
                             # "splice_region_variant",
                             # "splice_donor_region_variant",
                             # "splice_polypyrimidine_tract_variant",
@@ -43,7 +44,9 @@ panel_impact_dict = {
                             "non_genic_variant",
                             # "splice_donor_region_variant",
                             # "splice_polypyrimidine_tract_variant",
-                            ]
+                            ],
+
+    "synonymous": ["synonymous"]
 
 ## CONTENT of the kidney regions
 #       1 IMPACT
@@ -84,6 +87,7 @@ def create_panel_versions(compact_annot_panel_path, output_path):
     compact_annot_panel_df.to_csv(f"{output_path}.{version}.tsv",
                                     sep = "\t", index = False)
 
+## TODO reimplement with click
 if __name__ == '__main__':
     compact_annot_panel_path = sys.argv[1]
     output_path = sys.argv[2]

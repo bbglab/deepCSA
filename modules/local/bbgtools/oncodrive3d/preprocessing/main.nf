@@ -2,10 +2,7 @@ process ONCODRIVE3D_PREPROCESSING {
     tag "$meta.id"
     label 'process_medium'
 
-    conda "pandas:1.5.2"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-        'biocontainers/pandas:1.5.2' }"
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta),  path(maf)
@@ -13,7 +10,7 @@ process ONCODRIVE3D_PREPROCESSING {
 
     output:
     tuple val(meta), path("*.mutations.raw_vep.tsv") , emit: vep_output4o3d
-    path "versions.yml"                              , emit: versions
+    path "versions.yml"                              , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

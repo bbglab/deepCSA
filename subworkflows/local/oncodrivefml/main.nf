@@ -1,8 +1,7 @@
 include { CREATECUSTOMBEDFILE    as ONCODRIVEFMLBED     } from '../../../modules/local/createpanels/custombedfile/main'
 
-include { SUBSET_MAF             as SUBSET_ONCODRIVEFML } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF             as SUBSETONCODRIVEFML  } from '../../../modules/local/subsetmaf/main'
 
-include { ONCODRIVEFML                                  } from '../../../modules/local/bbgtools/oncodrivefml/main'
 include { ONCODRIVEFML           as ONCODRIVEFMLSNVS    } from '../../../modules/local/bbgtools/oncodrivefml/main'
 
 
@@ -13,26 +12,22 @@ workflow ONCODRIVEFML_ANALYSIS{
     mutations
     mutabilities
     panel_file
+    cadd_scores
+    mode
 
     main:
-    ch_versions = Channel.empty()
-
     ONCODRIVEFMLBED(panel_file)
-    ch_versions = ch_versions.mix(ONCODRIVEFMLBED.out.versions)
 
-    SUBSET_ONCODRIVEFML(mutations)
-    ch_versions = ch_versions.mix(SUBSET_ONCODRIVEFML.out.versions)
+    SUBSETONCODRIVEFML(mutations)
 
-    SUBSET_ONCODRIVEFML.out.mutations
+    SUBSETONCODRIVEFML.out.mutations
     .join( mutabilities )
     .set{ muts_n_mutability }
 
-    ONCODRIVEFML(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
-    ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed)
-    ch_versions = ch_versions.mix(ONCODRIVEFML.out.versions)
+    ONCODRIVEFMLSNVS(muts_n_mutability,  ONCODRIVEFMLBED.out.bed, cadd_scores, mode)
 
     emit:
-    results         = ONCODRIVEFML.out.tsv          // channel: [ val(meta), file(results) ]
-    results_snvs    = ONCODRIVEFMLSNVS.out.tsv      // channel: [ val(meta), file(results) ]
-    versions        = ch_versions                   // channel: [ versions.yml ]
+    results_snvs           = ONCODRIVEFMLSNVS.out.tsv         // channel: [ val(meta), file(results) ]
+    results_snvs_folder    = ONCODRIVEFMLSNVS.out.folder      // channel: [ val(meta), file(results) ]
+
 }

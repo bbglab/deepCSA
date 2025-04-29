@@ -1,14 +1,15 @@
-#!/usr/local/bin/python
-
-
+#!/usr/bin/env python
 
 # TODO
 # add plotting modules to bgreference container
 import sys
 import pandas as pd
+import numpy as np
 # import seaborn as sns
 # import matplotlib.pyplot as plt
 from utils import vartype
+from read_utils import custom_na_values
+
 
 vcf = sys.argv[1]
 
@@ -27,13 +28,31 @@ print(vaf_all_molecules)
 if vaf_all_molecules:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs",
-                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "numNs_AM", "VAF_AM"]
+                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
+                        "numNs", 'VAF_Ns',
+                        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "VAF_AM",
+                        "numNs_AM", "VAF_Ns_AM",
+                        'DEPTH_ND', 'ALT_DEPTH_ND',
+                        # 'REF_DEPTH_ND', "numNs_ND",
+                        "VAF_ND",
+                        # "VAF_distorted", "VAF_distorted_reduced",
+                        "VAF_distorted_expanded",
+                        "VAF_distorted_expanded_sq",
+                        "VAF_distortion",
+                        "VAF_distortion_sq"
+                        ]
     print("Using also information on all molecules, duplex and non-duplex.")
 else:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF', "numNs"]
+                        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
+                        "numNs", 'VAF_Ns',
+                        # "VAF_distorted", "VAF_distorted_reduced",
+                        "VAF_distorted_expanded",
+                        "VAF_distorted_expanded_sq",
+                        "VAF_distortion",
+                        "VAF_distortion_sq"
+                        ]
     print("Not using information on non-duplex molecules.")
 
 
@@ -74,7 +93,7 @@ def read_from_vardict_VCF_all(sample,
     print(f"Processing {sample}")
 
     dat = pd.read_csv(name,
-                    sep = '\t', header = None, comment= '#')
+                    sep = '\t', header = None, comment= '#', na_filter = False)
     dat.columns = ["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", "SAMPLE"]
     print("Total mutations:", dat.shape[0])
 
@@ -170,6 +189,7 @@ def read_from_vardict_VCF_all(sample,
     dat_full["DEPTH"] = dat_full["CDP"].astype(int)
 
     dat_full["numNs"] = dat_full["NDP"].astype(int)
+    dat_full["VAF_Ns"] = dat_full["numNs"] / (dat_full["DEPTH"] + dat_full["numNs"])
 
     # compute VAF
     dat_full["VAF"] = dat_full["ALT_DEPTH"] / dat_full["DEPTH"]
@@ -185,13 +205,48 @@ def read_from_vardict_VCF_all(sample,
         # assign it to the column
         dat_full["ALT_DEPTH_AM"] = [int(v[1]) for v in dat_full["CADAM"].str.split(",")]
         dat_full["REF_DEPTH_AM"] = [int(v[0]) for v in dat_full["CADAM"].str.split(",")]
-
         dat_full["DEPTH_AM"] = dat_full["CDPAM"].astype(int)
 
-        dat_full["numNs_AM"] = dat_full["NDPAM"].astype(int)
-
-        # compute VAF
+        # compute VAF_AM
         dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
+
+        dat_full["numNs_AM"] = dat_full["NDPAM"].astype(int)
+        dat_full["VAF_Ns_AM"] = dat_full["numNs_AM"] / (dat_full["DEPTH_AM"] + dat_full["numNs_AM"])
+
+        # compute VAF_ND
+        dat_full["ALT_DEPTH_ND"] = dat_full["ALT_DEPTH_AM"] - dat_full["ALT_DEPTH"]
+        dat_full["DEPTH_ND"] = dat_full["DEPTH_AM"] - dat_full["DEPTH"]
+        dat_full["VAF_ND"] = dat_full["ALT_DEPTH_ND"] / dat_full["DEPTH_ND"]
+
+
+        # compute VAF distortion
+        dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
+        dat_full["VAF_distortion_sq"] = np.log10(dat_full["VAF"]) / np.log10(dat_full["VAF_AM"])
+
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
+        dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
+
+
+        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
+        dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF_distorted_expanded_sq"].fillna(True)
+
+        # dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
+        # dat_full["VAF_distorted_reduced"] = (1 / dat_full["VAF_distortion"]) > 3
+
+        # dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
+        # dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
+
+
+
+    else:
+        dat_full["VAF_distortion"] = 1
+        dat_full["VAF_distortion_sq"] = 1
+        # dat_full["VAF_distorted"] = False
+        # dat_full["VAF_distorted_reduced"] = False
+        dat_full["VAF_distorted_expanded"] = False
+        dat_full["VAF_distorted_expanded_sq"] = False
+
+
 
 
     # subset dataframe to the columns of interest
@@ -340,6 +395,7 @@ def update_indel_info(df):
     # Initialize new columns with default values
     df['INDEL_LENGTH'] = 0
     df['INDEL_INFRAME'] = False
+    df['INDEL_MULTIPLE3'] = False
 
     # Create a DataFrame specifically for indels
     indel_maf_df = df.loc[indel_positions].copy()
@@ -348,6 +404,7 @@ def update_indel_info(df):
     indel_maf_df["INDEL_LENGTH"] = (indel_maf_df["REF"].str.len() - indel_maf_df["ALT"].str.len()).abs()
 
     # Determine if the indel is in-frame
+    indel_maf_df["INDEL_MULTIPLE3"] = indel_maf_df["INDEL_LENGTH"] % 3 == 0
     indel_maf_df["INDEL_INFRAME"] = indel_maf_df["INDEL_LENGTH"] % 3 == 0
 
     # Apply additional conditions to INDEL_INFRAME
@@ -369,7 +426,7 @@ def update_indel_info(df):
 # this is the file with the mutations produced by deepUMIcaller
 file_muts = vcf
 
-annotated_variants = pd.read_csv(annotation_file, header = 0, sep = "\t")
+annotated_variants = pd.read_csv(annotation_file, header = 0, sep = "\t", na_values = custom_na_values)
 
 ## read all mutations
 # recompute the VAF since it might not have enough resolution

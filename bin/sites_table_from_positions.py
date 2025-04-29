@@ -1,13 +1,15 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import sys
 import pandas as pd
 
-from bgreference import hg38, hg19, mm10
+from bgreference import hg38, hg19, mm10, mm39
 
 assembly_name2function = {"hg38": hg38,
                             "hg19": hg19,
-                            "mm10": mm10}
+                            "mm10": mm10,
+                            "mm39": mm39
+                            }
 
 # -- Auxiliary functions -- #
 def get_sequence_in_row(chrom, start, length, genome = hg38):

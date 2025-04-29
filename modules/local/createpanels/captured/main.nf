@@ -18,12 +18,14 @@ process CREATECAPTUREDPANELS {
     path("*.non_protein_affecting.tsv")    , emit: captured_panel_non_protein_affecting
     path("*.exons_splice_sites.tsv")       , emit: captured_panel_exons_splice_sites
     path("*.introns_intergenic.tsv")       , emit: captured_panel_introns_intergenic
+    path("*.synonymous.tsv")                , emit: captured_panel_synonymous
     path("*.all.bed")                      , emit: captured_panel_all_bed
     path("*.protein_affecting.bed")        , emit: captured_panel_protein_affecting_bed
     path("*.non_protein_affecting.bed")    , emit: captured_panel_non_protein_affecting_bed
     path("*.exons_splice_sites.bed")       , emit: captured_panel_exons_splice_sites_bed
     path("*.introns_intergenic.bed")       , emit: captured_panel_introns_intergenic_bed
-    path "versions.yml"                    , emit: versions
+    path("*.synonymous.bed")                , emit: captured_panel_synonymous_bed
+    path "versions.yml"                    , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -39,9 +41,8 @@ process CREATECAPTUREDPANELS {
         bedtools merge \\
             -i <(
                 tail -n +2 \$captured_panel | \\
-                awk -F'\\t' '{print \$1, \$2, \$2}' OFS='\\t' | uniq
-            ) | \\
-            awk 'BEGIN { FS = "\\t"; OFS = "\\t" } { if (\$2 != \$3) { \$2 += 1 ; \$3 -= 1 } else { \$2 = \$2 ; \$3 = \$3 }; print }' > \${captured_panel%.tsv}.bed;
+                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | uniq
+            ) > \${captured_panel%.tsv}.bed;
     done
 
     cat <<-END_VERSIONS > versions.yml

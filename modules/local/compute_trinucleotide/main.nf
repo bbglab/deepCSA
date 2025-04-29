@@ -3,18 +3,14 @@ process COMPUTE_TRINUCLEOTIDE {
     tag "$meta.id"
     label 'process_low'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(depths)
 
     output:
     tuple val(meta), path("*.trinucleotides.tsv.gz"), emit: trinucleotides
-    path "versions.yml"                             , emit: versions
+    path "versions.yml"                             , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

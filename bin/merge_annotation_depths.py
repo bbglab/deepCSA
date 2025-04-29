@@ -1,11 +1,11 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 
 import click
 import json
 import pandas as pd
 
-def annotate_depths(annotation_file, depths_file, json_f):
+def annotate_depths(annotation_file, depths_file, json_f, input_file):
     """
     INFO
     """
@@ -23,8 +23,15 @@ def annotate_depths(annotation_file, depths_file, json_f):
     annotated_depths["CONTEXT"] = annotated_depths["CONTEXT"].fillna('-')
     sample_columns = [x for x in annotated_depths.columns if x not in ["CHROM", "POS", "CONTEXT"] ]
     annotated_depths = annotated_depths[["CHROM", "POS", "CONTEXT"] + sample_columns]
-    sample_columns_first = [ str(x).split('.')[0] for x in sample_columns ]
-    annotated_depths.columns = ["CHROM", "POS", "CONTEXT"] + sample_columns_first
+
+    input_csv = pd.read_table(input_file, sep = ',', header = 0)
+    bam2sample_dict = dict(zip(input_csv["bam"].astype(str).apply(lambda x: x.split("/")[-1]),
+                               input_csv["sample"].astype(str)
+                               )
+                            )
+    
+    sample_columns_correct = [ bam2sample_dict[str(x)] for x in sample_columns ]
+    annotated_depths.columns = ["CHROM", "POS", "CONTEXT"] + sample_columns_correct
     annotated_depths.to_csv("all_samples_indv.depths.tsv.gz",
                                 header=True,
                                 index=False,
@@ -42,7 +49,7 @@ def annotate_depths(annotation_file, depths_file, json_f):
                                                                                 index = False)
 
     else:
-        for sample in sample_columns_first:
+        for sample in sample_columns_correct:
             annotated_depths[["CHROM", "POS", "CONTEXT", f"{sample}"]].to_csv(f"{sample}.depths.annotated.tsv.gz",
                                                                                 sep = "\t",
                                                                                 header = True,
@@ -60,11 +67,12 @@ def annotate_depths(annotation_file, depths_file, json_f):
 @click.option('--annotation', type=click.Path(exists=True), help='Input annotation file')
 @click.option('--depths', type=click.Path(exists=True), help='Input depths file')
 @click.option('--json_file', type=click.Path(exists=True), help='JSON groups file')
+@click.option('--input_csv', type=click.Path(exists=True), help='Input CSV file')
 # @click.option('--output', type=click.Path(), help='Output annotated depths file')
 
-def main(annotation, depths, json_file):
+def main(annotation, depths, json_file, input_csv):
     click.echo(f"Annotating depths file...")
-    annotate_depths(annotation, depths, json_file)
+    annotate_depths(annotation, depths, json_file, input_csv)
 
 if __name__ == '__main__':
     main()

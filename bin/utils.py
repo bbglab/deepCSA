@@ -26,11 +26,13 @@ def to_int_if_possible(string):
 
 def filter_maf(maf_df, filter_criteria):
     '''
-    Filter a MAF dataframe with filtering information coming from a JSON file.
-    {
-    'FILTER' : 'notcontains n_rich', 'VAF' : 'le 0.35', 'TYPE' : 'SNV'
-    }
-
+    Filter a MAF dataframe with filtering information coming from a list of tuples.
+    This can be either a dictionary transformed to list with the .items() method or by directly creating a list of tuples.
+    [('VAF', 'le 0.3'), ('VAF_AM', 'le 0.3'), ('vd_VAF', 'le 0.3'),
+    ('DEPTH', 'ge 40'), ('FILTER', 'notcontains n_rich'),
+    ('FILTER', 'notcontains cohort_n_rich_uni'), ('FILTER', 'notcontains NM20'),
+    ('FILTER', 'notcontains no_pileup_support'), ('FILTER', 'notcontains other_sample_SNP'),
+    ('FILTER', 'notcontains low_mappability')]
     '''
 
     # Define mappings for operators used in criteria
@@ -42,38 +44,42 @@ def filter_maf(maf_df, filter_criteria):
         'gt': lambda x, y: x > y,
         'ge': lambda x, y: x >= y,
         'not': lambda x, y: x != y,
-        'notcontains': lambda x, y: ~x.str.contains(y), # (~maf_df["FILTER"].str.contains("not_in_panel"))
-        'contains': lambda x, y: x.str.contains(y)
+        'notcontains': lambda x, y: x.apply(lambda z : y not in z.split(";")), # (~maf_df["FILTER"].str.contains("not_in_panel"))
+        'contains': lambda x, y: x.apply(lambda z : y in z.split(";"))
     }
 
     # Apply filters based on criteria from the JSON file
-    for col, criterion in filter_criteria.items():
-        if col in maf_df.columns:
+    for col, criterion in filter_criteria:
 
-            if ' ' in criterion:
-                operator, value = criterion.split(maxsplit=1)
+        if isinstance(criterion, bool):
+            pref_len = maf_df.shape[0]
+            maf_df = maf_df[maf_df[col] == criterion]
+            print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
 
-                if len(operator) == 2 and operator in operators:
-                    # 'VAF' : 'le 0.35'
-                    pref_len = maf_df.shape[0]
-                    maf_df = maf_df[operators[operator](maf_df[col], float(value))]
-                    print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+        elif ' ' in criterion:
+            operator, value = criterion.split(maxsplit=1)
 
-                elif operator in operators:
-                    # 'FILTER' : 'notcontains n_rich',
-                    pref_len = maf_df.shape[0]
-                    maf_df = maf_df[operators[operator](maf_df[col], value)]
-                    print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+            if len(operator) == 2 and operator in operators:
+                # 'VAF' : 'le 0.35'
+                pref_len = maf_df.shape[0]
+                maf_df = maf_df[operators[operator](maf_df[col], float(value))]
+                print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
 
-                else:
-                    print(f"We have no filtering criteria defined for {col}:{criterion} filter.")
-
+            elif operator in operators:
+                # 'FILTER' : 'notcontains n_rich',
+                pref_len = maf_df.shape[0]
+                maf_df = maf_df[operators[operator](maf_df[col], value)]
+                print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
 
             else:
-                # 'TYPE' : 'SNV'
-                pref_len = maf_df.shape[0]
-                maf_df = maf_df[maf_df[col] == criterion]
-                print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+                print(f"We have no filtering criteria defined for {col}:{criterion} filter.")
+
+
+        else:
+            # 'TYPE' : 'SNV'
+            pref_len = maf_df.shape[0]
+            maf_df = maf_df[maf_df[col] == criterion]
+            print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
 
     return maf_df
 
@@ -131,3 +137,18 @@ contexts_formatted_sigprofiler = ['A[C>A]A', 'A[C>A]C', 'A[C>A]G', 'A[C>A]T', 'C
 # contexts_unformatted = sorted([(a, b) for a, b in itertools.product(subs, flanks)], key=lambda x: (x[0], x[1]))
 # contexts_no_change = [b[0]+a[0]+b[1] for a, b in contexts_unformatted]
 # contexts_formatted = [b[0]+a[0]+b[1]+'>'+a[1] for a, b in contexts_unformatted]
+
+
+def inclusion_exclusion(plist):
+
+    """A more efficient version of the algorithm"""
+
+    n = len(plist)
+    if n > 2:
+        p1 = inclusion_exclusion(plist[: n // 2])
+        p2 = inclusion_exclusion(plist[n // 2: ])
+        return inclusion_exclusion([p1, p2])
+    if n == 2:
+        return plist[0] + plist[1] - plist[0] * plist[1]
+    if n == 1:
+        return plist[0]

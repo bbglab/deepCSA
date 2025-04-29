@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 
 # import click
@@ -11,6 +11,7 @@ import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
 from utils import filter_maf
+from read_utils import custom_na_values
 
 
 def subset_mutation_dataframe(mutations_file, json_filters):
@@ -18,17 +19,28 @@ def subset_mutation_dataframe(mutations_file, json_filters):
     INFO
     """
     # Load your MAF DataFrame (raw_annotated_maf)
-    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0)
+    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
 
+    data_tuples = []
 
     # Load the filter criteria from the JSON file
     with open(json_filters, 'r') as file:
         filter_criteria = json.load(file)
 
-    if len(filter_criteria) > 0:
+        # Convert the dictionary into a list of tuples
+        for key, value in filter_criteria.items():
+            if isinstance(value, list):
+                for item in value:
+                    data_tuples.append((key, item))
+            else:
+                data_tuples.append((key, value))
+        print(data_tuples)
+
+
+    if len(data_tuples) > 0:
         # Filter the annotated maf using the described filters
         print("MAF subset")
-        return filter_maf(raw_annotated_maf, filter_criteria)
+        return filter_maf(raw_annotated_maf, data_tuples)
 
     return raw_annotated_maf
 
@@ -110,7 +122,7 @@ def plot_mutations_per_gene(sample_name, maf, parameters = {}):
     ax.set_xlabel("Genes", fontsize=14)
     ax.set_ylabel("Number mutations", fontsize=14)
 
-    plt.xticks(fontsize=10, rotation=30)
+    plt.xticks(fontsize=10, rotation=90)
     plt.yticks(fontsize=12)
     plt.tick_params(axis='x', which='major', labelsize=14)
     ax.set_title(f"Mutations per gene in {sample_name}")

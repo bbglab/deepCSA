@@ -7,6 +7,7 @@ GROUPING_DICT = {
     'start_lost': 'nonsense',
 
     'missense_variant': 'missense',
+    'missense': 'missense',                                     ## customly added
     'inframe_insertion': 'missense',
     'inframe_deletion': 'missense',
 
@@ -16,10 +17,11 @@ GROUPING_DICT = {
 
 
     'splice_region_variant': 'splice_region_variant',
-    'splice_donor_region_variant': 'splice_donor_region_variant',
-    'splice_polypyrimidine_tract_variant': 'splice_polypyrimidine_tract_variant',
+    'splice_donor_region_variant': 'splice_region_variant',
+    'splice_polypyrimidine_tract_variant': 'splice_region_variant',
 
     'synonymous_variant': 'synonymous',
+    'synonymous': 'synonymous',                                 ## customly added
     'incomplete_terminal_codon_variant': 'synonymous',
     'start_retained_variant': 'synonymous',
     'stop_retained_variant': 'synonymous',
@@ -38,7 +40,7 @@ GROUPING_DICT = {
     'intron_variant': 'intron_variant',
 
     'non_coding_transcript_variant' : 'non_coding_transcript_variant',
-    'mature_miRNA_variant': 'non_coding_transcript_variant', # TODO fix this
+    'mature_miRNA_variant': 'non_coding_transcript_variant',
 
     'upstream_gene_variant': 'non_genic_variant',
     'downstream_gene_variant': 'non_genic_variant',
@@ -60,7 +62,7 @@ PROTEIN_AFFECTING_DICT = {
     'nonsense' : 'protein_affecting',
     'missense' : 'protein_affecting',
     'essential_splice' : 'protein_affecting',
-    'splice_region' : 'ambiguous',
+
     'synonymous' : 'non_protein_affecting',
 
     'protein_altering_variant' : 'protein_affecting',
@@ -91,6 +93,7 @@ CONSEQUENCES_LIST = [
     'inframe_insertion',
     'inframe_deletion',
     'missense_variant',
+    'missense',                                 ## customly added
     'protein_altering_variant',
     'splice_region_variant',
     'splice_donor_5th_base_variant',
@@ -100,6 +103,7 @@ CONSEQUENCES_LIST = [
     'start_retained_variant',
     'stop_retained_variant',
     'synonymous_variant',
+    'synonymous',                               ## customly added
 
     'coding_sequence_variant',
 
@@ -144,6 +148,7 @@ CONSEQUENCES_LIST_WITHIN = [
     'inframe_insertion',
     'inframe_deletion',
     'missense_variant',
+    'missense',                                 ## customly added
     'protein_altering_variant',
     'splice_region_variant',
     'splice_donor_5th_base_variant',
@@ -153,6 +158,7 @@ CONSEQUENCES_LIST_WITHIN = [
     'start_retained_variant',
     'stop_retained_variant',
     'synonymous_variant',
+    'synonymous',                               ## customly added
     'coding_sequence_variant',
     '5_prime_UTR_variant',
     '3_prime_UTR_variant',
@@ -195,3 +201,15 @@ def most_deleterious_within_variant(impact_vep_string):
         return rank_consequence_dict_within[min(all_consequences_ranks)]
     except:
         return '-'
+
+
+broadimpact_grouping_dict = {
+        "missense": ["missense"],
+        "nonsense": ["nonsense"],
+        "essential_splice": ["essential_splice"],
+        "splice_region_variant": ["splice_region_variant"],
+        "truncating": ["nonsense", "essential_splice"],
+        "essential_splice_plus": ["essential_splice", "splice_region_variant"],
+        "truncating_plus": ["nonsense", "essential_splice", "splice_region_variant"],
+        "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"]
+    }

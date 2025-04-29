@@ -3,12 +3,7 @@ process SIGNATURES_PROBABILITIES {
     tag "${meta.id}"
     label 'process_low'
 
-    // conda "pandas:1.5.2"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
-
-    container 'docker.io/ferriolcalvet/bgreference'
+    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
 
     input:
@@ -16,7 +11,7 @@ process SIGNATURES_PROBABILITIES {
 
     output:
     path ("*.decomposed_probabilities.tsv") , emit: signature_probs
-    path "versions.yml"                     , emit: versions
+    path "versions.yml"                     , topic: versions
 
     when:
     task.ext.when == null || task.ext.when

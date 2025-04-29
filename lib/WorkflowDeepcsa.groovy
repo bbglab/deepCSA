@@ -1,11 +1,75 @@
 //
-// This file holds several functions specific to the workflow/deepcsa.nf in the bbg/deepcsa pipeline
+// This file holds several functions specific to the workflow/deepcsa.nf in the bbglab/deepCSA pipeline
 //
 
 import nextflow.Nextflow
 import groovy.text.SimpleTemplateEngine
 
 class WorkflowDeepcsa {
+
+    // Logo
+    public static String logo(workflow, monochrome_logs) {
+        String.format(
+            """
+            ${monochrome_logs ? '' : '\033[0;33m'}
+     888                             .d8888b.   .d8888b.        d8888
+     888                            d88P  Y88b d88P  Y88b      d88888
+     888                            888    888 Y88b.          d88P888
+ .d88888  .d88b.   .d88b.  88888b.  888         "Y888b.      d88P 888
+d88" 888 d8P  Y8b d8P  Y8b 888 "88b 888            "Y88b.   d88P  888
+888  888 88888888 88888888 888  888 888    888       "888  d88P   888
+Y88b 888 Y8b.     Y8b.     888 d88P Y88b  d88P Y88b  d88P d8888888888
+ "Y88888  "Y8888   "Y8888  88888P"   "Y8888P"   "Y8888P" d88P     888
+                           888
+                           888
+                           888
+            ${monochrome_logs ? '' : '\033[0m'}
+            """.stripIndent()
+        )
+    }
+
+//
+    // Citation string for pipeline
+    //
+    public static String citation(workflow) {
+        return "If you use ${workflow.manifest.name} for your analysis please cite:\n\n" +
+            // TODO nf-core: Add Zenodo DOI for pipeline after first release
+            //"* The pipeline\n" +
+            //"  https://doi.org/10.5281/zenodo.XXXXXXX\n\n" +
+            "* The nf-core framework\n" +
+            "  https://doi.org/10.1038/s41587-020-0439-x\n\n" +
+            "* Software dependencies\n" +
+            "  https://github.com/${workflow.manifest.name}/blob/master/CITATIONS.md"
+    }
+
+    //
+    // Validate parameters and print summary to screen
+    //
+    public static void initialise(workflow, params, log) {
+
+        // Print workflow version and exit on --version
+        if (params.version) {
+            String workflow_version = NfcoreTemplate.version(workflow)
+            log.info "${workflow.manifest.name} ${workflow_version}"
+            System.exit(0)
+        }
+
+        // Check that a -profile or Nextflow config has been provided to run the pipeline
+        NfcoreTemplate.checkConfigProvided(workflow, log)
+
+        // Check that conda channels are set-up correctly
+        if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+            Utils.checkCondaChannels(log)
+        }
+
+        // Check AWS batch settings
+        NfcoreTemplate.awsBatch(workflow, params)
+
+        // Check input has been provided
+        if (!params.input) {
+            Nextflow.error("Please provide an input samplesheet to the pipeline e.g. '--input samplesheet.csv'")
+        }
+    }
 
     //
     // Check and validate parameters
