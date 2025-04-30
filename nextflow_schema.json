@@ -274,6 +274,11 @@
                     "description": "Do you want to run omega?",
                     "fa_icon": "fas fa-book"
                 },
+                "omega_multi": {
+                    "type": "boolean",
+                    "description": "Do you want to run omega_multi?",
+                    "fa_icon": "fas fa-book"
+                },
                 "omega_globalloc": {
                     "type": "boolean",
                     "description": "Do you want to run omega with the globalloc mode?",
@@ -830,6 +835,16 @@
                     "type": "number",
                     "default": 0.1,
                     "description": "EM fraction threshold"
+                },
+                "norm_file": {
+                    "type": "string",
+                    "default": "NA",
+                    "description": "Normalization file"
+                },
+                "prior_file": {
+                    "type": "string",
+                    "default": "NA",
+                    "description": "Prior file"
                 }
             }
         },

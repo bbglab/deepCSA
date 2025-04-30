@@ -221,7 +221,16 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
         annotated_variants_reduced = annotated_variants_reduced.merge(hotspots_def_df, on = ['CHROM', 'POS', "MUTTYPE"], how = 'left')
         annotated_variants_columns += new_hostpot_columns
 
-    annotated_variants_reduced = annotated_variants_reduced[ annotated_variants_columns ]
+    # Check for duplicates
+    duplicates = annotated_variants_reduced[annotated_variants_columns][
+        annotated_variants_reduced[annotated_variants_columns].duplicated(keep=False)
+    ]
+    if not duplicates.empty:
+        print(f"Found {duplicates.shape[0]} duplicated rows:")
+        print(duplicates)
+        sys.exit("Execution stopped due to duplicate rows.")
+
+    annotated_variants_reduced = annotated_variants_reduced[annotated_variants_columns]
 
     annotated_variants_reduced["MUT_ID_pyr"] = annotated_variants_reduced["MUT_ID"].apply(lambda x : get_canonical_mutid(x))
 
