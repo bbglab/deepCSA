@@ -10,8 +10,8 @@ process COMPARE_SIGNATURES {
     path (reference_signatures)
 
     output:
-    tuple val(meta), path("*.compared_output_dir")  , emit: compared_results
-    path "versions.yml"                             , topic: versions
+    tuple val(meta), path("*.compared_output_dir/**")   , emit: compared_results
+    path "versions.yml"                                 , topic: versions
 
 
     // when:
