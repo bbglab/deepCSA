@@ -514,9 +514,8 @@
                 "confidence_level": {
                     "type": "string",
                     "description": "Duplex reads confidence level",
-                    "default": "high",
-                    "fa_icon": "fas fa-book",
-                    "help_text": ""
+                    "default": "med",
+                    "fa_icon": "fas fa-book"
                 },
                 "all_duplex_counts": {
                     "type": "boolean",
@@ -613,6 +612,11 @@
                     "type": "array",
                     "description": "List of filters to apply for getting only somatic mutations.",
                     "fa_icon": "far fa-file-code"
+                },
+                "no_filter": {
+                    "type": "boolean",
+                    "description": "Activate it when you only want to use the FILTER field for filtering somatic mutations.",
+                    "fa_icon": "fas fa-book"
                 }
             }
         },
