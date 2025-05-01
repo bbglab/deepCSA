@@ -42,6 +42,7 @@ process ENSEMBLVEP_VEP {
     def file_extension = args.contains("--vcf") ? 'vcf' : args.contains("--json")? 'json' : args.contains("--tab")? 'tab' : 'vcf'
     def compress_cmd = args.contains("--compress_output") ? '' : '--compress_output bgzip'
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def chr = vcf.name.toString().tokenize('_')[-1].tokenize('.')[0]  // Extract chromosome from input filename
     def dir_cache = cache ? "\${PWD}/${cache}" : "/.vep"
     def reference = fasta ? "--fasta $fasta" : ""
 
@@ -50,7 +51,7 @@ process ENSEMBLVEP_VEP {
     # the structure of the ID is the following:
     vep \\
         -i ${vcf} \\
-        -o ${prefix}.${file_extension}.gz \\
+        -o ${prefix}_${chr}.${file_extension}.gz \\
         $args \\
         $compress_cmd \\
         $reference \\
@@ -71,11 +72,12 @@ process ENSEMBLVEP_VEP {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def chr = vcf.name.toString().tokenize('_')[-1].tokenize('.')[0]  // Extract chromosome from input filename
     """
-    touch ${prefix}.ann.vcf.gz
-    touch ${prefix}.ann.tab.gz
-    touch ${prefix}.ann.json.gz
-    touch ${prefix}.summary.html
+    touch ${prefix}_${chr}.ann.vcf.gz
+    touch ${prefix}_${chr}.ann.tab.gz
+    touch ${prefix}_${chr}.ann.json.gz
+    touch ${prefix}_${chr}.summary.html
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

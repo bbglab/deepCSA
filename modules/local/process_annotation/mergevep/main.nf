@@ -17,7 +17,11 @@ process MERGE_VEP {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    bcftools concat -a ${vep_files} | bgzip > ${prefix}.merged.tab.gz
+    # Sort input files by chromosome number
+    sorted_files=\$(ls ${vep_files} | sort -V)
+
+    # Concatenate sorted files
+    bcftools concat -a \$sorted_files | bgzip > ${prefix}.merged.tab.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
