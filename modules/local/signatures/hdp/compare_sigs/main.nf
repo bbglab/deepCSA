@@ -14,12 +14,6 @@ process COMPARE_SIGNATURES {
     path "versions.yml"                                 , topic: versions
 
 
-    // when:
-    // params.norm_file != "NA"
-
-    when:
-    task.ext.when == null || task.ext.when
-
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
@@ -64,8 +58,6 @@ process COMPARE_SIGNATURES {
 //     output:
 //     tuple val(meta), path("compared_normalized_output_dir"), emit: compared_normalized_results
 
-//     when:
-//     params.norm_file != "NA"
 
 //     script:
 //     """

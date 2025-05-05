@@ -13,8 +13,6 @@ process MUTATED_CELLS_FROM_VAF {
     tuple val(meta), path("*.tsv") , emit: mutated_cells_sample
     path  "versions.yml" , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     """

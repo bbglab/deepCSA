@@ -14,8 +14,6 @@ process GROUP_GENES {
     path("pathway_groups_out.json") , optional : true   , emit: json_pathways
     path "versions.yml"                                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def separator = task.ext.separator ?: "tab"

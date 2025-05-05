@@ -20,8 +20,6 @@ process COMPUTE_MUTABILITY {
     // tuple val(meta), path("*.mutability_per_site.tsv.adjusted") , optional:true  , emit: mutability_adjusted
     // path "versions.yml"                                                          , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

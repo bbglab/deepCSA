@@ -14,8 +14,6 @@ process SITE_COMPARISON {
     tuple val(meta), path("*.comparison.tsv.gz") , emit: comparisons
     path "versions.yml"                          , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

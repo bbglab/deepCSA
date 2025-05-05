@@ -13,8 +13,6 @@ process DOWNSAMPLE_DEPTHS {
     tuple val(meta), path("*.downsampled.tsv.gz") , emit: downsampled_depths
     path "versions.yml"                           , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def downsample_prop = task.ext.downsample_prop ?: 1

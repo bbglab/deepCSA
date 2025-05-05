@@ -16,8 +16,6 @@ process OMEGA_MUTABILITIES {
     tuple val(meta), path("mutabilities_per_site.*.tsv.gz") , emit: mutabilities
     path "versions.yml"                                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

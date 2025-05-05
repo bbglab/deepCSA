@@ -12,8 +12,6 @@ process PLOT_OMEGA {
     tuple val(meta), path("**.pdf")  , optional: true   , emit: plots
     path "versions.yml"                                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

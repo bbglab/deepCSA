@@ -15,8 +15,6 @@ process CUSTOM_MUTATION_PROCESSING {
     tuple val(meta), path("*.custom.tsv")   , emit: mutations
     path "versions.yml"                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

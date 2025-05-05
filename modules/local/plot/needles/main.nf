@@ -13,8 +13,6 @@ process PLOT_NEEDLES {
     tuple val(meta), path("**.pdf")  , emit: plots, optional : true
     path "versions.yml"              , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

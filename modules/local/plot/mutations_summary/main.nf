@@ -12,8 +12,6 @@ process PLOT_MUTATIONS {
     tuple val(meta), path("*.pdf")  , emit: plots
     path "versions.yml"             , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

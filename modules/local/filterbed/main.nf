@@ -13,8 +13,6 @@ process FILTERBED {
     tuple val(meta), path("*.tsv.gz")  , emit: maf
     path "versions.yml"                , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def filtername = task.ext.filtername ?: "covered"

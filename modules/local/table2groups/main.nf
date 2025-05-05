@@ -14,8 +14,6 @@ process TABLE_2_GROUP {
     path("all_groups.json")                     , emit: json_allgroups
     path "versions.yml"                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

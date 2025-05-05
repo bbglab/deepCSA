@@ -14,8 +14,6 @@ process PREPARE_INPUT {
     tuple val(meta), path("*.csv")                                  , emit: csv_matrices
     path "versions.yml"                                             , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

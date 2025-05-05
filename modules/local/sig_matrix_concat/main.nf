@@ -13,8 +13,6 @@ process MATRIX_CONCAT {
     path("*_matrix*.hdp.tsv")   , emit: wgs_tsv_hdp
     path "versions.yml"         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

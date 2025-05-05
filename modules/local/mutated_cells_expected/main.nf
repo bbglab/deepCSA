@@ -21,8 +21,6 @@ process EXPECTED_MUTATED_CELLS {
 
     path "versions.yml"                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def metadata_file = task.ext.metadata_file ? "${features_table}": ""

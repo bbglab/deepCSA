@@ -15,8 +15,6 @@ process COMPUTE_MATRIX {
     tuple val(meta), path("*.per_sample.sigprofiler")  , optional:true, emit: per_sample_sigprof
     path "versions.yml"                                               , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

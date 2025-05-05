@@ -12,8 +12,6 @@ process COMPUTE_TRINUCLEOTIDE {
     tuple val(meta), path("*.trinucleotides.tsv.gz"), emit: trinucleotides
     path "versions.yml"                             , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

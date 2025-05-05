@@ -14,12 +14,8 @@ process NORMALIZE_SIGNATURES {
     path "versions.yml"                           , topic: versions
 
 
-    when:
-    params.norm_file != "NA"
-
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     Rscript run_HDP_sigNormalising.R \\
         $output_dir \\

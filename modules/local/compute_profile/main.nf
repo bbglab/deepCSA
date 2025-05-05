@@ -21,8 +21,6 @@ process COMPUTE_PROFILE {
 
     path "versions.yml"                                                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

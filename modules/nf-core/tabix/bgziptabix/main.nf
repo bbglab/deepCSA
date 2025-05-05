@@ -17,8 +17,6 @@ process TABIX_BGZIPTABIX {
     tuple val(meta), path("*.gz"), path("*.csi"), optional: true, emit: gz_csi
     path  "versions.yml" ,                        topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

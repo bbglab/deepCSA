@@ -16,8 +16,6 @@ process SUMMARIZE_ANNOTATION {
     tuple val(meta), path("*.vep.tab.gz")       , emit: tab_all
     path "versions.yml"                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

@@ -18,8 +18,6 @@ process TABIX_BGZIPTABIX_QUERY {
     tuple val(meta), path("*.gz")   , emit: subset
     path  "versions.yml"            , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

@@ -12,8 +12,6 @@ process ONCODRIVE3D_PREPROCESSING {
     tuple val(meta), path("*.mutations.raw_vep.tsv") , emit: vep_output4o3d
     path "versions.yml"                              , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

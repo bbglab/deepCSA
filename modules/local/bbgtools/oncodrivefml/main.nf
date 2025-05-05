@@ -21,8 +21,6 @@ process ONCODRIVEFML {
     tuple val(meta), path("${meta.id}.${mode}/")         , emit: folder
     path "versions.yml"                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: "" // "-s ${params.seed}"

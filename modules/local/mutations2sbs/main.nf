@@ -13,8 +13,6 @@ process MUTATIONS_2_SIGNATURES {
     tuple val(meta), path ("*.sigs.annotated.tsv.gz")   , emit: mafs_sigs_info
     path "versions.yml"                                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

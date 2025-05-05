@@ -14,8 +14,6 @@ process SIGPROFILERASSIGNMENT {
     tuple val(meta), path("**Decomposed_MutationType_Probabilities.*.txt")  , emit: mutation_probs
     path "versions.yml"                                                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

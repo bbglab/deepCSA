@@ -13,8 +13,6 @@ process DNA_2_PROTEIN_MAPPING {
     tuple val(meta2), path("*.mapping.tsv") , emit: mapping
     path  "versions.yml"                   , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta2.id}"

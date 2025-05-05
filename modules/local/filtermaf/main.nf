@@ -13,8 +13,6 @@ process FILTER_BATCH {
     tuple val(meta), path("*.cohort.filtered.tsv.gz") , emit: cohort_maf
     path "versions.yml"                               , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
