@@ -1,8 +1,8 @@
 process MERGE_VEP {
-    label 'process_low'
+    label 'process_medium'
 
-    conda "bioconda::bcftools=1.15.1"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/bcftools:1.15.1--h0ea216a_0' : 'biocontainers/bcftools:1.15.1--h0ea216a_0' }"
+    conda "bioconda::pigz=2.3.4"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/pigz:2.3.4' : 'quay.io/biocontainers/pigz:2.3.4' }"
 
     input:
     tuple val(meta), path(vep_files)
@@ -17,11 +17,30 @@ process MERGE_VEP {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    # Sort input files by chromosome number
-    sorted_files=\$(ls ${vep_files} | sort -V)
+    # Output filename
+    out_file="${prefix}.merged.tab"
 
-    # Concatenate sorted files
-    bcftools concat -a \$sorted_files | bgzip > ${prefix}.merged.tab.gz
+    # Sort input files by chromosome (e.g. chr1, chr2, ..., chrX, chrY)
+    sorted_files=\$(printf "%s\\n" ${vep_files} | sort -V)
+
+    # Initialize header_written flag
+    header_written=false
+
+    # Merge files
+    for f in \$sorted_files; do
+        echo "Processing \$f..."
+        if [ "\$header_written" = false ]; then
+            # Use pigz for parallel decompression and awk for header and data processing
+            pigz -dc -p ${task.cpus} "\$f" | awk '{if(\$0 ~ /^##/) print; else if(\$0 ~ /^#/) {print; next} else print}' > "\$out_file"
+            header_written=true
+        else
+            # Only append data rows (skip header lines)
+            pigz -dc -p ${task.cpus} "\$f" | awk 'NR>1 {print}' >> "\$out_file"
+        fi
+    done
+
+    # Compress final merged output using pigz instead of bgzip
+    pigz -p ${task.cpus} "\$out_file"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
