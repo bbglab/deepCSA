@@ -1,8 +1,8 @@
 process MERGE_VEP {
     label 'process_medium'
 
-    conda "bioconda::pigz=2.3.4"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/pigz:2.3.4' : 'quay.io/biocontainers/pigz:2.3.4' }"
+    conda "bioconda::pigz=2.3.4 conda-forge::coreutils=8.31"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ? 'https://depot.galaxyproject.org/singularity/mulled-v2-9aba7f8498f4a9a927f0981c7d692976:2c7d6d5a2df7b0e4d2d146e9b0b6f1a8e3b7f3e9-0' : 'quay.io/biocontainers/mulled-v2-9aba7f8498f4a9a927f0981c7d692976:2c7d6d5a2df7b0e4d2d146e9b0b6f1a8e3b7f3e9-0' }"
 
     input:
     tuple val(meta), path(vep_files)
