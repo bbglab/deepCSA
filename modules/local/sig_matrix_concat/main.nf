@@ -9,9 +9,10 @@ process MATRIX_CONCAT {
     path (json_samples)
 
     output:
-    path("*_matrix*.sp.tsv")    , emit: wgs_tsv
-    path("*_matrix*.hdp.tsv")   , emit: wgs_tsv_hdp
-    path "versions.yml"         , topic: versions
+    path("*_matrix*.sp.tsv")        , emit: wgs_tsv
+    path("*_matrix*.hdp.tsv")       , emit: wgs_tsv_hdp
+    path("*_matrix*.sp.round.tsv")  , emit: wgs_round_tsv
+    path "versions.yml"             , topic: versions
 
 
     script:
