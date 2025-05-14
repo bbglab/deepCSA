@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 import sys
+import gc
 
 from itertools import product
 from bgreference import hg38, hg19, mm10, mm39
