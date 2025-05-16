@@ -1,10 +1,20 @@
 #!/usr/bin/env python
 
+#######
+# This script converts a mutations file (TSV format) to one or multiple VCF-formatted files.
+#######
+
+#######
+# Usage: 
+#######
+## If your sample names are NOT in a column called SAMPLE_ID,
+## you can use the --sample-name-column option to specify it.
+
 # if the maf is from deepCSA, use this one, otherwise use the one below
-# usage: python deepcsa_maf2vcf.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/ --maf-from-deepcsa
+# usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/ --maf-from-deepcsa
 
 # if the maf file is not from deepCSA, use this below
-# usage: python deepcsa_maf2vcf.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
+# usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
 
 import click
 import pandas as pd
