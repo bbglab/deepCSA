@@ -3,10 +3,10 @@ process CREATECAPTUREDPANELS {
     label 'process_single'
     label 'process_medium_high_memory'
 
-    conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
+    conda "bioconda::pybedtools=0.9.1 conda-forge::polars conda-forge::click"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-            'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
-            'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
+        'https://depot.galaxyproject.org/singularity/mulled-v2-fe8faa35dbf6dc65a0f7f5d4ea12e31a79f73e40:66ed1b38d280722529bb8a0167b0cf02f8a0b488-0' :
+        'quay.io/biocontainers/mulled-v2-fe8faa35dbf6dc65a0f7f5d4ea12e31a79f73e40:66ed1b38d280722529bb8a0167b0cf02f8a0b488-0' }"
 
 
     input:

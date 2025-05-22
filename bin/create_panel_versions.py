@@ -1,13 +1,21 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import pandas as pd
+"""
+create_panel_versions_polars.py
+
+Generates multiple VEP annotation panel subsets based on the 'IMPACT' column
+using the high-performance Polars library.
+
+Usage:
+    python create_panel_versions_polars.py <input_tsv> <output_prefix>
+"""
+
+import polars as pl
+import click
 import os
 import sys
 
-# TODO: check pandas version 2.0.3
-# -- Auxiliary functions -- #
-
-panel_impact_dict = {
+PANEL_IMPACT_DICT = {
 
     "protein_affecting": ["nonsense", "missense",
                             "essential_splice",
@@ -67,28 +75,36 @@ panel_impact_dict = {
 
 }
 
-# -- Main function -- #
 
-def create_panel_versions(compact_annot_panel_path, output_path):
+@click.command()
+@click.argument("input_path", type=click.Path(exists=True))
+@click.argument("output_prefix", type=str)
+def create_panel_versions(input_path: str, output_prefix: str) -> None:
+    """
+    Generates panel subsets from a VEP-annotated file using Polars.
 
-    # Load VEP annotated panel, already compacted to have one variant per site
-    ## requires column named IMPACT with consequence type
-    compact_annot_panel_df = pd.read_csv(compact_annot_panel_path, sep = "\t")
+    \b
+    INPUT_PATH: Path to the annotated TSV file.
+    OUTPUT_PREFIX: Prefix for the output files (e.g., 'output/panel').
+    """
+    try:
+        df = pl.read_csv(input_path, separator="\t")
+    except Exception as e:
+        click.echo(f"Error reading input file: {e}", err=True)
+        sys.exit(1)
 
-    # Create panel versions
-    for version in panel_impact_dict:
+    if "IMPACT" not in df.columns:
+        click.echo("ERROR: 'IMPACT' column not found in input file.", err=True)
+        sys.exit(1)
 
-        panel_version = compact_annot_panel_df.loc[compact_annot_panel_df["IMPACT"].isin(panel_impact_dict[version])]
-        panel_version.to_csv(f"{output_path}.{version}.tsv",
-                                sep = "\t", index = False)
+    for version_name, impact_values in PANEL_IMPACT_DICT.items():
+        filtered = df.filter(pl.col("IMPACT").is_in(impact_values))
+        filtered.write_csv(f"{output_prefix}.{version_name}.tsv", separator="\t")
 
-    # Store complete panel (better change this way of using this version in nextflow)
-    version = "all"
-    compact_annot_panel_df.to_csv(f"{output_path}.{version}.tsv",
-                                    sep = "\t", index = False)
+    # Write the full file as a version
+    df.write_csv(f"{output_prefix}.all.tsv", separator="\t")
 
-if __name__ == '__main__':
-    compact_annot_panel_path = sys.argv[1]
-    output_path = sys.argv[2]
+    click.echo("Panel versions generated successfully.")
 
-    create_panel_versions(compact_annot_panel_path, output_path)
+if __name__ == "__main__":
+    create_panel_versions()
