@@ -47,8 +47,6 @@ workflow CREATE_PANELS {
 
     take:
     depths
-    vep_cache
-    vep_extra_files
 
     main:
 
@@ -59,14 +57,13 @@ workflow CREATE_PANELS {
     SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation }
 
     // Annotate all possible mutations in the captured panel
-    // COMMENTED to avoid running VEP again and again during testing
     VCFANNOTATEPANEL(sites_annotation,
                     params.fasta,
                     params.vep_genome,
                     params.vep_species,
                     params.vep_cache_version,
-                    vep_cache,
-                    vep_extra_files)
+                    params.vep_cache,
+                    [])
 
     // Postprocess annotations to get one annotation per mutation
     POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
