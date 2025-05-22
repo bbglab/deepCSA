@@ -3,7 +3,7 @@ include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../..
 
 include { SUBSET_MAF                as SUBSETMUTABILITY        } from '../../../modules/local/subsetmaf/main'
 
-include { COMPUTE_MUTABILITY        as COMPUTEMUTABILITY        } from '../../../modules/local/compute_mutability/main'
+include { COMPUTE_RELATIVE_MUTABILITY        as COMPUTERELATIVEMUTABILITY        } from '../../../modules/local/compute_mutability/main'
 
 include { TABIX_BGZIPTABIX          as MUTABILITY_BGZIPTABIX    } from '../../../modules/nf-core/tabix/bgziptabix/main'
 
@@ -34,9 +34,9 @@ workflow MUTABILITY {
     .join(depth)
     .set{ mutations_n_profile_n_depth }
 
-    COMPUTEMUTABILITY( mutations_n_profile_n_depth, panel_file)
+    COMPUTERELATIVEMUTABILITY( mutations_n_profile_n_depth, panel_file)
 
-    MUTABILITY_BGZIPTABIX( COMPUTEMUTABILITY.out.mutability )
+    MUTABILITY_BGZIPTABIX( COMPUTERELATIVEMUTABILITY.out.mutability )
 
 
     emit:
