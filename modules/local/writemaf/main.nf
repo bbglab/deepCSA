@@ -15,8 +15,7 @@ process WRITE_MAFS {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    // TODO reimplement with click
     """
     write_mafs.py ${maf} ${json_groups}
 
@@ -27,8 +26,6 @@ process WRITE_MAFS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch all_samples.cohort.tsv.gz
 

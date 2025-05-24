@@ -16,7 +16,6 @@ process PREPARE_INPUT {
 
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     # First, create an R script
@@ -57,7 +56,6 @@ process PREPARE_INPUT {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.pdf

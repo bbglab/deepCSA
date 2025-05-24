@@ -17,8 +17,6 @@ process CUSTOM_MUTATION_PROCESSING {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO reimplement python script with click
     """
     mutations_custom_processing.py \\
@@ -33,8 +31,6 @@ process CUSTOM_MUTATION_PROCESSING {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${mutations_annotated.getBaseName()}.custom.tsv
 

@@ -16,10 +16,8 @@ process CREATECUSTOMBEDFILE {
 
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def tool = task.ext.tool ?: 'oncodrivefml'
-
     // find a better solution for doing this,
     // probably in python
     // so that both genes overlapping can be conserved and then we can also do groups of genes

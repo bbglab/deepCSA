@@ -2,12 +2,6 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     tag "$meta.id"
     label 'process_medium'
 
-    
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-
     // TODO pending to push the container somewhere and be able to retrieve it
     container 'docker.io/spellegrini87/oncodrive3d_chimerax:latest'
 
@@ -27,7 +21,8 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
 
-    // Increase/decreaase pixel_size to decrease/increase resolution and speed/slow png generation
+    // Increase/decrease pixel_size to decrease/increase resolution and speed/slow png generation
+    //TODO revise argument definition
     """
     oncodrive3D chimerax-plot -o $prefix \\
                               -g $genes_csv \\
@@ -47,7 +42,6 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.tsv

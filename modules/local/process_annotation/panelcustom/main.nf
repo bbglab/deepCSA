@@ -20,8 +20,6 @@ process CUSTOM_ANNOTATION_PROCESSING {
 
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     def simple = task.ext.simple ? "True" : "False"
     // TODO
     // Document this custom_regions has to be a TSV file with the following columns:

@@ -21,7 +21,6 @@ process OMEGA_PREPROCESS {
 
 
     script:
-    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO revise this fix
     def sample_name = prefix.tokenize('.')[0]
@@ -38,7 +37,6 @@ process OMEGA_PREPROCESS {
                         --mutational-profile-file ${mutation_profile} \\
                         --single-sample ${sample_name} \\
                         ${global_loc}
-    # $args -c $task.cpus
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         omega: 1.0
@@ -46,7 +44,7 @@ process OMEGA_PREPROCESS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
+
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.tsv

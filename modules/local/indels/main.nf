@@ -13,9 +13,7 @@ process INDELS_COMPARISON {
 
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
     indels_comparison.py \\
                 --sample ${prefix} \\

@@ -33,7 +33,6 @@ process EXPAND_REGIONS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.vep.summary.tab.gz

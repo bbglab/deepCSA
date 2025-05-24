@@ -16,8 +16,6 @@ process COMPUTE_TRINUCLEOTIDE {
     script:
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def filters = task.ext.filters ?: ""
-
     """
     mutprof_2compute_trinucleotide.py \\
                     --depths_file ${depths} \\
@@ -31,7 +29,6 @@ process COMPUTE_TRINUCLEOTIDE {
 
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.profile.json

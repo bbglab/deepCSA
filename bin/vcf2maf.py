@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
-# TODO
-# add plotting modules to bgreference container
+
 import sys
 import pandas as pd
 import numpy as np
-# import seaborn as sns
-# import matplotlib.pyplot as plt
 from utils import vartype
 from read_utils import custom_na_values
 
@@ -25,6 +22,9 @@ annotation_file = sys.argv[5]
 vaf_all_molecules = sys.argv[6] == 'true'
 print(vaf_all_molecules)
 
+# TODO
+# fix this, force all molecules to be always active,
+# when not specified copy same values as the duplex
 if vaf_all_molecules:
     keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
                         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
@@ -262,24 +262,6 @@ def read_from_vardict_VCF_all(sample,
     else:
         print("No ID field generated, 'CHROM', 'POS', 'REF', 'ALT' not in the first positions of the df")
 
-
-    # if plottingDist:
-    #     fig, (ax1, ax2) = plt.subplots(1, 2, figsize = [14, 4])
-    #     fig.suptitle(f"Sample {sample}")
-
-    #     sns.histplot(dat_full, x="VAF", bins = n_bins,
-    #                     ax = ax1
-    #                 )
-    #     sns.histplot(dat_full[dat_full["VAF"] < subset_val], x="VAF", bins= n_bins,
-    #                     ax = ax2
-    #                 )
-
-    #     # ax1.axvline(0, color = 'r', linestyle = '--')
-    #     # ax1.axvline(subset_val, color = 'r', linestyle = '--')
-
-    #     ax1.set_xlabel("VAF")
-    #     ax2.set_xlabel("VAF")
-    #     plt.show()
 
     return dat_full_reduced
 

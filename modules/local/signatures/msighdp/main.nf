@@ -14,7 +14,6 @@ process MSIGHDP {
 
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def k_guess = task.ext.k_guess ?: "12"
     """
@@ -34,7 +33,6 @@ process MSIGHDP {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.pdf

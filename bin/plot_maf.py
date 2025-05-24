@@ -288,6 +288,24 @@ def plot_manager(sample_name, maf, plotting_criteria_file):
                     plt.close()
 
 
+# TODO add VAF distribution plot
+# if plottingDist:
+#     fig, (ax1, ax2) = plt.subplots(1, 2, figsize = [14, 4])
+#     fig.suptitle(f"Sample {sample}")
+
+#     sns.histplot(dat_full, x="VAF", bins = n_bins,
+#                     ax = ax1
+#                 )
+#     sns.histplot(dat_full[dat_full["VAF"] < subset_val], x="VAF", bins= n_bins,
+#                     ax = ax2
+#                 )
+
+#     # ax1.axvline(0, color = 'r', linestyle = '--')
+#     # ax1.axvline(subset_val, color = 'r', linestyle = '--')
+
+#     ax1.set_xlabel("VAF")
+#     ax2.set_xlabel("VAF")
+#     plt.show()
 
 # @click.command()
 # @click.option('--sample_name', type=str, help='Name of the sample being processed.')
@@ -312,7 +330,8 @@ json_filters = sys.argv[4]
 req_plots    = sys.argv[5]
 
 
-
+# TODO
+# handle with click
 if __name__ == '__main__':
     maf = subset_mutation_dataframe(mut_file, json_filters)
     plot_manager(sample_name, maf, req_plots)

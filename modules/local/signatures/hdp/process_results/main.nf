@@ -15,7 +15,6 @@ process  PROCESS_HDP_RESULTS {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir -p output_dir/iterations/
     mv hdp_chains_*.RData output_dir/iterations/.
@@ -34,7 +33,6 @@ process  PROCESS_HDP_RESULTS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.pdf

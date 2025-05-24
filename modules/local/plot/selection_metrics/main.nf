@@ -18,7 +18,6 @@ process PLOT_SELECTION_METRICS {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def output_prefix = task.ext.output_prefix ?: ""
-    def filters = task.ext.filters ?: ""
     def requested_plots = task.ext.plots ?: ""
     """
     plot_selectionsideplots.py \\
@@ -35,7 +34,6 @@ process PLOT_SELECTION_METRICS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def output_prefix = task.ext.output_prefix ?: ""
     """

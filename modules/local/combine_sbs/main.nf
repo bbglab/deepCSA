@@ -15,8 +15,6 @@ process SIGNATURES_PROBABILITIES {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     ls ${signature_probabilities} > signature_probs_files.txt
     concat_sbs_probs.py --signature-probabilities signature_probs_files.txt
@@ -28,7 +26,6 @@ process SIGNATURES_PROBABILITIES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.decomposed_probabilities.tsv

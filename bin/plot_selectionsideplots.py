@@ -81,6 +81,7 @@ def generate_all_side_figures(sample,
         possible_genes += indels_genes
 
     gene_list = list(set(possible_genes))
+    gene_list = [x for x in gene_list if x in list(pd.unique(snvs_maf["canonical_SYMBOL"]))]
 
 
     os.makedirs(f"{sample}.plots")
