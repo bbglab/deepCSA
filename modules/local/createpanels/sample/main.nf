@@ -21,7 +21,8 @@ process CREATESAMPLEPANELS {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     // TODO reimplment with click
     """
     create_panel4sample.py \\

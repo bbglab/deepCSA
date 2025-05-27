@@ -16,7 +16,8 @@ process PLOT_SELECTION_METRICS {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def output_prefix = task.ext.output_prefix ?: ""
     def requested_plots = task.ext.plots ?: ""
     """
@@ -34,7 +35,8 @@ process PLOT_SELECTION_METRICS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def output_prefix = task.ext.output_prefix ?: ""
     """
     touch ${prefix}${output_prefix}.pdf

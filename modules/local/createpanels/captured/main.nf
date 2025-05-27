@@ -29,7 +29,8 @@ process CREATECAPTUREDPANELS {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     create_panel_versions.py \\
                     ${compact_captured_panel_annotation} \\
@@ -49,7 +50,8 @@ process CREATECAPTUREDPANELS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.all.tsv
     touch ${prefix}.protein_affecting.tsv

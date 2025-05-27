@@ -19,7 +19,8 @@ process OMEGA_ESTIMATOR {
 
     script:
     def option = task.ext.option ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
 
     mkdir groups;
@@ -62,7 +63,8 @@ process OMEGA_ESTIMATOR {
 
     stub:
     def option = task.ext.option ?: "bayes"
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch output_${option}.${prefix}.tsv
 

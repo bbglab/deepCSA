@@ -14,7 +14,8 @@ process ONCODRIVE3D_PREPROCESSING {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     oncodrive3d_preprocessing.py ${maf} ${all_vep_output} ${prefix}
 
@@ -25,7 +26,8 @@ process ONCODRIVE3D_PREPROCESSING {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.mutations.raw_vep.tsv
 

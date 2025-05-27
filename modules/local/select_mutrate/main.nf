@@ -14,7 +14,8 @@ process SELECT_MUTRATES {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def mode = task.ext.mode ?: "mutations"
     """
     omega_select_mutrate.py \\

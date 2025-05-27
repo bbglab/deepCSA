@@ -21,7 +21,9 @@ process OMEGA_PREPROCESS {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+
     // TODO revise this fix
     def sample_name = prefix.tokenize('.')[0]
     def global_loc = task.ext.global_loc ? "--absent-synonymous infer_global_custom  --mutational-profile-global-file global_mutprofile.tsv --synonymous-mutrates-file ${syn_muts_global}" : "--absent-synonymous ignore"
@@ -45,7 +47,8 @@ process OMEGA_PREPROCESS {
 
     stub:
 
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

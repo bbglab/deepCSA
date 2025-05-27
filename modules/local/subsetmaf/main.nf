@@ -15,7 +15,8 @@ process SUBSET_MAF {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def output_prefix = task.ext.output_prefix ?: ""
     def filters = task.ext.filters ?: ""
     def output_format = task.ext.output_fmt ?: ""
@@ -46,7 +47,8 @@ process SUBSET_MAF {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.mutations.tsv
 

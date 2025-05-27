@@ -16,7 +16,8 @@ process VCF2MAF {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def batch = task.ext.batch ?: "${meta.batch}"
     def level = task.ext.level ?: "high"
     def all_molecules_dp = task.ext.all_molecules_dp ?: "false"
@@ -32,7 +33,8 @@ process VCF2MAF {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.vep.summary.tab.gz
 

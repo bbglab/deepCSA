@@ -27,7 +27,8 @@ process ONCODRIVE3D_RUN {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     // To be set as true to prioritize MANE transcripts but penalize plotting 
     // annotations (we should also change the datasets dir to the MANE one) 
     def mane = task.ext.mane ? '--mane' : ''
@@ -64,7 +65,8 @@ process ONCODRIVE3D_RUN {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

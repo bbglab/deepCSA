@@ -16,7 +16,8 @@ process PLOT_NEEDLES {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def output_prefix = task.ext.output_prefix ?: ""
     """
     plot_needles.py \\
@@ -33,7 +34,8 @@ process PLOT_NEEDLES {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def output_prefix = task.ext.output_prefix ?: ""
 
     """

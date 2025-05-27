@@ -14,7 +14,8 @@ process PLOT_OMEGA {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def requested_plots = task.ext.plots ?: "truncating,missense"
     """
     plot_selection_omega.py \\
@@ -31,7 +32,8 @@ process PLOT_OMEGA {
 
     stub:
     def output_prefix = task.ext.output_prefix ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}${output_prefix}.pdf
 

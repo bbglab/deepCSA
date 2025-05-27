@@ -20,7 +20,8 @@ process CREATECONSENSUSPANELS {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     create_consensus_panel.py \\
                     ${compact_captured_panel_annotation} \\
@@ -41,7 +42,8 @@ process CREATECONSENSUSPANELS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch consensus.${prefix}.tsv
     touch consensus.${prefix}.bed

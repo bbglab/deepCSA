@@ -23,7 +23,8 @@ process COMPUTE_RELATIVE_MUTABILITY {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
 
     """
     mutprof_3compute_mutability.py \\
@@ -42,7 +43,8 @@ process COMPUTE_RELATIVE_MUTABILITY {
 
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.profile.json
 

@@ -19,7 +19,8 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
 
     // Increase/decrease pixel_size to decrease/increase resolution and speed/slow png generation
     //TODO revise argument definition
@@ -42,7 +43,8 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

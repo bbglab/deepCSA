@@ -16,7 +16,8 @@ process COMPARE_SIGNATURES {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     Rscript /app/HDP_sigExtraction/R/run_HDP_comparing.R \\
         output_dir/ \\
@@ -35,7 +36,8 @@ process COMPARE_SIGNATURES {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.pdf
 

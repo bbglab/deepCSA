@@ -15,7 +15,8 @@ process MERGE_BATCH {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     merge_cohort.py --output_file ${prefix}.cohort.tsv.gz
 

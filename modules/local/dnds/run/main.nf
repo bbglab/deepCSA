@@ -18,7 +18,8 @@ process RUN_DNDS {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     dNdS_run.R --inputfile ${mutations_table} \\
                 --outputfile ${prefix}.out.tsv \\
@@ -34,7 +35,8 @@ process RUN_DNDS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.out.tsv
 

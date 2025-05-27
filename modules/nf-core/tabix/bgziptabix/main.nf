@@ -21,7 +21,8 @@ process TABIX_BGZIPTABIX {
     script:
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     bgzip  --threads ${task.cpus} -c $args $input > ${prefix}.${input.getExtension()}.gz
     tabix $args2 ${prefix}.${input.getExtension()}.gz
@@ -33,7 +34,8 @@ process TABIX_BGZIPTABIX {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.${input.getExtension()}.gz
     touch ${prefix}.${input.getExtension()}.gz.tbi
