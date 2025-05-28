@@ -50,8 +50,8 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate parameters and generate parameter summary to stdout
     //
-    pre_help_text =  WorkflowDeepcsa.logo(workflow, params.monochrome_logs)
-    post_help_text = '\n' + WorkflowDeepcsa.citation(workflow) + '\n'
+    pre_help_text =  logo(workflow, params.monochrome_logs)
+    post_help_text = '\n' + citation(workflow) + '\n'
     def workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../bbglab> --input path/to/input/ --outdir path/to/output/"
     UTILS_NFVALIDATION_PLUGIN (
         help,
@@ -187,3 +187,63 @@ def methodsDescriptionText(mqc_methods_yaml) {
 
     return description_html.toString()
 }
+
+
+
+def logo(monochrome_logs) {
+    String.format(
+        """
+        ${monochrome_logs ? '' : '\033[0;33m'}
+    888                             .d8888b.   .d8888b.        d8888
+    888                            d88P  Y88b d88P  Y88b      d88888
+    888                            888    888 Y88b.          d88P888
+.d88888  .d88b.   .d88b.  88888b.  888         "Y888b.      d88P 888
+d88" 888 d8P  Y8b d8P  Y8b 888 "88b 888            "Y88b.   d88P  888
+888  888 88888888 88888888 888  888 888    888       "888  d88P   888
+Y88b 888 Y8b.     Y8b.     888 d88P Y88b  d88P Y88b  d88P d8888888888
+"Y88888  "Y8888   "Y8888  88888P"   "Y8888P"   "Y8888P" d88P     888
+                        888
+                        888
+                        888
+        ${monochrome_logs ? '' : '\033[0m'}
+        """.stripIndent()
+    )
+}
+
+
+def citation(workflow) {
+        return "If you use ${workflow.manifest.name} for your analysis please cite:\n\n" +
+            // TODO nf-core: Add Zenodo DOI for pipeline after first release
+            //"* The pipeline\n" +
+            //"  https://doi.org/10.5281/zenodo.XXXXXXX\n\n" +
+            "* The nf-core framework\n" +
+            "  https://doi.org/10.1038/s41587-020-0439-x\n\n" +
+            "* Software dependencies\n" +
+            "  https://github.com/${workflow.manifest.name}/blob/master/CITATIONS.md"
+}
+
+
+
+def paramsSummaryMultiqc(workflow, summary) {
+        String summary_section = ''
+        summary.keySet().each { group ->
+            def group_params = summary.get(group)  // This gets the parameters of that particular group
+            if (group_params) {
+                summary_section += "    <p style=\"font-size:110%\"><b>$group</b></p>\n"
+                summary_section += "    <dl class=\"dl-horizontal\">\n"
+                group_params.keySet().each { param ->
+                    summary_section += "        <dt>$param</dt><dd><samp>${group_params.get(param) ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>\n"
+                }
+                summary_section += "    </dl>\n"
+            }
+        }
+
+        String yaml_file_text  = "id: '${workflow.manifest.name.replace('/','-')}-summary'\n"
+        yaml_file_text        += "description: ' - this information is collected when the pipeline is started.'\n"
+        yaml_file_text        += "section_name: '${workflow.manifest.name} Workflow Summary'\n"
+        yaml_file_text        += "section_href: 'https://github.com/${workflow.manifest.name}'\n"
+        yaml_file_text        += "plot_type: 'html'\n"
+        yaml_file_text        += "data: |\n"
+        yaml_file_text        += "${summary_section}"
+        return yaml_file_text
+    }
