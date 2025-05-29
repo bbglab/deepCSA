@@ -4,7 +4,10 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryMap } from 'plugin/nf-schema'
+include { paramsSummaryMap          } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_deepcsa'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -532,19 +535,19 @@ workflow DEEPCSA{
     ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
-    // // Info required for completion email and summary
-    // def multiqc_report = []
+    // Info required for completion email and summary
+    def multiqc_report = []
 
-    // def summary_params = paramsSummaryMap(workflow)
-    // workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
-    // ch_workflow_summary = Channel.value(workflow_summary)
+    def summary_params = paramsSummaryMap(workflow)
+    workflow_summary    = paramsSummaryMultiqc(workflow, summary_params)
+    ch_workflow_summary = Channel.value(workflow_summary)
 
-    // methods_description    = WorkflowDeepcsa.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    // ch_methods_description = Channel.value(methods_description)
+    methods_description    = methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    ch_methods_description = Channel.value(methods_description)
 
     ch_multiqc_files = Channel.empty()
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
 
     MULTIQC (
