@@ -86,9 +86,6 @@ include { SELECT_MUTRATES           as SYNMUTREADSRATE      } from '../modules/l
 include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
 
 
-// Download annotation cache if needed
-include { PREPARE_CACHE                                     } from '../subworkflows/local/prepare_cache/main'
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
