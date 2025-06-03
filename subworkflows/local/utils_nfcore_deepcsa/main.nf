@@ -50,7 +50,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate parameters and generate parameter summary to stdout
     //
-    pre_help_text =  logo(workflow, monochrome_logs)
+    pre_help_text =  logo(monochrome_logs)
     post_help_text = '\n' + citation(workflow) + '\n'
     def workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../bbglab> --input path/to/input/ --outdir path/to/output/"
     UTILS_NFVALIDATION_PLUGIN (
