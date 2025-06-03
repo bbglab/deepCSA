@@ -28,7 +28,7 @@ workflow PIPELINE_INITIALISATION {
     version           // boolean: Display version and exit
     help              // boolean: Display help text
     validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    _monochrome_logs   // boolean: Do not use coloured log outputs
+    monochrome_logs   // boolean: Do not use coloured log outputs
     nextflow_cli_args //   array: List of positional nextflow CLI args
     outdir            //  string: The output directory where the results will be saved
 
@@ -50,7 +50,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate parameters and generate parameter summary to stdout
     //
-    pre_help_text =  logo(workflow, params.monochrome_logs)
+    pre_help_text =  logo(workflow, monochrome_logs)
     post_help_text = '\n' + citation(workflow) + '\n'
     def workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../bbglab> --input path/to/input/ --outdir path/to/output/"
     UTILS_NFVALIDATION_PLUGIN (
