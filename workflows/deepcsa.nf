@@ -539,10 +539,10 @@ workflow DEEPCSA{
     def multiqc_report = []
 
     def summary_params = paramsSummaryMap(workflow)
-    workflow_summary    = paramsSummaryMultiqc(workflow, summary_params)
+    workflow_summary    = paramsSummaryMultiqc(summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    methods_description    = methodsDescriptionText(ch_multiqc_custom_methods_description)
     ch_methods_description = Channel.value(methods_description)
 
     ch_multiqc_files = Channel.empty()
