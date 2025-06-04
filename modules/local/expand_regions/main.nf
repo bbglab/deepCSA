@@ -14,8 +14,6 @@ process EXPAND_REGIONS {
     tuple val(meta), path("hotspot_names.json") , emit: new_regions_json
     path "versions.yml"                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def expansion = task.ext.expansion ?: 0

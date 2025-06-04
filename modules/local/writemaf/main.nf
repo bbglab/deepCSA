@@ -13,8 +13,6 @@ process WRITE_MAFS {
     path("*.filtered.tsv.gz") , emit: mafs
     path "versions.yml"       , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

@@ -274,6 +274,11 @@
                     "description": "Do you want to run omega?",
                     "fa_icon": "fas fa-book"
                 },
+                "omega_multi": {
+                    "type": "boolean",
+                    "description": "Do you want to run omega_multi?",
+                    "fa_icon": "fas fa-book"
+                },
                 "omega_globalloc": {
                     "type": "boolean",
                     "description": "Do you want to run omega with the globalloc mode?",
@@ -509,9 +514,8 @@
                 "confidence_level": {
                     "type": "string",
                     "description": "Duplex reads confidence level",
-                    "default": "high",
-                    "fa_icon": "fas fa-book",
-                    "help_text": ""
+                    "default": "med",
+                    "fa_icon": "fas fa-book"
                 },
                 "all_duplex_counts": {
                     "type": "boolean",
@@ -608,6 +612,11 @@
                     "type": "array",
                     "description": "List of filters to apply for getting only somatic mutations.",
                     "fa_icon": "far fa-file-code"
+                },
+                "no_filter": {
+                    "type": "boolean",
+                    "description": "Activate it when you only want to use the FILTER field for filtering somatic mutations.",
+                    "fa_icon": "fas fa-book"
                 }
             }
         },
@@ -830,6 +839,16 @@
                     "type": "number",
                     "default": 0.1,
                     "description": "EM fraction threshold"
+                },
+                "norm_file": {
+                    "type": "string",
+                    "default": "NA",
+                    "description": "Normalization file"
+                },
+                "prior_file": {
+                    "type": "string",
+                    "default": "NA",
+                    "description": "Prior file"
                 }
             }
         },

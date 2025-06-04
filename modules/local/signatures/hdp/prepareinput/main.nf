@@ -11,10 +11,9 @@ process PREPARE_INPUT {
 
     output:
     tuple val(meta), path("*.hdp.rds"), path("*.hdp.treelayer.rds") , emit: input_data
+    tuple val(meta), path("*.csv")                                  , emit: csv_matrices
     path "versions.yml"                                             , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

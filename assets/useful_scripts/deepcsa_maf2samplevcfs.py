@@ -1,10 +1,20 @@
 #!/usr/bin/env python
 
+#######
+# This script converts a mutations file (TSV format) to one or multiple VCF-formatted files.
+#######
+
+#######
+# Usage: 
+#######
+## If your sample names are NOT in a column called SAMPLE_ID,
+## you can use the --sample-name-column option to specify it.
+
 # if the maf is from deepCSA, use this one, otherwise use the one below
-# usage: python deepcsa_maf2vcf.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/ --maf-from-deepcsa
+# usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/ --maf-from-deepcsa
 
 # if the maf file is not from deepCSA, use this below
-# usage: python deepcsa_maf2vcf.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
+# usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
 
 import click
 import pandas as pd
@@ -145,17 +155,18 @@ vardict_vcf_header = '''##fileformat=VCFv4.2
 @click.option('--mutations-file', required=True, type=click.Path(exists=True), help="Path to the mutations file (TSV format).")
 @click.option('--output-dir', required=True, type=click.Path(), help="Directory to save the output VCF files.")
 @click.option('--maf-from-deepcsa', is_flag=True, default=False, help="Flag to indicate if the MAF file is from deepCSA.")
-def main(mutations_file, output_dir, maf_from_deepcsa):
+@click.option('--sample-name-column', default="SAMPLE_ID", type=str, help="Column name for sample names in the mutations file.")
+def main(mutations_file, output_dir, maf_from_deepcsa, sample_name_column):
     """
     Convert a mutations file to one or multiple VCF-formatted files.
     """
 
     mutations = pd.read_table(mutations_file)
-
-    for sample in mutations["SAMPLE_ID"].unique():
+    mutations[sample_name_column] = mutations[sample_name_column].astype(str)
+    for sample in mutations[sample_name_column].unique():
         
         # filter the dataframe for the current sample
-        sample_mutations = mutations[mutations["SAMPLE_ID"] == sample]
+        sample_mutations = mutations[mutations[sample_name_column] == sample]
 
         if maf_from_deepcsa:
             vcf_info_sample = sample_mutations[['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']].copy()

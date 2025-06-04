@@ -27,8 +27,6 @@ process CREATECAPTUREDPANELS {
     path("*.synonymous.bed")                , emit: captured_panel_synonymous_bed
     path "versions.yml"                    , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

@@ -17,8 +17,6 @@ process POSTPROCESS_VEP_ANNOTATION {
     tuple val(meta), path("*.compact_rich.tsv") , emit: rich_panel_annotation
     path  "versions.yml"                        , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

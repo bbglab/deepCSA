@@ -16,8 +16,6 @@ process RUN_DNDS {
     tuple val(meta), path("*.out.tsv*") , emit: results
     path "versions.yml"                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

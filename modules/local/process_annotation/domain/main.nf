@@ -16,8 +16,6 @@ process DOMAIN_ANNOTATION {
     path("*.domains.bed4.bed")  , emit: domains_bed
     path  "versions.yml"        , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     """

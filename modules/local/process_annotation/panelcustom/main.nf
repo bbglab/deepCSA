@@ -18,8 +18,6 @@ process CUSTOM_ANNOTATION_PROCESSING {
     tuple val(meta), path("added_regions.tsv") , emit: added_regions
     path  "versions.yml"                       , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

@@ -12,8 +12,6 @@ process RUN_HDP_CHAIN_SAMPLING {
     tuple val(meta), path("iteration_dir/*"), emit: iteration_results
     path "versions.yml"                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

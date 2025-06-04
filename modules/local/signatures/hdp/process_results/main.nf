@@ -12,8 +12,6 @@ process  PROCESS_HDP_RESULTS {
     tuple val(meta), path("output_dir"), emit: processed_results
     path "versions.yml"                , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

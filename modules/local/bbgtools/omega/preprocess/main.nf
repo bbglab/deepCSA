@@ -19,8 +19,6 @@ process OMEGA_PREPROCESS {
     tuple val(meta), path("syn_muts.*.tsv")     , emit: syn_muts_tsv
     path "versions.yml"                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

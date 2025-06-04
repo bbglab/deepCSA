@@ -17,8 +17,6 @@ process ANNOTATE_DEPTHS {
     tuple val(meta), path("all_samples_indv.depths.tsv.gz")     , emit: all_samples_depths
     path "versions.yml"                                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

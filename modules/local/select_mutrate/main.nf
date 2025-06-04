@@ -12,8 +12,6 @@ process SELECT_MUTRATES {
     path  "versions.yml"                         , topic: versions
 
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

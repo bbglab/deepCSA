@@ -26,8 +26,6 @@ process ONCODRIVE3D_PLOT {
     tuple val(meta), path("**.log")                                            , emit: log
     path "versions.yml"                                                        , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

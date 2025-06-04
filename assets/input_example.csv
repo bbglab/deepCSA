@@ -1,0 +1,3 @@
+sample,vcf,bam
+K_5_1_A_1,/data/bbg/datasets/transfer/ferriol_deepcsa/K_5_1_A_1.high.filtered.vcf,/data/bbg/datasets/transfer/ferriol_deepcsa/K_5_1_A_1.sorted.bam
+K_6_1_A_1,/data/bbg/datasets/transfer/ferriol_deepcsa/K_6_1_A_1.high.filtered.vcf,/data/bbg/datasets/transfer/ferriol_deepcsa/K_6_1_A_1.sorted.bam

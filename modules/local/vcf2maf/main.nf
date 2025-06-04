@@ -14,8 +14,6 @@ process VCF2MAF {
     tuple val(meta), path("*.tsv.gz")  , emit: maf
     path "versions.yml"                , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""

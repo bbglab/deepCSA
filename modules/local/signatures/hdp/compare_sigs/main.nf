@@ -10,15 +10,9 @@ process COMPARE_SIGNATURES {
     path (reference_signatures)
 
     output:
-    tuple val(meta), path("*.compared_output_dir")  , emit: compared_results
-    path "versions.yml"                             , topic: versions
+    tuple val(meta), path("*.compared_output_dir/**")   , emit: compared_results
+    path "versions.yml"                                 , topic: versions
 
-
-    // when:
-    // params.norm_file != "NA"
-
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""
@@ -64,8 +58,6 @@ process COMPARE_SIGNATURES {
 //     output:
 //     tuple val(meta), path("compared_normalized_output_dir"), emit: compared_normalized_results
 
-//     when:
-//     params.norm_file != "NA"
 
 //     script:
 //     """
