@@ -3,12 +3,9 @@ process CREATECAPTUREDPANELS {
     label 'process_single'
     label 'process_medium_high_memory'
 
-    conda "python=3.9 bioconda::pybedtools=0.9.1 conda-forge::polars conda-forge::click"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    'https://depot.galaxyproject.org/singularity/python:3.9--1' :
-    'quay.io/biocontainers/python:3.9--1' }"
-
-    input:
+    conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
+    
+    input
     tuple val(meta), path(compact_captured_panel_annotation)
 
     output:
@@ -33,7 +30,6 @@ process CREATECAPTUREDPANELS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    pip install pybedtools polars click
     create_panel_versions.py \\
                     ${compact_captured_panel_annotation} \\
                     ${prefix};
