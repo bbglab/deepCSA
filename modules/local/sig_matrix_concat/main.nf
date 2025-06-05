@@ -16,7 +16,7 @@ process MATRIX_CONCAT {
 
 
     script:
-    def prefix = task.ext.prefix ?: "" // here the prefix will contain the type of profile either all, nonproteinaffecting, ...
+    def prefix = task.ext.prefix ?: "" // type of profile. e.g. all, nonproteinaffecting, ...
     """
     ls ${matrix_files} > all_files.txt;
     concat_sigprot_matrices.py \\

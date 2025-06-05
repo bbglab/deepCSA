@@ -80,8 +80,7 @@ def generate_all_side_figures(sample,
         indels_genes = list(pd.unique(indels_data["SYMBOL"]))
         possible_genes += indels_genes
 
-    gene_list = list(set(possible_genes))
-    gene_list = [x for x in gene_list if x in list(pd.unique(snvs_maf["canonical_SYMBOL"]))]
+    gene_list = list(set(possible_genes).intersection(set(snvs_maf["canonical_SYMBOL"].unique())))
 
 
     os.makedirs(f"{sample}.plots")

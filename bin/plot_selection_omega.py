@@ -60,9 +60,8 @@ def generate_all_side_figures(sample,
         possible_genes += omega_missense_genes
 
 
-    gene_list = list(set(possible_genes))
+    gene_list = list(set(possible_genes).intersection(set(snvs_maf["canonical_SYMBOL"].unique())))
 
-    gene_list = [x for x in gene_list if x in list(pd.unique(snvs_maf["canonical_SYMBOL"]))]
 
     os.makedirs(f"{sample}.plots")
 
