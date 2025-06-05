@@ -2,10 +2,12 @@ process CREATECAPTUREDPANELS {
     tag "$meta.id"
     label 'process_single'
     label 'process_medium_high_memory'
-    label 'wave_conda'
 
     conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
-    
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://bbglab/deepcsa_bed:latest' :
+        'bbglab/deepcsa_bed:latest' }"
+        
     input:
     tuple val(meta), path(compact_captured_panel_annotation)
 
