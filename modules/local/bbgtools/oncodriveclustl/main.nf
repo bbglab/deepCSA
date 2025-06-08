@@ -22,7 +22,8 @@ process ONCODRIVECLUSTL {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def assembly = task.ext.assembly ?: "hg38"
     """
     cat > mutability_config.json << EOF
@@ -57,8 +58,8 @@ process ONCODRIVECLUSTL {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

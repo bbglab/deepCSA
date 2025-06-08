@@ -19,9 +19,6 @@ process ANNOTATE_DEPTHS {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    // TODO check if the file is compressed and uncompress if needed before subsetting
     """
     cut -f 1,2,9 ${panel_all} | uniq > ${panel_all}.contexts
     merge_annotation_depths.py \\
@@ -37,8 +34,6 @@ process ANNOTATE_DEPTHS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch all_samples.cohort.tsv.gz
 

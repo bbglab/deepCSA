@@ -17,8 +17,9 @@ process PREPROCESS_DNDS {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+    // TODO reimplement python script with click
     """
     dNdS_preprocess.py ${depths} ${annotated_panel} ${prefix}.depths_input.tsv
     cat <<-END_VERSIONS > versions.yml
@@ -28,8 +29,8 @@ process PREPROCESS_DNDS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

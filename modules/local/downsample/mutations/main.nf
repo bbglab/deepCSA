@@ -16,7 +16,8 @@ process DOWNSAMPLE_MUTATIONS {
     path "versions.yml"                                  , topic: versions
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def downsample_prop = task.ext.downsample_prop ?: 1
     """
     downsample_script.py mutations \\
@@ -31,7 +32,8 @@ process DOWNSAMPLE_MUTATIONS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.vep.summary.tab.gz
 

@@ -20,7 +20,8 @@ process PLOT_DEPTHS {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
     def plot_within_gene = task.ext.withingene ? "True" : "False"
     """

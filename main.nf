@@ -8,15 +8,12 @@
 */
 
 nextflow.enable.dsl = 2
-nextflow.preview.topic = true
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORTS: NEXTFLOW MODULES, WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-include { validateParameters; paramsHelp; paramsSummaryLog } from 'plugin/nf-schema'
 
 include { DEEPCSA                 } from './workflows/deepcsa'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_deepcsa'

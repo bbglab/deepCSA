@@ -15,8 +15,8 @@ process MUTATIONS_2_SIGNATURES {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     signatures_mutations_n_sbs.py --mutations ${maf} \\
                             --signature-probabilities ${signature_probabilities} \\
@@ -29,8 +29,8 @@ process MUTATIONS_2_SIGNATURES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.sigs.annotated.tsv.gz
 

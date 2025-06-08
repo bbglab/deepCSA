@@ -15,7 +15,8 @@ process FILTER_BATCH {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def repetitive_variant = task.ext.repetitive_variant ?: "${params.repetitive_variant_thres}"
     def germline_threshold = task.ext.germline_threshold ?: "${params.germline_threshold}"
     def proportion_samples_nrich = task.ext.prop_samples_nrich ?: "${params.prop_samples_nrich}"

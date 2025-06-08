@@ -7,9 +7,7 @@ process CREATESAMPLEPANELS {
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
             'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
             'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
+
 
     input:
     tuple val(meta) , path(compact_captured_panel_annotation)
@@ -23,8 +21,9 @@ process CREATESAMPLEPANELS {
 
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+    // TODO reimplment with click
     """
     create_panel4sample.py \\
                     ${compact_captured_panel_annotation} \\
@@ -49,8 +48,8 @@ process CREATESAMPLEPANELS {
     stub:
     def prefix = task.ext.prefix ?: "TargetRegions"
     """
-    touch *.tsv
-    touch *.bed
+    touch ${prefix}.tsv
+    touch ${prefix}.bed
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

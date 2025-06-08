@@ -4,7 +4,10 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { validateParameters; paramsHelp; paramsSummaryLog; paramsSummaryMap; samplesheetToList } from 'plugin/nf-schema'
+include { paramsSummaryMap          } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_deepcsa'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,9 +88,6 @@ include { SELECT_MUTRATES           as SYNMUTRATE           } from '../modules/l
 include { SELECT_MUTRATES           as SYNMUTREADSRATE      } from '../modules/local/select_mutrate/main'
 include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
 
-
-// Download annotation cache if needed
-include { PREPARE_CACHE                                     } from '../subworkflows/local/prepare_cache/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,19 +179,6 @@ workflow DEEPCSA{
     .set{ meta_bams_alone }
 
 
-    // TODO: test if downloading VEP cache works
-    // Download Ensembl VEP cache if needed
-    // Assuming that if the cache is provided, the user has already downloaded it
-    ensemblvep_info = params.vep_cache ? [] : Channel.of([ [ id:"${params.vep_genome}.${params.vep_cache_version}" ], params.vep_genome, params.vep_species, params.vep_cache_version ])
-    if (params.download_cache) {
-        PREPARE_CACHE(ensemblvep_info)
-        vep_cache = PREPARE_CACHE.out.ensemblvep_cache.map{ _meta, cache -> [ cache ] }
-    } else {
-        vep_cache = params.vep_cache
-    }
-    vep_extra_files = []
-
-
     TABLE2GROUP(features_table)
 
 
@@ -200,7 +187,7 @@ workflow DEEPCSA{
     DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
 
     // Panels generation: all modalities
-    CREATEPANELS(DEPTHANALYSIS.out.depths, vep_cache, vep_extra_files)
+    CREATEPANELS(DEPTHANALYSIS.out.depths)
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
@@ -218,7 +205,7 @@ workflow DEEPCSA{
     PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
 
     // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone, vep_cache, vep_extra_files,
+    MUT_PREPROCESSING(meta_vcfs_alone,
                         CREATEPANELS.out.all_consensus_bed,
                         CREATEPANELS.out.exons_bed,
                         TABLE2GROUP.out.json_allgroups,
@@ -552,10 +539,10 @@ workflow DEEPCSA{
     def multiqc_report = []
 
     def summary_params = paramsSummaryMap(workflow)
-    workflow_summary    = WorkflowDeepcsa.paramsSummaryMultiqc(workflow, summary_params)
+    workflow_summary    = paramsSummaryMultiqc(summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = WorkflowDeepcsa.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    methods_description    = methodsDescriptionText(ch_multiqc_custom_methods_description)
     ch_methods_description = Channel.value(methods_description)
 
     ch_multiqc_files = Channel.empty()
@@ -572,23 +559,6 @@ workflow DEEPCSA{
     multiqc_report = MULTIQC.out.report.toList()
 }
 
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    COMPLETION EMAIL AND SUMMARY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-// workflow.onComplete {
-//     if (params.email || params.email_on_fail) {
-//         NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
-//     }
-//     NfcoreTemplate.dump_parameters(workflow, params)
-//     NfcoreTemplate.summary(workflow, params, log)
-//     if (params.hook_url) {
-//         NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
-//     }
-// }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

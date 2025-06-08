@@ -16,13 +16,13 @@ process VCF2MAF {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def batch = task.ext.batch ?: "${meta.batch}"
     def level = task.ext.level ?: "high"
     def all_molecules_dp = task.ext.all_molecules_dp ?: "false"
     // TODO reimplement it with click
-    // TODO level and all_molecules can be defined in the modules.config file 
+    // TODO level and all_molecules can be defined in the modules.config file think about making all molecules mandatory
     """
     vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation} ${all_molecules_dp};
 
@@ -33,8 +33,8 @@ process VCF2MAF {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.vep.summary.tab.gz
 

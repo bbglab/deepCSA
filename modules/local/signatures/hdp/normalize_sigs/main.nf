@@ -15,7 +15,6 @@ process NORMALIZE_SIGNATURES {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     Rscript run_HDP_sigNormalising.R \\
         $output_dir \\
@@ -31,8 +30,8 @@ process NORMALIZE_SIGNATURES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.pdf
 

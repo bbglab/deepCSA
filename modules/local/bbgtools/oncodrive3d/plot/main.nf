@@ -28,8 +28,8 @@ process ONCODRIVE3D_PLOT {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     oncodrive3D plot -o $prefix \\
                      -g $genes_csv \\
@@ -51,8 +51,8 @@ process ONCODRIVE3D_PLOT {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

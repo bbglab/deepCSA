@@ -14,7 +14,8 @@ process MUTATED_GENOMES_FROM_VAF {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def recode = task.ext.recode_list ? "--recoded-genes ${task.ext.recode_list}" : ""
     """
     mutgenomes_driver_priority.py \\

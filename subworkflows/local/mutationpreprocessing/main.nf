@@ -23,8 +23,6 @@ workflow MUTATION_PREPROCESSING {
 
     take:
     vcfs
-    vep_cache
-    vep_extra_files
     bedfile
     bedfile_exons
     groups
@@ -39,8 +37,8 @@ workflow MUTATION_PREPROCESSING {
                     params.vep_genome,
                     params.vep_species,
                     params.vep_cache_version,
-                    vep_cache,
-                    vep_extra_files)
+                    params.vep_cache,
+                    [])
 
     // Join all annotated samples and put them in a channel to be summarized together
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }

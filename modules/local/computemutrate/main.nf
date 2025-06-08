@@ -15,8 +15,8 @@ process MUTRATE {
 
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
     compute_mutrate.py \\
