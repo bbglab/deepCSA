@@ -1,4 +1,4 @@
-process MUTRATE {
+process MUTATION_DENSITY {
     tag "$meta.id"
     label 'process_single'
 
@@ -12,19 +12,16 @@ process MUTRATE {
     tuple val(meta), path("*.mutrates.tsv"), emit: mutrates
     path  "versions.yml"                   , topic: versions
 
-
-
     script:
-    def prefix = task.ext.prefix ?: ""
-    prefix = "${meta.id}${prefix}"
+    def sample_name = "${meta.id}"
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    compute_mutrate.py \\
-                ${mutations} \\
-                ${depth} \\
-                ${consensus_panel} \\
-                ${prefix} \\
-                ${panel_version};
+    compute_mutdensity.py \\
+                --maf_path ${mutations} \\
+                --depths_path ${depth} \\
+                --annot_panel_path ${consensus_panel} \\
+                --sample_name ${sample_name} \\
+                --panel_version ${panel_version};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

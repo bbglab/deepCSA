@@ -1,8 +1,8 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSETMUTRATE           } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETMUTRATE        } from '../../../modules/local/subsetmaf/main'
 
-include { MUTRATE as MUTRATE } from '../../../modules/local/computemutrate/main'
+include { MUTATION_DENSITY          as MUTDENSITY           } from '../../../modules/local/computemutrate/main'
 
 
 workflow MUTATION_RATE{
@@ -23,10 +23,9 @@ workflow MUTATION_RATE{
     .join(depth)
     .set{ mutations_n_depth }
 
-    MUTRATE(mutations_n_depth, panel)
+    MUTDENSITY(mutations_n_depth, panel)
 
-    // PLOTMUTRATE()
 
     emit:
-    mutrates = MUTRATE.out.mutrates
+    mutrates = MUTDENSITY.out.mutrates
 }

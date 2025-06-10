@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys
+import click
 import pandas as pd
 from read_utils import custom_na_values
 
@@ -109,7 +109,7 @@ def mutrate_gene(maf_df, depths_df, depths_adj_df, sample_name, type_list = Fals
 
 
 # -- Main function -- #
-def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_v):
+def compute_mutdensity(maf_path, depths_path, annot_panel_path, sample_name, panel_v):
 
     # File loading
     maf_df = pd.read_csv(maf_path, sep = "\t", na_values = custom_na_values)
@@ -122,7 +122,7 @@ def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_
     depths_subset_df = depths_df.merge(annot_panel_df[["CHROM", "POS", "GENE"]].drop_duplicates(),
                                         on = ["CHROM", "POS"], how = "inner")
     ## mode 2 (adjusted): each position counts as many times it contributes to the panel
-    depths_df[sample_name.split('.')[0]] = depths_df[sample_name.split('.')[0]] / 3   # the depth per position can contribute to three different mutations
+    depths_df[sample_name] = depths_df[sample_name] / 3   # the depth per position can contribute to three different mutations
     depths_subset_adj_df = depths_df.merge(annot_panel_df[["CHROM", "POS", "GENE"]], on = ["CHROM", "POS"], how = "inner")
 
     ## mode 3 (adjusted): each position counts as many times it contributes to the panel, but ONLY ONCE PER SAMPLE
@@ -134,19 +134,20 @@ def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_
 
     # Compute mutation rates
     ## sample mutation rate
-    mutrate_sample_allmuts_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0])
-    mutrate_sample_snvs_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0], ["SNV"])
-    mutrate_sample_nonsnvs_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0], ["INSERTION", "DELETION", "COMPLEX", "MNV"])
-    mutrate_sample_indels_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name.split('.')[0], ["INSERTION", "DELETION"])
-    ## per gene mutation rate
-    mutrate_genes_allmuts_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0])
-    mutrate_genes_snvs_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0], ["SNV"])
-    mutrate_genes_nonsnvs_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0], ["INSERTION", "DELETION", "COMPLEX", "MNV"])
-    mutrate_genes_indels_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name.split('.')[0], ["INSERTION", "DELETION"])
+    mutrate_sample_allmuts_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name)
+    mutrate_sample_snvs_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name, ["SNV"])
+    mutrate_sample_indels_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name, ["INSERTION", "DELETION"])
+    mutrate_sample_snvsnindels_df = mutrate_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name, ["SNV", "INSERTION", "DELETION"])
 
-    mutrate_df = pd.concat([mutrate_sample_allmuts_df, mutrate_sample_snvs_df, mutrate_sample_nonsnvs_df, mutrate_sample_indels_df,
-                            mutrate_genes_allmuts_df, mutrate_genes_snvs_df, mutrate_genes_nonsnvs_df, mutrate_genes_indels_df])
-    mutrate_df["SAMPLE_ID"] = sample_name.split('.')[0]
+    ## per gene mutation rate
+    mutrate_genes_allmuts_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name)
+    mutrate_genes_snvs_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name, ["SNV"])
+    mutrate_genes_indels_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name, ["INSERTION", "DELETION"])
+    mutrate_genes_snvsnindels_df = mutrate_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name, ["SNV", "INSERTION", "DELETION"])
+
+    mutrate_df = pd.concat([mutrate_sample_allmuts_df, mutrate_sample_snvs_df, mutrate_sample_snvsnindels_df, mutrate_sample_indels_df,
+                            mutrate_genes_allmuts_df, mutrate_genes_snvs_df, mutrate_genes_snvsnindels_df, mutrate_genes_indels_df])
+    mutrate_df["SAMPLE_ID"] = sample_name
     mutrate_df["REGIONS"] = panel_v
 
     # Save
@@ -154,24 +155,29 @@ def compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_
                 "DEPTH",
                 "N_MUTS", "N_MUTATED",
                 "MUTRATE_MB", "MUTRATE_MB_ADJUSTED",
-                "MUTRATE_KB", "MUTRATE_KB_ADJUSTED",
+                # "MUTRATE_KB", "MUTRATE_KB_ADJUSTED",
                 "MUTREADSRATE_MB", "MUTREADSRATE_MB_ADJUSTED",
-                "MUTREADSRATE_KB", "MUTREADSRATE_KB_ADJUSTED"]].to_csv(f"{sample_name.split('.')[0]}.{panel_v}.mutrates.tsv",
+                # "MUTREADSRATE_KB", "MUTREADSRATE_KB_ADJUSTED"
+                ]].to_csv(f"{sample_name}.{panel_v}.mutrates.tsv",
                                                             sep = "\t",
                                                             header = True,
                                                             index = False
                                                             )
 
 
+@click.command()
+@click.option('--maf_path', type=click.Path(exists=True), required=True, help='Path to the MAF file.')
+@click.option('--depths_path', type=click.Path(exists=True), required=True, help='Path to the depths file.')
+@click.option('--annot_panel_path', type=click.Path(exists=True), required=True, help='Path to the annotation panel file.')
+@click.option('--sample_name', type=str, required=True, help='Sample name.')
+@click.option('--panel_version', type=str, required=True, help='Panel version.')
+def main(maf_path, depths_path, annot_panel_path, sample_name, panel_version):
+    """
+    CLI entry point for computing mutation rates.
+    """
+    compute_mutdensity(maf_path, depths_path, annot_panel_path, sample_name, panel_version)
+
 
 if __name__ == '__main__':
-    # TODO reimplement with click
-    maf_path = sys.argv[1]
-    depths_path = sys.argv[2]
-    annot_panel_path = sys.argv[3]
-    sample_name = sys.argv[4]
-    panel_version = sys.argv[5]
 
-    compute_mutrate(maf_path, depths_path, annot_panel_path, sample_name, panel_version)
-
-
+    main()
