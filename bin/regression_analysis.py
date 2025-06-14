@@ -694,14 +694,14 @@ def main(pdf_path, metric,
             os.mkdir(method_directory)
 
             ### create input file diferently depending on the method
-            if method == "mutrate":
-                process_mutrate(mutrate_file = config["metrics.data"]["mutrate"],
-                                mutrate_config = method_config,
+            if method == "mutdensity":
+                process_mutdensity(mutdensity_file = config["metrics.data"]["mutdensity"],
+                                mutdensity_config = method_config,
                                 rows_names = responses,
                                 cols_names = samples,
                                 save_files_dir = method_directory,
                                 missing_values_treatment = missing_values,
-                                metric = "mutrate")
+                                metric = "mutdensity")
             elif method == "oncodrivefml":
                 process_oncodrivefml(oncodrivefml_data = config["metrics.data"]["oncodrivefml"],
                                     oncodrivefml_config = method_config,

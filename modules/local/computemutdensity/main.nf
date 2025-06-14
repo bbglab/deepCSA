@@ -9,7 +9,7 @@ process MUTATION_DENSITY {
     tuple val(meta2), path(consensus_panel)
 
     output:
-    tuple val(meta), path("*.mutrates.tsv"), emit: mutrates
+    tuple val(meta), path("*.mutdensities.tsv"), emit: mutdensities
     path  "versions.yml"                   , topic: versions
 
     script:
@@ -33,7 +33,7 @@ process MUTATION_DENSITY {
     def prefix = task.ext.prefix ?: "all_samples"
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    touch ${prefix}.${panel_version}.mutrates.tsv
+    touch ${prefix}.${panel_version}.mutdensities.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

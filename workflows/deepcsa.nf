@@ -34,10 +34,10 @@ include { PLOT_DEPTHS               as PLOTDEPTHSEXONSCONS  } from '../subworkfl
 
 include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkflows/local/mutationpreprocessing/main'
 
-include { MUTATION_RATE             as MUTRATEALL           } from '../subworkflows/local/mutationrate/main'
-include { MUTATION_RATE             as MUTRATEPROT          } from '../subworkflows/local/mutationrate/main'
-include { MUTATION_RATE             as MUTRATENONPROT       } from '../subworkflows/local/mutationrate/main'
-include { MUTATION_RATE             as MUTRATESYNONYMOUS    } from '../subworkflows/local/mutationrate/main'
+include { MUTATION_DENSITY          as MUTDENSITYALL           } from '../subworkflows/local/mutationdensity/main'
+include { MUTATION_DENSITY          as MUTDENSITYPROT          } from '../subworkflows/local/mutationdensity/main'
+include { MUTATION_DENSITY          as MUTDENSITYNONPROT       } from '../subworkflows/local/mutationdensity/main'
+include { MUTATION_DENSITY          as MUTDENSITYSYNONYMOUS    } from '../subworkflows/local/mutationdensity/main'
 
 include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
@@ -70,7 +70,7 @@ include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkfl
 
 include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
 
-include { REGRESSIONS               as REGRESSIONSMUTRATE          } from '../subworkflows/local/regressions/main'
+include { REGRESSIONS               as REGRESSIONSMUTDENSITY          } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGA            } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGAGLOB        } from '../subworkflows/local/regressions/main'
@@ -84,8 +84,8 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSNONPROTCONS    } from '../modules/n
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSINTRONSCONS    } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SELECT_MUTRATES           as SYNMUTRATE           } from '../modules/local/select_mutrate/main'
-include { SELECT_MUTRATES           as SYNMUTREADSRATE      } from '../modules/local/select_mutrate/main'
+include { SELECT_MUTDENSITIES           as SYNMUTDENSITY           } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
 include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
 
 
@@ -153,7 +153,7 @@ workflow DEEPCSA{
 
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
-    def run_mutrate         = (params.mutationrate || params.omega)
+    def run_mutdensity         = (params.mutationdensity || params.omega)
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
@@ -225,41 +225,41 @@ workflow DEEPCSA{
     // Intersect BED of desired sites with samples' depths
     DEPTHSALLCONS(annotated_depths, CREATEPANELS.out.all_consensus_bed)
     DEPTHSEXONSCONS(annotated_depths, CREATEPANELS.out.exons_consensus_bed)
-    if (run_mutrate || params.profilenonprot) {
+    if (run_mutdensity || params.profilenonprot) {
         DEPTHSNONPROTCONS(annotated_depths, CREATEPANELS.out.nonprot_consensus_bed)
     }
 
-    if (run_mutrate) {
+    if (run_mutdensity) {
         DEPTHSPROTCONS(annotated_depths, CREATEPANELS.out.prot_consensus_bed)
         DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
     }
     
 
 
-    if (run_mutrate){
+    if (run_mutdensity){
         // Mutation Rate
-        MUTRATEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
-        MUTRATEPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
-        MUTRATENONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
-        MUTRATESYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, CREATEPANELS.out.synonymous_consensus_panel)
+        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
+        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
+        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
+        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, CREATEPANELS.out.synonymous_consensus_panel)
 
         Channel.of([ [ id: "all_samples" ] ])
-        .join( MUTRATESYNONYMOUS.out.mutrates )
-        .set{ all_samples_syn_mutrate }
+        .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
+        .set{ all_samples_syn_mutdensity }
 
-        SYNMUTRATE(all_samples_syn_mutrate)
+        SYNMUTDENSITY(all_samples_syn_mutdensity)
 
-        SYNMUTREADSRATE(all_samples_syn_mutrate)
+        SYNMUTREADSRATE(all_samples_syn_mutdensity)
 
 
         // Concatenate all outputs into a single file
         Channel.empty()
-        .concat(MUTRATEALL.out.mutrates.map{ it -> it[1]}.flatten())
-        .concat(MUTRATEPROT.out.mutrates.map{ it -> it[1]}.flatten())
-        .concat(MUTRATENONPROT.out.mutrates.map{ it -> it[1]}.flatten())
-        .concat(MUTRATESYNONYMOUS.out.mutrates.map{ it -> it[1]}.flatten())
-        .set{ all_mutrates }
-        all_mutrates.collectFile(name: "all_mutrates.tsv", storeDir:"${params.outdir}/mutrate", skip: 1, keepHeader: true).set{ all_mutrates_file }
+        .concat(MUTDENSITYALL.out.mutdensities.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYPROT.out.mutdensities.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYNONPROT.out.mutdensities.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYSYNONYMOUS.out.mutdensities.map{ it -> it[1]}.flatten())
+        .set{ all_mutdensities }
+        all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
 
     }
 
@@ -381,7 +381,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.exons_consensus_panel,
                     custom_groups_table,
                     CREATEPANELS.out.domains_panel_bed,
-                    SYNMUTRATE.out.mutrate,
+                    SYNMUTDENSITY.out.mutdensity,
                     CREATEPANELS.out.panel_annotated_rich
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
@@ -401,7 +401,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
                             CREATEPANELS.out.domains_panel_bed,
-                            SYNMUTREADSRATE.out.mutrate,
+                            SYNMUTREADSRATE.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
@@ -420,7 +420,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_panel,
                             custom_groups_table,
                             CREATEPANELS.out.domains_panel_bed,
-                            SYNMUTRATE.out.mutrate,
+                            SYNMUTDENSITY.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich
                             )
             if (params.regressions){
@@ -436,7 +436,7 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.exons_consensus_panel,
                                     custom_groups_table,
                                     CREATEPANELS.out.domains_panel_bed,
-                                    SYNMUTREADSRATE.out.mutrate,
+                                    SYNMUTREADSRATE.out.mutdensity,
                                     CREATEPANELS.out.panel_annotated_rich
                                     )
 
@@ -504,8 +504,8 @@ workflow DEEPCSA{
     // Regressions
     if (params.regressions){
 
-        if (params.mutationrate && params.mutrate_regressions){
-            REGRESSIONSMUTRATE("mutrate", all_mutrates_file, params.mutrate_regressions)
+        if (params.mutationdensity && params.mutdensity_regressions){
+            REGRESSIONSMUTDENSITY("mutdensity", all_mutdensities_file, params.mutdensity_regressions)
         }
 
         if (params.oncodrivefml && params.oncodrivefml_regressions){

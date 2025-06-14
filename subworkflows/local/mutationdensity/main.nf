@@ -1,11 +1,11 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSETMUTRATE        } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETMUTDENSITY        } from '../../../modules/local/subsetmaf/main'
 
-include { MUTATION_DENSITY          as MUTDENSITY           } from '../../../modules/local/computemutrate/main'
+include { MUTATION_DENSITY          as MUTDENSITY           } from '../../../modules/local/computemutdensity/main'
 
 
-workflow MUTATION_RATE{
+workflow MUTATION_DENSITY{
     take:
     mutations
     depth
@@ -17,9 +17,9 @@ workflow MUTATION_RATE{
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
 
-    SUBSETMUTRATE(SUBSETMUTATIONS.out.subset)
+    SUBSETMUTDENSITY(SUBSETMUTATIONS.out.subset)
 
-    SUBSETMUTRATE.out.mutations
+    SUBSETMUTDENSITY.out.mutations
     .join(depth)
     .set{ mutations_n_depth }
 
@@ -27,5 +27,5 @@ workflow MUTATION_RATE{
 
 
     emit:
-    mutrates = MUTDENSITY.out.mutrates
+    mutdensities = MUTDENSITY.out.mutdensities
 }

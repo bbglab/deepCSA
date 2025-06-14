@@ -34,7 +34,7 @@ workflow OMEGA_ANALYSIS{
     panel
     custom_gene_groups
     domains_file
-    mutationrates
+    mutationdensities
     complete_panel
 
 
@@ -127,7 +127,7 @@ workflow OMEGA_ANALYSIS{
 
         PREPROCESSINGGLOBALLOC(muts_n_depths_n_profile,
                                 expanded_panel,
-                                mutationrates.first(),
+                                mutationdensities.first(),
                                 all_samples_mut_profile)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
