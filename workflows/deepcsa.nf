@@ -68,7 +68,7 @@ include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkfl
 include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
-include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
+include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkflows/local/plottingsummary/main'
 
 include { REGRESSIONS               as REGRESSIONSMUTRATE          } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
@@ -352,6 +352,8 @@ workflow DEEPCSA{
             // Oncodrive3D
             ONCODRIVE3D(somatic_mutations, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
                         datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
+            positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results_pos, remainder: true)
+
         }
     }
 
@@ -498,7 +500,13 @@ workflow DEEPCSA{
 
     if ( params.indels & params.oncodrivefml & params.omega ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-        PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
+        PLOTTINGSUMMARY(positive_selection_results_ready, all_mutrates_file,
+                        TABLE2GROUP.out.json_samples,
+                        TABLE2GROUP.out.json_groups,
+                        TABLE2GROUP.out.json_allgroups,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        CREATEPANELS.out.rich_annotated,
+                        seqinfo_df)
     }
 
     // Regressions
