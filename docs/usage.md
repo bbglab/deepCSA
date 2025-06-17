@@ -201,6 +201,16 @@ NXF_OPTS='-Xms1g -Xmx4g'
 * Mutational profile
 * Mutational signatures
 
+
+```console
+params {
+    plot_depths   = true
+    signatures    = true
+    profileall    = true
+}
+```
+
+
 ### Clonal structure definition. Complete run with a focus on positive selection at the cohort-level.
 * All the previous +
 * Mutation density
@@ -211,5 +221,170 @@ NXF_OPTS='-Xms1g -Xmx4g'
   * Per gene, per sample
 
 
+```console
+params {
+    mutationrate                = true
+
+    profileall                  = true
+
+    oncodrivefml                = true
+    oncodriveclustl             = true
+
+    oncodrive3d                 = true
+    o3d_raw_vep                 = true
+    o3d_plot                    = true
+
+
+    omega                       = true
+    omega_multi                 = true
+    omega_globalloc             = true
+    omega_mutabilities          = true
+    site_comparison_grouping    = 'all'
+    omega_plot                  = true
+
+    omega_withingene            = true
+    omega_autodomains           = true
+    omega_autoexons             = true
+    
+    mutated_cells_vaf           = true
+    mutepi_genes_to_recode      = null
+
+    indels                      = true
+
+    signatures                  = true
+}
+```
+
+
+
 ### Mutational processes in alternative genomic regions. Partial run with a focus on mutational processes/signatures.
+* Same as initial run (even it can be ignored)
+* Mutational profile and mutational signatures based on:
+  * All genomic regions
+  * Only exonic regions
+  * Only non-protein affecting regions (synonymous mutations and intronic, intergenic)
+  * Intronic and intergenic regions
+
+```console
+params {
+    mutationrate                = true
+
+    profileall                  = true
+    profilenonprot              = true
+    profileexons                = true
+    profileintrons              = true
+
+    signatures                  = true
+}
+```
+
+
 ### Interindividual variability and sample comparison. Complete run with downstream steps for computation of linear regressions to compare different samples/groups based on clinical variables or sample metadata.
+* Same as complete clonal structure definition +
+* Computation of univariate and multivariate linear regressions between clonal structure metrics and clonal selection
+
+```console
+params {
+    mutationrate                = true
+
+    profileall                  = true
+
+    omega                       = true
+    omega_multi                 = true
+    omega_globalloc             = true
+    omega_mutabilities          = true
+    site_comparison_grouping    = 'all'
+    omega_plot                  = true
+
+    omega_withingene            = true
+    omega_autodomains           = true
+    omega_autoexons             = true
+    
+    regressions                 = true
+    // additional regression parameters, see nextflow_schema.json for more info
+      ...
+}
+```
+
+
+
+
+## Definition of structural parameters required
+
+* Container pulling (either prior to running the pipeline or directly as the pipeline runs)
+* Generation of Oncodrive3D datasets (see: [Oncodrive3D repo datasets building process](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets))
+
+* Download of additional specific datasets
+  * Ensembl VEP (see: [Ensembl VEP docs](https://www.ensembl.org/info/docs/tools/vep/index.html)) 
+  <!-- TODO we should revise if we can provide more specific information on how to download the cache -->
+  * CADD scores (see: [CADD downloads page](cadd.gs.washington.edu/download) "All possible SNVs of GRCh38/hg38" file)
+  * COSMIC signatures (i.e. [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/) (select context size = 96 and your desired species of interest))
+  <!-- * dNdScv datasets (see: ) -->
+  
+
+### Mandatory parameter configuration:
+
+```console
+params {
+
+    fasta                       = null
+
+    cosmic_ref_signatures      = "COSMIC_v3.4_SBS_GRCh38.txt"
+    wgs_trinuc_counts          = "assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+
+    // oncodrivefml (only for human; could be adapted to others)
+    cadd_scores                = "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz"
+    cadd_scores_ind            = "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz.tbi"
+
+    // dnds
+    dnds_ref_transcripts       = "RefCDS_human_latest_intogen.rda"
+    dnds_covariates            = "covariates_hg19_hg38_epigenome_pcawg.rda"
+
+    // oncodrive3d + fancy plots
+    datasets3d                 = "oncodrive3d/datasets"
+    annotations3d              = "oncodrive3d/annotations"
+
+
+    vep_cache                  = ".vep"
+
+    // Ensembl VEP for homo_sapiens, but should be adjusted accordingly to species and cache version 
+    vep_genome                 = "GRCh38"
+    vep_species                = "homo_sapiens"
+    vep_cache_version          = 111
+    vep_out_format             = "tab"
+    vep_params                 = "--no_stats --cache --offline --symbol --protein --canonical --af_gnomadg --af_gnomade"
+    vep_params_panel           = "--no_stats --cache --offline --symbol --protein --canonical"
+}
+```
+
+<!-- TODO: revise if this could be used in mice http://mendel.stanford.edu/SidowLab/downloads/gerp/ -->
+### Optional parameters configuration:
+
+```console
+params {
+
+    // definition of gene groups
+    // could be fixed or dynamic based on the study
+    custom_groups               = false
+    custom_groups_file          = null
+    custom_groups_separator     = 'tab'
+    
+    // customize the annotation of certain regions i.e. TERT promoter mutations, other non-coding drivers...
+    customize_annotation        = false
+    custom_annotation_tsv       = ''
+
+    
+    // define a set of common known hotspots
+    hotspots_annotation         = false
+    hotspots_definition_file    = ''
+
+    
+    // definition of specific regions within genes with specific interest on computing dN/dS
+    omega_hotspots_bedfile      = null
+
+    // define a file of mutations that should not be trusted
+    //  and you want to remove from all the analysis
+    blacklist_mutations        = null
+
+}
+```
