@@ -27,7 +27,7 @@ K_6_1_A_1,K_6_1_A_1.high.filtered.vcf,K_6_1_A_1.sorted.bam
 | Column    | Description                                                                                                                                                                            |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Sample names cannot contain dots (`.`). Ideally the sample name should have a _Python string-like_ format, it should not be a single number.  |
-| `vcf` | Full path to VCF file containing all the mutations called in your sample. It should be uncompressed and with the VCF format field complying with the expected format. See usage 2 below in case the input is not coming from deepUMIcaller.                                                             |
+| `vcf` | Full path to VCF file containing all the mutations called in your sample. It should be uncompressed and with the VCF format field complying with the expected format. See [custom mutation calling](#custom-mutation-calling ) below in case the input is not coming from deepUMIcaller.                                                             |
 | `bam` | Full path to BAM file containing the duplex aligned reads that were used for the variant calling.                                                             |
 
 An [example samplesheet](../assets/example_inputs/input_example.csv) has been provided with the pipeline.
@@ -184,7 +184,7 @@ NXF_OPTS='-Xms1g -Xmx4g'
 ```
 
 
-## Alternative run modes
+## Proposed run modes
 
 <!-- TODO decide if this could be added as different profiles/modes for parameter definition -->
 
@@ -309,7 +309,7 @@ params {
 
 
 
-## Definition of structural parameters required
+## Definition of structural parameters
 
 * Container pulling (either prior to running the pipeline or directly as the pipeline runs)
 * Generation of Oncodrive3D datasets (see: [Oncodrive3D repo datasets building process](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets))
@@ -386,5 +386,77 @@ params {
     //  and you want to remove from all the analysis
     blacklist_mutations        = null
 
+}
+```
+
+
+## Custom mutation calls
+
+If you want to run deepCSA with your own mutation calls, this is also possible. Reasons behind this would be:
+
+- the variant calling was not done using deepUMIcaller.
+- you came up with a set of mutations that you trust and want to force them as the ones to be used for the analysis.
+
+
+### Step 1: Generate properly formatted input VCFs
+
+For this, you will need to generate a VCF file per sample with the same format as that expected by deepCSA using the following script that you can find in the deepCSA repository in the following relative path:
+
+`assets/useful_scripts/deepcsa_maf2samplevcfs.py`
+
+The script itself contains this brief explanation on the usage and required parameters:
+
+```{console}
+#######
+# This script converts a mutations file (TSV format) to one or multiple VCF-formatted files.
+#######
+
+#######
+# Usage: 
+#######
+## If your sample names are NOT in a column called SAMPLE_ID,
+## you can use the --sample-name-column option to specify it.
+
+# if the maf is from deepCSA, use this one
+# usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/ --maf-from-deepcsa
+
+# if the maf file is not from deepCSA, use this one
+# usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
+
+
+
+#######
+# Mandatory columns in input mutations: 
+#######
+
+# if the maf is from deepCSA, it must contain the following columns, as they were originally generated
+# ['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']
+
+# if the maf file is not from deepCSA, then it MUST contain the following columns
+# ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH']
+# where:
+#     DEPTH indicates the total number of duplex reads sequenced at the position where the mutation occurs
+#     ALT_DEPTH indicates the total number of duplex reads supporting the variant at the same position
+```
+
+
+### Step 2: Prepare input.csv file
+
+Make sure to prepare the input.csv file with matching the correct VCF-BAM files for each sample.
+
+If you want to run deepCSA as a basic user and ensure that mutations are properly filtered stop here.
+
+
+### (optional; advanced users) Step 3: Force no filtering of variants
+
+In case you are following these steps to run deepCSA with a set of mutations that you already filtered and trust there is one last thing that you should do.
+
+When running the pipeline you should set the following parameters:
+
+```console
+params {
+    no_filter               = true
+    filter_criteria         = []
+    filter_criteria_somatic = []
 }
 ```
