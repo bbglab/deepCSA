@@ -9,13 +9,20 @@ This document describes the output produced by the pipeline.
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
 - [Directory Structure](#directory-structure)
-- [Input and configuration](#)
-- [Depth analysis](#)
-- [Mutation preprocessing](#)
-- [Basic analysis](#)
-- [Positive selection](#)
-- [Mutational signatures](#)
-- [Plots along the way](#)
+- [Introduction](#introduction)
+- [Directory Structure](#directory-structure)
+- [Input and configuration](#input-and-configuration)
+- [Depth analysis](#depth-analysis)
+- [Mutation preprocessing](#mutation-preprocessing)
+- [Basic analysis](#basic-analysis)
+- [Intermediate outputs](#intermediate-outputs)
+- [Positive selection](#positive-selection)
+- [Site selection metrics](#site-selection-metrics)
+- [Additional clonal structure metrics](#additional-clonal-structure-metrics)
+- [Mutational signatures](#mutational-signatures)
+- [Plotting funcionalities](#plotting-funcionalities)
+- [Additional outputs](#additional-outputs)
+- [Others](#others)
 
 ## Directory Structure
 
@@ -250,7 +257,7 @@ Optional:
 
 
 
-## Additional cohort description outputs
+## Additional outputs
 
 ### Key role
 
@@ -261,13 +268,12 @@ Optional:
 
 - table2group
 - groupgenes
+- expandregions
+- filterexons
+- multiqc
+- pipeline_info
 
-
-
-
-
-
-
+## Others
 
 Define regions to analyze
 Compute depth to define regions to analyze
