@@ -315,7 +315,7 @@ params {
 * Generation of Oncodrive3D datasets (see: [Oncodrive3D repo datasets building process](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets))
 
 * Download of additional specific datasets
-  * Ensembl VEP (see: [Ensembl VEP docs](https://www.ensembl.org/info/docs/tools/vep/index.html)) 
+  * Ensembl VEP (see: [Ensembl VEP docs](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html#cache)). Modify accordingly your `nextflow.config` vep parameters, `vep_cache`, `vep_cache_version`, etc.
   <!-- TODO we should revise if we can provide more specific information on how to download the cache -->
   * CADD scores (see: [CADD downloads page](cadd.gs.washington.edu/download) "All possible SNVs of GRCh38/hg38" file)
   * COSMIC signatures (i.e. [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/) (select context size = 96 and your desired species of interest))
