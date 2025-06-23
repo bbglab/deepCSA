@@ -266,7 +266,7 @@ Optional:
 - sigprobs
 - muts2sigs
 
-## Plotting funcionalities
+## Plotting functionalities
 
 ### Key role
 
