@@ -29,7 +29,7 @@ You will need to create a samplesheet with information about the samples you wou
 
 The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once e.g. to increase sequencing depth. The pipeline will concatenate the raw reads before performing any downstream analysis. Below is an example for the same sample sequenced across 3 lanes:
 
-```console
+```csv
 sample,vcf,bam
 K_5_1_A_1,K_5_1_A_1.high.filtered.vcf,K_5_1_A_1.sorted.bam
 K_6_1_A_1,K_6_1_A_1.high.filtered.vcf,K_6_1_A_1.sorted.bam
