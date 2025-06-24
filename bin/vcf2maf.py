@@ -39,7 +39,8 @@ if vaf_all_molecules:
                         "VAF_distorted_expanded",
                         "VAF_distorted_expanded_sq",
                         "VAF_distortion",
-                        "VAF_distortion_sq"
+                        "VAF_distortion_sq",
+                        "PMEAN", "PSTD"
                         ]
     print("Using also information on all molecules, duplex and non-duplex.")
 else:
@@ -51,7 +52,8 @@ else:
                         "VAF_distorted_expanded",
                         "VAF_distorted_expanded_sq",
                         "VAF_distortion",
-                        "VAF_distortion_sq"
+                        "VAF_distortion_sq",
+                        "PMEAN", "PSTD"
                         ]
     print("Not using information on non-duplex molecules.")
 
@@ -246,7 +248,9 @@ def read_from_vardict_VCF_all(sample,
         dat_full["VAF_distorted_expanded"] = False
         dat_full["VAF_distorted_expanded_sq"] = False
 
-
+    # define mean position in read 
+    dat_full["PMEAN"] = dat_full["PMN"].astype(float) if "PMN" in dat_full.columns else -1
+    dat_full["PSTD"] = dat_full["PST"].astype(float) if "PST" in dat_full.columns else -1
 
 
     # subset dataframe to the columns of interest

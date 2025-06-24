@@ -34,7 +34,7 @@ else:
 
     # work with already filtered df + somatic only to explore potential artifacts
     # take only variant and sample info from the df
-    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID"]].reset_index(drop = True)
+    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "PMEAN", "PSTD"]].reset_index(drop = True)
 
     # add counter column
     maf_df_f_somatic["count"] = 1
@@ -48,6 +48,28 @@ else:
                                                                         axis = 1
                                                                     )
     maf_df = maf_df.drop("repetitive_variant", axis = 1)
+
+
+
+    # use the position in read information to filter repetitive variants with a fixed position (likely artifacts)
+    maf_df_f_somatic_pos_info = maf_df_f_somatic[~(maf_df_f_somatic["PMEAN"].isna()) & 
+                                                    (maf_df_f_somatic["PMEAN"] != -1) &
+                                                    (maf_df_f_somatic["PSTD"] == 0)]
+    
+    if maf_df_f_somatic_pos_info.shape[0] > 0:
+        maf_df_f_somatic_compiled_pos = maf_df_f_somatic_pos_info.groupby("MUT_ID")["PMEAN"].nunique().reset_index()
+
+        variants_with_rep_position = maf_df_f_somatic_compiled_pos[(maf_df_f_somatic_compiled_pos["PMEAN"] == 1)]["MUT_ID"]
+        print("Variants always found in the same position: ", variants_with_rep_position)
+        variants_with_rep_position = set(variants_with_rep_position).intersection(set(repetitive_variants))
+        print("Repetitive variants always found in the same position: ", variants_with_rep_position)
+
+        maf_df["repetitive_mapping_variant"] = maf_df["MUT_ID"].isin(variants_with_rep_position)
+
+        maf_df["FILTER"] = maf_df[["FILTER","repetitive_mapping_variant"]].apply(lambda x: add_filter(x["FILTER"], x["repetitive_mapping_variant"], "repetitive_mapping_variant"),
+                                                                            axis = 1
+                                                                        )
+        maf_df = maf_df.drop("repetitive_mapping_variant", axis = 1)
 
 
 
