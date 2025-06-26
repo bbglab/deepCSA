@@ -30,7 +30,7 @@ process INDELS_COMPARISON {
     def prefix = task.ext.prefix ?: "all_samples"
     def panel_version = task.ext.panel_version ?: "${meta.id}"
     """
-    touch ${prefix}.${panel_version}.mutrates.tsv
+    touch ${prefix}.${panel_version}.indels.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

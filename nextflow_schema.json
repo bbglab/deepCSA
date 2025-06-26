@@ -312,9 +312,9 @@
                     "description": "Do you want to run signatures?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutationrate": {
+                "mutationdensity": {
                     "type": "boolean",
-                    "description": "Do you want to run mutationrate?",
+                    "description": "Do you want to run mutationdensity?",
                     "fa_icon": "fas fa-book"
                 },
                 "indels": {
@@ -355,11 +355,11 @@
             "fa_icon": "fas fa-dna",
             "description": "Provides all the parameters needed to run the regression module",
             "properties": {
-                "mutrate_regressions": {
+                "mutdensity_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "description": "Modality attributes for regression analysis with the mutation rate",
-                    "help_text": "If you want to run regressions with the mutation rate, include the modality attributes separated by a comma. Allowed values: mutrate,all,nonproteinaffecting,proteinaffecting,alltypes,snv,complex-deletion-insertion-mnv",
+                    "description": "Modality attributes for regression analysis with the mutation density",
+                    "help_text": "If you want to run regressions with the mutation density, include the modality attributes separated by a comma. Allowed values: mutdensity,all,nonproteinaffecting,proteinaffecting,alltypes,snv,complex-deletion-insertion-mnv",
                     "fa_icon": "far fa-file-code"
                 },
                 "omega_regressions": {
