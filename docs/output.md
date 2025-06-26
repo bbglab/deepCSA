@@ -18,9 +18,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 - [Site selection metrics](#site-selection-metrics)
 - [Additional clonal structure metrics](#additional-clonal-structure-metrics)
 - [Mutational signatures](#mutational-signatures)
-- [Plotting funcionalities](#plotting-funcionalities)
+- [Plotting functionalities](#plotting-functionalities)
 - [Additional outputs](#additional-outputs)
-
 
 ## Directory Structure
 
@@ -152,7 +151,6 @@ Optional:
 - Blacklist mutations if activated (see assets for example).
 - Downsample mutations if activated.
 
-
 ### Outputs
 
 - sumannotation
@@ -170,8 +168,6 @@ Optional:
 
 - Mutational profile computation
   Capture the mutation probability of each trinucleotide. Represent it in three different normalization conditions.
-
-
 
 ### Outputs
 
@@ -250,7 +246,6 @@ Optional:
 - mutatedcellsfromvafam
 - mutatedgenomesfromvafam
 
-
 ## Mutational signatures
 
 ### Key role
@@ -280,8 +275,6 @@ Optional:
 - plotneedles
 - plotselection
 - plotsomaticmaf
-
-
 
 ## Additional outputs
 

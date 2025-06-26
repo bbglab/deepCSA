@@ -6,7 +6,6 @@
 
 <!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
 
-
 ## How to run the pipeline
 
 The typical command for running the pipeline is as follows:
@@ -38,7 +37,7 @@ K_6_1_A_1,K_6_1_A_1.high.filtered.vcf,K_6_1_A_1.sorted.bam
 | Column    | Description                                                                                                                                                                            |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Sample names cannot contain dots (`.`). Ideally the sample name should have a _Python string-like_ format, it should not be a single number.  |
-| `vcf` | Full path to VCF file containing all the mutations called in your sample. It should be uncompressed and with the VCF format field complying with the expected format. See [custom mutation calling](#custom-mutation-calling ) below in case the input is not coming from deepUMIcaller.                                                             |
+| `vcf` | Full path to VCF file containing all the mutations called in your sample. It should be uncompressed and with the VCF format field complying with the expected format. See [custom mutation calling](#custom-mutation-calls) below in case the input is not coming from deepUMIcaller.                                                             |
 | `bam` | Full path to BAM file containing the duplex aligned reads that were used for the variant calling.                                                             |
 
 An [example samplesheet](../assets/example_inputs/input_example.csv) has been provided with the pipeline.
@@ -53,13 +52,13 @@ An [example samplesheet](../assets/example_inputs/input_example.csv) has been pr
 * Interindividual variability and sample comparison. Complete run with downstream steps for computation of linear regressions to compare different samples/groups based on clinical variables or sample metadata.
 
 ### Initial run. Data exploration
+
 * Definition of regions to analyze
 * Depth per sample and/or per gene
 * Somatic mutations
   * Needle plots
 * Mutational profile
 * Mutational signatures
-
 
 ```console
 params {
@@ -69,8 +68,8 @@ params {
 }
 ```
 
+### Clonal structure definition. Complete run with a focus on positive selection at the cohort-level
 
-### Clonal structure definition. Complete run with a focus on positive selection at the cohort-level.
 * All the previous +
 * Mutation density
 * Positive selection per gene
@@ -78,7 +77,6 @@ params {
   * Per gene, all samples together
   * Per gene, per group of samples
   * Per gene, per sample
-
 
 ```console
 params {
@@ -114,9 +112,8 @@ params {
 }
 ```
 
+### Mutational processes in alternative genomic regions. Partial run with a focus on mutational processes/signatures
 
-
-### Mutational processes in alternative genomic regions. Partial run with a focus on mutational processes/signatures.
 * Same as initial run (even it can be ignored)
 * Mutational profile and mutational signatures based on:
   * All genomic regions
@@ -137,8 +134,8 @@ params {
 }
 ```
 
+### Interindividual variability and sample comparison. Complete run with downstream steps for computation of linear regressions to compare different samples/groups based on clinical variables or sample metadata
 
-### Interindividual variability and sample comparison. Complete run with downstream steps for computation of linear regressions to compare different samples/groups based on clinical variables or sample metadata.
 * Same as complete clonal structure definition +
 * Computation of univariate and multivariate linear regressions between clonal structure metrics and clonal selection
 
@@ -165,9 +162,6 @@ params {
 }
 ```
 
-
-
-
 ## Definition of structural parameters
 
 * Container pulling (either prior to running the pipeline or directly as the pipeline runs)
@@ -180,8 +174,7 @@ params {
   * COSMIC signatures (i.e. [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/) (select context size = 96 and your desired species of interest))
   <!-- * dNdScv datasets (see: ) -->
   
-
-### Mandatory parameter configuration:
+### Mandatory parameter configuration
 
 ```console
 params {
@@ -217,7 +210,7 @@ params {
 ```
 
 <!-- TODO: revise if this could be used in mice http://mendel.stanford.edu/SidowLab/downloads/gerp/ -->
-### Optional parameters configuration:
+### Optional parameters configuration
 
 ```console
 params {
@@ -248,14 +241,12 @@ params {
 }
 ```
 
-
 ## Custom mutation calls
 
 If you want to run deepCSA with your own mutation calls, this is also possible. Reasons behind this would be:
 
-- the variant calling was not done using deepUMIcaller.
-- you came up with a set of mutations that you trust and want to force them as the ones to be used for the analysis.
-
+* the variant calling was not done using deepUMIcaller.
+* you came up with a set of mutations that you trust and want to force them as the ones to be used for the analysis.
 
 ### Step 1: Generate properly formatted input VCFs
 
@@ -298,13 +289,11 @@ The script itself contains this brief explanation on the usage and required para
 #     ALT_DEPTH indicates the total number of duplex reads supporting the variant at the same position
 ```
 
-
 ### Step 2: Prepare input.csv file
 
 Make sure to prepare the input.csv file with matching the correct VCF-BAM files for each sample.
 
 If you want to run deepCSA as a basic user and ensure that mutations are properly filtered stop here.
-
 
 ### (optional; advanced users) Step 3: Force no filtering of variants
 
@@ -319,8 +308,6 @@ params {
     filter_criteria_somatic = []
 }
 ```
-
-
 
 ## Running the pipeline
 
@@ -409,23 +396,23 @@ They are loaded in sequence, so later profiles can overwrite earlier profiles.
 
 If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the `PATH`. This is _not_ recommended, since it can lead to different results on different machines dependent on the computer enviroment.
 
-- `test`
-  - A profile with a complete configuration for automated testing
-  - Includes links to test data so needs no other parameters
-- `docker`
-  - A generic configuration profile to be used with [Docker](https://docker.com/)
-- `singularity`
-  - A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
-- `podman`
-  - A generic configuration profile to be used with [Podman](https://podman.io/)
-- `shifter`
-  - A generic configuration profile to be used with [Shifter](https://nersc.gitlab.io/development/shifter/how-to-use/)
-- `charliecloud`
-  - A generic configuration profile to be used with [Charliecloud](https://hpc.github.io/charliecloud/)
-- `apptainer`
-  - A generic configuration profile to be used with [Apptainer](https://apptainer.org/)
-- `conda`
-  - A generic configuration profile to be used with [Conda](https://conda.io/docs/). Please only use Conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity, Podman, Shifter, Charliecloud, or Apptainer.
+* `test`
+  * A profile with a complete configuration for automated testing
+  * Includes links to test data so needs no other parameters
+* `docker`
+  * A generic configuration profile to be used with [Docker](https://docker.com/)
+* `singularity`
+  * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
+* `podman`
+  * A generic configuration profile to be used with [Podman](https://podman.io/)
+* `shifter`
+  * A generic configuration profile to be used with [Shifter](https://nersc.gitlab.io/development/shifter/how-to-use/)
+* `charliecloud`
+  * A generic configuration profile to be used with [Charliecloud](https://hpc.github.io/charliecloud/)
+* `apptainer`
+  * A generic configuration profile to be used with [Apptainer](https://apptainer.org/)
+* `conda`
+  * A generic configuration profile to be used with [Conda](https://conda.io/docs/). Please only use Conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity, Podman, Shifter, Charliecloud, or Apptainer.
 
 ### `-resume`
 
@@ -441,7 +428,7 @@ Specify the path to a specific config file (this is a core Nextflow command). Se
 
 ### Resource requests
 
-Whilst the default requirements set within the pipeline will hopefully work for most people and with most input data, you may find that you want to customise the compute resources that the pipeline requests. Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if the job exits with any of the error codes specified [here](https://github.com/nf-core/rnaseq/blob/4c27ef5610c87db00c3c5a3eed10b1d161abf575/conf/base.config#L18) it will automatically be resubmitted with higher requests (2 x original, then 3 x original). If it still fails after the third attempt then the pipeline execution is stopped.
+Whilst the default requirements set within the pipeline will hopefully work for most people and with most input data, you may find that you want to customise the compute resources that the pipeline requests. Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if the job exits with any of the error codes specified [here (example nf-core/rnaseq)](https://github.com/nf-core/rnaseq/blob/4c27ef5610c87db00c3c5a3eed10b1d161abf575/conf/base.config#L18) it will automatically be resubmitted with higher requests (2 x original, then 3 x original). If it still fails after the third attempt then the pipeline execution is stopped.
 
 To change the resource requests, please see the [max resources](https://nf-co.re/docs/usage/configuration#max-resources) and [tuning workflow resources](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources) section of the nf-core website.
 
@@ -472,4 +459,3 @@ We recommend adding the following line to your environment to limit this (typica
 ```bash
 NXF_OPTS='-Xms1g -Xmx4g'
 ```
-

@@ -1,3 +1,5 @@
+# deepCSA
+
 ## Introduction
 
 **bbglab/deepCSA** is a bioinformatics pipeline that can be used for analyzing targeted DNA sequencing data. It was designed for duplex sequencing data of normal tissues.
@@ -8,7 +10,6 @@
 
 <!-- 1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/)) -->
-
 
 ## Usage
 
@@ -26,7 +27,6 @@ Each row represents a single sample with a single-sample VCF containing the muta
 
 **Make sure that you do not use any '.' in your sample names, and also use text-like names for the samples, try to avoid having only numbers.** This second case should be handled properly but using string-like names will ensure consistency.
 
-
 Now, you can run the pipeline using:
 
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
@@ -39,13 +39,11 @@ nextflow run main.nf --outdir <OUTDIR> -profile singularity,<DESIRED PROFILE> --
 
 The input can be provided by the `--input` option but it is more recommended to define this and all the other parameters in a parameter file, that can be provided to the pipeline for running the analysis with the specified configuration.
 
-
 ### Warning
 
 Please provide pipeline parameters via the Nextflow `-params-file` option or CLI. Custom config files including those
 provided by the `-c` Nextflow option can be used to provide any configuration **except for parameters**_;
 see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
-
 
 ## Credits
 
@@ -66,7 +64,7 @@ We thank the following people for their extensive assistance in the development 
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
  -->
- 
+
 ## Citations
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
@@ -84,9 +82,6 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 >
 > _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
 
-
-
 ## Documentation
 
-Find the documentation ([here](https://github.com/bbglab/deepCSA/tree/main/docs)).
-
+Find the documentation ([link to docs](https://github.com/bbglab/deepCSA/tree/main/docs)).
