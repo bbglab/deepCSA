@@ -18,7 +18,8 @@ process OMEGA_MUTABILITIES {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
 
     mkdir groups;
@@ -44,7 +45,8 @@ process OMEGA_MUTABILITIES {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch mutabilities_per_site.${prefix}.tsv.gz
 

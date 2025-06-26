@@ -16,7 +16,8 @@ process SITE_COMPARISON {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def size = task.ext.size ?: "all" // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
     """
     omega_comparison_per_site.py --mutations-file ${mutations} \\
@@ -32,7 +33,8 @@ process SITE_COMPARISON {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch mutabilities_per_site.${prefix}.tsv.gz
 

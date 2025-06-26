@@ -21,8 +21,9 @@ process OMEGA_PREPROCESS {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+
     // TODO revise this fix
     def sample_name = prefix.tokenize('.')[0]
     def global_loc = task.ext.global_loc ? "--absent-synonymous infer_global_custom  --mutational-profile-global-file global_mutprofile.tsv --synonymous-mutrates-file ${syn_muts_global}" : "--absent-synonymous ignore"
@@ -38,7 +39,6 @@ process OMEGA_PREPROCESS {
                         --mutational-profile-file ${mutation_profile} \\
                         --single-sample ${sample_name} \\
                         ${global_loc}
-    # $args -c $task.cpus
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         omega: 1.0
@@ -46,8 +46,9 @@ process OMEGA_PREPROCESS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 
@@ -69,4 +70,4 @@ process OMEGA_PREPROCESS {
 //                      --mutational-profile-global-file P19_0033_BTR_01.all.profile.tsv
 //                      --single-sample all_samples
 //                      --absent-synonymous infer_global_custom
-//                      --synonymous-mutrates-file mutrates_per_gene.tsv
+//                      --synonymous-mutrates-file mutdensities_per_gene.tsv

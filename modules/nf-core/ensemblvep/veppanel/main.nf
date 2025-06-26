@@ -37,7 +37,8 @@ process ENSEMBLVEP_VEP {
     def args = task.ext.args ?: ''
     def file_extension = args.contains("--vcf") ? 'vcf' : args.contains("--json")? 'json' : args.contains("--tab")? 'tab' : 'vcf'
     def compress_cmd = args.contains("--compress_output") ? '' : '--compress_output bgzip'
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def dir_cache = cache ? "\${PWD}/${cache}" : "/.vep"
     def reference = fasta ? "--fasta $fasta" : ""
 
@@ -65,7 +66,8 @@ process ENSEMBLVEP_VEP {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.ann.vcf.gz
     touch ${prefix}.ann.tab.gz

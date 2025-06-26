@@ -18,7 +18,8 @@ process COMPUTE_MATRIX {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     mut_profile.py matrix \\
                     --sample_name ${prefix} \\
@@ -32,8 +33,8 @@ process COMPUTE_MATRIX {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.matrix.tsv
 

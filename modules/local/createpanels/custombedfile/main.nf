@@ -16,10 +16,9 @@ process CREATECUSTOMBEDFILE {
 
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def tool = task.ext.tool ?: 'oncodrivefml'
-
     // find a better solution for doing this,
     // probably in python
     // so that both genes overlapping can be conserved and then we can also do groups of genes
@@ -35,7 +34,8 @@ process CREATECUSTOMBEDFILE {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.annotated.bed
 

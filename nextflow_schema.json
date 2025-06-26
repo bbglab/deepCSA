@@ -312,9 +312,9 @@
                     "description": "Do you want to run signatures?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutationrate": {
+                "mutationdensity": {
                     "type": "boolean",
-                    "description": "Do you want to run mutationrate?",
+                    "description": "Do you want to run mutationdensity?",
                     "fa_icon": "fas fa-book"
                 },
                 "indels": {
@@ -355,11 +355,11 @@
             "fa_icon": "fas fa-dna",
             "description": "Provides all the parameters needed to run the regression module",
             "properties": {
-                "mutrate_regressions": {
+                "mutdensity_regressions": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "description": "Modality attributes for regression analysis with the mutation rate",
-                    "help_text": "If you want to run regressions with the mutation rate, include the modality attributes separated by a comma. Allowed values: mutrate,all,nonproteinaffecting,proteinaffecting,alltypes,snv,complex-deletion-insertion-mnv",
+                    "description": "Modality attributes for regression analysis with the mutation density",
+                    "help_text": "If you want to run regressions with the mutation density, include the modality attributes separated by a comma. Allowed values: mutdensity,all,nonproteinaffecting,proteinaffecting,alltypes,snv,complex-deletion-insertion-mnv",
                     "fa_icon": "far fa-file-code"
                 },
                 "omega_regressions": {
@@ -648,8 +648,8 @@
                 "exclude_subgroups": {
                     "type": "string",
                     "default": "[\\'UV_signatures\\', \\'MMR_deficiency_signatures\\', \\'POL_deficiency_signatures\\', \\'HR_deficiency_signatures\\',\\'BER_deficiency_signatures\\', \\'Artifact_signatures\\', \\'Lymphoid_signatures\\']",
-                    "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
-                    "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
+                    "description": "List-like (python) string with the different groups of signatures to be removed from SigProfilerAssignment.",
+                    "help_text": "List-like (python) string with the different groups of signatures to be removed from SigProfilerAssignment.",
                     "fa_icon": "far fa-file-code"
                 },
                 "datasets3d": {

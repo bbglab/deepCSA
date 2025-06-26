@@ -14,7 +14,8 @@ process BLACKLIST_MUTATIONS {
     path "versions.yml"                                , topic: versions
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     blacklist_muts.py \\
                     --mutations_file ${mutations_file} \\
@@ -28,7 +29,8 @@ process BLACKLIST_MUTATIONS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.bk.filtered.mutations.tsv
 

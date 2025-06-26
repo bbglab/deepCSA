@@ -13,9 +13,8 @@ process INDELS_COMPARISON {
 
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    // def panel_version = task.ext.panel_version ?: "${meta2.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     indels_comparison.py \\
                 --sample ${prefix} \\
@@ -31,7 +30,7 @@ process INDELS_COMPARISON {
     def prefix = task.ext.prefix ?: "all_samples"
     def panel_version = task.ext.panel_version ?: "${meta.id}"
     """
-    touch ${prefix}.${panel_version}.mutrates.tsv
+    touch ${prefix}.${panel_version}.indels.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -2,12 +2,6 @@
 
 **bbglab/deepCSA** is a bioinformatics pipeline that can be used for analyzing targeted DNA sequencing data. It was designed for duplex sequencing data of normal tissues.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
-
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
@@ -18,21 +12,20 @@
 
 ## Usage
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
 First, prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+sample,vcf,bam
+K_5_1_A_1,/data/bbg/datasets/transfer/ferriol_deepcsa/K_5_1_A_1.high.filtered.vcf,/data/bbg/datasets/transfer/ferriol_deepcsa/K_5_1_A_1.sorted.bam
+K_6_1_A_1,/data/bbg/datasets/transfer/ferriol_deepcsa/K_6_1_A_1.high.filtered.vcf,/data/bbg/datasets/transfer/ferriol_deepcsa/K_6_1_A_1.sorted.bam
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+Each row represents a single sample with a single-sample VCF containing the mutations called in that sample and the BAM file that was used for getting those variant calls. The mutations will be obtained from the VCF and the BAM file will be used for computing the sequencing depth at each position and using this for the downstream analysis.
 
--->
+**Make sure that you do not use any '.' in your sample names, and also use text-like names for the samples, try to avoid having only numbers.** This second case should be handled properly but using string-like names will ensure consistency.
+
 
 Now, you can run the pipeline using:
 
@@ -41,11 +34,13 @@ Now, you can run the pipeline using:
 ```bash
 git clone https://github.com/bbglab/deepCSA.git
 cd deepCSA
-nextflow run main.nf --outdir <OUTDIR> -profile singularity,<DESIRED PROFILE>
+nextflow run main.nf --outdir <OUTDIR> -profile singularity,<DESIRED PROFILE> --input samplesheet.csv
 ```
-The input should be provided by the `--input` option but it is more recommended to define it within a given profile.
 
-Internally also use the -work-dir option:
+The input can be provided by the `--input` option but it is more recommended to define it within a given profile.
+
+<!-- TODO revise this
+You can also define the `-work-dir` option to control where this is being outputed.
 ```
 -work-dir  /workspace/nobackup2/work/deepCSA/<NAME>
 ```
@@ -58,13 +53,13 @@ process {
    maxRetries = 2
 }
 ```
+ -->
 
-
-:::warning
+#### Warning
 Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those
 provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
 see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
-:::
+
 
 ## Credits
 
@@ -72,12 +67,20 @@ bbglab/deepCSA was originally written by Ferriol Calvet.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+* @rblancomi
+* @FedericaBrando
+* @koszulordie
+* @St3451
+* @AxelRosendahlHuber
+* @andrianovam
+* @migrau
 
+<!-- TODO 
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
-
+ -->
+ 
 ## Citations
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
@@ -99,11 +102,13 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 
 ## (temporary) Documentation
 
+Check the `assets/example_inputs` directory for full information on which are the expected file formats for the different required and mandatory inputs.
+
 ### Custom TSV regions annotation file should contain this
 Document this custom_regions has to be a TSV file with the following columns:
-    * chromosome  start   end gene_name    impactful_mutations [neutral_impact] [new_impact]
-    * chromosome start and end indicate the region that is being customized
-    * gene_name           : is the name of the region that is being added, make sure that it does not coincide with the name of any other gene.
-    * impactful_mutations : is a comma-separated list of SNVs that need to be labelled with the value indicated in new_impact, format: chr5_1294991_C/T, with pyrimidine based definition
-    * neutral_impact      : (optional, default; synonymous)
-    * new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.
+   * chromosome  start   end gene_name    impactful_mutations [neutral_impact] [new_impact]
+   * chromosome start and end indicate the region that is being customized
+   * gene_name           : is the name of the region that is being added, make sure that it does not coincide with the name of any other gene.
+   * impactful_mutations : is a comma-separated list of SNVs that need to be labelled with the value indicated in new_impact, format: chr5_1294991_C/T, with pyrimidine based definition
+   * neutral_impact      : (optional, default; synonymous)
+   * new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.

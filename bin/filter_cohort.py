@@ -118,17 +118,12 @@ else:
 #######
 
 # this is if we were to consider both unique and no-unique variants
-germline_vars_all_samples = maf_df.loc[maf_df["VAF"] > somatic_vaf_boundary, "MUT_ID"].unique()
-
-# this is if we were to consider only unique germline
-germline_vars = maf_df.loc[maf_df["VAF"] > somatic_vaf_boundary][["MUT_ID", "SAMPLE_ID"]].groupby(
-                                                            "MUT_ID").size().sort_values(ascending = False).to_frame("n_samples").reset_index()
-unique_germline_vars = germline_vars.loc[germline_vars["n_samples"] == 1]["MUT_ID"].unique()
-
-
-
+germline_vars_all_samples = maf_df.loc[(maf_df["VAF"] > somatic_vaf_boundary) &
+                                       (maf_df["VAF_AM"] > somatic_vaf_boundary) &
+                                       (maf_df["vd_VAF"] > somatic_vaf_boundary),
+                                       "MUT_ID"].unique()
 print(len(germline_vars_all_samples), "using all germline variants of all samples")
-# print(len(unique_germline_vars), "using only germline variants unique to a single sample")
+
 
 maf_df["other_sample_SNP"] = False
 maf_df.loc[(maf_df["MUT_ID"].isin(germline_vars_all_samples)) &

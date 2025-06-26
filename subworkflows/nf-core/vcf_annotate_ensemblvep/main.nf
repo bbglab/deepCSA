@@ -3,7 +3,6 @@
 //
 
 include { ENSEMBLVEP_VEP } from '../../../modules/nf-core/ensemblvep/vep/main'
-// include { TABIX_TABIX    } from '../../../modules/nf-core/tabix/tabix/main'
 
 // TODO update this so that it only receives the vcf as input
 workflow VCF_ANNOTATE_ENSEMBLVEP {
@@ -19,9 +18,6 @@ workflow VCF_ANNOTATE_ENSEMBLVEP {
     main:
 
     ENSEMBLVEP_VEP(vcf, vep_genome, vep_species, vep_cache_version, vep_cache, fasta, vep_extra_files)
-    // TABIX_TABIX(ENSEMBLVEP_VEP.out.vcf)
-
-    // ch_vcf_tbi = ENSEMBLVEP_VEP.out.vcf.join(TABIX_TABIX.out.tbi, failOnDuplicate: true, failOnMismatch: true)
 
     // Gather versions of all tools used
 

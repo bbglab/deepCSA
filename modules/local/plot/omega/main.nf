@@ -14,10 +14,8 @@ process PLOT_OMEGA {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def output_prefix = task.ext.output_prefix ?: ""
-    def filters = task.ext.filters ?: ""
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def requested_plots = task.ext.plots ?: "truncating,missense"
     """
     plot_selection_omega.py \\
@@ -33,9 +31,9 @@ process PLOT_OMEGA {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def output_prefix = task.ext.output_prefix ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}${output_prefix}.pdf
 
@@ -45,16 +43,3 @@ process PLOT_OMEGA {
     END_VERSIONS
     """
 }
-
-
-//     cat > mutations_subset.conf << EOF
-//     {
-//         ${filters}
-//     }
-//     EOF
-
-//     cat > requested_plots.conf << EOF
-//     {
-//         ${requested_plots}
-//     }
-//     EOF

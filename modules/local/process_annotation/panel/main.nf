@@ -19,7 +19,8 @@ process POSTPROCESS_VEP_ANNOTATION {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def assembly = task.ext.assembly ?: "hg38"
     def canonical_only = task.ext.canonical_only ? "--only_canonical" : ""
     // TODO
@@ -49,7 +50,6 @@ process POSTPROCESS_VEP_ANNOTATION {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${vep_annotated_file.getBaseName()}.compact.tsv;
 
