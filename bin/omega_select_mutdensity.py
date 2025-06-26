@@ -25,8 +25,8 @@ def select_syn_mutdensity(mutdensity_file, output_file, mode):
     # the input would have already been forced to be either of the two options
     # it might still be useful in case this was not called from main()
     else:
-        print('unknown mode, please enter either mutations or mutated_reads')
-        exit(1) ## FIXME not sure if this is the right code to exit with
+        raise ValueError('unknown mode, please enter either mutations or mutated_reads')
+
 
     synonymous_mutdensities_genes.columns = ["GENE", "MUTDENSITY"]
     synonymous_mutdensities_genes.to_csv(f"{output_file}",
