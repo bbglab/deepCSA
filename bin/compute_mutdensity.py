@@ -17,9 +17,9 @@ from read_utils import custom_na_values
 
 # -- Auxiliary functions -- #
 
-mutdensity_impact_groups = [False, ["SNV"] , ["INSERTION", "DELETION"], ["SNV", "INSERTION", "DELETION"]]
+MUTDENSITY_IMPACT_GROUPS = [False, ["SNV"] , ["INSERTION", "DELETION"], ["SNV", "INSERTION", "DELETION"]]
 
-def mutdensity_sample(maf_df, depths_df, depths_adj_df, sample_name, consequence_groups_list = [False]):
+def mutdensity_sample(maf_df, depths_df, depths_adj_df, sample_name):
     """
     Computes a sample's global mutation density. Returns the mutation density
     per Mb, non-adjusted and adjusted by panel
@@ -33,7 +33,7 @@ def mutdensity_sample(maf_df, depths_df, depths_adj_df, sample_name, consequence
                                 "DEPTH_ADJUSTED": depths_adj_df[f"{sample_name}"].sum()
                                 }
 
-    for type_list in consequence_groups_list:
+    for type_list in MUTDENSITY_IMPACT_GROUPS:
         if not type_list:
             unique_maf = maf_df[["SAMPLE_ID", "MUT_ID", "ALT_DEPTH"]].drop_duplicates()
             types_included = 'all_types'
@@ -69,7 +69,7 @@ def mutdensity_sample(maf_df, depths_df, depths_adj_df, sample_name, consequence
     return mutdensity_sample
 
 
-def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name, consequence_groups_list = [False]):
+def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name):
     """
     Computes each gene mutation density. Returns the mutation density
     both per Mb and Kb sequenced, both non-adjusted and adjusted by panel
@@ -78,7 +78,7 @@ def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name, consequence_g
 
     impact_group_results = list()
 
-    for type_list in consequence_groups_list:
+    for type_list in MUTDENSITY_IMPACT_GROUPS:
         # filter by mutation type according to type_list
         if not type_list:
             unique_maf = maf_df[["SAMPLE_ID", "GENE", "MUT_ID", "ALT_DEPTH"]].drop_duplicates()
@@ -158,10 +158,10 @@ def compute_mutdensity(maf_path, depths_path, annot_panel_path, sample_name, pan
 
     # Compute mutation densities
     ## sample mutation density
-    mutdensity_sample_df = mutdensity_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name, mutdensity_impact_groups)
+    mutdensity_sample_df = mutdensity_sample(maf_df, depths_subset_df, depths_subset_adj_sample_df, sample_name)
 
     ## per gene mutation density
-    mutdensity_genes_df = mutdensity_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name, mutdensity_impact_groups)
+    mutdensity_genes_df = mutdensity_gene(maf_df, depths_subset_df, depths_subset_adj_df, sample_name)
 
     mutdensity_df = pd.concat([mutdensity_sample_df, mutdensity_genes_df])
 
