@@ -126,19 +126,19 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths, params.consensus_panel_min_depth)
 
     emit:
-    full_panel_annotated     = VCFANNOTATEPANEL.out.tab
-    all_panel               = all_panel.first()
-    all_bed                 = all_bed.first()
-    prot_panel              = prot_panel.first()
-    prot_bed                = prot_bed.first()
-    nonprot_panel           = nonprot_panel.first()
-    nonprot_bed             = nonprot_bed.first()
-    exons_panel             = exons_panel.first()
-    exons_bed               = exons_bed.first()
-    introns_panel           = introns_panel.first()
-    introns_bed             = introns_bed.first()
-    synonymous_panel        = synonymous_panel.first()
-    synonymous_bed          = synonymous_bed.first()
+    full_panel_annotated        = VCFANNOTATEPANEL.out.tab
+    all_panel                   = all_panel.first()
+    all_bed                     = all_bed.first()
+    prot_panel                  = prot_panel.first()
+    prot_bed                    = prot_bed.first()
+    nonprot_panel               = nonprot_panel.first()
+    nonprot_bed                 = nonprot_bed.first()
+    exons_panel                 = exons_panel.first()
+    exons_bed                   = exons_bed.first()
+    introns_panel               = introns_panel.first()
+    introns_bed                 = introns_bed.first()
+    synonymous_panel            = synonymous_panel.first()
+    synonymous_bed              = synonymous_bed.first()
 
 
     all_consensus_panel         = CREATECONSENSUSPANELSALL.out.consensus_panel.first()
@@ -157,6 +157,9 @@ workflow CREATE_PANELS {
     panel_annotated_rich        = rich_annotated
     added_custom_regions        = added_regions
     domains_panel_bed           = DOMAINANNOTATION.out.domains_bed
+
+    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation
+    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
