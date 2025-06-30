@@ -2,10 +2,6 @@ process DOMAIN_ANNOTATION {
 
     tag "${meta.id}"
 
-    label 'cpu_low'
-    label 'time_low'
-    label 'process_high_memory'
-
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:

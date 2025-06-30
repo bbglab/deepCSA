@@ -1,6 +1,5 @@
 process GROUP_GENES {
     tag "groups"
-    label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 

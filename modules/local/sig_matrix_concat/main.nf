@@ -1,6 +1,5 @@
 process MATRIX_CONCAT {
     tag "$meta.id"
-    label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 

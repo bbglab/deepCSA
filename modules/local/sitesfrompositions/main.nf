@@ -2,10 +2,6 @@ process SITESFROMPOSITIONS {
 
     tag "${meta.id}"
 
-    label 'cpu_single'
-    label 'time_low'
-    label 'process_low_memory'
-
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
 

@@ -6,7 +6,6 @@ process FILTERBED {
     // Look at the low mappability or low complexity filtering of the deepUMIcaller pipeline
 
     tag "$meta.id"
-    label 'process_high'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 

@@ -1,6 +1,5 @@
 process DNA_2_PROTEIN_MAPPING {
     tag "$meta.id"
-    label 'process_single'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 

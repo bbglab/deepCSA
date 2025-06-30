@@ -1,10 +1,6 @@
 process SUMMARIZE_ANNOTATION {
     tag "$meta.id"
 
-    label 'cpu_low'
-    label 'process_high_memory'
-    label 'time_low'
-
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:

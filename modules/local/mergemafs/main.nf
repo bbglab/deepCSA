@@ -7,9 +7,6 @@ process MERGE_BATCH {
 
     tag "$meta.id"
 
-    label 'process_high_memory'
-    label 'time_low'
-
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
