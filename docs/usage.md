@@ -174,6 +174,8 @@ params {
   
 ### Mandatory parameter configuration
 
+See [File formatting docs](file_formatting.md) for more details on the structure of files that can be provided to deepCSA.
+
 ```console
 params {
 
@@ -210,6 +212,8 @@ params {
 <!-- TODO: revise if this could be used in mice http://mendel.stanford.edu/SidowLab/downloads/gerp/ -->
 ### Optional parameters configuration
 
+See [File formatting docs](file_formatting.md) for more details on the structure of files that can be provided to deepCSA.
+
 ```console
 params {
 
@@ -235,9 +239,32 @@ params {
     // define a file of mutations that should not be trusted
     //  and you want to remove from all the analysis
     blacklist_mutations        = null
-
 }
 ```
+
+## Additional customizable parameters
+
+In addition to several files that can be provided as input listed in the [optional files parameters](#optional-parameters-configuration), there are some more parameters that allow for specific tunnings of the analysis.
+
+### Minimum depth thresholds
+
+There are several depth thresholds that can be defined in the pipeline, I will list them below from the most strict to the least strict.
+
+* consensus_panel_min_depth  = 500
+
+For a given genomic position to be included in the so called "consensus panel" this position needs to have a depth of at least `consensus_panel_min_depth` in at least 80% of the samples. This should always be the highest value among all the depth thresholds and it should be big enough to classify a mutation as somatic vs germline. It should be at least 40.
+
+* sample_panel_min_depth     = 40
+
+This value impacts the creation of sample specific panels that capture which genomics positions have been sequenced to at least this depth in each specific sample. This should be big enough to classify a mutation as somatic vs germline. It should be at least 40.
+
+* mutation_depth_threshold   = 40
+
+This value is used for filtering the mutations by depth. Meaning that if a mutation does not reach this minimum sequencing depth it will not be kept for further analysis. This value should be big enough to be able to classify a mutation as somatic vs germline, and reach a trustworthy computation of the mutation frequency. It should be at least 40.
+
+* use_custom_minimum_depth    = 0
+
+This value is the less stringent depth threshold and is used in the first step of computing the positions that may be part of the so called "panels". This value indicates the minimum average depth at a given position for this position to be kept for the posterior depth analysis and definition on panels. The main use of this value should be to reduce the size of the files that are being processed afterwards. This can be set to 20 or more very safely.
 
 ## Custom mutation calls
 
