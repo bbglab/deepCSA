@@ -19,8 +19,8 @@ First, prepare a samplesheet with your input data that looks as follows:
 
 ```csv
 sample,vcf,bam
-K_5_1_A_1,K_5_1_A_1.high.filtered.vcf,K_5_1_A_1.sorted.bam
-K_6_1_A_1,K_6_1_A_1.high.filtered.vcf,K_6_1_A_1.sorted.bam
+sample1,sample1.high.filtered.vcf,sample1.sorted.bam
+sample2,sample2.high.filtered.vcf,sample2.sorted.bam
 ```
 
 Each row represents a single sample with a single-sample VCF containing the mutations called in that sample and the BAM file that was used for getting those variant calls. The mutations will be obtained from the VCF and the BAM file will be used for computing the sequencing depth at each position and using this for the downstream analysis.
