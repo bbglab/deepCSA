@@ -58,6 +58,16 @@ params {
 
 We also allow the computation of positive selection for groups of genes, particularly for omega, but this might be expanded to other methods. For this to happen, the `custom_groups` parameter needs to be set to `true` and then the corresponding groups file and its separator should be provided. Find an example below.
 
+This is an example on how this file could look like.
+
+```bash
+chr15q  chr15q  IDH2    SIN3A
+chr17p  chr17p  MAP2K4  NCOR1   TP53    USP6
+chr17q  chr17q  AXIN2   BRCA1   CDK12   ERBB2   NF1     PPM1D   RNF43   SOX9    SPOP    SRSF2   STAT3   VEZF1
+chr1p   chr1p   ARID1A  CDKN2C  MTOR    NOTCH2  NRAS    RPL22   RPL5    SPEN
+chr19p  chr19p  KEAP1   NOTCH3  SMARCA4 STK11
+```
+
 #### Related parameters
 
 ```console
@@ -69,6 +79,20 @@ params {
 ```
 
 ### Hotspots file
+
+This file will be used for the annotation of some specific mutations as known hotspots.
+
+We generally use a file with a list of hotspots retrieved from highly frequent mutations in cancer, but this could be changed by any other file with the desired information tailored to each specific use case.
+
+You should provide a file with the following structure (MUTTYPE should be pyrimidine centric, or '-' in case of non SNV variants).
+
+```bash
+CHROM   POS     MUTTYPE HOTSPOT_NAME
+chr12   25245351        C>A     KRAS_G12C_Missense
+chr12   25245350        C>A     KRAS_G12V_Missense
+chr7    55191822        T>G     EGFR_L858R_Missense
+chr12   25245350        C>T     KRAS_G12D_Missense
+```
 
 #### Related parameters
 
@@ -98,6 +122,12 @@ params {
 
 The user can provide a file with mutations that are very likely artifacts and should be removed from any analysis. This could be a list compiled across mutiple projects and coming from past knowledge. The format of this list is a single MUT_ID per line, with MUT_ID being generated in the same format that we use within deepCSA.
 
+```bash
+chr1:11107296_C>CA
+chr1:11107450_C>A
+chr1:11108379_T>A
+```
+
 #### Related parameters
 
 ```console
@@ -121,6 +151,11 @@ Document this custom_regions has to be a TSV file with the following columns:
 * neutral_impact      : (optional, default; synonymous)
 
 * new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.
+
+```console
+CHROM   START   END     NAME    IMPACTFUL       NEUTRAL IMPACT
+chr5    1294942 1295289 TERTpromoter    chr5_1295017_C/A,chr5_1295057_C/T,chr5_1295061_C/G,chr5_1295061_C/T,chr5_1295081_C/T,chr5_1295138_C/A,chr5_1294991_C/T,chr5_1295054_C/T,chr5_1295057_C/A,chr5_1295081_C/G,chr5_1295115_C/T,chr5_1295132_C/T,chr5_1295211_C/T,chr5_1295219_C/T,chr5_1295259_C/T,chr5_1295018_C/T,chr5_1295032_C/G,chr5_1295043_C/A,chr5_1295034_C/A,chr5_1295127_C/T,chr5_1295138_C/T,chr5_1295090_C/T,chr5_1295113_C/A,chr5_1295046_T/G,chr5_1295135_C/T,chr5_1295113_C/T   synonymous      missense
+```
 
 #### Related parameters
 
