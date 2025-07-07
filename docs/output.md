@@ -2,70 +2,291 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
+This document describes the output produced by the pipeline.
 
-The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
-
-<!-- TODO nf-core: Write this documentation describing your workflow's output -->
-
-## Pipeline overview
+## Pipeline overview <!-- omit in toc -->
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
-- [FastQC](#fastqc) - Raw read QC
-- [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
-- [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
+- [Directory Structure](#directory-structure)
+- [Input and configuration](#input-and-configuration)
+- [Depth analysis](#depth-analysis)
+- [Mutation preprocessing](#mutation-preprocessing)
+- [Basic analysis](#basic-analysis)
+- [Intermediate outputs](#intermediate-outputs)
+- [Positive selection](#positive-selection)
+- [Site selection metrics](#site-selection-metrics)
+- [Additional clonal structure metrics](#additional-clonal-structure-metrics)
+- [Mutational signatures](#mutational-signatures)
+- [Plotting functionalities](#plotting-functionalities)
+- [Additional outputs](#additional-outputs)
 
-### FastQC
+## Directory Structure
 
-<details markdown="1">
-<summary>Output files</summary>
+The directory structure listed below will be created in the results directory after the pipeline has finished.
+The structure captures the maximum diversity of created outputs, but when only certain run options are turned on, not all directories will be generated.
+All paths are relative to the top-level results directory.
 
-- `fastqc/`
-  - `*_fastqc.html`: FastQC report containing quality metrics.
-  - `*_fastqc.zip`: Zip archive containing the FastQC report, tab-delimited data file and plot images.
+```{console}
+{outdir}
+├──absolutemutabilities
+├──absolutemutabilitiesgloballoc
+├──annotatedepths
+├──clean_germline_somatic
+├──clean_somatic
+├──computematrix
+├──computeprofile
+├──createpanels
+│   ├── consensus
+│   │   └── <region_type>.consensus.bed
+│   │   └── <region_type>.consensus.tsv
+│   ├── captured
+│   │   └── <region_type>.captured.bed
+│   │   └── <region_type>.captured.tsv
+│   └── sample
+│       └── <region_type>.<sample>.bed
+│       └── <region_type>.<sample>.tsv
+├──customannotation
+├──customprocessing
+├──customprocessingrich
+├──depthssummary
+├──dna2proteinmapping
+├──domainannotation
+├──expandregions
+├──filterexons
+├──germline_somatic
+├──groupgenes
+├──indels
+├──matrixconcatwgs
+├──multiqc
+├──mutability
+├──mutatedcellsfromvafam
+├──mutatedgenomesfromvafam
+├──mutrate
+├──muts2sigs
+├──omega
+│   ├── preprocessing
+│   │   └── syn_muts.<sample>
+│   │   └── mutabilities.<sample>
+│   └── output_mle.<sample>.tsv
+├──omegagloballoc
+│   ├── preprocessing
+│   │   └── syn_muts.<sample>
+│   │   └── mutabilities.<sample>
+│   └── output_mle.<sample>.tsv
+├──oncodrive3d
+│   ├── run
+│       └── <sample>
+│   └── plot
+│       └── <sample>
+├──oncodrivefmlsnvs
+├──pipeline_info
+├──plotmaf
+├──plotneedles
+│   └── <sample>
+│       └── <gene-sample needles>
+├──plotselection
+├──plotsomaticmaf
+├──postprocessveppanel
+├──signatures_hdp
+│   └── output.<region_type>
+│       └── <sample>
+├──sigprobs
+├──sigprofilerassignment
+│   └── output.<region_type>
+│       └── <sample>
+├──sitecomparison
+├──sitecomparisongloballoc
+├──sitecomparisongloballocmulti
+├──sitecomparisonmulti
+├──sitesfrompositions
+├──sumannotation
+├──synmutrate
+├──synmutreadsrate
+└──table2group
+work/
+.nextflow.log
+```
 
-</details>
+## Input and configuration
 
-[FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) gives general quality metrics about your sequenced reads. It provides information about the quality score distribution across your reads, per base sequence content (%A/T/G/C), adapter contamination and overrepresented sequences. For further reading and documentation see the [FastQC help pages](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/).
+See Usage docs for extensive explanation on required inputs and format. Including documentation on parameters to run on for 4 different suggested running modes.
 
-![MultiQC - FastQC sequence counts plot](images/mqc_fastqc_counts.png)
+## Depth analysis
 
-![MultiQC - FastQC mean quality scores plot](images/mqc_fastqc_quality.png)
+### Key role
 
-![MultiQC - FastQC adapter content plot](images/mqc_fastqc_adapter.png)
+- Computation of depth per sample for each specific position
+  Most analysis may be influenced by sequencing depth, it is essential to correct for these values.
 
-:::note
-The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They may contain adapter sequence and potentially regions with low quality.
-:::
+- Definition of regions to analyze
+  Only genomic areas that have been properly covered across samples will be used for the analysis.
 
-### MultiQC
+### Outputs
 
-<details markdown="1">
-<summary>Output files</summary>
+- sitesfrompositions
+- postprocessveppanel
+- createpanels
+- annotatedepths
+- depthssummary
 
-- `multiqc/`
-  - `multiqc_report.html`: a standalone HTML file that can be viewed in your web browser.
-  - `multiqc_data/`: directory containing parsed statistics from the different tools used in the pipeline.
-  - `multiqc_plots/`: directory containing static images from the report in various formats.
+Optional:
 
-</details>
+- dna2proteinmapping
+- domainannotation
+- customprocessing
+- customprocessingrich
 
-[MultiQC](http://multiqc.info) is a visualization tool that generates a single HTML report summarising all samples in your project. Most of the pipeline QC results are visualised in the report and further statistics are available in the report data directory.
+## Mutation preprocessing
 
-Results generated by MultiQC collate pipeline QC from supported tools e.g. FastQC. The pipeline has special steps which also allow the software versions to be reported in the MultiQC output for future traceability. For more information about how to use MultiQC reports, see <http://multiqc.info>.
+### Key role
 
-### Pipeline information
+- VCF annotation: Annotate mutations with Ensembl VEP.
+- VCF to MAF conversion: Convert VCFs to MAF, define VAF, and merge with annotation.
+- Custom region annotation: Allow user to define different consequence types for specific regions.
+- Hotspot annotation: Add known hotspots to mutation annotation.
+- Filtering:
+  - Filter mutations at the sample level (e.g., VAF distortion).
+  - Filter at the cohort level (e.g., other_sample_SNP, repetitive_variant, not_covered, not_in_exons).
+- Blacklist mutations if activated (see assets for example).
+- Downsample mutations if activated.
 
-<details markdown="1">
-<summary>Output files</summary>
+### Outputs
 
-- `pipeline_info/`
-  - Reports generated by Nextflow: `execution_report.html`, `execution_timeline.html`, `execution_trace.txt` and `pipeline_dag.dot`/`pipeline_dag.svg`.
-  - Reports generated by the pipeline: `pipeline_report.html`, `pipeline_report.txt` and `software_versions.yml`. The `pipeline_report*` files will only be present if the `--email` / `--email_on_fail` parameter's are used when running the pipeline.
-  - Reformatted samplesheet files used as input to the pipeline: `samplesheet.valid.csv`.
-  - Parameters used by the pipeline run: `params.json`.
+- sumannotation
+- customannotation
+- germline_somatic
+- clean_somatic
+- clean_germline_somatic
 
-</details>
+## Basic analysis
 
-[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
+### Key role
+
+- Mutation density computation
+  Correct the number of mutations observed by the number of sequenced nucleotides.
+
+- Mutational profile computation
+  Capture the mutation probability of each trinucleotide. Represent it in three different normalization conditions.
+
+### Outputs
+
+- computematrix
+- computeprofile
+- mutrate
+
+## Intermediate outputs
+
+### Key role
+
+- Matrix concatenation
+  Combine WGS-renomralized matrices for mutational signature analysis.
+
+- Mutability calculation
+  Compute relative mutabilities using depths and mutational profile.
+
+- Choose synonymous mutation rates for downstream analysis.
+
+### Outputs
+
+- matrixconcatwgs
+- mutability
+- synmutrate
+- synmutreadsrate
+
+## Positive selection
+
+### Key role
+
+- Compute multiple positive selection metrics
+  This is done at the cohort-level, but also for each sample or group of samples.
+
+- OncodriveFML: Detects functional impact bias in observed mutations.
+
+- Oncodrive3D: Identifies 3D protein regions with mutation clustering, using relative mutabilities and raw VEP annotation.
+
+- Omega: dN/dS-based, quantifies selection pressure in defined regions (genes, exons, domains, hotspots, etc.).
+
+- Indels: Analysis of indel selection.
+
+### Outputs
+
+- omega
+- omegagloballoc
+- oncodrive3d
+- oncodrivefmlsnvs
+- indels
+
+## Site selection metrics
+
+### Key role
+
+- Compute absolute mutabilities for each position.
+
+- Compare the observed number of mutations per site to the expected number of mutations and estimate a site selection value.
+
+### Outputs
+
+- absolutemutabilities
+- absolutemutabilitiesgloballoc
+
+- sitecomparison
+- sitecomparisongloballoc
+- sitecomparisongloballocmulti
+- sitecomparisonmulti
+
+## Additional clonal structure metrics
+
+### Key role
+
+- VAF-based definition of the number of mutated genomes.
+
+### Outputs
+
+- mutatedcellsfromvafam
+- mutatedgenomesfromvafam
+
+## Mutational signatures
+
+### Key role
+
+- Signature assignment: Use SigProfilerAssignment with optional custom signatures.
+- HDP: Hierarchical Dirichlet Process for signature extraction.
+- (Pending) Signature extraction: SigProfilerExtractor support.
+
+### Outputs
+
+- signatures_hdp
+- sigprofilerassignment
+- sigprobs
+- muts2sigs
+
+## Plotting functionalities
+
+### Key role
+
+- Plotting basic statistics of numbers and distribution of mutations in genes.
+
+- Optionally think on adding more plots.
+
+### Outputs
+
+- plotmaf
+- plotneedles
+- plotselection
+- plotsomaticmaf
+
+## Additional outputs
+
+### Key role
+
+- Definition of groups, expanded regions and other metrics related with the full pipeline execution.
+
+### Outputs
+
+- table2group
+- groupgenes
+- expandregions
+- filterexons
+- multiqc
+- pipeline_info
