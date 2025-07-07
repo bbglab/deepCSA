@@ -70,4 +70,4 @@ process OMEGA_PREPROCESS {
 //                      --mutational-profile-global-file P19_0033_BTR_01.all.profile.tsv
 //                      --single-sample all_samples
 //                      --absent-synonymous infer_global_custom
-//                      --synonymous-mutrates-file mutrates_per_gene.tsv
+//                      --synonymous-mutrates-file mutdensities_per_gene.tsv
