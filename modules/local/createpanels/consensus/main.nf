@@ -3,7 +3,7 @@ process CREATECONSENSUSPANELS {
     label 'process_single'
 
     conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
-    container 'docker.io/bbglab/deepcsa_bed:latest'
+    container 'docker://bbglab/deepcsa_bed:latest'
 
     input:
     tuple val(meta) , path(compact_captured_panel_annotation)
@@ -20,14 +20,16 @@ process CREATECONSENSUSPANELS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     def args = task.ext.args ?: ""
-    def gene_subset = task.ext.gene_subset ? "--genes ${task.ext.gene_subset}": ""
+    def genes_subset = task.ext.genes_subset
+    target_genes = genes_subset != "" ? "--genes ${genes_subset}": ""
     """
+    ## ${target_genes}
     create_consensus_panel.py \\
                     --compact_annot_panel_path ${compact_captured_panel_annotation} \\
                     --depths_path ${depths} \\
                     --version ${prefix} \\
                     ${args} \\
-                    ${gene_subset} \\
+                    ${target_genes} \\
                     ;
 
     bedtools merge \\

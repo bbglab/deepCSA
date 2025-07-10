@@ -12,14 +12,18 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
     depths_df = pl.read_csv(depths_path, separator="\t")
 
     # Ensure numeric columns are int
-    for col in depths_df.columns[1:]:
-        depths_df = depths_df.with_columns(pl.col(col).cast(pl.Int64))
+    depths_df = depths_df.with_columns({
+                    col: pl.col(col).cast(pl.Int64) for col in depths_df.columns[1:]
+                })
 
     # Compliance: True if depth >= consensus_min_depth
     compliance_df = depths_df.select(depths_df.columns[2:]) >= consensus_min_depth
 
     # Calculate row compliance (fraction of samples meeting min depth)
-    row_compliance = compliance_df.sum(axis=1) / compliance_df.width
+    row_compliance = compliance_df.select(
+                                            pl.sum_horizontal(pl.all())
+                                        ).to_series() / compliance_df.width
+
 
     # Filter rows passing compliance threshold
     passing_rows = row_compliance >= compliance_threshold
@@ -32,26 +36,39 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
         how="inner"
     )
     if gene_list and version != 'all':
-        consensus_panel = consensus_panel.filter(pl.col("SYMBOL").is_in(gene_list))
+        consensus_panel = consensus_panel.filter(pl.col("GENE").is_in(gene_list))
+
+    consensus_panel = consensus_panel.sort(["CHROM", "POS", "REF", "ALT"])
     consensus_panel.write_csv(f"consensus.{version}.tsv", separator="\t")
 
+
+    #####
+    ## The failing consensus part has not been deeply tested
+    #####
     # Filter failing columns only for rows that pass the compliance threshold
     compliance_df_passing = compliance_df.filter(passing_rows)
-    failing_mask = ~compliance_df_passing
+
+    # Invert all boolean values (True → False, False → True)
+    failing_mask = pl.DataFrame([
+        ~compliance_df_passing[col] for col in compliance_df_passing.columns
+    ])
+
     failing_columns_counts = []
+    sample_ids = compliance_df_passing.columns
     for row_idx, row in enumerate(failing_mask.rows()):
-        for col_idx, failed in enumerate(row):
+        for sample_id, failed in zip(sample_ids, row):
             if failed:
                 failing_columns_counts.append({
                     "Row": row_idx,
-                    "SAMPLE_ID": compliance_df_passing.columns[col_idx],
+                    "SAMPLE_ID": sample_id,
                     "Failed": True
                 })
+
 
     if failing_columns_counts:
         failing_columns_counts_df = pl.DataFrame(failing_columns_counts)
         failure_counts_filtered = (
-            failing_columns_counts_df.groupby("SAMPLE_ID")
+            failing_columns_counts_df.group_by("SAMPLE_ID")
             .count()
             .rename({"count": "FAILING_COUNT"})
         )
