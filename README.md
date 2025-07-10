@@ -1,8 +1,10 @@
-# deepClonalStructureAnalysis (deepCSA)
+# deepCSA
 
 ## Introduction
 
 **bbglab/deepCSA** is a bioinformatics pipeline that can be used for analyzing the clonal structure information from targeted DNA sequencing data. It was designed for duplex sequencing data of normal tissues.
+
+![deepCSA workflow overview](docs/images/deepCSA.png)
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
