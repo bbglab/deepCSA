@@ -1,56 +1,75 @@
 #!/usr/bin/env python
 
-import pandas as pd
-import sys
 
-# -- Main function -- #
+import polars as pl
+import click
 
-def create_consensus_panel(compact_annot_panel_path, depths_path, version, consensus_min_depth):
+def create_consensus_panel(compact_annot_panel_path, depths_path, version, consensus_min_depth, compliance_threshold, genes=None):
+    gene_list = [g.strip() for g in genes.split(",")] if genes else None
 
     # Load captured panel and depths
-    compact_annot_panel_df = pd.read_csv(compact_annot_panel_path, sep = "\t")
+    compact_annot_panel_df = pl.read_csv(compact_annot_panel_path, separator="\t")
+    depths_df = pl.read_csv(depths_path, separator="\t")
 
-    depths_df = pd.read_csv(depths_path, sep = "\t")
-    depths_df.iloc[:, 1:] = depths_df.iloc[:, 1:].astype(int)
+    # Ensure numeric columns are int
+    for col in depths_df.columns[1:]:
+        depths_df = depths_df.with_columns(pl.col(col).cast(pl.Int64))
 
-    # Keep only positions having the minimum consensus depth in all the samples
-    consensus_min_depth = int(consensus_min_depth)
-    # min_depths_df = depths_df.loc[(depths_df.iloc[:, 2:] >= consensus_min_depth).all(axis = 1)]
+    # Compliance: True if depth >= consensus_min_depth
+    compliance_df = depths_df.select(depths_df.columns[2:]) >= consensus_min_depth
 
-    # Define the percentage threshold (e.g., 80% compliance)
-    compliance_threshold = 0.8
+    # Calculate row compliance (fraction of samples meeting min depth)
+    row_compliance = compliance_df.sum(axis=1) / compliance_df.width
 
-    # Boolean DataFrame: True if value >= consensus_min_depth
-    compliance_df = depths_df.iloc[:, 2:] >= consensus_min_depth
-
-    # Calculate percentage of columns meeting the condition for each row
-    row_compliance = compliance_df.sum(axis=1) / compliance_df.shape[1]
-
-    # Keep only rows that meet the percentage threshold
+    # Filter rows passing compliance threshold
     passing_rows = row_compliance >= compliance_threshold
-    min_depths_df = depths_df[passing_rows]
+    min_depths_df = depths_df.filter(passing_rows)
 
     # Filter captured panel to only keep minimally covered positions
-    consensus_panel = compact_annot_panel_df.merge(min_depths_df[["CHROM", "POS"]], on = ["CHROM", "POS"], how = "inner")
-    consensus_panel.to_csv(f"consensus.{version}.tsv", sep = "\t", index = False)
-
+    consensus_panel = compact_annot_panel_df.join(
+        min_depths_df.select(["CHROM", "POS"]),
+        on=["CHROM", "POS"],
+        how="inner"
+    )
+    if gene_list and version != 'all':
+        consensus_panel = consensus_panel.filter(pl.col("SYMBOL").is_in(gene_list))
+    consensus_panel.write_csv(f"consensus.{version}.tsv", separator="\t")
 
     # Filter failing columns only for rows that pass the compliance threshold
-    failing_columns_for_passing_rows = compliance_df[passing_rows][~compliance_df[passing_rows]]
+    compliance_df_passing = compliance_df.filter(passing_rows)
+    failing_mask = ~compliance_df_passing
+    failing_columns_counts = []
+    for row_idx, row in enumerate(failing_mask.rows()):
+        for col_idx, failed in enumerate(row):
+            if failed:
+                failing_columns_counts.append({
+                    "Row": row_idx,
+                    "SAMPLE_ID": compliance_df_passing.columns[col_idx],
+                    "Failed": True
+                })
 
-    # Flatten failing columns and count occurrences
-    failing_columns_counts = failing_columns_for_passing_rows.stack().reset_index()
-    failing_columns_counts.columns = ["Row", "SAMPLE_ID", "Failed"]
+    if failing_columns_counts:
+        failing_columns_counts_df = pl.DataFrame(failing_columns_counts)
+        failure_counts_filtered = (
+            failing_columns_counts_df.groupby("SAMPLE_ID")
+            .count()
+            .rename({"count": "FAILING_COUNT"})
+        )
+        failure_counts_filtered.write_csv(f"failing_consensus.{version}.tsv", separator="\t")
 
-    # Count failures for each column
-    failure_counts_filtered = failing_columns_counts["SAMPLE_ID"].value_counts().to_frame("FAILING_COUNT").reset_index()
-    failure_counts_filtered.to_csv(f"failing_consensus.{version}.tsv", sep = "\t", index = False)
+
+@click.command()
+@click.option('--compact_annot_panel_path', type=click.Path(exists=True), required=True, help='Path to the compact annotation panel file.')
+@click.option('--depths_path', type=click.Path(exists=True), required=True, help='Path to the depths file.')
+@click.option('--version', type=str, required=True, help='Panel version.')
+@click.option('--consensus_min_depth', type=int, required=True, help='Minimum depth for consensus.')
+@click.option('--compliance_threshold', type=float, default=0.8, show_default=True, help='Compliance threshold (fraction of samples required to meet min depth).')
+@click.option('--genes', default=None, help='Comma-separated list of genes to filter (e.g., TP53,KRAS,BRAF).')
+def main(compact_annot_panel_path, depths_path, version, consensus_min_depth, compliance_threshold, genes):
+    """
+    CLI entry point for creating a consensus panel.
+    """
+    create_consensus_panel(compact_annot_panel_path, depths_path, version, consensus_min_depth, compliance_threshold, genes)
 
 if __name__ == '__main__':
-    compact_annot_panel_path = sys.argv[1]
-    depths_path = sys.argv[2]
-    version = sys.argv[3]
-    min_depth = sys.argv[4]
-
-
-    create_consensus_panel(compact_annot_panel_path, depths_path, version, min_depth)
+    main()

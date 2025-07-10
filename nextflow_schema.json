@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/dev/nextflow_schema.json",
+    "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/main/nextflow_schema.json",
     "title": "bbglab/deepCSA pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
@@ -546,6 +546,19 @@
                     "type": "integer",
                     "description": "Depth threshold for the consensus panel",
                     "default": 500,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "consensus_compliance": {
+                    "type": "number",
+                    "description": "Threshold on proportion of samples that must meet the consensus depth requirement",
+                    "default": 0.8,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "selected_genes": {
+                    "type": "string",
+                    "description": "Comma-separeted list of genes to focus the analysis",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
