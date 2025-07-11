@@ -118,12 +118,12 @@ workflow CREATE_PANELS {
 
 
     // Create consensus panel: all modalities
-    CREATECONSENSUSPANELSALL(all_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSNONPROTAFFECT(nonprot_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSEXONS(exons_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSINTRONS(introns_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths, params.consensus_panel_min_depth)
+    CREATECONSENSUSPANELSALL(all_panel, depths)
+    CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths)
+    CREATECONSENSUSPANELSNONPROTAFFECT(nonprot_panel, depths)
+    CREATECONSENSUSPANELSEXONS(exons_panel, depths)
+    CREATECONSENSUSPANELSINTRONS(introns_panel, depths)
+    CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
     emit:
     full_panel_annotated        = VCFANNOTATEPANEL.out.tab
