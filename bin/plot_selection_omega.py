@@ -27,8 +27,8 @@ def generate_all_side_figures(sample,
                                 plots_output_dir
                                 ):
 
-    snvs_maf = pd.read_table(mut_file, na_values = custom_na_values)
-    snvs_maf = snvs_maf[snvs_maf["TYPE"] == "SNV"].reset_index(drop = True)
+    maf = pd.read_table(mut_file, na_values = custom_na_values)
+    snvs_maf = maf[maf["TYPE"] == "SNV"].reset_index(drop = True)
 
     possible_genes = []
 
@@ -250,7 +250,6 @@ def plot_omega_vertical(df,
 @click.option('--mut_file', type=click.Path(exists=True), help='Input mutations file')
 @click.option('--omega_file', type=click.Path(exists=True), help='Input omega results file')
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
-
 def main(sample_name, mut_file, omega_file, outdir):
     click.echo("Plotting omega results...")
     generate_all_side_figures(sample_name, mut_file, omega_file, outdir)

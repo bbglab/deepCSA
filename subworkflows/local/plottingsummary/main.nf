@@ -2,9 +2,9 @@
 
 
 include { PLOT_SELECTION_METRICS            as PLOTSELECTION                    } from '../../../modules/local/plot/selection_metrics/main'
-include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/selection_metrics/main'
-include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/selection_metrics/main'
-include { PLOT_METRICS_QC                   as PLOTMETRICSQC                    } from '../../../modules/local/plot/selection_metrics/main'
+// include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/selection_metrics/main'
+// include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/selection_metrics/main'
+// include { PLOT_METRICS_QC                   as PLOTMETRICSQC                    } from '../../../modules/local/plot/selection_metrics/main'
 
 
 
@@ -14,7 +14,6 @@ workflow PLOTTING_SUMMARY {
     positive_selection_results_ready
     all_mutrates
     samples
-    groups
     all_groups
     panel
     full_panel_rich
@@ -26,7 +25,9 @@ workflow PLOTTING_SUMMARY {
     // PLOTNEEDLES(muts_all_samples, sequence_information_df)
 
 
-
+    // Channel.of([ [ id: "all_samples" ] ])
+    // .join( positive_selection_results_ready )
+    // .set{ all_samples_results }
     PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
     // fig 2a omega per sample
     // needles with consequence type
@@ -37,29 +38,29 @@ workflow PLOTTING_SUMMARY {
 
 
 
-    PLOTSATURATION()
-    // plot gene + site selection + omega selection per domain in gene
-    // ? plot saturation kinetics curves
+    // PLOTSATURATION()
+    // // plot gene + site selection + omega selection per domain in gene
+    // // ? plot saturation kinetics curves
 
 
 
-    PLOTMETRICSQC(all_mutrates, )
-    // mutation density per gene cohort-level
-    // mutation density per gene & sample
-    //      synonymous
-    //      protein-affecting
-    //          truncating
-    //          missense
+    // PLOTMETRICSQC(all_mutrates, )
+    // // mutation density per gene cohort-level
+    // // mutation density per gene & sample
+    // //      synonymous
+    // //      protein-affecting
+    // //          truncating
+    // //          missense
 
 
-    PLOTINTERINDIVIDUALVARIABILITY()
-    // heatmap driver mutations per gene/sample
-    // other heatmaps:
-    //     mutation density
-    //     mutation burden
-    //     omega
-    //     siteselection per group
-    // define features based on PLOTMETRICSQC()
+    // PLOTINTERINDIVIDUALVARIABILITY()
+    // // heatmap driver mutations per gene/sample
+    // // other heatmaps:
+    // //     mutation density
+    // //     mutation burden
+    // //     omega
+    // //     siteselection per group
+    // // define features based on PLOTMETRICSQC()
 
 
     emit:

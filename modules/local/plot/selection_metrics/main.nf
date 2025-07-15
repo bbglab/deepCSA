@@ -18,15 +18,11 @@ process PLOT_SELECTION_METRICS {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def output_prefix = task.ext.output_prefix ?: ""
-    def requested_plots = task.ext.plots ?: ""
     """
+    mkdir ${prefix}.plots
     plot_selectionsideplots.py \\
-                    ${prefix} \\
-                    ${requested_plots} \\
-                    ${gene_data_df} \\
-                    ${prefix}${output_prefix} \\
-                    ${args}
+                    --sample_name ${prefix} \\
+                    --outdir ${prefix}.plots
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -37,9 +33,8 @@ process PLOT_SELECTION_METRICS {
     stub:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def output_prefix = task.ext.output_prefix ?: ""
     """
-    touch ${prefix}${output_prefix}.pdf
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

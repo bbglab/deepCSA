@@ -233,7 +233,7 @@ workflow DEEPCSA{
         DEPTHSPROTCONS(annotated_depths, CREATEPANELS.out.prot_consensus_bed)
         DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
     }
-    
+
 
 
     if (run_mutrate){
@@ -500,13 +500,14 @@ workflow DEEPCSA{
 
     if ( params.indels & params.oncodrivefml & params.omega ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-        PLOTTINGSUMMARY(positive_selection_results_ready, all_mutrates_file,
+        PLOTTINGSUMMARY(positive_selection_results_ready,
+                        all_mutrates_file,
                         TABLE2GROUP.out.json_samples,
-                        TABLE2GROUP.out.json_groups,
                         TABLE2GROUP.out.json_allgroups,
                         CREATEPANELS.out.exons_consensus_panel,
-                        CREATEPANELS.out.rich_annotated,
-                        seqinfo_df)
+                        CREATEPANELS.out.panel_annotated_rich,
+                        seqinfo_df
+                        )
     }
 
     // Regressions
