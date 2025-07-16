@@ -352,6 +352,7 @@ workflow DEEPCSA{
             // Oncodrive3D
             ONCODRIVE3D(somatic_mutations, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
                         datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
+            positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results_pos, remainder: true)
 
         }
@@ -498,7 +499,7 @@ workflow DEEPCSA{
         }
     }
 
-    if ( params.indels & params.oncodrivefml & params.omega ){
+    if ( params.omega & params.oncodrive3d & params.oncodrivefml & params.indels ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         all_mutrates_file,

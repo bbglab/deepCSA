@@ -25,11 +25,12 @@ workflow PLOTTING_SUMMARY {
     // PLOTNEEDLES(muts_all_samples, sequence_information_df)
 
 
-    // Channel.of([ [ id: "all_samples" ] ])
-    // .join( positive_selection_results_ready )
-    // .set{ all_samples_results }
-    PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
-    // fig 2a omega per sample
+    // plotting only for the entire cohort group
+    Channel.of([ [ id: "all_samples" ] ])
+    .join( positive_selection_results_ready )
+    .set{ all_samples_results }
+
+    PLOTSELECTION(all_samples_results, seqinfo_df)
     // needles with consequence type
 
     // plot selection at cohort/group level, all the different methods available
