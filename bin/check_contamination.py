@@ -15,25 +15,23 @@ from read_utils import custom_na_values
 
 # -- Auxiliary functions -- #
 
-MUTDENSITY_IMPACT_GROUPS = [False, ["SNV"] , ["INSERTION", "DELETION"], ["SNV", "INSERTION", "DELETION"]]
+# # Plot heatmap
+# def plot_shared_variants_heatmap(shared_counts):
+#     plt.figure(figsize=(23, 20))
+#     sns.heatmap(shared_counts,
+#                 annot=shared_counts.applymap(lambda x: x if x > 30 else ""),
+#                 fmt="",
+#                 cmap="Blues",
+#                 linewidths=0.5)
+#     #sns.clustermap(shared_counts, annot=shared_counts.applymap(lambda x: x if x > 0 else ""), fmt="", cmap="Blues", linewidths=0.5)
+#     #sns.heatmap(shared_counts, annot=True, cmap='Blues', fmt='g', linewidths=0.5)
+#     plt.xlabel("Germline Samples")
+#     plt.ylabel("Somatic Samples")
+#     plt.title("Shared Variants Between Somatic and Germline Samples")
+#     plt.show()
 
-# Plot heatmap
-def plot_shared_variants_heatmap(shared_counts):
-    plt.figure(figsize=(23, 20))
-    sns.heatmap(shared_counts,
-                annot=shared_counts.applymap(lambda x: x if x > 30 else ""),
-                fmt="",
-                cmap="Blues",
-                linewidths=0.5)
-    #sns.clustermap(shared_counts, annot=shared_counts.applymap(lambda x: x if x > 0 else ""), fmt="", cmap="Blues", linewidths=0.5)
-    #sns.heatmap(shared_counts, annot=True, cmap='Blues', fmt='g', linewidths=0.5)
-    plt.xlabel("Germline Samples")
-    plt.ylabel("Somatic Samples")
-    plt.title("Shared Variants Between Somatic and Germline Samples")
-    plt.show()
-
-# Example usage:
-# plot_shared_variants_heatmap(shared_variants_matrix)
+# # Example usage:
+# # plot_shared_variants_heatmap(shared_variants_matrix)
 
 
 
@@ -46,21 +44,21 @@ def compute_shared_variants(somatic_variants, germline_variants):
 
     unique_somatic_samples = sorted(somatic_variants['SAMPLE_ID'].unique())
     unique_germline_samples = sorted(germline_variants['SAMPLE_ID'].unique())
-    
+
     # Create a DataFrame to store counts
     shared_counts = pd.DataFrame(index=unique_somatic_samples, columns=unique_germline_samples).fillna(0)
-    
+
     # Iterate through each somatic sample
     for somatic_sample in unique_somatic_samples:
         somatic_mutations = set(somatic_variants[somatic_variants['SAMPLE_ID'] == somatic_sample]['MUT_ID'])
-        
+
         # Compare with germline mutations of all other samples
         for germline_sample in unique_germline_samples:
             germline_mutations = set(germline_variants[germline_variants['SAMPLE_ID'] == germline_sample]['MUT_ID'])
-            
+
             # Count shared mutations
             shared_counts.loc[somatic_sample, germline_sample] = len(somatic_mutations & germline_mutations)
-    
+
     return shared_counts
 
 
@@ -124,6 +122,7 @@ def contamination_detection(maf_file, somatic_maf_file):
     plt.xlabel("Germline Samples", fontsize=14)
     plt.ylabel("Somatic Samples", fontsize=14)
     plt.title("Somatic mutations that are germline in other samples", fontsize=16)
+    plt.savefig("somatic_vs_germline.pdf", bbox_inches = 'tight', dpi = 100)
     plt.show()
 
 
@@ -163,6 +162,7 @@ def contamination_detection(maf_file, somatic_maf_file):
     plt.xlabel("Germline Samples", fontsize = 14)
     plt.ylabel("All mutations samples", fontsize = 14)
     plt.title("All mutations that are germline in other samples", fontsize = 16)
+    plt.savefig("allmutations_vs_germline.pdf", bbox_inches = 'tight', dpi = 100)
     plt.show()
 
 
@@ -197,6 +197,7 @@ def contamination_detection(maf_file, somatic_maf_file):
     plt.xlabel("Germline Samples", fontsize = 14)
     plt.ylabel("Germline Samples", fontsize = 14)
     plt.title("Germline mutations that are germline in other samples", fontsize = 16)
+    plt.savefig("germline_vs_germline.pdf", bbox_inches = 'tight', dpi = 100)
     plt.show()
 
 
@@ -225,10 +226,9 @@ def contamination_detection(maf_file, somatic_maf_file):
                 annot_kws={"color": "white", "fontsize": 10},
                 linewidths=0.5)
 
-
-
     plt.xlabel("Germline Samples", fontsize = 14)
     plt.ylabel("Germline samples", fontsize = 14)
+    plt.savefig("normalized.germline_vs_germline.pdf", bbox_inches = 'tight', dpi = 100)
     plt.show()
 
 
@@ -263,6 +263,7 @@ def contamination_detection(maf_file, somatic_maf_file):
     plt.xlabel("Non-shared germline", fontsize = 14)
     plt.ylabel("Somatic", fontsize = 14)
     plt.title("Somatic mutations that are germline in other samples", fontsize = 16)
+    plt.savefig("contamination.somatic_vs_remaininggermline.pdf", bbox_inches = 'tight', dpi = 100)
     plt.show()
 
 
@@ -275,7 +276,7 @@ def contamination_detection(maf_file, somatic_maf_file):
     max_prop_per_sample.to_csv(f"contaminated_samples.tsv",
                             header = True,
                             sep  = '\t',
-                            index = False)
+                            index = True)
 
     contaminated_samples = list(max_prop_per_sample[max_prop_per_sample>0.5].index.values)
     contaminated_samples
@@ -287,18 +288,18 @@ def contamination_detection(maf_file, somatic_maf_file):
     for sample, max_val in max_prop_per_sample[max_prop_per_sample>0.5].reset_index().values:
         sample_vals = shared_somatic_to_non_shared_germline_proportion.loc[sample,:]
         source_sampleid = sample_vals[sample_vals == max_val].index.values[0]
-        
+
 
         print(f'{sample} has {max_val:.2f} proportion of the germline variants of {source_sampleid} as with a VAF not corresponding to germline variants.')
         print()
 
         subseeeet = maf_df[["SAMPLE_ID", "MUT_ID", "VAF", "ALT_DEPTH"]]
         p_dest = subseeeet[subseeeet["SAMPLE_ID"] == sample].drop("SAMPLE_ID", axis = 1)
-        
+
         p_source_germ = germline_vars_all_samples[germline_vars_all_samples["SAMPLE_ID"] == source_sampleid]
         p_source = subseeeet[(subseeeet["SAMPLE_ID"] == source_sampleid)
                                 & (subseeeet["MUT_ID"].isin(p_source_germ["MUT_ID"].values)) ].drop("SAMPLE_ID", axis = 1)
-        
+
         merged_samples = p_dest.merge(p_source,
                                 on = ["MUT_ID"],
                                 suffixes = ("_dest", "_source"),
@@ -309,7 +310,7 @@ def contamination_detection(maf_file, somatic_maf_file):
                                 header = True,
                                 sep  = '\t',
                                 index = False)
-        
+
         plt.scatter(x = merged_samples["VAF_dest"].fillna(0),
                     y = merged_samples["VAF_source"].fillna(0),
                     # color = ['blue' if x == 0 else 'red' for x in merged_samples["VAF_dest"].fillna(0)]
