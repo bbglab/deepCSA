@@ -28,10 +28,9 @@ process COMPUTE_CONTAMINATION {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: ""
-    prefix = "${meta.id}${prefix}"
     """
     touch contaminated_samples.tsv
+    touch contaminated_samples.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
