@@ -5,7 +5,7 @@ process OMEGA_PREPROCESS {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:20250113'
+    container 'docker.io/ferriolcalvet/omega:20250716'
 
     input:
     tuple val(meta) , path(mutations), path(depths), path(mutation_profile)
@@ -15,9 +15,9 @@ process OMEGA_PREPROCESS {
 
 
     output:
-    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv") , emit: mutabs_n_mutations_tsv
-    tuple val(meta), path("syn_muts.*.tsv")     , emit: syn_muts_tsv
-    path "versions.yml"                         , topic: versions
+    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv")   , emit: mutabs_n_mutations_tsv
+    tuple val(meta), path("syn_muts.*.tsv")                                                                                     , emit: syn_muts_tsv
+    path "versions.yml"                                                                                                         , topic: versions
 
 
     script:

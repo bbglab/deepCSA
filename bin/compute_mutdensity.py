@@ -49,10 +49,11 @@ def mutdensity_sample(maf_df, depths_df, depths_adj_df, sample_name):
         print(n_muts, n_mutated_reads)
 
         # mutation density metrics
-        sample_features = dict().update(sample_features_depth)
+        sample_features = dict()
+        sample_features.update(sample_features_depth)
         sample_features["N_MUTS"] = n_muts
         sample_features["N_MUTATED"] = n_mutated_reads
-        
+
         sample_features["MUTDENSITY_MB"] = ( sample_features["N_MUTS"] / sample_features["DEPTH"] * 1000000 ).astype(float)
         sample_features["MUTDENSITY_MB_ADJUSTED"] = ( sample_features["N_MUTS"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
         sample_features["MUTREADSRATE_MB"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH"] * 1000000 ).astype(float)
