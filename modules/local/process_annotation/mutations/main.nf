@@ -18,8 +18,8 @@ process SUMMARIZE_ANNOTATION {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def assembly = task.ext.assembly ?: "hg38"
     def hotspots = task.ext.hotspots_annotation ? "${hotspots_annotation_file}" : ""
     // TODO reimplement python script with click
@@ -47,8 +47,8 @@ process SUMMARIZE_ANNOTATION {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.vep.summary.tab.gz
 

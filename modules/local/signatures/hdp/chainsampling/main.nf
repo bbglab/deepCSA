@@ -15,7 +15,6 @@ process RUN_HDP_CHAIN_SAMPLING {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir iteration_dir
     Rscript /app/HDP_sigExtraction/R/run_HDP_chainSampling.R \\
@@ -33,8 +32,8 @@ process RUN_HDP_CHAIN_SAMPLING {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.pdf
 

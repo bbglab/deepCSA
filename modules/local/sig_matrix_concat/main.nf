@@ -16,7 +16,7 @@ process MATRIX_CONCAT {
 
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "" // type of profile. e.g. all, nonproteinaffecting, ...
     """
     ls ${matrix_files} > all_files.txt;
     concat_sigprot_matrices.py \\
@@ -31,7 +31,8 @@ process MATRIX_CONCAT {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch samples_matrix.${prefix}.sp.tsv
     touch groups_matrix.${prefix}.sp.tsv

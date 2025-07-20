@@ -2,15 +2,12 @@ process CREATECONSENSUSPANELS {
     tag "$meta.id"
     label 'process_single'
 
-    conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-            'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
-            'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
+    conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
+    container 'docker://bbglab/deepcsa_bed:latest'
 
     input:
     tuple val(meta) , path(compact_captured_panel_annotation)
     tuple val(meta2), path(depths)
-    val(consensus_min_depth)
 
     output:
     tuple val(meta), path("consensus*.tsv")         , emit: consensus_panel
@@ -20,14 +17,20 @@ process CREATECONSENSUSPANELS {
 
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+    def args = task.ext.args ?: ""
+    def genes_subset = task.ext.genes_subset
+    target_genes = genes_subset != "" ? "--genes ${genes_subset}": ""
     """
+    ## ${target_genes}
     create_consensus_panel.py \\
-                    ${compact_captured_panel_annotation} \\
-                    all_samples.depths.tsv.gz \\
-                    ${prefix} \\
-                    $consensus_min_depth;
+                    --compact_annot_panel_path ${compact_captured_panel_annotation} \\
+                    --depths_path ${depths} \\
+                    --version ${prefix} \\
+                    ${args} \\
+                    ${target_genes} \\
+                    ;
 
     bedtools merge \\
             -i <(
@@ -42,7 +45,8 @@ process CREATECONSENSUSPANELS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch consensus.${prefix}.tsv
     touch consensus.${prefix}.bed

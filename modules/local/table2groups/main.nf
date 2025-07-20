@@ -16,10 +16,9 @@ process TABLE_2_GROUP {
 
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "groups"
     def separator = task.ext.separator ?: "comma"
     def features = task.ext.features ?: ""
+    // TODO reimplement with click
     """
     cat > features_table_information.json << EOF
     {
@@ -36,10 +35,8 @@ process TABLE_2_GROUP {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "groups"
     """
-    touch all_samples.cohort.tsv.gz
+    touch samples.json groups.json all_groups.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -5,7 +5,7 @@ process OMEGA_ESTIMATOR {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:20250113'
+    container 'docker.io/ferriolcalvet/omega:20250716'
 
     input:
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
@@ -18,9 +18,9 @@ process OMEGA_ESTIMATOR {
 
 
     script:
-    def args = task.ext.args ?: ""
     def option = task.ext.option ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
 
     mkdir groups;
@@ -62,11 +62,11 @@ process OMEGA_ESTIMATOR {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def option = task.ext.option ?: "bayes"
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
-    touch output_${option}.tsv
+    touch output_${option}.${prefix}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

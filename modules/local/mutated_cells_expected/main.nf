@@ -25,13 +25,13 @@ process EXPECTED_MUTATED_CELLS {
     script:
     def metadata_file = task.ext.metadata_file ? "${features_table}": ""
     """
-    mkdir expected_mutrate
+    mkdir expected_mutdensity
     mutgenomes_expected_mutrisk.R \\
                         ${regions} \\
                         ${mutations} \\
                         ${depths} \\
                         ${annotated_panel} \\
-                        expected_mutrate \\
+                        expected_mutdensity \\
                         ${annotated_bed_file} \\
                         ${metadata_file}
 
@@ -43,7 +43,8 @@ process EXPECTED_MUTATED_CELLS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.pdf
 
