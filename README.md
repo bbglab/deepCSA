@@ -29,17 +29,19 @@ Each row represents a single sample with a single-sample VCF containing the muta
 
 **Make sure that you do not use any '.' in your sample names, and also use text-like names for the samples, try to avoid having only numbers.** This second case should be handled properly but using string-like names will ensure consistency.
 
-Now, you can run the pipeline using:
+**There are specific datasets that need to be prepared before running deepCSA. You can find a list of those, and instructions for downloading them in [the documentation section of the repo](docs/usage.md#mandatory-parameter-configuration).**
+
+After making sure that these files are ready, you can now run the pipeline using:
 
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 git clone https://github.com/bbglab/deepCSA.git
 cd deepCSA
-nextflow run main.nf --outdir <OUTDIR> -profile singularity,<DESIRED PROFILE> --input samplesheet.csv
+nextflow run main.nf --outdir <OUTDIR> -profile singularity,<DESIRED PROFILE> -params-file pipeline_params.yml
 ```
 
-The input can be provided by the `--input` option but it is more recommended to define this and all the other parameters in a parameter file, that can be provided to the pipeline for running the analysis with the specified configuration.
+The input can be provided by the `--input` option but it is more recommended to define this and all the other parameters in a parameter file (i.e. `pipeline_params.yml`), that can be provided to the pipeline for running the analysis with the specified configuration. This will also allow the definition of the remaining required parameters.
 
 ### Warning
 
