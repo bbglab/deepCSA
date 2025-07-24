@@ -1,5 +1,10 @@
 import os
 import sys
+import time
+import requests
+import subprocess
+import json
+import warnings
 import pandas as pd
 import seaborn as sns
 import numpy as np
@@ -11,50 +16,72 @@ import matplotlib.cm as cm
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import matplotlib.patches as mpatches
-import subprocess
-import json
-import warnings
 
-import pandas as pd
-import numpy as np
-import requests
-import time
-import os
 
 
 from utils_impacts import GROUPING_DICT, CONSEQUENCES_LIST
 
 
+#####
+# Get reference data
+#####
 
-def get_normal_maf(path_maf, gene_list, only_protein_pos=True, truncating=True):
+# Oncodrive3D
+o3d_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_mane_240506"
+o3d_annotations = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506"
+o3d_seq_df = pd.read_table(f"{o3d_datasets}/seq_for_mut_prob.tsv")
+
+o3d_alt_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_240506"            # These "alt" are used to rerieve annotations in equivalent Uniprot ID that are missing in the MANE related ones
+o3d_alt_seq_df = pd.read_table(f"{o3d_alt_datasets}/seq_for_mut_prob.tsv")
+
+o3d_annot_df = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
+o3d_pdb_tool_df = pd.read_table(f"{o3d_annotations}/pdb_tool_df.tsv")
+disorder_df = pd.read_table(f"{o3d_datasets}/confidence.tsv")
+
+# Domain annotations
+domain = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
+# domain = domain[domain.Ens_Transcr_ID.isin(maf.Ens_transcript_ID.unique())]
+domain = domain[(domain.Type == "DOMAIN") & (domain.Evidence == "Pfam")].reset_index(drop=True)
+
+pfam_domains_file = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506/uniprot_feat.tsv"
+pfam = pd.read_table(pfam_domains_file)
+pfam[(pfam["Type"] == "DOMAIN") & (pfam["Evidence"] == "Pfam")]
+
+
+
+#####
+# Define functions
+#####
+
+
+def get_normal_maf(path_maf, gene_list = None, only_protein_pos=True, truncating=True):
 
     # TODO: check for correct filtering
-
     maf_df = pd.read_table(path_maf)
-    maf_df["CLEAN_SAMPLE_ID"] = maf_df["SAMPLE_ID"].apply(lambda x: "_".join(x.split("_")[1:3]))
-    maf_df_f = maf_df
-    maf_df_f = maf_df.loc[(~maf_df["FILTER.not_covered"])].reset_index(drop = True)
+
+    if gene_list is None:
+        gene_list = maf_df["canonical_SYMBOL"].unique().tolist()
 
     # Final filter
-    maf_df_f = maf_df_f[
-        (maf_df_f["TYPE"].isin(["SNV", "INSERTION", "DELETION"])
-        ) & (maf_df_f["canonical_SYMBOL"].isin(gene_list))
+    maf_df_f = maf_df[
+        (maf_df["TYPE"].isin(["SNV", "INSERTION", "DELETION"])
+        ) & (maf_df["canonical_SYMBOL"].isin(gene_list))
         ].reset_index(drop = True)
 
     if only_protein_pos:
         maf_df_f = maf_df_f[maf_df_f["canonical_Protein_position"] != '-' ]
 
-    maf_df_f.loc[(maf_df_f["TYPE"].isin(["INSERTION", "DELETION"])), "canonical_Consequence_broader"] = "indel"
-    maf_df_f["canonical_Consequence_broader"] = maf_df_f["canonical_Consequence_broader"].replace("splice_region_variant", "splicing")
-    maf_df_f["canonical_Consequence_broader"] = maf_df_f["canonical_Consequence_broader"].replace("essential_splice", "splicing")
+    maf_df_f["plotting_broad_consequence"] = maf_df_f["canonical_Consequence_broader"]
+    maf_df_f.loc[(maf_df_f["TYPE"].isin(["INSERTION", "DELETION"])), "plotting_broad_consequence"] = "indel"
+    maf_df_f["plotting_broad_consequence"] = maf_df_f["plotting_broad_consequence"].replace("splice_region_variant", "splicing")
 
     if truncating:
-        maf_df_f["canonical_Consequence_broader"] = maf_df_f["canonical_Consequence_broader"].replace(
-            {"nonsense": "truncating", "splicing": "truncating"}
+        maf_df_f["plotting_broad_consequence"] = maf_df_f["plotting_broad_consequence"].replace(
+            {"nonsense": "truncating", "essential_splice": "truncating"}
             )
 
     maf_df_f['Alt_amino_acid'] = np.where(
-        maf_df_f['canonical_Consequence_broader'] == 'missense',
+        maf_df_f['plotting_broad_consequence'] == 'missense',
         maf_df_f['canonical_Amino_acids'].str.split('/').str[-1],
         np.nan
     )
@@ -63,7 +90,7 @@ def get_normal_maf(path_maf, gene_list, only_protein_pos=True, truncating=True):
     cols = ["canonical_SYMBOL",
             "canonical_Feature",
             "canonical_Protein_position",
-            "canonical_Consequence_broader",
+            "plotting_broad_consequence",
             "Alt_amino_acid",
             "CHROM",
             "POS",
@@ -73,7 +100,7 @@ def get_normal_maf(path_maf, gene_list, only_protein_pos=True, truncating=True):
         "canonical_SYMBOL" : "Gene",
         "canonical_Feature" : "Ens_transcript_ID",
         "canonical_Protein_position" : "Pos",
-        "canonical_Consequence_broader" : "Consequence",
+        "plotting_broad_consequence" : "Consequence",
         "CHROM" : "CHR",
         "POS" : "DNA_POS"}
         )
@@ -87,33 +114,6 @@ def get_normal_maf(path_maf, gene_list, only_protein_pos=True, truncating=True):
         maf_df_f.Pos= maf_df_f.Pos.astype(int)
 
     return maf_df_f
-
-
-# Load cancer mut
-# ---------------
-
-def get_cancer_maf_cohort(path_vep_out, lst_genes=None, only_protein_pos=True):
-
-    columns_to_load = ["SYMBOL", "Location", "Protein_position", "Feature", "Consequence"]
-    vep_cohort = pd.read_table(path_vep_out, usecols=columns_to_load, low_memory=False)
-    if lst_genes is not None:
-        vep_cohort = vep_cohort[vep_cohort["SYMBOL"].isin(lst_genes)]
-    vep_cohort = vep_cohort[vep_cohort["SYMBOL"] != "-"].reset_index(drop=True)
-
-
-    # Here we are removing the mutations that are in splice sites (as well as intronic and non coding exon regions)
-    if only_protein_pos:
-        vep_cohort = vep_cohort[vep_cohort["Protein_position"] != "-"].reset_index(drop=True)
-
-    cols = ["SYMBOL", "Feature", "Location", "Protein_position", "Consequence"]
-    vep_cohort = vep_cohort[cols].rename(columns={
-        "SYMBOL" : "Gene",
-        "Feature" : "Ens_transcript_ID",
-        "Protein_position" : "Pos"}
-        )
-
-    return vep_cohort
-
 
 
 
@@ -146,46 +146,6 @@ def get_o3d_gene_data(
     score_gene_df["Cluster"] = score_gene_df["Cluster"].fillna(0)
 
     return score_gene_df
-
-
-def get_o3d_data_cancer(
-    cohort_df,
-    o3d_cancer_path,
-    o3d_seq_df,
-    lst_genes
-    ):
-
-    lst_gene_df = []
-    for gene in lst_genes:
-        top_gene_qval = np.inf
-        top_gene_score = 0
-        top_cohort = np.nan
-        top_gene_df = np.nan
-        for cohort in cohort_df.COHORT.unique():
-
-            o3d_pos_cancer_path_cohort = f"{o3d_cancer_path}/{cohort}/{cohort}.3d_clustering_pos.csv"
-            o3d_gene_cancer_path_cohort = f"{o3d_cancer_path}/{cohort}/{cohort}.3d_clustering_genes.csv"
-            if os.path.exists(o3d_pos_cancer_path_cohort):
-                columns_to_load = ["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]
-                o3d_pos_df = pd.read_csv(o3d_pos_cancer_path_cohort, usecols=columns_to_load, low_memory=False)
-                o3d_pos_df = o3d_pos_df[o3d_pos_df["Gene"] == gene]
-                o3d_gene_df = pd.read_csv(o3d_gene_cancer_path_cohort)
-                o3d_gene_df = o3d_gene_df[o3d_gene_df["Gene"] == gene]
-                if len(o3d_gene_df) > 0:
-
-                    gene_qval = o3d_gene_df.qval.values[0]
-                    gene_score = o3d_gene_df.Score_obs_sim_top_vol.values[0]
-                    if gene_qval < top_gene_qval or (gene_qval == top_gene_qval and gene_score > top_gene_score):
-                        top_gene_qval = gene_qval
-                        top_gene_score = gene_score
-                        top_cohort = cohort
-                        top_gene_df = get_o3d_gene_data(gene, o3d_seq_df, o3d_pos_df)
-                        top_gene_df["Gene"] = gene
-                        top_gene_df["Cohort"] = cohort
-        if not pd.isnull(top_cohort):
-            lst_gene_df.append(top_gene_df)
-
-    return pd.concat(lst_gene_df).reset_index(drop=True)
 
 
 # Depth
@@ -336,7 +296,7 @@ def dna2prot_depth(maf, coord_df, dna_sites, depth_df):
 
     # Map DNA to protein pos, get exons index to protein pos, etc
     dna_prot_df_lst = []
-    for gene in maf.Gene.unique():
+    for gene in maf["Gene"].unique():
         gene_coord_df = coord_df[coord_df["Gene"] == gene]
         dna_prot_df_lst.append(get_dna_map_to_protein(gene_coord_df))
     dna_prot_df = pd.concat(dna_prot_df_lst)
@@ -384,20 +344,21 @@ def find_exon(x_coord, exon_coord_df):
 
 
 
-# Init
-gene_order = ["KMT2D","EP300","ARID1A","CREBBP","NOTCH2","RB1","RBM10","TP53",
-              "CDKN1A","FOXQ1", "KDM6A", "STAG2", "FGFR3"
-             # "PIK3CA","TERT", "KMT2C",
-             ]
-run_name = "all_samples"
+#####
+# Load cohort data
+#####
 
-pfam_domains_file = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506/uniprot_feat.tsv"
-pfam = pd.read_table(pfam_domains_file)
-pfam[(pfam["Type"] == "DOMAIN") & (pfam["Evidence"] == "Pfam")]
+sample_name = "all_samples"
+consensus_df_file = "data/consensus.exons_splice_sites.unique.tsv"
+depth_df_file = f"annotatedepths/all_samples_indv.depths.tsv.gz"
+site_selection = f"sitecomparison/{sample_name}.aminoacid.comparison.tsv.gz"
+omega_file = f"omegagloballoc/output_mle.{sample_name}.global_loc.tsv"
+o3d_df_file = f"oncodrive3d/run/{sample_name}/{sample_name}.3d_clustering_pos.csv"
+mutations_file = f"clean_somatic/{sample_name}.somatic.mutations.tsv"
 
 
 # Count each mutation only ones if it appears in multiple reads
-maf = get_normal_maf(somatic_maf_file, gene_order, truncating=True)
+maf = get_normal_maf(mutations_file, truncating=True)
 maf_count = maf.groupby(['Gene', 'Consequence', 'Pos']).size().reset_index(name='Count')
 maf_cnsq_count = maf.groupby(['Gene', 'Consequence']).size().reset_index(name='Count')
 maf_cnsq_count
@@ -409,14 +370,12 @@ command = f"cut -f 1,2,6,7 {deepcsa_run_dir}/createpanels/consensuspanels/consen
 process = subprocess.run(command, shell=True, capture_output=True, text=True)
 
 
-
-consensus_df = pd.read_table("data/consensus.exons_splice_sites.unique.tsv")
-depth_df = pd.read_table(f"{deepcsa_run_dir}/annotatedepths/all_samples_indv.depths.tsv.gz")
+# this consensus_df can come from the dna2proteinmapping step
+# also there is a dn2proteinmapping file there as well
+consensus_df = pd.read_table(consensus_df_file)
+depth_df = pd.read_table(depth_df_file)
 
 exons_depth, exons_coord_id = get_dna2prot_depth(maf, depth_df, consensus_df)
-#exons_coord = pd.read_table("/data/bbg/projects/bladder_ts/data/exons/bladder_panel.cds.bed4.bed", header=None)
-display(exons_depth)
-display(exons_coord_id)
 exons_depth["EXON_ID"] = exons_depth.apply(lambda x: find_exon(x, exons_coord_id), axis=1)
 exons_depth
 
@@ -427,76 +386,36 @@ exons_depth
 
 
 # Per-site selection
-site_selection = os.path.join(deepcsa_run_dir, f"sitecomparison/{run_name}.aminoacid.comparison.tsv.gz")
 site_selection = pd.read_table(site_selection).rename(
     columns={"OBS/EXP" : "Selection"}).drop(
     columns=["OBSERVED_MUTS", "EXPECTED_MUTS"])
 site_selection.loc[site_selection.Selection < 0, "Selection"] = 0
 site_selection = site_selection[site_selection.Protein_position != "-"].reset_index(drop=True)
 site_selection.Protein_position = site_selection.Protein_position.astype(int)
-print("> site_selection:")
-display(site_selection)
+
 
 # Exon selection
-exon_selection = os.path.join(deepcsa_run_dir, f"omegagloballoc/output_mle.{run_name}.global_loc.tsv")                    # exon selection + confidence (missense and truncating)
-exon_selection = pd.read_table(exon_selection)
-exon_selection = exon_selection[exon_selection.gene.str.contains("--")]
-exon_selection = exon_selection[exon_selection.impact.isin(["missense", "truncating"])].reset_index(drop=True)
-exon_selection = exon_selection.merge(
+omega_table = pd.read_table(omega_file)
+omega_subgenic_table = omega_table[(omega_table.gene.str.contains("--"))
+                                   (omega_table.impact.isin(["missense", "truncating"]))
+                                   ].reset_index(drop=True)
+
+exon_selection = omega_subgenic_table.merge(
     exons_depth.rename(columns={"EXON_ID" : "gene", "EXON_RANK" : "exon_rank"}).dropna()[["gene", "exon_rank"]].drop_duplicates().reset_index(drop=True),
     how="left").sort_values(["gene", "exon_rank", "impact"]).reset_index(drop=True)
-print("> exon_selection:")
-display(exon_selection)
 
-# Oncodrive3D
-o3d_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_mane_240506"
-o3d_annotations = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506"
-o3d_seq_df = pd.read_table(f"{o3d_datasets}/seq_for_mut_prob.tsv")
+print("> exon_selection:", exon_selection.shape )
 
-o3d_alt_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_240506"            # These "alt" are used to rerieve annotations in equivalent Uniprot ID that are missing in the MANE related ones
-o3d_alt_seq_df = pd.read_table(f"{o3d_alt_datasets}/seq_for_mut_prob.tsv")
 
-o3d_annot_df = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
-o3d_pdb_tool_df = pd.read_table(f"{o3d_annotations}/pdb_tool_df.tsv")
-disorder_df = pd.read_table(f"{o3d_datasets}/confidence.tsv")
-o3d_df = f"{deepcsa_run_dir}/oncodrive3d/run/{run_name}/{run_name}.3d_clustering_pos.csv"
-o3d_df = pd.read_csv(o3d_df)[["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]]
-
-# Domain annotations
-domain = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
-# domain = domain[domain.Ens_Transcr_ID.isin(maf.Ens_transcript_ID.unique())]
-domain = domain[(domain.Type == "DOMAIN") & (domain.Evidence == "Pfam")].reset_index(drop=True)
-
-# Domain selection
-domain_selection = pd.read_table(os.path.join(deepcsa_run_dir, f"omegagloballoc/output_mle.{run_name}.global_loc.tsv"))
-domain_selection = domain_selection[domain_selection.gene.str.contains("--")]
-domain_selection = domain_selection[domain_selection["impact"].isin(["missense", "truncating"])]
+domain_selection = omega_subgenic_table.copy()
 domain_selection["selection_id"] = domain_selection.gene.str.split("--").apply(lambda x: x[1].split("-")[0])
 domain_selection = domain_selection[domain_selection.selection_id.isin(domain.Description.values)].reset_index(drop=True)
+print("> domain_selection:", domain_selection.shape )
 
 
 
+o3d_df = pd.read_csv(o3d_df_file)[["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]]
 
-# Cancer
-path_intogen = "/data/bbg/projects/clustering_3d/o3d_analysys/datasets/input/cancer_202404"
-cancer_cohort_df = pd.read_table(f"{path_intogen}/cohorts.tsv")
-path_cancer_vep_all = f"{path_intogen}/vep/"
-
-# Cancer mut
-selected_cancer_type = "BLCA"
-blca_cancer_df = get_cancer_maf_all(
-    cancer_cohort_df[cancer_cohort_df["CANCER_TYPE"] == selected_cancer_type],
-    path_cancer_vep_all,
-    lst_genes=gene_order,
-    only_protein_pos=True,
-    truncating=True
-    )
-blca_cancer_cnsq_count = blca_cancer_df.groupby(['Gene', 'Consequence']).size().reset_index(name='Count')
-blca_cancer_df = blca_cancer_df.groupby(['Gene', 'Consequence', 'Pos']).size().reset_index(name='Count')
-
-# Cancer 3D clustering
-o3d_cancer_path = "/data/bbg/projects/clustering_3d/o3d_analysys/datasets/output/cancer_202404/o3d_output/human_mane_raw/run_2024-07-01_16-04-14"
-o3d_cancer_df = get_o3d_data_cancer(cancer_cohort_df[cancer_cohort_df["CANCER_TYPE"] == selected_cancer_type], o3d_cancer_path, o3d_seq_df, gene_order)
 
 
 
@@ -529,15 +448,16 @@ plot_pars = {
     "sse_bbox_to_anchor"        : [1.2645, 2.4],
     "domain_sel_bbox_to_anchor" : [1.086, -3, 1.4, 4.8],
     "domain_y_bbox_to_anchor"   : 5,
-    "domain_x_bbox_to_anchor"   : {
-                                "ARID1A" : 1.25,
-                                "KDM6A"  : 1.245,
-                                "KMT2D"  : 1.255,
-                                "EP300"  : 1.267,
-                                "CREBBP" : 1.267,
-                                "NOTCH2" : 1.241,
-                                "KMT2C"  : 1.255
-                                },
+    "domain_x_bbox_to_anchor"   : {},
+    # "domain_x_bbox_to_anchor"   : {
+    #                             "ARID1A" : 1.25,
+    #                             "KDM6A"  : 1.245,
+    #                             "KMT2D"  : 1.255,
+    #                             "EP300"  : 1.267,
+    #                             "CREBBP" : 1.267,
+    #                             "NOTCH2" : 1.241,
+    #                             "KMT2C"  : 1.255
+    #                             },
     "legend_depth_fontsize"     : 10.5,
     "txt_fontsize"              : 9,
     "len_txt_thr"               : 2400,
@@ -566,24 +486,25 @@ plot_pars = {
                                 'Helix'  : "#F7CAC9",
                                 'Ladder' : "#A7C7E7"
                                 },
-    "sse_lw"                    : {
-                                "KMT2D"  : 1,
-                                "EP300"  : 1,
-                                "ARID1A" : 1,
-                                "CREBBP" : 1,
-                                "NOTCH2" : 1,
-                                "KMT2C"  : 1,
-                                "STAG2"  : 1,
-                                "RB1"    : 1,
-                                "RBM10"  : 1,
-                                "KDM6A"  : 1,
-                                "TP53"   : 2.2,
-                                "FGFR3"  : 1,
-                                "CDKN1A" : 4,
-                                "FOXQ1"  : 2.2,
-                                "PIK3CA" : 1,
-                                "TERT"   : 1,
-                                }
+    "sse_lw" : 1
+    # "sse_lw"                    : {
+    #                             "KMT2D"  : 1,
+    #                             "EP300"  : 1,
+    #                             "ARID1A" : 1,
+    #                             "CREBBP" : 1,
+    #                             "NOTCH2" : 1,
+    #                             "KMT2C"  : 1,
+    #                             "STAG2"  : 1,
+    #                             "RB1"    : 1,
+    #                             "RBM10"  : 1,
+    #                             "KDM6A"  : 1,
+    #                             "TP53"   : 2.2,
+    #                             "FGFR3"  : 1,
+    #                             "CDKN1A" : 4,
+    #                             "FOXQ1"  : 2.2,
+    #                             "PIK3CA" : 1,
+    #                             "TERT"   : 1,
+    #                             }
 }
 
 
@@ -616,8 +537,6 @@ def get_exon_depth_saturation(gene_depth, gene_mut, dna=False):
 
     check_mutated_masked = exon_depth_prot[(exon_depth_prot["MUTATED"] == 1) & (exon_depth_prot["COVERED"] == 0)]
     check_mutated_masked["GENE"] = gene_depth.GENE.unique()[0]
-    if len(check_mutated_masked) > 0:
-        display(check_mutated_masked)
 
     return exon_depth
 
@@ -859,9 +778,7 @@ def plot_gene_selection(mut_count_df,
                         plot_pars,
                         title,
                         ddg_df=None,
-                        mut_cancer_df=None,
-                        o3d_cancer_df=None,
-                        thr_selection=0.0001,
+                        thr_selection=1e-5,
                         lst_tracks=["Mut_count", "Site_selection", "Res_depth", "Domain"],
                         default_track_order=False,
                         save=False,
@@ -880,8 +797,6 @@ def plot_gene_selection(mut_count_df,
         "Secondary_structure": 0.03,
         "Domain": 0.03,
         "Domain_selection": 0.035,
-        "Cancer_3d_clustering": 0.15,
-        "Cancer_mut_count": 0.25
     }
 
     lst_tracks = [track.capitalize() for track in lst_tracks]
@@ -897,14 +812,8 @@ def plot_gene_selection(mut_count_df,
                     'height_ratios': h_ratios}
         )
 
-    n1_max = np.max(mut_count_df["Count"])
-    n2_max = np.max(mut_cancer_df["Count"]) if isinstance(mut_cancer_df, pd.DataFrame) else np.nan
-    n_max = np.nanmax((n1_max, n2_max))
-
-    n1_3d_max = np.max(o3d_df["O3D_score"])
-    n2_3d_max = np.max(o3d_cancer_df["O3D_score"]) if isinstance(o3d_cancer_df, pd.DataFrame) else np.nan
-    n2_3d_max = 0 if pd.isnull(n2_3d_max) else n2_3d_max
-    n_3d_max = np.max((n1_3d_max, n2_3d_max))
+    n_max = np.max(mut_count_df["Count"])
+    n_3d_max = np.max(o3d_df["O3D_score"])
 
 
     # Track mut
@@ -1353,43 +1262,6 @@ def plot_gene_selection(mut_count_df,
             borderpad=0)
 
 
-    # Track Cancer 3D score
-    # ----------------------
-    if "Cancer_3d_clustering" in lst_tracks and len(o3d_cancer_df) > 0:
-        ax = lst_tracks.index("Cancer_3d_clustering")
-
-        axes[ax].plot(np.array(range(prot_len-1))+1, -o3d_cancer_df["O3D_score"], zorder=2, color=plot_pars["colors"]["o3d_score"], lw=1)
-        axes[ax].fill_between(
-            o3d_cancer_df['Pos'], 0, -n_3d_max, where=(o3d_cancer_df['Cluster'] == 1),
-            color=plot_pars["colors"]["o3d_cluster"], alpha=1, label='Cluster', zorder=0, lw=1.5
-            )
-        axes[ax].set_ylabel('Tumors 3D-clustering\n(missense mutations)', fontsize=plot_pars["ylabel_fontsize"], rotation=0, va='center', ha='right')
-        axes[ax].yaxis.set_label_coords(plot_pars["y_labels_coord"][0], plot_pars["y_labels_coord"][1])
-        axes[ax].set_ylim(-n_3d_max - n_3d_max/plot_pars["j_margin"], 0 + n_3d_max/(plot_pars["j_margin"] * 5))
-        axes[ax].yaxis.set_major_locator(MaxNLocator(integer=True, nbins=3))
-        axes[ax].tick_params(axis='y', labelsize=plot_pars["ticksize"])
-        axes[ax].set_yticklabels(abs(axes[ax].get_yticks()).astype(int))
-
-        axes[ax].spines['top'].set_visible(False)
-        axes[ax].spines['right'].set_visible(False)
-
-
-    # Track Cancer mut
-    # ----------------
-    if "Cancer_mut_count" in lst_tracks and len(mut_cancer_df) > 0:
-        ax = lst_tracks.index("Cancer_mut_count")
-
-        plot_count_track(mut_cancer_df, gene_len=gene_len, axes=axes, ax=ax, negative=True, colors_dict=plot_pars["colors"])
-        axes[ax].set_ylabel('Tumors mutations', fontsize=plot_pars["ylabel_fontsize"], rotation=0, va='center', ha='right')
-        axes[ax].yaxis.set_label_coords(plot_pars["y_labels_coord"][0], plot_pars["y_labels_coord"][1])
-        #axes[ax].set_ylim(-n_max - n_max/plot_pars["j_margin"], 0 + n_max/plot_pars["j_margin"])
-        axes[ax].yaxis.set_major_locator(MaxNLocator(integer=True, nbins=5))
-        axes[ax].tick_params(axis='y', labelsize=plot_pars["ticksize"])
-        axes[ax].set_yticklabels(abs(axes[ax].get_yticks()).astype(int))
-        axes[ax].spines['top'].set_visible(False)
-        axes[ax].spines['right'].set_visible(False)
-
-
     # Legend
     # ======
 
@@ -1416,6 +1288,7 @@ def plot_gene_selection(mut_count_df,
         return domain_color_dict
 
 
+
 def plot_domain_selection(
     df,
     gene,
@@ -1427,9 +1300,11 @@ def plot_domain_selection(
     filename="domain_selection.png"
     ):
 
-    df = df.drop(columns=["Begin", "End"]).drop_duplicates()
     custom_markers = {"missense": "o", "truncating": "D"}  # 'o' = Circle, 'D' = Rotated Square
     custom_size = {"missense": 200, "truncating": 145}  # Larger for missense
+
+
+    df = df.drop(columns=["Begin", "End"]).drop_duplicates()
     df["color"] = df["selection_id"].map(color_map)
     df["edge_width"] = df["pvalue"].apply(lambda p: 1.5 if p < 0.0001 else 0.2)
 
@@ -1459,7 +1334,6 @@ def plot_domain_selection(
     ax.set_xticklabels(df["selection_id"].unique(), rotation=45, ha="right")
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
-    # plt.xlabel("Domain ID")
     plt.ylabel("dN/dS")
     plt.title(title)
 
@@ -1576,21 +1450,15 @@ for gene in ["TP53"]:# gene_order:
     gene_mut = maf[maf["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
     gene_mut_count = maf_count[maf_count["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
     gene_mut_cnsq_count = maf_cnsq_count[maf_cnsq_count["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
-    gene_cancer_mut = blca_cancer_df[blca_cancer_df["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
-    gene_cancer_cnsq_count = blca_cancer_cnsq_count[blca_cancer_cnsq_count["Gene"] == gene]
 
     # Oncodrive3D
     o3d_gene_df = get_o3d_gene_data(gene, o3d_seq_df, o3d_df)
     uni_id = o3d_seq_df[o3d_seq_df["Gene"] == gene].Uniprot_ID.values[0]
     pdb_tool_gene = o3d_pdb_tool_df[o3d_pdb_tool_df["Uniprot_ID"] == uni_id].reset_index(drop=True)
-    o3d_cancer_gene_df = o3d_cancer_df[o3d_cancer_df["Gene"] == gene].reset_index(drop=True)
 
     if indels == False:
         gene_mut_count = gene_mut_count[gene_mut_count["Consequence"] != "indel"].reset_index(drop=True)
         gene_mut = gene_mut[gene_mut["Consequence"] != "indel"].reset_index(drop=True)
-        gene_cancer_mut = gene_cancer_mut[gene_cancer_mut["Consequence"] != "indel"].reset_index(drop=True)
-        gene_mut_cnsq_count = gene_mut_cnsq_count[gene_mut_cnsq_count["Consequence"] != "indel"].reset_index(drop=True)
-        gene_cancer_cnsq_count = gene_cancer_cnsq_count[gene_cancer_cnsq_count["Consequence"] != "indel"].reset_index(drop=True)
 
     prot_len = int(exons_depth[exons_depth["GENE"] == gene].PROT_POS.max())
     domain_gene = domain[domain["Gene"] == gene].reset_index(drop=True)
@@ -1631,10 +1499,12 @@ for gene in ["TP53"]:# gene_order:
         "Stability_change",
         "Secondary_structure",
         "Domain",
-        "Domain_selection",
-        "Cancer_3d_clustering",
-        "Cancer_mut_count"
+        "Domain_selection"
         ]
+    
+    # FIXME
+    # this should point to a list of all the genes for which these tracks are not available,
+    # otherwise, add a check that makes sure the gene is/isnot suitable for having these tracks
     if gene in ["KDM6A", "STAG2"]:
         plot_pars["fsize"] = (12.3, 12)
         [lst_tracks.remove(track) for track in [
@@ -1645,16 +1515,11 @@ for gene in ["TP53"]:# gene_order:
             "Secondary_structure",
             ] if track in lst_tracks
         ]
-    if o3d_cancer_gene_df.empty and "Cancer_3d_clustering" in lst_tracks:
-        lst_tracks.remove("Cancer_3d_clustering")
-        plot_pars["fsize"] = (plot_pars["fsize"][0], plot_pars["fsize"][1] - 1.5)
 
     domain_color_dict_gene = plot_gene_selection(
         mut_count_df=gene_mut_count,
         mut_df=gene_mut,
         o3d_df=o3d_gene_df,
-        mut_cancer_df=gene_cancer_mut,
-        o3d_cancer_df=o3d_cancer_gene_df,
         pdb_tool_df=pdb_tool_gene,
         domain_df=domain_gene,
         coverage_df=gene_exons_depth,
@@ -1671,5 +1536,5 @@ for gene in ["TP53"]:# gene_order:
         thr_selection=0.00001,
         default_track_order=False,
         save=True,
-        filename=f"plots/fig4bc/core/all_tracks/{gene}.png"
+        filename=f"{gene}.saturation_all.png"
         )
