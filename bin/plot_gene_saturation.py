@@ -102,8 +102,8 @@ def get_o3d_gene_data(
 
     # Subset gene
     seq_df_gene = seq_df[seq_df["Gene"] == gene]
-    gene_len = len(seq_df_gene.Seq.values[0])
-    gene_pos = pd.DataFrame({"Pos" : range(1, gene_len+1)})
+    protein_len = len(seq_df_gene.Seq.values[0])
+    gene_pos = pd.DataFrame({"Pos" : range(1, protein_len+1)})
     uni_id, af_f = seq_df_gene[["Uniprot_ID", "F"]].values[0]
     score_gene_df = o3d_pos_df[o3d_pos_df["Gene"] == gene].reset_index(drop=True)
 
@@ -412,7 +412,7 @@ plot_pars = {
 def get_exon_depth_saturation(gene_depth, gene_mut, dna=False):
 
     # Exon average depth
-    gene_depth = gene_exons_depth.copy()
+    gene_depth = gene_depth.copy()
     exon_depth = gene_depth.groupby("EXON_RANK").apply(
         lambda x: 0 if sum(x.COVERED) == 0 else sum(x.DEPTH) / sum(x.COVERED)).reset_index().rename(columns = {0 : "DEPTH"})
     exon_depth["START_PROT_POS"] = gene_depth.groupby("EXON_RANK").apply(lambda x: x.PROT_POS.min())
@@ -501,7 +501,7 @@ def where_plus(condition):
 
 def plot_count_track(
     count_df,
-    gene_len,
+    protein_len,
     axes,
     colors_dict,
     ax=0,
@@ -514,20 +514,17 @@ def plot_count_track(
     n_batches = 10
     ):
 
-    pos_df = pd.DataFrame({"Pos" : range(1, gene_len+1)})
-
-
     # Shuffle the data and split into batches
     shuffled_df = count_df.sample(frac=1, random_state=42).reset_index(drop=True)
     batches = np.array_split(shuffled_df, n_batches)
 
     legend_list = []
-    pos_df = pd.DataFrame({"Pos" : range(1, gene_len+1)})
+    pos_df = pd.DataFrame({"Pos" : range(1, protein_len+1)})
 
     for batch_idx, batch in enumerate(batches):
         for cnsq in ['indel', 'truncating', 'nonsense', 'missense', 'synonymous', 'splicing']:
 
-            if (indel == False and cnsq == "indel") or cnsq not in batch["Consequence"].unique():
+            if (not indel and cnsq == "indel") or (cnsq not in batch["Consequence"].unique()) :
                 continue
 
             count_cnsq_df = batch[batch["Consequence"] == cnsq].reset_index(drop=True)
@@ -675,7 +672,7 @@ def plot_gene_selection(mut_count_df,
                         domain_selection_df,
                         gene,
                         max_depth,
-                        gene_len,
+                        protein_len,
                         plot_pars,
                         title,
                         ddg_df=None,
@@ -722,7 +719,7 @@ def plot_gene_selection(mut_count_df,
     if "Mut_count" in lst_tracks:
         ax = lst_tracks.index("Mut_count")
 
-        plot_count_track(mut_count_df, gene_len=gene_len, axes=axes, ax=ax, colors_dict=plot_pars["colors"])
+        plot_count_track(mut_count_df, protein_len=protein_len, axes=axes, ax=ax, colors_dict=plot_pars["colors"])
         axes[ax].set_ylabel('Mutations', rotation=0, va='center', ha='right', fontsize=plot_pars["ylabel_fontsize"])
         axes[ax].yaxis.set_label_coords(plot_pars["y_labels_coord"][0], plot_pars["y_labels_coord"][1])
 
@@ -739,7 +736,7 @@ def plot_gene_selection(mut_count_df,
     if "Site_selection" in lst_tracks:
         ax = lst_tracks.index("Site_selection")
 
-        site_selection_df = pd.DataFrame({"Protein_position" : np.arange(gene_len)+1}).merge(site_selection_df, how="left")
+        site_selection_df = pd.DataFrame({"Protein_position" : np.arange(protein_len)+1}).merge(site_selection_df, how="left")
         axes[ax].plot(
             site_selection_df.Protein_position, site_selection_df.Selection, zorder=1,
             color=plot_pars["colors"]["site_selection"], lw=1
@@ -749,7 +746,7 @@ def plot_gene_selection(mut_count_df,
             color=plot_pars["colors"]["site_selection"], alpha=0.4, zorder=0, lw=1.5
             )
 
-        site_selection_hits_df = pd.DataFrame({"Protein_position" : np.arange(gene_len)+1}).merge(
+        site_selection_hits_df = pd.DataFrame({"Protein_position" : np.arange(protein_len)+1}).merge(
             site_selection_df[site_selection_df["p_value"] < thr_selection].reset_index(drop=True), how="left")
         axes[ax].fill_between(
             site_selection_hits_df.Protein_position, 0, site_selection_hits_df.Selection,
@@ -775,7 +772,7 @@ def plot_gene_selection(mut_count_df,
     if "3d_clustering" in lst_tracks:
         ax = lst_tracks.index("3d_clustering")
 
-        axes[ax].plot(np.array(range(prot_len-1))+1, o3d_df["O3D_score"], zorder=2, color=plot_pars["colors"]["o3d_score"], lw=1, label="Clustering score")
+        axes[ax].plot(np.array(range(protein_len-1))+1, o3d_df["O3D_score"], zorder=2, color=plot_pars["colors"]["o3d_score"], lw=1, label="Clustering score")
         axes[ax].fill_between(o3d_df['Pos'], 0, n_3d_max, where=(o3d_df['Cluster'] == 1),
                             color=plot_pars["colors"]["o3d_cluster"], alpha=1, label='Cluster', zorder=0, lw=1.5)
 
@@ -802,7 +799,7 @@ def plot_gene_selection(mut_count_df,
         ax = lst_tracks.index("Exon_selection")
 
         exon_coverage = get_exon_depth_saturation(coverage_df, mut_df)
-        exon_coverage = get_exon_mid_prot_pos(exon_coverage, gene_len)
+        exon_coverage = get_exon_mid_prot_pos(exon_coverage, protein_len)
         exon_info = exon_coverage[["EXON_RANK", "START_PROT_POS", "END_PROT_POS", "MID_PROT_POS"]]
         exon_selection_df = exon_selection_df.merge(exon_info)
         custom_legend = []
@@ -1066,7 +1063,7 @@ def plot_gene_selection(mut_count_df,
             axes[ax].fill_between(
                 pdb_tool_df["Pos"], 0, 1, where=(pdb_tool_df['SSE'] == sse),
                 zorder=2, color=plot_pars["sse_colors"][sse],
-                alpha=1, label=sse, lw=plot_pars["sse_lw"][gene]
+                alpha=1, label=sse, lw=plot_pars["sse_lw"]
                 )
         axes[ax].set_yticks([])
         axes[ax].legend(fontsize=plot_pars["legend_fontsize"], frameon=plot_pars["legend_frameon"],
@@ -1097,18 +1094,18 @@ def plot_gene_selection(mut_count_df,
             start = int(row["Begin"])
             end = int(row["End"])
 
-            if name not in added_domain and (gene_len >= plot_pars["len_txt_thr"] or gene == "KDM6A"):
+            if name not in added_domain and (protein_len >= plot_pars["len_txt_thr"] or gene == "KDM6A"):
                 axes[ax].fill_between(range(start, end + 1), -0.5, 0.45, alpha=0.5, color=domain_color_dict[name], label=name, lw=0.5)
             else:
                 axes[ax].fill_between(range(start, end + 1), -0.5, 0.45, alpha=0.5, color=domain_color_dict[name], lw=0.5)
 
             if name not in added_domain:
-                if gene_len < plot_pars["len_txt_thr"] and gene != "KDM6A":
+                if protein_len < plot_pars["len_txt_thr"] and gene != "KDM6A":
                     y = -0.04
                     axes[ax].text(((start + end) / 2)+0.5, y, name, ha='center', va='center', fontsize=10, color="black")
                 added_domain.append(name)
         axes[ax].set_yticks([])
-        if (gene_len >= plot_pars["len_txt_thr"] or gene == "KDM6A") and len(added_domain) > 0:
+        if (protein_len >= plot_pars["len_txt_thr"] or gene == "KDM6A") and len(added_domain) > 0:
             pass
             # axes[ax].legend(fontsize=plot_pars["legend_fontsize"], frameon=plot_pars["legend_frameon"],
             #                 bbox_to_anchor=(plot_pars["domain_x_bbox_to_anchor"][gene], plot_pars["domain_y_bbox_to_anchor"]), title = "Domain",
@@ -1140,7 +1137,7 @@ def plot_gene_selection(mut_count_df,
             axes[ax].fill_between(range(start, end + 1), y[0], y[1], color=colors[i])
 
         # xlim = axes[ax].get_xlim()
-        # axes[ax].hlines(0, 0-(gene_len*0.2), gene_len+(gene_len*0.2),  lw=0.7, zorder=1, alpha=1, color="black")
+        # axes[ax].hlines(0, 0-(protein_len*0.2), protein_len+(protein_len*0.2),  lw=0.7, zorder=1, alpha=1, color="black")
         # axes[ax].set_xlim(xlim)
 
         axes[ax].set_yticks([0.25, -0.25])
@@ -1354,7 +1351,6 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
     # ====
 
     # Mut
-
     gene_mut = maf[maf["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
     gene_mut_count = gene_mut.groupby(['Consequence', 'Pos']).size().reset_index(name='Count')
     gene_mut_cnsq_count = gene_mut.groupby(['Consequence']).size().reset_index(name='Count')
@@ -1436,7 +1432,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
         exon_selection_df=exon_selection_gene,
         domain_selection_df=domain_selection_gene,
         ddg_df=ddg_gene,
-        gene_len=prot_len,
+        protein_len=prot_len,
         gene=gene,
         max_depth=max_depth,
         plot_pars=plot_pars,
