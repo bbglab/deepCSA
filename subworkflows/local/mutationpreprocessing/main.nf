@@ -17,6 +17,7 @@ include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../mod
 include { PLOT_MUTATIONS                as PLOTSOMATICMAF   } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
 include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   } from '../../../modules/local/downsample/mutations/main'
+include { COMPUTE_CONTAMINATION         as CONTAMINATION    } from '../../../modules/local/contamination/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -97,10 +98,17 @@ workflow MUTATION_PREPROCESSING {
     // Keep only somatic mutations
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
 
+    
+
+    Channel.of([["id": "all_samples"]])
+    .join(named_mafs).first()
+    .set{raw_muts_all_samples}
 
     Channel.of([["id": "all_samples"]])
     .join(SOMATICMUTATIONS.out.mutations).first()
     .set{muts_all_samples}
+
+    CONTAMINATION(raw_muts_all_samples, muts_all_samples)
 
     PLOTSOMATICMAF(muts_all_samples)
 
