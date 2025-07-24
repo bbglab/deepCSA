@@ -5,6 +5,7 @@ import requests
 import subprocess
 import json
 import warnings
+import click
 import pandas as pd
 import seaborn as sns
 import numpy as np
@@ -20,33 +21,6 @@ import matplotlib.patches as mpatches
 
 
 from utils_impacts import GROUPING_DICT, CONSEQUENCES_LIST
-
-
-#####
-# Get reference data
-#####
-
-# Oncodrive3D
-o3d_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_mane_240506"
-o3d_annotations = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506"
-o3d_seq_df = pd.read_table(f"{o3d_datasets}/seq_for_mut_prob.tsv")
-
-o3d_alt_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_240506"            # These "alt" are used to rerieve annotations in equivalent Uniprot ID that are missing in the MANE related ones
-o3d_alt_seq_df = pd.read_table(f"{o3d_alt_datasets}/seq_for_mut_prob.tsv")
-
-o3d_annot_df = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
-o3d_pdb_tool_df = pd.read_table(f"{o3d_annotations}/pdb_tool_df.tsv")
-disorder_df = pd.read_table(f"{o3d_datasets}/confidence.tsv")
-
-# Domain annotations
-domain = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
-# domain = domain[domain.Ens_Transcr_ID.isin(maf.Ens_transcript_ID.unique())]
-domain = domain[(domain.Type == "DOMAIN") & (domain.Evidence == "Pfam")].reset_index(drop=True)
-
-pfam_domains_file = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506/uniprot_feat.tsv"
-pfam = pd.read_table(pfam_domains_file)
-pfam[(pfam["Type"] == "DOMAIN") & (pfam["Evidence"] == "Pfam")]
-
 
 
 #####
@@ -141,7 +115,7 @@ def get_o3d_gene_data(
     score_gene_df["C"] = score_gene_df["C"].astype(int)
     score_gene_df = score_gene_df.drop(columns=["C_ext"])
 
-    score_gene_df.columns = "Pos", "O3D_score", "Cluster"
+    score_gene_df.columns = ["Pos", "O3D_score", "Cluster"]
     score_gene_df["O3D_score"] = score_gene_df["O3D_score"].fillna(0)
     score_gene_df["Cluster"] = score_gene_df["Cluster"].fillna(0)
 
@@ -342,79 +316,6 @@ def find_exon(x_coord, exon_coord_df):
 
     return matches['ID'].values[0] if not matches.empty else np.nan
 
-
-
-#####
-# Load cohort data
-#####
-
-sample_name = "all_samples"
-consensus_df_file = "data/consensus.exons_splice_sites.unique.tsv"
-depth_df_file = f"annotatedepths/all_samples_indv.depths.tsv.gz"
-site_selection = f"sitecomparison/{sample_name}.aminoacid.comparison.tsv.gz"
-omega_file = f"omegagloballoc/output_mle.{sample_name}.global_loc.tsv"
-o3d_df_file = f"oncodrive3d/run/{sample_name}/{sample_name}.3d_clustering_pos.csv"
-mutations_file = f"clean_somatic/{sample_name}.somatic.mutations.tsv"
-
-
-# Count each mutation only ones if it appears in multiple reads
-maf = get_normal_maf(mutations_file, truncating=True)
-maf_count = maf.groupby(['Gene', 'Consequence', 'Pos']).size().reset_index(name='Count')
-maf_cnsq_count = maf.groupby(['Gene', 'Consequence']).size().reset_index(name='Count')
-maf_cnsq_count
-
-
-
-# Get consensus file
-command = f"cut -f 1,2,6,7 {deepcsa_run_dir}/createpanels/consensuspanels/consensus.exons_splice_sites.tsv | cut -f-3 | uniq > data/consensus.exons_splice_sites.unique.tsv"
-process = subprocess.run(command, shell=True, capture_output=True, text=True)
-
-
-# this consensus_df can come from the dna2proteinmapping step
-# also there is a dn2proteinmapping file there as well
-consensus_df = pd.read_table(consensus_df_file)
-depth_df = pd.read_table(depth_df_file)
-
-exons_depth, exons_coord_id = get_dna2prot_depth(maf, depth_df, consensus_df)
-exons_depth["EXON_ID"] = exons_depth.apply(lambda x: find_exon(x, exons_coord_id), axis=1)
-exons_depth
-
-
-
-
-
-
-
-# Per-site selection
-site_selection = pd.read_table(site_selection).rename(
-    columns={"OBS/EXP" : "Selection"}).drop(
-    columns=["OBSERVED_MUTS", "EXPECTED_MUTS"])
-site_selection.loc[site_selection.Selection < 0, "Selection"] = 0
-site_selection = site_selection[site_selection.Protein_position != "-"].reset_index(drop=True)
-site_selection.Protein_position = site_selection.Protein_position.astype(int)
-
-
-# Exon selection
-omega_table = pd.read_table(omega_file)
-omega_subgenic_table = omega_table[(omega_table.gene.str.contains("--"))
-                                   (omega_table.impact.isin(["missense", "truncating"]))
-                                   ].reset_index(drop=True)
-
-exon_selection = omega_subgenic_table.merge(
-    exons_depth.rename(columns={"EXON_ID" : "gene", "EXON_RANK" : "exon_rank"}).dropna()[["gene", "exon_rank"]].drop_duplicates().reset_index(drop=True),
-    how="left").sort_values(["gene", "exon_rank", "impact"]).reset_index(drop=True)
-
-print("> exon_selection:", exon_selection.shape )
-
-
-domain_selection = omega_subgenic_table.copy()
-domain_selection["selection_id"] = domain_selection.gene.str.split("--").apply(lambda x: x[1].split("-")[0])
-domain_selection = domain_selection[domain_selection.selection_id.isin(domain.Description.values)].reset_index(drop=True)
-print("> domain_selection:", domain_selection.shape )
-
-
-
-o3d_df = pd.read_csv(o3d_df_file)[["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]]
 
 
 
@@ -1439,17 +1340,25 @@ def mut_count_horizontal_barplot(
 # TODO:
 # - Check that max res depth equal max exon depth, if not use the one that's actually included in the plot
 
+def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection):
+    for gene in ["TP53"]:
+        plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection)
+
+
+
 indels = False
 
-for gene in ["TP53"]:# gene_order:
+def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection):
 
     # Data
     # ====
 
     # Mut
+
     gene_mut = maf[maf["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
-    gene_mut_count = maf_count[maf_count["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
-    gene_mut_cnsq_count = maf_cnsq_count[maf_cnsq_count["Gene"] == gene].drop(columns="Gene").reset_index(drop=True)
+    gene_mut_count = gene_mut.groupby(['Consequence', 'Pos']).size().reset_index(name='Count')
+    gene_mut_cnsq_count = gene_mut.groupby(['Consequence']).size().reset_index(name='Count')
+
 
     # Oncodrive3D
     o3d_gene_df = get_o3d_gene_data(gene, o3d_seq_df, o3d_df)
@@ -1501,7 +1410,7 @@ for gene in ["TP53"]:# gene_order:
         "Domain",
         "Domain_selection"
         ]
-    
+
     # FIXME
     # this should point to a list of all the genes for which these tracks are not available,
     # otherwise, add a check that makes sure the gene is/isnot suitable for having these tracks
@@ -1538,3 +1447,124 @@ for gene in ["TP53"]:# gene_order:
         save=True,
         filename=f"{gene}.saturation_all.png"
         )
+
+
+
+#####
+# Load cohort data
+#####
+
+
+def data_loading(sample_name = "all_samples"):
+
+    consensus_df_file = "consensus.exons_splice_sites.unique.tsv"
+    depth_df_file = f"all_samples_indv.depths.tsv.gz"
+    # depth_df_file = f"{sample_name}.depths.tsv.gz"
+    site_selection = f"{sample_name}.global_loc.aminoacid.comparison.tsv.gz"
+    omega_file = f"output_mle.{sample_name}.global_loc.tsv"
+    o3d_df_file = f"{sample_name}.3d_clustering_pos.csv"
+    mutations_file = f"{sample_name}.somatic.mutations.tsv"
+
+
+    # Count each mutation only ones if it appears in multiple reads
+    maf = get_normal_maf(mutations_file, ["TP53"], truncating=True)
+
+    # this consensus_df can come from the dna2proteinmapping step
+    # also there is a dn2proteinmapping file there as well
+    consensus_df = pd.read_table(consensus_df_file)
+    depth_df = pd.read_table(depth_df_file)
+
+    exons_depth, exons_coord_id = get_dna2prot_depth(maf, depth_df, consensus_df)
+    exons_depth["EXON_ID"] = exons_depth.apply(lambda x: find_exon(x, exons_coord_id), axis=1)
+
+
+    # Omega data
+    omega_table = pd.read_table(omega_file)
+
+    omega_subgenic_table = omega_table[(omega_table.gene.str.contains("--")) &
+                                        (omega_table.impact.isin(["missense", "truncating"]))
+                                    ].reset_index(drop=True)
+
+    # Exon selection
+    exon_selection = omega_subgenic_table.merge(
+        exons_depth.rename(columns={"EXON_ID" : "gene", "EXON_RANK" : "exon_rank"}).dropna()[["gene", "exon_rank"]].drop_duplicates().reset_index(drop=True),
+        how="left").sort_values(["gene", "exon_rank", "impact"]).reset_index(drop=True)
+    print("> exon_selection:", exon_selection.shape )
+
+    # Domain selection
+    domain_selection = omega_subgenic_table.copy()
+    domain_selection["selection_id"] = domain_selection.gene.str.split("--").apply(lambda x: x[1].split("-")[0])
+    domain_selection = domain_selection[domain_selection.selection_id.isin(domain.Description.values)].reset_index(drop=True)
+    print("> domain_selection:", domain_selection.shape )
+
+
+    # Per-site selection
+    site_selection = pd.read_table(site_selection).rename(
+        columns={"OBS/EXP" : "Selection"}).drop(
+        columns=["OBSERVED_MUTS", "EXPECTED_MUTS"])
+    site_selection.loc[site_selection.Selection < 0, "Selection"] = 0
+    site_selection = site_selection[site_selection.Protein_position != "-"].reset_index(drop=True)
+    site_selection.Protein_position = site_selection.Protein_position.astype(int)
+
+
+    # Oncodrive3D data
+    o3d_df = pd.read_csv(o3d_df_file)[["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]]
+
+    return maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection
+
+
+
+# def get_reference_data():
+#     #####
+#     # Get reference data
+#     #####
+
+#     # Oncodrive3D
+#     o3d_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_mane_240506"
+#     o3d_annotations = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506"
+#     o3d_seq_df = pd.read_table(f"{o3d_datasets}/seq_for_mut_prob.tsv")
+
+#     o3d_alt_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_240506"            # These "alt" are used to rerieve annotations in equivalent Uniprot ID that are missing in the MANE related ones
+#     o3d_alt_seq_df = pd.read_table(f"{o3d_alt_datasets}/seq_for_mut_prob.tsv")
+
+#     o3d_annot_df = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
+#     o3d_pdb_tool_df = pd.read_table(f"{o3d_annotations}/pdb_tool_df.tsv")
+#     disorder_df = pd.read_table(f"{o3d_datasets}/confidence.tsv")
+
+#     # Domain annotations
+#     domain = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
+#     # domain = domain[domain.Ens_Transcr_ID.isin(maf.Ens_transcript_ID.unique())]
+#     domain = domain[(domain.Type == "DOMAIN") & (domain.Evidence == "Pfam")].reset_index(drop=True)
+
+
+
+# Oncodrive3D
+o3d_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_mane_240506"
+o3d_annotations = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506"
+o3d_seq_df = pd.read_table(f"{o3d_datasets}/seq_for_mut_prob.tsv")
+
+o3d_alt_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_240506"            # These "alt" are used to rerieve annotations in equivalent Uniprot ID that are missing in the MANE related ones
+o3d_alt_seq_df = pd.read_table(f"{o3d_alt_datasets}/seq_for_mut_prob.tsv")
+
+o3d_annot_df = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
+o3d_pdb_tool_df = pd.read_table(f"{o3d_annotations}/pdb_tool_df.tsv")
+disorder_df = pd.read_table(f"{o3d_datasets}/confidence.tsv")
+
+# Domain annotations
+domain = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
+# domain = domain[domain.Ens_Transcr_ID.isin(maf.Ens_transcript_ID.unique())]
+domain = domain[(domain.Type == "DOMAIN") & (domain.Evidence == "Pfam")].reset_index(drop=True)
+
+
+@click.command()
+@click.option('--sample_name', type=str, help='Name of the sample being processed.')
+@click.option('--outdir', type=click.Path(), help='Output path for plots')
+def main(sample_name, outdir):
+    click.echo("Plotting omega results...")
+    # get_reference_data()
+    maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection = data_loading(sample_name)
+    plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection)
+
+
+if __name__ == '__main__':
+    main()
