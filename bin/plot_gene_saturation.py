@@ -1,8 +1,6 @@
 import os
-import sys
 import time
 import requests
-import subprocess
 import json
 import warnings
 import click
@@ -387,25 +385,7 @@ plot_pars = {
                                 'Helix'  : "#F7CAC9",
                                 'Ladder' : "#A7C7E7"
                                 },
-    "sse_lw" : 1
-    # "sse_lw"                    : {
-    #                             "KMT2D"  : 1,
-    #                             "EP300"  : 1,
-    #                             "ARID1A" : 1,
-    #                             "CREBBP" : 1,
-    #                             "NOTCH2" : 1,
-    #                             "KMT2C"  : 1,
-    #                             "STAG2"  : 1,
-    #                             "RB1"    : 1,
-    #                             "RBM10"  : 1,
-    #                             "KDM6A"  : 1,
-    #                             "TP53"   : 2.2,
-    #                             "FGFR3"  : 1,
-    #                             "CDKN1A" : 4,
-    #                             "FOXQ1"  : 2.2,
-    #                             "PIK3CA" : 1,
-    #                             "TERT"   : 1,
-    #                             }
+    "sse_lw"                    : 1
 }
 
 
@@ -1257,40 +1237,40 @@ def plot_domain_selection(
     plt.show()
 
 
-def mut_count_side_barplot(
-    df,
-    color_dict,
-    figsize=(3.4, 2.3),
-    max_count=None,
-    title=None,
-    save=False,
-    filename="mut_count_side_barplot.png"
-    ):
+# def mut_count_side_barplot(
+#     df,
+#     color_dict,
+#     figsize=(3.4, 2.3),
+#     max_count=None,
+#     title=None,
+#     save=False,
+#     filename="mut_count_side_barplot.png"
+#     ):
 
-    title = title
+#     title = title
 
-    order = ["truncating", "missense", "synonymous"]
-    df = df.set_index("Consequence").loc[order].reset_index()
+#     order = ["truncating", "missense", "synonymous"]
+#     df = df.set_index("Consequence").loc[order].reset_index()
 
-    fig, ax = plt.subplots(figsize=figsize)
-    bars = ax.bar(df["Consequence"], df["Count"], color=[color_dict[c] for c in df["Consequence"]])
+#     fig, ax = plt.subplots(figsize=figsize)
+#     bars = ax.bar(df["Consequence"], df["Count"], color=[color_dict[c] for c in df["Consequence"]])
 
-    for bar in bars:
-        height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, height, str(height),
-                ha='center', va='bottom', fontsize=10)
+#     for bar in bars:
+#         height = bar.get_height()
+#         ax.text(bar.get_x() + bar.get_width() / 2, height, str(height),
+#                 ha='center', va='bottom', fontsize=10)
 
 
-    plt.ylabel("Number of mutations")
-    plt.ylim(0, max_count if isinstance(max_count, int) else np.max(df["Count"]))
-    ax.set_title(title, pad=15)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.set_xticklabels([label.capitalize() for label in df["Consequence"]])
+#     plt.ylabel("Number of mutations")
+#     plt.ylim(0, max_count if isinstance(max_count, int) else np.max(df["Count"]))
+#     ax.set_title(title, pad=15)
+#     ax.spines['top'].set_visible(False)
+#     ax.spines['right'].set_visible(False)
+#     ax.set_xticklabels([label.capitalize() for label in df["Consequence"]])
 
-    if save:
-        fig.savefig(filename, dpi=300, bbox_inches='tight')
-    plt.show()
+#     if save:
+#         fig.savefig(filename, dpi=300, bbox_inches='tight')
+#     plt.show()
 
 def mut_count_horizontal_barplot(
     df,
@@ -1331,6 +1311,77 @@ def mut_count_horizontal_barplot(
     plt.show()
 
 
+def get_selection_groups(df, thr_selection):
+
+    df = df.copy().rename(columns={"Protein_position": "Pos"})
+    g0 = df[df["Selection"] == 0]
+    g1 = df[(df["Selection"] != 0) & (df["p_value"] >= thr_selection)]
+
+    g2 = df[df["p_value"] < thr_selection]
+    g2 = g2.sort_values("Selection").reset_index(drop=True)
+
+    g0["Group"] = "G0"
+    g1["Group"] = "G1"
+    g2["Group"] = "G2"
+
+    return pd.concat((g0, g1, g2)).reset_index(drop=True)
+
+
+def plot_feat_by_selection_group(df, figsize=(10, 4), save=False, filename="selection_groups_feat.png",):
+
+    color_dict = {
+    "G0": "gray",
+    "G1": "#6baed6",
+    "G2": "blue"
+}
+    rename_labels = {
+        "G0": f"Not observed\n(N={df[df['Group'] == 'G0'].shape[0]})",
+        "G1": f"Not significant\n(N={df[df['Group'] == 'G1'].shape[0]})",
+        "G2": f"Significant\n(N={df[df['Group'] == 'G2'].shape[0]})"
+    }
+
+    fig, axes = plt.subplots(1, 2, figsize=figsize, sharey=False)
+
+    # Violin + Jitter plot for pACC
+    sns.violinplot(ax=axes[0], x="Group", y="pACC", data=df, color="#d9d9d9", inner=None)
+    sns.stripplot(ax=axes[0], x="Group", y="pACC", data=df,
+                palette=color_dict, jitter=True, size=4, alpha=0.7)
+    axes[0].set_title("Solvent Accessibility by Selection")
+    axes[0].set_xlabel(None)
+    axes[0].set_ylabel("Solvent accessibility")
+    axes[0].set_ylim(-2,102)
+
+    # Violin + Jitter plot for Stability Change
+    sns.violinplot(ax=axes[1], x="Group", y="Stability_change", data=df, color="#d9d9d9", inner=None)
+    sns.stripplot(ax=axes[1], x="Group", y="Stability_change", data=df,
+                palette=color_dict, jitter=True, size=4, alpha=0.7)
+    axes[1].set_title("Stability Change by Selection")
+    axes[1].set_xlabel(None)
+    axes[1].set_ylabel("Stability change")
+
+    # Overlay median values
+    medians = df.groupby("Group")["pACC"].median()
+    for i, median in enumerate(medians):
+        axes[0].scatter(i, median, zorder=3, color='black', marker='x', s=80, label="Median" if i == 0 else "")
+    medians = df.groupby("Group")["Stability_change"].median()
+    for i, median in enumerate(medians):
+        axes[1].scatter(i, median, zorder=3, color='black', marker='x', s=80, label="Median" if i == 0 else "")
+
+    axes[0].spines['top'].set_visible(False)
+    axes[0].spines['right'].set_visible(False)
+    axes[1].spines['top'].set_visible(False)
+    axes[1].spines['right'].set_visible(False)
+
+    axes[0].set_xticklabels([rename_labels[label] for label in color_dict.keys()])
+    axes[1].set_xticklabels([rename_labels[label] for label in color_dict.keys()])
+
+    # # Improve layout
+    # plt.tight_layout()
+
+    if save:
+        fig.savefig(filename, dpi=300, bbox_inches='tight')
+
+    plt.show()
 
 
 
@@ -1446,17 +1497,65 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
 
 
 
+
+    # Side plots
+    # ==========
+
+    plot_domain_selection(
+        domain_selection_gene,
+        gene,
+        domain_color_dict_gene,
+        title=f"{gene}\nDomain selection",
+        legend2_coord=(0.75, 1),
+        save=True,
+        filename=f"{gene}.domain_selection.png"
+        )
+
+
+    # max_count = int(np.max(gene_mut_cnsq_count["Count"]))
+    # mut_count_side_barplot(
+    #     gene_mut_cnsq_count, plot_pars["colors"],
+    #     max_count=max_count,
+    #     title=f"{gene}",
+    #     save=True,
+    #     filename=f"{gene}.count_barplot.png"
+    #     )
+    mut_count_horizontal_barplot(
+        gene_mut_cnsq_count, plot_pars["colors"],
+        title=f"{gene}",
+        save=True,
+        filename=f"{gene}.normal.stacked_horizontal.png"
+        )
+
+
+
+    # Selection groups feat
+    # =====================
+    site_selection_gene_grouped = get_selection_groups(site_selection_gene, thr_selection=0.00001)
+    site_selection_gene_grouped = site_selection_gene_grouped.merge(pdb_tool_gene[["Pos", "pACC"]])
+    site_selection_gene_grouped = site_selection_gene_grouped.merge(ddg_gene)
+    plot_feat_by_selection_group(site_selection_gene_grouped, save=True, filename=f"{gene}.selection_groups.png")
+
+
+
 #####
 # Load cohort data
 #####
-
-
 def data_loading(sample_name = "all_samples"):
 
+    # TODO
+    # revise if this one or the DNA2PROTEINMAPPING already
     consensus_df_file = "consensus.exons_splice_sites.unique.tsv"
+
+
+    # TODO
+    # replace with the depths for the sample we are plotting,
+    # only a single column
     depth_df_file = f"all_samples_indv.depths.tsv.gz"
     # depth_df_file = f"{sample_name}.depths.tsv.gz"
     site_selection = f"{sample_name}.global_loc.aminoacid.comparison.tsv.gz"
+
+
     omega_file = f"output_mle.{sample_name}.global_loc.tsv"
     o3d_df_file = f"{sample_name}.3d_clustering_pos.csv"
     mutations_file = f"{sample_name}.somatic.mutations.tsv"
