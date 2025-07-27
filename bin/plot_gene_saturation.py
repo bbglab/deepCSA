@@ -348,15 +348,6 @@ plot_pars = {
     "domain_sel_bbox_to_anchor" : [1.086, -3, 1.4, 4.8],
     "domain_y_bbox_to_anchor"   : 5,
     "domain_x_bbox_to_anchor"   : {},
-    # "domain_x_bbox_to_anchor"   : {
-    #                             "ARID1A" : 1.25,
-    #                             "KDM6A"  : 1.245,
-    #                             "KMT2D"  : 1.255,
-    #                             "EP300"  : 1.267,
-    #                             "CREBBP" : 1.267,
-    #                             "NOTCH2" : 1.241,
-    #                             "KMT2C"  : 1.255
-    #                             },
     "legend_depth_fontsize"     : 10.5,
     "txt_fontsize"              : 9,
     "len_txt_thr"               : 2400,
@@ -623,18 +614,20 @@ def avg_per_pos_ddg(mut_df, ddg_prot):
     return pd.DataFrame({"Pos": ddg_prot.keys(), "Stability_change": ddg_vec}).astype({"Pos": int, "Stability_change": float})
 
 
-def get_ddg_gene(gene, gene_mut, o3d_annotations, o3d_seq_df, o3d_alt_seq_df):
+def get_ddg_gene(gene, gene_mut, o3d_annotations, o3d_seq_df,
+                 # o3d_alt_seq_df
+                 ):
 
     uni_id = o3d_seq_df[o3d_seq_df["Gene"] == gene].Uniprot_ID.unique()[0]
     ddg_path = os.path.join(o3d_annotations, "stability_change", f"{uni_id}_ddg.json")
-    alt_uni_id = get_equivalent_alt_prot_id(gene, o3d_seq_df, o3d_alt_seq_df)
-    alt_ddg_path = os.path.join(o3d_annotations, "stability_change", f"{alt_uni_id}_ddg.json")
+    # alt_uni_id = get_equivalent_alt_prot_id(gene, o3d_seq_df, o3d_alt_seq_df)
+    # alt_ddg_path = os.path.join(o3d_annotations, "stability_change", f"{alt_uni_id}_ddg.json")
     if os.path.isfile(ddg_path):
         ddg_gene = json.load(open(ddg_path))
         ddg_gene = avg_per_pos_ddg(gene_mut, ddg_gene)
-    elif isinstance(alt_uni_id, str) and os.path.isfile(alt_ddg_path):
-        ddg_gene = json.load(open(alt_ddg_path))
-        ddg_gene = avg_per_pos_ddg(gene_mut, ddg_gene)
+    # elif isinstance(alt_uni_id, str) and os.path.isfile(alt_ddg_path):
+    #     ddg_gene = json.load(open(alt_ddg_path))
+    #     ddg_gene = avg_per_pos_ddg(gene_mut, ddg_gene)
     else:
         ddg_gene = None
 
@@ -1436,7 +1429,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
 
     domain_selection_gene = get_domain_selection_gene(domain_selection, domain_gene, gene)
 
-    ddg_gene = get_ddg_gene(gene, gene_mut, o3d_annotations, o3d_seq_df, o3d_alt_seq_df)
+    ddg_gene = get_ddg_gene(gene, gene_mut, o3d_annotations, o3d_seq_df)
 
 
     # Plot
@@ -1634,19 +1627,12 @@ def data_loading(sample_name = "all_samples"):
 
 
 # Oncodrive3D
-o3d_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_mane_240506"
-o3d_annotations = "/data/bbg/nobackup/scratch/oncodrive3d/annotations_mane_240506"
-o3d_seq_df = pd.read_table(f"{o3d_datasets}/seq_for_mut_prob.tsv")
+o3d_seq_df = pd.read_table("seq_for_mut_prob.tsv")
 
-o3d_alt_datasets = "/data/bbg/nobackup/scratch/oncodrive3d/datasets_240506"            # These "alt" are used to rerieve annotations in equivalent Uniprot ID that are missing in the MANE related ones
-o3d_alt_seq_df = pd.read_table(f"{o3d_alt_datasets}/seq_for_mut_prob.tsv")
-
-o3d_annot_df = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
-o3d_pdb_tool_df = pd.read_table(f"{o3d_annotations}/pdb_tool_df.tsv")
-disorder_df = pd.read_table(f"{o3d_datasets}/confidence.tsv")
+o3d_pdb_tool_df = pd.read_table("pdb_tool_df.tsv")
 
 # Domain annotations
-domain = pd.read_table(f"{o3d_annotations}/uniprot_feat.tsv")
+domain = pd.read_table("uniprot_feat.tsv")
 # domain = domain[domain.Ens_Transcr_ID.isin(maf.Ens_transcript_ID.unique())]
 domain = domain[(domain.Type == "DOMAIN") & (domain.Evidence == "Pfam")].reset_index(drop=True)
 

@@ -507,7 +507,8 @@ workflow DEEPCSA{
                         TABLE2GROUP.out.json_allgroups,
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.panel_annotated_rich,
-                        seqinfo_df
+                        seqinfo_df,
+                        ANNOTATEDEPTHS.out.all_samples_depths,
                         )
     }
 
