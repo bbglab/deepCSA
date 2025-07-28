@@ -91,7 +91,7 @@ It will provide:
 
 ```console
 params {
-    mutationrate                = true
+    mutationdensity             = true
 
     profileall                  = true
 
@@ -136,7 +136,7 @@ It will provide:
 
 ```console
 params {
-    mutationrate                = true
+    mutationdensity             = true
 
     profileall                  = true
     profilenonprot              = true
@@ -156,7 +156,7 @@ It will provide:
 
 ```console
 params {
-    mutationrate                = true
+    mutationdensity             = true
 
     profileall                  = true
 
