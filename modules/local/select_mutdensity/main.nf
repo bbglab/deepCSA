@@ -1,14 +1,14 @@
-process SELECT_MUTRATES {
+process SELECT_MUTDENSITIES {
     tag "$meta.id"
     label 'process_single'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta), path(mutation_rates)
+    tuple val(meta), path(mutation_densities)
 
     output:
-    tuple val(meta), path("*.gene_mutrates.tsv") , emit: mutrate
+    tuple val(meta), path("*.gene_mutdensities.tsv") , emit: mutdensity
     path  "versions.yml"                         , topic: versions
 
 
@@ -18,9 +18,9 @@ process SELECT_MUTRATES {
     prefix = "${meta.id}${prefix}"
     def mode = task.ext.mode ?: "mutations"
     """
-    omega_select_mutrate.py \\
-                --mutrates ${mutation_rates} \\
-                --output ${prefix}.gene_mutrates.tsv \\
+    omega_select_mutdensity.py \\
+                --mutdensities ${mutation_densities} \\
+                --output ${prefix}.gene_mutdensities.tsv \\
                 --mode ${mode};
 
     cat <<-END_VERSIONS > versions.yml
@@ -32,7 +32,7 @@ process SELECT_MUTRATES {
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
     """
-    touch ${prefix}.gene_mutrates.tsv
+    touch ${prefix}.gene_mutdensities.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

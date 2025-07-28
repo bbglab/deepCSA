@@ -182,15 +182,15 @@ def adjust_mutabilities(sample_name, mutation_matrix_file, mutability_info, out_
 @click.option('--profile', type=click.Path(exists=True), help='Input mutational profile dataframe file.')
 @click.option('--bedfile', type=click.Path(exists=True), help='BED file of the regions.')
 @click.option('--out_mutability', type=click.Path(), help='Output mutability file.')
-@click.option('--adjust_local_rate', is_flag=True, help='Generate an additional file with the mutabilities adjusted by the local mutation rate of each gene.')
+@click.option('--adjust_local_density', is_flag=True, help='Generate an additional file with the mutabilities adjusted by the local mutation density of each gene.')
 
 
-def main(sample_name, mutation_matrix, depths, profile, bedfile, out_mutability, adjust_local_rate):
+def main(sample_name, mutation_matrix, depths, profile, bedfile, out_mutability, adjust_local_density):
     click.echo(f"Computing the mutabilities...")
     sample_name = sample_name.split('.')[0]
     mutabilities_with_gene = compute_mutabilities(sample_name, depths, profile, bedfile, out_mutability)
     click.echo("Mutabilities computed.")
-    if adjust_local_rate:
+    if adjust_local_density:
         adjust_mutabilities(sample_name, mutation_matrix, mutabilities_with_gene, f"{out_mutability}.adjusted")
 
 if __name__ == '__main__':

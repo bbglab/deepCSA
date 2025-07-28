@@ -10,11 +10,29 @@
 ## If your sample names are NOT in a column called SAMPLE_ID,
 ## you can use the --sample-name-column option to specify it.
 
-# if the maf is from deepCSA, use this one, otherwise use the one below
+# if the maf is from deepCSA, use this one
 # usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/ --maf-from-deepcsa
 
-# if the maf file is not from deepCSA, use this below
+# if the maf file is not from deepCSA, use this one
 # usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
+
+
+
+#######
+# Mandatory columns in input mutations: 
+#######
+
+# if the maf is from deepCSA, it must contain the following columns, as they were originally generated
+# ['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']
+
+# if the maf file is not from deepCSA, then it MUST contain the following columns
+# ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH']
+# where:
+#     DEPTH indicates the total number of duplex reads sequenced at the position where the mutation occurs
+#     ALT_DEPTH indicates the total number of duplex reads supporting the variant at the same position
+
+
+
 
 import click
 import pandas as pd
