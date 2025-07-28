@@ -87,7 +87,8 @@ def plot_stacked_bar_track_binned(count_df,
                                     ax=0,
                                     alpha=1,
                                     indel=False,
-                                    bin_size=10,
+                                    min_bin_size=3,
+                                    num_bins = 100,
                                     num_ticks=5):
     """
     Plots stacked barplot of mutation counts binned by position.
@@ -103,6 +104,11 @@ def plot_stacked_bar_track_binned(count_df,
         bin_size: size of non-overlapping bins
         tick_every: show x-axis ticks every N bins
     """
+
+    # Compute bin_size or result to default
+    candidate_bin_size = max(1, gene_len // num_bins)
+    bin_size = max(min_bin_size, candidate_bin_size)
+
     valid_consequences = ['nonsense', 'missense', 'synonymous']
     if indel:
         valid_consequences.append('indel')
@@ -150,6 +156,8 @@ def plot_stacked_bar_track_binned(count_df,
     # Sparse x-ticks
     tick_every = len(all_bins) // num_ticks
     sparse_ticks = all_bins[::tick_every]
+    sparse_ticks = [x-1 for x in sparse_ticks]
+
     axes[ax].set_xticks(sparse_ticks)
     axes[ax].set_xticklabels(sparse_ticks)
     axes[ax].set_xlim(0, gene_len + bin_size)
