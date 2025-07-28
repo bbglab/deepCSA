@@ -517,11 +517,6 @@
                     "default": "med",
                     "fa_icon": "fas fa-book"
                 },
-                "all_duplex_counts": {
-                    "type": "boolean",
-                    "description": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules.",
-                    "fa_icon": "fas fa-question-circle"
-                },
                 "pileup_all_duplex": {
                     "type": "boolean",
                     "description": "Whether the BAM provided for the pileup is the mediumhigh quality BAM file or the whole duplex BAM.",
