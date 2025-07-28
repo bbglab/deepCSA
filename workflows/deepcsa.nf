@@ -84,8 +84,8 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSNONPROTCONS    } from '../modules/n
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSINTRONSCONS    } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SELECT_MUTDENSITIES           as SYNMUTDENSITY           } from '../modules/local/select_mutdensity/main'
-include { SELECT_MUTDENSITIES           as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES       as SYNMUTDENSITY        } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES       as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
 include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
 
 
@@ -502,7 +502,7 @@ workflow DEEPCSA{
     if ( params.omega & params.oncodrive3d & params.oncodrivefml & params.indels ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
-                        all_mutrates_file,
+                        all_mutdensities_file,
                         TABLE2GROUP.out.json_samples,
                         TABLE2GROUP.out.json_allgroups,
                         CREATEPANELS.out.exons_consensus_panel,

@@ -44,16 +44,15 @@ workflow PLOTTING_SUMMARY {
 
     PLOTSELECTION(all_samples_results, seqinfo_df)
     // needles with consequence type
-
     // plot selection at cohort/group level, all the different methods available
-
     // plot selection per domain at cohort level
 
 
 
     PLOTSATURATION(all_samples_results, all_samples_depth, panel, seqinfo_df, pdb_tool_df, domain_df)
-    // // plot gene + site selection + omega selection per domain in gene
-    // // ? plot saturation kinetics curves
+    // plot gene + site selection
+    // omega selection per domain in gene
+    // ? plot saturation kinetics curves
 
 
 

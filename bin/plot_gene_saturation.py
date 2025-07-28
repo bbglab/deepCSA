@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import time
 import requests
@@ -1429,7 +1431,8 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
 
     domain_selection_gene = get_domain_selection_gene(domain_selection, domain_gene, gene)
 
-    ddg_gene = get_ddg_gene(gene, gene_mut, o3d_annotations, o3d_seq_df)
+    ddg_gene = None
+    # ddg_gene = get_ddg_gene(gene, gene_mut, o3d_annotations, o3d_seq_df)
 
 
     # Plot
