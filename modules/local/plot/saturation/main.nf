@@ -20,7 +20,6 @@ process PLOT_SATURATION {
 
 
     script:
-    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
@@ -28,7 +27,8 @@ process PLOT_SATURATION {
     cut -f 1,2,6 ${panel_file} | uniq > consensus.exons_splice_sites.unique.tsv
     plot_gene_saturation.py \\
                     --sample_name ${prefix} \\
-                    --outdir ${prefix}.plots
+                    --outdir ${prefix}.plots \\
+                    --domain_file ${domains_df}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -40,7 +40,7 @@ process PLOT_SATURATION {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.pdf
+    touch ${prefix}.png
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -48,16 +48,3 @@ process PLOT_SATURATION {
     END_VERSIONS
     """
 }
-
-
-//     cat > mutations_subset.conf << EOF
-//     {
-//         ${filters}
-//     }
-//     EOF
-
-//     cat > requested_plots.conf << EOF
-//     {
-//         ${requested_plots}
-//     }
-//     EOF

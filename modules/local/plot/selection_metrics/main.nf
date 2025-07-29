@@ -15,7 +15,6 @@ process PLOT_SELECTION_METRICS {
 
 
     script:
-    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """

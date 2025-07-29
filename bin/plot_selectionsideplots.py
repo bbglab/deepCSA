@@ -37,7 +37,7 @@ def generate_all_side_figures(sample,
     if "omega_trunc" in tools or "omega_mis" in tools:
         omega_data = pd.read_table(f"output_mle.{sample}.tsv")
         omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
-                                    & ~(omega_data["gene"].str.contains('--'))
+                                    & ~(omega_data["gene"].str.contains('--'))        # select only genes
                                 ]
         if "omega_trunc" in tools :
             omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
@@ -326,8 +326,7 @@ def plot_all_positive_selection(omega_truncating,
                                 gene_order,
                                 title = None,
                                 pvalue_thres = 0.05,
-                                linewidth_def = 0.6,
-                                configs = {}
+                                linewidth_def = 0.6
                                 ):
     num_genes = len(gene_order)
 
@@ -531,8 +530,6 @@ def plot_all_positive_selection(omega_truncating,
     ax4.set_xlim([-separation, num_genes - 1 + separation])
     ax5.set_xlim([-separation, num_genes - 1 + separation])
 
-    plt.show()
-
     return fig
 
 
@@ -541,20 +538,16 @@ def get_all_data(sample, outdir, pvaluee = 0.05):
     oncodrivefml_data = pd.read_table(f"{sample}-oncodrivefml.tsv.gz")
     oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
     oncodrivefml_data.columns = ["GENE", "OncodriveFML", "pvalue", "OBSERVED_MEAN", "BACKGROUND_MEAN", "BACKGROUND_STD"]
-    # oncodrivefml_data = oncodrivefml_data[oncodrivefml_data["GENE"].isin(panel_genes)].reset_index(drop = True)
 
 
     omega_data = pd.read_table(f"output_mle.{sample}.tsv")
     omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
                                     & ~(omega_data["gene"].str.contains('--'))
                                 ]
-    # omega_data = omega_data[omega_data["gene"].isin(panel_genes)].reset_index(drop = True)
-
     omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
     omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
     truncating_decreasing = list(omega_truncating.sort_values("omega_trunc", ascending= False)["GENE"].values)
     print("Truncating\n", truncating_decreasing)
-
 
     omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
     omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
@@ -595,13 +588,11 @@ def get_all_data(sample, outdir, pvaluee = 0.05):
     oncodrive3d_data = pd.read_table(f"{sample}.3d_clustering_genes.csv", sep = ',')
     oncodrive3d_data_scores = oncodrive3d_data[["Gene", "Score_obs_sim_top_vol", "qval"]]
     oncodrive3d_data_scores.columns = ["GENE", "Oncodrive3D", 'pvalue']
-    # oncodrive3d_data_scores = oncodrive3d_data_scores[oncodrive3d_data_scores["GENE"].isin(panel_genes)].reset_index(drop = True)
 
 
     indels_data = pd.read_table(f"{sample}.sample.indels.tsv")
     indels_panel_df = indels_data[["SYMBOL", "pa/Npa", "pvalue"]]
     indels_panel_df.columns = ["GENE", "Indels_score", "pvalue"]
-    # indels_panel_df = indels_panel_df[indels_panel_df["GENE"].isin(panel_genes)].reset_index(drop = True)
 
 
     figuree = plot_all_positive_selection(omega_truncating,
@@ -614,12 +605,7 @@ def get_all_data(sample, outdir, pvaluee = 0.05):
                                             pvalue_thres = pvaluee)
 
 
-    figuree.savefig(f"{sample}.positive_selection_summary.pdf", bbox_inches='tight')
-
-
-
-
-
+    figuree.savefig(f"{outdir}/{sample}.positive_selection_summary.pdf", bbox_inches='tight')
 
 
 
@@ -639,186 +625,3 @@ if __name__ == '__main__':
 
 
 
-
-# def plot_all_positive_selection(omega_truncating,
-#                                 omega_missense,
-#                                 # indels_panel_df,
-#                                 oncodrive3d_data_scores,
-#                                 oncodrivefml_data,
-#                                 gene_order,
-#                                 title = None,
-#                                 pvalue_thres = 0.05,
-#                                 configs = {}
-#                                ):
-#     num_genes = len(gene_order)
-
-
-#     # List of dataframes
-#     dataframes = [#("frameshift", indels_panel_df),
-#                   ("o3d_score", oncodrive3d_data_scores),
-#                   ("ofml_score", oncodrivefml_data)
-#     ]
-
-#     # Concatenate dataframes to get unique genes
-#     # all_genes = pd.concat(dataframes)['GENE'].unique()
-#     num_dfs = len(dataframes)
-
-#     # omega_truncating, omega_missense
-
-#     # Create the figure and subplots
-#     fig, (ax1, ax2, ax3, ax4, ) = plt.subplots(4, 1, figsize=(8, 6), gridspec_kw={'height_ratios': [8, 8, 5, 5]})
-#     if title:
-#         fig.suptitle(title)
-
-#     # Separate data based on significance of p-value
-#     omega_truncating_sig = omega_truncating[omega_truncating["pvalue"] <= pvalue_thres].reset_index(drop = True)
-#     omega_truncating_notsig = omega_truncating[omega_truncating["pvalue"] > pvalue_thres].reset_index(drop = True)
-
-#     # Plot the second bar plot in the middle subplot
-#     sns.barplot(data=omega_truncating_notsig, x='GENE', y='omega_trunc',
-#                 ax=ax1, alpha=1,
-#                 fill = False,
-#                 legend = False,
-#                 order = gene_order,
-#                 color = metrics_colors_dictionary["omega_trunc"])
-
-
-#     # Plot the second bar plot in the middle subplot
-#     sns.barplot(data=omega_truncating_sig, x='GENE', y='omega_trunc',
-#                 ax=ax1, alpha=1,
-#                 legend = False,
-#                 order = gene_order,
-#                 color = metrics_colors_dictionary["omega_trunc"],
-#                 edgecolor = None
-#                )
-
-#     # ax1.set_yscale('log')
-#     ax1.set_xlabel('')
-#     ax1.set_ylabel('dN/dS of\ntruncating', fontsize = 12, rotation = 0, labelpad=35, verticalalignment = 'center')
-#     # ax1.set_yticks([0,3,5])
-#     # ax1.set_yticklabels([0,3,5])
-#     ax1.set_xticklabels([])  # Hide x-axis labels on the middle plot
-#     ax1.axhline(1, color='black', linestyle='--')
-
-#     # Remove top and right spines
-#     ax1.spines['top'].set_visible(False)
-#     ax1.spines['right'].set_visible(False)
-
-#     # if 'omega_truncating' in configs:
-
-
-
-
-
-
-#     # Separate data based on significance of p-value
-#     omega_missense_sig = omega_missense[omega_missense["pvalue"] <= pvalue_thres].reset_index(drop = True)
-#     omega_missense_notsig = omega_missense[omega_missense["pvalue"] > pvalue_thres].reset_index(drop = True)
-
-#     # Plot the second bar plot in the middle subplot
-#     sns.barplot(data=omega_missense_notsig, x='GENE', y='omega_mis',
-#                 ax=ax2, alpha=1,
-#                 fill = False,
-#                 legend = False,
-#                 order = gene_order,
-#                 color = metrics_colors_dictionary["omega_miss"])
-
-
-#     # Plot the second bar plot in the middle subplot
-#     sns.barplot(data=omega_missense_sig, x='GENE', y='omega_mis',
-#                 ax=ax2, alpha=1,
-#                 legend = False,
-#                 order = gene_order,
-#                 color = metrics_colors_dictionary["omega_miss"],
-#                 edgecolor = None
-#                )
-
-#     # ax1.set_title('Bar plot of Indels_score (Dataframe 1)')
-#     # ax2.set_yscale('log')
-#     ax2.set_xlabel('')
-#     ax2.set_ylabel('dN/dS of\nmissense', fontsize = 12, rotation = 0, labelpad=35, verticalalignment = 'center')
-#     ax2.set_xticklabels([])  # Hide x-axis labels on the upper plot
-#     ax2.axhline(1, color='black', linestyle='--')
-#     # Remove top and right spines
-#     ax2.spines['top'].set_visible(False)
-#     ax2.spines['right'].set_visible(False)
-
-
-
-#     df = oncodrive3d_data_scores
-#     name_metric = "o3d_score"
-#     variable_name = df.columns[1]
-#     max_score = df[variable_name].max()
-#     for j, gene in enumerate(gene_order):
-#         try:
-#             value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
-#             value =  value_original / max_score * 5
-#             pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
-#             color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
-#             edgecolor = metrics_colors_dictionary[name_metric]
-#             size = value * 200  # Scale size for better visualization
-#             ax3.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, alpha=1,)
-#             # ax5.text(j, i, f'{value_original:.2f}', ha='center', va='center', fontsize=8, color='black')
-#         except:
-#             continue
-
-#     # Set axis labels
-#     ax3.set_xticks(range(len(gene_order)))
-#     ax3.set_xticklabels([])  # Hide x-axis labels on the middle plot
-#     ax3.set_yticks([])
-#     ax3.set_yticklabels([])
-#     ax3.set_ylabel('3D\nclustering', fontsize = 12, rotation = 0, labelpad=55, verticalalignment = 'center')
-#     ax3.set_ylim(-0.5, 0.5)
-#     # Remove top and right spines
-#     ax3.spines['top'].set_visible(False)
-#     ax3.spines['right'].set_visible(False)
-
-#     # Set title and labels
-#     ax3.set_xlabel('')
-
-
-
-
-#     df = oncodrivefml_data
-#     name_metric = "ofml_score"
-#     variable_name = df.columns[1]
-#     max_score = df[variable_name].max()
-#     for j, gene in enumerate(gene_order):
-#         try:
-#             value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
-#             value =  value_original / max_score * 5
-#             pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
-#             color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
-#             edgecolor = metrics_colors_dictionary[name_metric]
-#             size = value * 200  # Scale size for better visualization
-#             ax4.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, alpha=0.9)
-#             # ax5.text(j, i, f'{value_original:.2f}', ha='center', va='center', fontsize=8, color='black')
-#         except:
-#             continue
-
-#     # Set axis labels
-#     #ax4.set_xticklabels(gene_order, fontsize = 12, rotation=90)
-#     ax4.set_yticks([])
-#     ax4.set_yticklabels([])
-#     ax4.set_xticks(range(num_genes))
-#     ax4.set_xticklabels(gene_order, fontsize = 12, rotation=90)
-#     ax4.set_ylabel('Functional\nimpact\nbias', fontsize = 12, rotation = 0, labelpad=55, verticalalignment = 'center')
-#     ax4.set_ylim(-0.5, 0.5)
-#     # Remove top and right spines
-#     ax4.spines['top'].set_visible(False)
-#     ax4.spines['right'].set_visible(False)
-
-
-
-
-#     # Set consistent x-axis limits for all subplots
-#     separation = 2
-#     ax1.set_xlim([-separation, num_genes - 1 + separation])
-#     ax2.set_xlim([-separation, num_genes - 1 + separation])
-#     ax3.set_xlim([-separation, num_genes - 1 + separation])
-#     ax4.set_xlim([-separation, num_genes - 1 + separation])
-
-#     plt.tight_layout()
-#     plt.show()
-
-#     return fig
