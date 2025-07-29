@@ -13,12 +13,13 @@ workflow PLOTTING_SUMMARY {
     take:
     positive_selection_results_ready
     all_mutrates
+    site_comparison
+    all_samples_depth
     samples
     all_groups
     panel
     full_panel_rich
     seqinfo_df
-    all_samples_depth
 
 
     main:
@@ -47,9 +48,11 @@ workflow PLOTTING_SUMMARY {
     // plot selection at cohort/group level, all the different methods available
     // plot selection per domain at cohort level
 
+    Channel.of([ [ id: "all_samples" ] ])
+    .join( site_comparison )
+    .set{ all_samples_sites }
 
-
-    PLOTSATURATION(all_samples_results, all_samples_depth, panel, seqinfo_df, pdb_tool_df, domain_df)
+    PLOTSATURATION(all_samples_results, all_samples_depth, all_samples_sites, panel, seqinfo_df, pdb_tool_df, domain_df)
     // plot gene + site selection
     // omega selection per domain in gene
     // ? plot saturation kinetics curves
@@ -76,6 +79,7 @@ workflow PLOTTING_SUMMARY {
 
 
     emit:
-    selection_plots = PLOTSELECTION.out.plots
+    selection_plots     = PLOTSELECTION.out.plots
+    saturation_plots    = PLOTSATURATION.out.plots
 
 }

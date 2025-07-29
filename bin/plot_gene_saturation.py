@@ -729,7 +729,7 @@ def plot_gene_selection(mut_count_df,
             )
 
         n_max = np.max(site_selection_df.Selection)
-        ax_ylim_min = 0 if plot_pars["c_margin"] == 0 else 0 - n_max/c_margin
+        ax_ylim_min = 0 #if plot_pars["c_margin"] == 0 else 0 - n_max/c_margin
         ax_ylim_max = n_max + n_max/plot_pars["j_margin"]
         axes[ax].set_ylim(ax_ylim_min, ax_ylim_max)
 
@@ -1529,8 +1529,10 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
     # =====================
     site_selection_gene_grouped = get_selection_groups(site_selection_gene, thr_selection=0.00001)
     site_selection_gene_grouped = site_selection_gene_grouped.merge(pdb_tool_gene[["Pos", "pACC"]])
-    site_selection_gene_grouped = site_selection_gene_grouped.merge(ddg_gene)
-    plot_feat_by_selection_group(site_selection_gene_grouped, save=True, filename=f"{gene}.selection_groups.png")
+
+    if ddg_gene is not None:
+        site_selection_gene_grouped = site_selection_gene_grouped.merge(ddg_gene)
+        plot_feat_by_selection_group(site_selection_gene_grouped, save=True, filename=f"{gene}.selection_groups.png")
 
 
 
@@ -1549,7 +1551,7 @@ def data_loading(sample_name = "all_samples"):
     # only a single column
     depth_df_file = f"all_samples_indv.depths.tsv.gz"
     # depth_df_file = f"{sample_name}.depths.tsv.gz"
-    site_selection = f"{sample_name}.global_loc.aminoacid.comparison.tsv.gz"
+    site_selection = f"{sample_name}.aminoacid.comparison.tsv.gz"
 
 
     omega_file = f"output_mle.{sample_name}.global_loc.tsv"
@@ -1564,6 +1566,8 @@ def data_loading(sample_name = "all_samples"):
     # also there is a dn2proteinmapping file there as well
     consensus_df = pd.read_table(consensus_df_file)
     depth_df = pd.read_table(depth_df_file)
+    print(consensus_df.head())
+    print(depth_df.head())
 
     exons_depth, exons_coord_id = get_dna2prot_depth(maf, depth_df, consensus_df)
     exons_depth["EXON_ID"] = exons_depth.apply(lambda x: find_exon(x, exons_coord_id), axis=1)

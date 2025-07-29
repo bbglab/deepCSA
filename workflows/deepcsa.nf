@@ -389,6 +389,7 @@ workflow DEEPCSA{
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
+            site_comparison_results = OMEGA.out.site_comparison
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
@@ -503,12 +504,13 @@ workflow DEEPCSA{
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         all_mutdensities_file,
+                        site_comparison_results,
+                        ANNOTATEDEPTHS.out.all_samples_depths,
                         TABLE2GROUP.out.json_samples,
                         TABLE2GROUP.out.json_allgroups,
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.panel_annotated_rich,
-                        seqinfo_df,
-                        ANNOTATEDEPTHS.out.all_samples_depths,
+                        seqinfo_df
                         )
     }
 
