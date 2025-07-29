@@ -86,6 +86,7 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/n
 
 include { SELECT_MUTDENSITIES       as SYNMUTDENSITY        } from '../modules/local/select_mutdensity/main'
 include { SELECT_MUTDENSITIES       as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
+
 include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
 
 
@@ -235,9 +236,8 @@ workflow DEEPCSA{
     }
 
 
-
     if (run_mutdensity){
-        // Mutation Rate
+        // Mutation Density
         MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
         MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
         MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
