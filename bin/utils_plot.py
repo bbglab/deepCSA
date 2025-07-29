@@ -148,7 +148,14 @@ metrics_colors_dictionary = {"ofml"        : "viridis_r",
                                 "splicing"    : "#A1C5DF",
                                 }
 
-
+mutation_type_colors = {
+    "C>A": "#5abdeb",
+    "C>G": "#050708",
+    "C>T": "#d43c32",
+    "T>A": "#cbcacb",
+    "T>C": "#aacb72",
+    "T>G": "#e7c9c6"
+}
 
 plots_general_config = {
 

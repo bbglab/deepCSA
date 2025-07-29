@@ -326,6 +326,7 @@ def plot_all_positive_selection(omega_truncating,
                                 gene_order,
                                 title = None,
                                 pvalue_thres = 0.05,
+                                linewidth_def = 0.6,
                                 configs = {}
                                 ):
     num_genes = len(gene_order)
@@ -333,7 +334,7 @@ def plot_all_positive_selection(omega_truncating,
 
 
     # Create the figure and subplots
-    fig, (ax1, ax2, ax3, ax4, ax5, ) = plt.subplots(5, 1, figsize=(8, 8), gridspec_kw={'height_ratios': [5, 5, 5, 5, 5]})
+    fig, (ax1, ax2, ax3, ax4, ax5, ) = plt.subplots(5, 1, figsize=(2.5, 2.9), gridspec_kw={'height_ratios': [5, 5, 5, 5, 5]})
     if title:
         fig.suptitle(title)
 
@@ -346,6 +347,7 @@ def plot_all_positive_selection(omega_truncating,
                 ax=ax1, alpha=1,
                 fill = False,
                 legend = False,
+                linewidth = linewidth_def,
                 order = gene_order,
                 color = metrics_colors_dictionary["omega_trunc"])
 
@@ -354,6 +356,7 @@ def plot_all_positive_selection(omega_truncating,
     sns.barplot(data=omega_truncating_sig, x='GENE', y='omega_trunc',
                 ax=ax1, alpha=1,
                 legend = False,
+                linewidth = linewidth_def,
                 order = gene_order,
                 color = metrics_colors_dictionary["omega_trunc"],
                 edgecolor = None
@@ -361,7 +364,7 @@ def plot_all_positive_selection(omega_truncating,
 
     # ax1.set_yscale('log')
     ax1.set_xlabel('')
-    ax1.set_ylabel('dN/dS of\ntruncating', fontsize = 12, rotation = 0, labelpad=35, verticalalignment = 'center')
+    ax1.set_ylabel('dN/dS of\ntruncating', rotation = 0, labelpad=7, verticalalignment = 'center')
     ax1.set_xticklabels([])  # Hide x-axis labels on the middle plot
     ax1.axhline(1, color='black', linestyle='--')
 
@@ -382,6 +385,7 @@ def plot_all_positive_selection(omega_truncating,
                 ax=ax2, alpha=1,
                 fill = False,
                 legend = False,
+                linewidth = linewidth_def,
                 order = gene_order,
                 color = metrics_colors_dictionary["omega_miss"])
 
@@ -390,6 +394,7 @@ def plot_all_positive_selection(omega_truncating,
     sns.barplot(data=omega_missense_sig, x='GENE', y='omega_mis',
                 ax=ax2, alpha=1,
                 legend = False,
+                linewidth = linewidth_def,
                 order = gene_order,
                 color = metrics_colors_dictionary["omega_miss"],
                 edgecolor = None
@@ -398,7 +403,7 @@ def plot_all_positive_selection(omega_truncating,
     # ax1.set_title('Bar plot of Indels_score (Dataframe 1)')
     # ax2.set_yscale('log')
     ax2.set_xlabel('')
-    ax2.set_ylabel('dN/dS of\nmissense', fontsize = 12, rotation = 0, labelpad=35, verticalalignment = 'center')
+    ax2.set_ylabel('dN/dS of\nmissense', rotation = 0, labelpad=7, verticalalignment = 'center')
     ax2.set_xticklabels([])  # Hide x-axis labels on the upper plot
     ax2.axhline(1, color='black', linestyle='--')
     # Remove top and right spines
@@ -418,8 +423,8 @@ def plot_all_positive_selection(omega_truncating,
             pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
             color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
             edgecolor = metrics_colors_dictionary[name_metric]
-            size = value * 200  # Scale size for better visualization
-            ax3.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, alpha=1,)
+            size = value * 15  # Scale size for better visualization
+            ax3.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=1,)
             # ax5.text(j, i, f'{value_original:.2f}', ha='center', va='center', fontsize=8, color='black')
         except:
             continue
@@ -429,7 +434,10 @@ def plot_all_positive_selection(omega_truncating,
     ax3.set_xticklabels([])  # Hide x-axis labels on the middle plot
     ax3.set_yticks([])
     ax3.set_yticklabels([])
-    ax3.set_ylabel('3D\nclustering', fontsize = 12, rotation = 0, labelpad=55, verticalalignment = 'center')
+    ax3.set_ylabel('3D\nclustering', rotation = 0, labelpad=17,
+                   verticalalignment = 'center',
+                   horizontalalignment = 'right'
+                   )
     ax3.set_ylim(-0.5, 0.5)
     # Remove top and right spines
     ax3.spines['top'].set_visible(False)
@@ -452,8 +460,8 @@ def plot_all_positive_selection(omega_truncating,
             pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
             color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
             edgecolor = metrics_colors_dictionary[name_metric]
-            size = value * 200  # Scale size for better visualization
-            ax4.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, alpha=0.9)
+            size = value * 15  # Scale size for better visualization
+            ax4.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=0.9)
             # ax5.text(j, i, f'{value_original:.2f}', ha='center', va='center', fontsize=8, color='black')
         except:
             continue
@@ -463,7 +471,10 @@ def plot_all_positive_selection(omega_truncating,
     ax4.set_xticklabels([])
     ax4.set_yticks([])
     ax4.set_yticklabels([])
-    ax4.set_ylabel('Functional\nimpact\nbias', fontsize = 12, rotation = 0, labelpad=55, verticalalignment = 'center')
+    ax4.set_ylabel('Functional\nimpact\nbias', rotation = 0, labelpad=17,
+                   verticalalignment = 'center',
+                   horizontalalignment = 'right'
+                   )
     ax4.set_ylim(-0.5, 0.5)
     # Remove top and right spines
     ax4.spines['top'].set_visible(False)
@@ -481,6 +492,7 @@ def plot_all_positive_selection(omega_truncating,
                 ax=ax5, alpha=1, #0.6,
                 fill = False,
                 legend = False,
+                linewidth = linewidth_def,
                 order = gene_order,
                 color = metrics_colors_dictionary["frameshift"])
 
@@ -489,15 +501,19 @@ def plot_all_positive_selection(omega_truncating,
     sns.barplot(data=indels_panel_df_sig, x='GENE', y='Indels_score',
                 ax=ax5, alpha=1,
                 legend = False,
+                linewidth = linewidth_def,
                 order = gene_order,
                 color = metrics_colors_dictionary["frameshift"],
                 edgecolor = None
                )
 
     ax5.set_xlabel('')
-    ax5.set_ylabel('Excess of\nframeshift\nindels', fontsize = 12, rotation = 0, labelpad=45, verticalalignment = 'center')
+    ax5.set_ylabel('Excess of\nframeshift\nindels', rotation = 0,
+                   verticalalignment = 'center',
+                   horizontalalignment = 'right'
+                   )
     ax5.set_xticks(range(num_genes))
-    ax5.set_xticklabels(gene_order, fontsize = 12, rotation=90)
+    ax5.set_xticklabels(gene_order, rotation=90)
     # ax5.set_yticks([0,2,4,6])
     # ax5.set_yticklabels([0,2,4,6])
     ax5.axhline(1, color='black', linestyle='--')
@@ -515,8 +531,6 @@ def plot_all_positive_selection(omega_truncating,
     ax4.set_xlim([-separation, num_genes - 1 + separation])
     ax5.set_xlim([-separation, num_genes - 1 + separation])
 
-
-    plt.tight_layout()
     plt.show()
 
     return fig
