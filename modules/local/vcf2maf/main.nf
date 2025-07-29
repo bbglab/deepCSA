@@ -20,7 +20,7 @@ process VCF2MAF {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    vcf2maf.py 
+    vcf2maf.py  \\
         --vcf ${vcf} \\
         --sampleid ${prefix} \\
         --annotation_file ${annotation} \\
