@@ -200,6 +200,15 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to analyze omega hotspots independently?"
                 },
+                "domains_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "description": "Path to domain definition file to use.",
+                    "help_text": "Path to domain definition file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
                 "omega_hotspots_bedfile": {
                     "type": "string",
                     "format": "file-path",

@@ -87,8 +87,8 @@ workflow CREATE_PANELS {
     }
 
     // Generate BED file with genomic coordinates of sequenced domains
-    domains_file = file("${params.annotations3d}/pfam.tsv")
-    DOMAINANNOTATION(rich_annotated, domains_file)
+    domains = params.domains_file ? file(params.domains_file, checkIfExists: true) : []
+    DOMAINANNOTATION(rich_annotated, domains)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
