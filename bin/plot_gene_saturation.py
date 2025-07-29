@@ -87,7 +87,7 @@ def get_normal_maf(path_maf, gene_list = None, only_protein_pos=True, truncating
         maf_df_f = maf_df_f.dropna(subset="Pos").reset_index(drop=True)
         maf_df_f.Pos= maf_df_f.Pos.astype(int)
 
-    return maf_df_f
+    return maf_df_f, gene_list
 
 
 
@@ -188,7 +188,7 @@ def parse_cds_coord(exon):
 def get_dna_exon_pos(exon_range, strand):
 
     if strand == -1:
-         return np.arange(exon_range[1], exon_range[0] + 1)[::-1]
+        return np.arange(exon_range[1], exon_range[0] + 1)[::-1]
     else:
         return np.arange(exon_range[0], exon_range[1] + 1)
 
@@ -210,12 +210,12 @@ def get_dna_map_to_protein(coord_df):
     prot_pos = np.arange(len(exons)) // 3 + 1
 
     df = pd.DataFrame({"GENE" : coord_df.Gene.unique()[0],
-                       "CHR" : f'chr{coord_df.Chr.unique()[0]}',
-                       "DNA_POS" : exons,
-                       "PROT_POS" : prot_pos,
-                       "REVERSE_STRAND" : strand,
-                       "EXON_RANK" : exons_ix,
-                       "TRANSCRIPT_ID" : coord_df.Ens_transcript_ID.unique()[0]})
+                        "CHR" : f'chr{coord_df.Chr.unique()[0]}',
+                        "DNA_POS" : exons,
+                        "PROT_POS" : prot_pos,
+                        "REVERSE_STRAND" : strand,
+                        "EXON_RANK" : exons_ix,
+                        "TRANSCRIPT_ID" : coord_df.Ens_transcript_ID.unique()[0]})
 
     return df
 
@@ -617,11 +617,11 @@ def avg_per_pos_ddg(mut_df, ddg_prot):
 
 
 def get_ddg_gene(gene, gene_mut, o3d_annotations, o3d_seq_df,
-                 # o3d_alt_seq_df
-                 ):
+                    # o3d_alt_seq_df
+                    ):
 
     uni_id = o3d_seq_df[o3d_seq_df["Gene"] == gene].Uniprot_ID.unique()[0]
-    ddg_path = os.path.join(o3d_annotations, "stability_change", f"{uni_id}_ddg.json")
+    ddg_path = f"{o3d_annotations}/stability_change/{uni_id}_ddg.json"
     # alt_uni_id = get_equivalent_alt_prot_id(gene, o3d_seq_df, o3d_alt_seq_df)
     # alt_ddg_path = os.path.join(o3d_annotations, "stability_change", f"{alt_uni_id}_ddg.json")
     if os.path.isfile(ddg_path):
@@ -1232,41 +1232,6 @@ def plot_domain_selection(
     plt.show()
 
 
-# def mut_count_side_barplot(
-#     df,
-#     color_dict,
-#     figsize=(3.4, 2.3),
-#     max_count=None,
-#     title=None,
-#     save=False,
-#     filename="mut_count_side_barplot.png"
-#     ):
-
-#     title = title
-
-#     order = ["truncating", "missense", "synonymous"]
-#     df = df.set_index("Consequence").loc[order].reset_index()
-
-#     fig, ax = plt.subplots(figsize=figsize)
-#     bars = ax.bar(df["Consequence"], df["Count"], color=[color_dict[c] for c in df["Consequence"]])
-
-#     for bar in bars:
-#         height = bar.get_height()
-#         ax.text(bar.get_x() + bar.get_width() / 2, height, str(height),
-#                 ha='center', va='bottom', fontsize=10)
-
-
-#     plt.ylabel("Number of mutations")
-#     plt.ylim(0, max_count if isinstance(max_count, int) else np.max(df["Count"]))
-#     ax.set_title(title, pad=15)
-#     ax.spines['top'].set_visible(False)
-#     ax.spines['right'].set_visible(False)
-#     ax.set_xticklabels([label.capitalize() for label in df["Consequence"]])
-
-#     if save:
-#         fig.savefig(filename, dpi=300, bbox_inches='tight')
-#     plt.show()
-
 def mut_count_horizontal_barplot(
     df,
     color_dict,
@@ -1383,15 +1348,19 @@ def plot_feat_by_selection_group(df, figsize=(10, 4), save=False, filename="sele
 # TODO:
 # - Check that max res depth equal max exon depth, if not use the one that's actually included in the plot
 
-def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection):
-    for gene in ["TP53"]:
-        plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection)
+def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, list_genes, output_directory = '.'):
+    for gene in list_genes:
+        try:
+            plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, output_directory)
+        except Exception as e:
+            print(f"Saturation plots for gene: {gene} did not work.")
+            print("Error", e)
 
 
 
 indels = False
 
-def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection):
+def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, output_dir):
 
     # Data
     # ====
@@ -1407,7 +1376,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
     uni_id = o3d_seq_df[o3d_seq_df["Gene"] == gene].Uniprot_ID.values[0]
     pdb_tool_gene = o3d_pdb_tool_df[o3d_pdb_tool_df["Uniprot_ID"] == uni_id].reset_index(drop=True)
 
-    if indels == False:
+    if not indels :
         gene_mut_count = gene_mut_count[gene_mut_count["Consequence"] != "indel"].reset_index(drop=True)
         gene_mut = gene_mut[gene_mut["Consequence"] != "indel"].reset_index(drop=True)
 
@@ -1488,7 +1457,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
         thr_selection=0.00001,
         default_track_order=False,
         save=True,
-        filename=f"{gene}.saturation_all.png"
+        filename=f"{output_dir}/{gene}.saturation_all.png"
         )
 
 
@@ -1497,15 +1466,18 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
     # Side plots
     # ==========
 
-    plot_domain_selection(
-        domain_selection_gene,
-        gene,
-        domain_color_dict_gene,
-        title=f"{gene}\nDomain selection",
-        legend2_coord=(0.75, 1),
-        save=True,
-        filename=f"{gene}.domain_selection.png"
-        )
+    if domain_selection_gene.shape[0] > 0:
+        plot_domain_selection(
+            domain_selection_gene,
+            gene,
+            domain_color_dict_gene,
+            title=f"{gene}\nDomain selection",
+            legend2_coord=(0.75, 1),
+            save=True,
+            filename=f"{output_dir}/{gene}.domain_selection.png"
+            )
+    else:
+        print("Not plotting domains, no omega value for domains")
 
 
     # max_count = int(np.max(gene_mut_cnsq_count["Count"]))
@@ -1520,7 +1492,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
         gene_mut_cnsq_count, plot_pars["colors"],
         title=f"{gene}",
         save=True,
-        filename=f"{gene}.normal.stacked_horizontal.png"
+        filename=f"{output_dir}/{gene}.normal.stacked_horizontal.png"
         )
 
 
@@ -1532,7 +1504,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_
 
     if ddg_gene is not None:
         site_selection_gene_grouped = site_selection_gene_grouped.merge(ddg_gene)
-        plot_feat_by_selection_group(site_selection_gene_grouped, save=True, filename=f"{gene}.selection_groups.png")
+        plot_feat_by_selection_group(site_selection_gene_grouped, save=True, filename=f"{output_dir}/{gene}.selection_groups.png")
 
 
 
@@ -1560,7 +1532,7 @@ def data_loading(sample_name = "all_samples"):
 
 
     # Count each mutation only ones if it appears in multiple reads
-    maf = get_normal_maf(mutations_file, ["TP53"], truncating=True)
+    maf, list_of_genes = get_normal_maf(mutations_file, truncating=True)
 
     # this consensus_df can come from the dna2proteinmapping step
     # also there is a dn2proteinmapping file there as well
@@ -1605,7 +1577,7 @@ def data_loading(sample_name = "all_samples"):
     # Oncodrive3D data
     o3d_df = pd.read_csv(o3d_df_file)[["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]]
 
-    return maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection
+    return maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, list_of_genes
 
 
 
@@ -1650,8 +1622,8 @@ domain = domain[(domain.Type == "DOMAIN") & (domain.Evidence == "Pfam")].reset_i
 def main(sample_name, outdir):
     click.echo("Plotting omega results...")
     # get_reference_data()
-    maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection = data_loading(sample_name)
-    plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection)
+    maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list = data_loading(sample_name)
+    plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list, outdir)
 
 
 if __name__ == '__main__':
