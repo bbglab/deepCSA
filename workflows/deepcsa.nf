@@ -360,14 +360,10 @@ workflow DEEPCSA{
 
     // if (params.expected_mutated_cells & params.dnds){
     if (params.dnds){
-        covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
-        ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
         DNDS(somatic_mutations,
                     DEPTHSEXONSCONS.out.subset,
                     CREATEPANELS.out.exons_consensus_bed,
-                    CREATEPANELS.out.exons_consensus_panel,
-                    covariates,
-                    ref_transcripts
+                    CREATEPANELS.out.exons_consensus_panel
                     )
     }
 

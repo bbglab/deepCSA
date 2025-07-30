@@ -2,13 +2,8 @@ process ONCODRIVE3D_RUN {
     tag "$meta.id"
     label 'process_high'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
+    container 'docker.io/bbglab/oncodrive3d:1.0.5'
 
-    // TODO pending to push the container somewhere and be able to retrieve it
-    container 'docker.io/ferriolcalvet/oncodrive3d:latest'
 
     input:
     tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
@@ -60,7 +55,7 @@ process ONCODRIVE3D_RUN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 
@@ -72,7 +67,7 @@ process ONCODRIVE3D_RUN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 }
