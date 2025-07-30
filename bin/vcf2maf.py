@@ -148,8 +148,11 @@ def read_from_vardict_VCF_all(sample,
     ##
     for ele in ["CDPAM", "CADAM", "NDPAM"]:
         if ele not in dat_full.columns:
-            print(f"{ele} not present in the format field, revise the VCF reading function")
-            return dat_full
+            print(f"{ele} not present in the format field, revise your VCF")
+            # return dat_full
+            print(f"In the meantime, we are using {ele[:3]} to fill the information for {ele}")
+            dat_full[ele] = dat_full[ele[:3]].astype(int)
+
     # assign it to the column
     dat_full["ALT_DEPTH_AM"] = [int(v[1]) for v in dat_full["CADAM"].str.split(",")]
     dat_full["REF_DEPTH_AM"] = [int(v[0]) for v in dat_full["CADAM"].str.split(",")]
