@@ -20,14 +20,12 @@ def parse_panel_n_domains(consensus_panel_rich_file, domains_file):
 
     panel_all_gene_transcript = all_protein_positions[["GENE", "Feature"]].drop_duplicates()
 
-    pfam_domains = pd.read_table(domains_file)
-    pfam_domains_summary = pfam_domains[['Ens_Transcr_ID', 'Begin', 'End','NAME']].merge(panel_all_gene_transcript,
-                                                                                         left_on = 'Ens_Transcr_ID',
-                                                                                         right_on = 'Feature',
-                                                                                         how = 'inner'
-                                                                                         ).drop(
-                                                                                            columns = ['Feature']
-                                                                                            )
+    pfam_domains = pd.read_table(domains_file, usecols= ['Ens_Transcr_ID', 'Begin', 'End', 'NAME']).drop_duplicates()
+    pfam_domains_summary = pfam_domains.merge(panel_all_gene_transcript,
+                                                left_on = 'Ens_Transcr_ID',
+                                                right_on = 'Feature',
+                                                how = 'inner'
+                                                ).drop(columns = ['Feature'])
     pfam_domains_summary["NAME"] = pfam_domains_summary["GENE"] + '--' + pfam_domains_summary["NAME"]
 
     return all_protein_positions_summary, pfam_domains_summary

@@ -1047,7 +1047,7 @@
         {
             "$ref": "#/$defs/signature_extraction_parameters"
         },
-        {   
+        {
             "$ref": "#/$defs/max_job_request_options"
         },
         {

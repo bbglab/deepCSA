@@ -17,13 +17,13 @@ process EXPAND_REGIONS {
 
     script:
     def expansion = task.ext.expansion ?: 0
-    def bedfile_to_use = task.ext.using_bedfile ? "custom_regions_bedfiles.bed" : "None"
-    def autoexons = params.omega_autoexons ? "1" : "0"
+    def custom_bedfile = task.ext.using_bedfile ? "--bedfile custom_regions_bedfiles.bed" : ""
+    def autoexons = params.omega_autoexons ? "--autoexons" : ""
     """
     cat ${bedfile} >> custom_regions_bedfiles.bed
-    add_hotspots.py ${panel} \\
-                    ${bedfile_to_use} \\
-                    ${expansion} \\
+    add_hotspots.py --panel_file ${panel} \\
+                    ${custom_bedfile} \\
+                    --expand ${expansion} \\
                     ${autoexons}
 
     cat <<-END_VERSIONS > versions.yml

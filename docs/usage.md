@@ -113,7 +113,7 @@ params {
     omega_withingene            = true
     omega_autodomains           = true
     omega_autoexons             = true
-    
+
     mutated_cells_vaf           = true
     mutepi_genes_to_recode      = null
 
@@ -170,7 +170,7 @@ params {
     omega_withingene            = true
     omega_autodomains           = true
     omega_autoexons             = true
-    
+
     regressions                 = true
     // additional regression parameters, see nextflow_schema.json for more info
       ...
@@ -187,8 +187,10 @@ params {
   <!-- TODO we should revise if we can provide more specific information on how to download the cache -->
   - CADD scores (see: [CADD downloads page](https://cadd.gs.washington.edu/download) "All possible SNVs of GRCh38/hg38" file)
   - COSMIC signatures (i.e. [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/) (select context size = 96 and your desired species of interest))
+
+- Provide custom domain definition file.
   <!-- * dNdScv datasets (see: ) -->
-  
+
 ### Mandatory parameter configuration
 
 See [File formatting docs](file_formatting.md) for more details on the structure of files that can be provided to deepCSA.
@@ -212,11 +214,12 @@ params {
     // oncodrive3d + fancy plots
     datasets3d                 = "oncodrive3d/datasets"
     annotations3d              = "oncodrive3d/annotations"
+    domains_file               = "pfam.tsv"
 
 
     vep_cache                  = ".vep"
 
-    // Ensembl VEP for homo_sapiens, but should be adjusted accordingly to species and cache version 
+    // Ensembl VEP for homo_sapiens, but should be adjusted accordingly to species and cache version
     vep_genome                 = "GRCh38"
     vep_species                = "homo_sapiens"
     vep_cache_version          = 111
@@ -239,17 +242,17 @@ params {
     custom_groups               = false
     custom_groups_file          = null
     custom_groups_separator     = 'tab'
-    
+
     // customize the annotation of certain regions i.e. TERT promoter mutations, other non-coding drivers...
     customize_annotation        = false
     custom_annotation_tsv       = ''
 
-    
+
     // define a set of common known hotspots
     hotspots_annotation         = false
     hotspots_definition_file    = ''
 
-    
+
     // definition of specific regions within genes with specific interest on computing dN/dS
     omega_hotspots_bedfile      = null
 
@@ -304,7 +307,7 @@ The script itself contains this brief explanation on the usage and required para
 #######
 
 #######
-# Usage: 
+# Usage:
 #######
 ## If your sample names are NOT in a column called SAMPLE_ID,
 ## you can use the --sample-name-column option to specify it.
@@ -318,7 +321,7 @@ The script itself contains this brief explanation on the usage and required para
 
 
 #######
-# Mandatory columns in input mutations: 
+# Mandatory columns in input mutations:
 #######
 
 # if the maf is from deepCSA, it must contain the following columns, as they were originally generated

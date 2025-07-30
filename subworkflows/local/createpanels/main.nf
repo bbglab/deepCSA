@@ -87,7 +87,7 @@ workflow CREATE_PANELS {
     }
 
     // Generate BED file with genomic coordinates of sequenced domains
-    domains = params.domains_file ? file(params.domains_file, checkIfExists: true) : []
+    domains = file(params.domains_file, checkIfExists: true)
     DOMAINANNOTATION(rich_annotated, domains)
 
     // Create captured-specific panels: all modalities
