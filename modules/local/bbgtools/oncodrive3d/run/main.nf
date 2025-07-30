@@ -2,13 +2,8 @@ process ONCODRIVE3D_RUN {
     tag "$meta.id"
     label 'process_high'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
+    container 'docker.io/bbglab/oncodrive3d:1.0.5'
 
-    // TODO pending to push the container somewhere and be able to retrieve it
-    container 'docker.io/ferriolcalvet/oncodrive3d:latest'
 
     input:
     tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
@@ -29,8 +24,8 @@ process ONCODRIVE3D_RUN {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    // To be set as true to prioritize MANE transcripts but penalize plotting 
-    // annotations (we should also change the datasets dir to the MANE one) 
+    // To be set as true to prioritize MANE transcripts but penalize plotting
+    // annotations (we should also change the datasets dir to the MANE one)
     def mane = task.ext.mane ? '--mane' : ''
     def vep_raw = task.ext.vep_raw ? '--o3d_transcripts --use_input_symbols' : ''
     """
@@ -60,7 +55,7 @@ process ONCODRIVE3D_RUN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 
@@ -72,7 +67,7 @@ process ONCODRIVE3D_RUN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 }

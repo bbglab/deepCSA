@@ -22,7 +22,7 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     prefix = "${meta.id}${prefix}"
 
     // Increase/decrease pixel_size to decrease/increase resolution and speed/slow png generation
-    //TODO revise argument definition
+    // TODO revise argument definition
     """
     oncodrive3D chimerax-plot -o $prefix \\
                               -g $genes_csv \\
@@ -37,7 +37,7 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 
@@ -49,7 +49,7 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 }

@@ -12,10 +12,12 @@ workflow DNDS {
     depth
     bedfile
     panel
-    covariates
-    ref_trans
 
     main:
+
+    covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
+    ref_trans = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
+
 
     SUBSETMUTATIONS(mutations, bedfile)
 
