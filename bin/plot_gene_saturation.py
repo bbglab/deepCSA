@@ -409,12 +409,12 @@ def get_exon_depth_saturation(gene_depth, gene_mut, dna=False):
         exon_depth_prot = exon_depth_prot.drop(columns=[0])
 
         exon_depth["COVERED"] = exon_depth_prot.groupby("EXON_RANK").apply(lambda x: sum(x.COVERED)).values
-        exon_depth_prot["MUTATED"] = exon_depth_prot.PROT_POS.isin(gene_mut.Pos.unique()).astype(int)
+        exon_depth_prot["MUTATED"] = exon_depth_prot["PROT_POS"].isin(gene_mut["Pos"].unique()).astype(int)
         exon_depth["MUTATED"] = exon_depth_prot.groupby("EXON_RANK").apply(lambda x: sum(x.MUTATED)).values
         exon_depth["SATURATION"] = exon_depth["MUTATED"] / exon_depth["COVERED"]
 
-    check_mutated_masked = exon_depth_prot[(exon_depth_prot["MUTATED"] == 1) & (exon_depth_prot["COVERED"] == 0)]
-    check_mutated_masked["GENE"] = gene_depth.GENE.unique()[0]
+    # check_mutated_masked = exon_depth_prot[(exon_depth_prot["MUTATED"] == 1) & (exon_depth_prot["COVERED"] == 0)]
+    # check_mutated_masked["GENE"] = gene_depth.GENE.unique()[0]
 
     return exon_depth
 
@@ -539,17 +539,15 @@ def plot_count_track(
                         )
 
 
-def get_domain_selection_gene(df, domain_gene, gene, sort_by_impact=True):
+def get_domain_selection_gene(domain_selection_all_genes, domain_gene, gene, sort_by_impact=True):
 
-    domain_selection_gene = df.copy()
-    domain_selection_gene = df[df.gene.str.startswith(gene)]
-    domain_selection_gene = domain_selection_gene.merge(domain_gene.rename(columns={"Description": "selection_id"})[["selection_id", "Begin", "End"]], how="inner")
+    domain_selection_gene = domain_selection_all_genes.merge(domain_gene.rename(columns={"NAME": "gene"})[["gene", "DOMAIN_ID", "Begin", "End"]], how="inner")
     domain_selection_gene = domain_selection_gene.sort_values(["Begin", "impact"]).reset_index(drop=True)
     if sort_by_impact:
-        average_dnds = domain_selection_gene.groupby("selection_id").apply(lambda x: x["dnds"].mean()).to_dict()
-        domain_selection_gene["average_dnds"] = domain_selection_gene["selection_id"].map(average_dnds)
+        average_dnds = domain_selection_gene.groupby("DOMAIN_ID").apply(lambda x: x["dnds"].mean()).to_dict()
+        domain_selection_gene["average_dnds"] = domain_selection_gene["DOMAIN_ID"].map(average_dnds)
         domain_selection_gene = domain_selection_gene.sort_values(["average_dnds", "impact"], ascending=[False, True]).reset_index(drop=True)
-    domain_selection_gene["x_pos"] = domain_selection_gene["selection_id"].astype("category").cat.set_categories(domain_selection_gene["selection_id"].unique()).cat.codes
+    domain_selection_gene["x_pos"] = domain_selection_gene["DOMAIN_ID"].astype("category").cat.set_categories(domain_selection_gene["DOMAIN_ID"].unique()).cat.codes
     domain_selection_gene["x_pos"] += np.where(domain_selection_gene["impact"] == "missense", -0.15, 0.15)
 
     return domain_selection_gene
@@ -1060,31 +1058,31 @@ def plot_gene_selection(mut_count_df,
         ax = lst_tracks.index("Domain")
 
         domain_color_dict = {}
-        for n, name in enumerate(domain_df["Description"].unique()):
+        for n, name in enumerate(domain_df["DOMAIN_ID"].unique()):
             domain_color_dict[name] = f"C{n}"
 
         n = 0
         added_domain = []
         for i, row in domain_df.iterrows():
-            if pd.Series([row["Description"], row["Begin"], row["End"]]).isnull().any():
+            if pd.Series([row["DOMAIN_ID"], row["Begin"], row["End"]]).isnull().any():
                 continue
 
-            name = row["Description"]
+            name = row["DOMAIN_ID"]
             start = int(row["Begin"])
             end = int(row["End"])
 
-            if name not in added_domain and (protein_len >= plot_pars["len_txt_thr"] or gene == "KDM6A"):
+            if name not in added_domain and (protein_len >= plot_pars["len_txt_thr"]):
                 axes[ax].fill_between(range(start, end + 1), -0.5, 0.45, alpha=0.5, color=domain_color_dict[name], label=name, lw=0.5)
             else:
                 axes[ax].fill_between(range(start, end + 1), -0.5, 0.45, alpha=0.5, color=domain_color_dict[name], lw=0.5)
 
             if name not in added_domain:
-                if protein_len < plot_pars["len_txt_thr"] and gene != "KDM6A":
+                if protein_len < plot_pars["len_txt_thr"]:
                     y = -0.04
                     axes[ax].text(((start + end) / 2)+0.5, y, name, ha='center', va='center', fontsize=10, color="black")
                 added_domain.append(name)
         axes[ax].set_yticks([])
-        if (protein_len >= plot_pars["len_txt_thr"] or gene == "KDM6A") and len(added_domain) > 0:
+        if (protein_len >= plot_pars["len_txt_thr"]) and len(added_domain) > 0:
             pass
             # axes[ax].legend(fontsize=plot_pars["legend_fontsize"], frameon=plot_pars["legend_frameon"],
             #                 bbox_to_anchor=(plot_pars["domain_x_bbox_to_anchor"][gene], plot_pars["domain_y_bbox_to_anchor"]), title = "Domain",
@@ -1167,35 +1165,41 @@ def plot_gene_selection(mut_count_df,
 
 
 def plot_domain_selection(
-    df,
+    domain_selection_in_gene,
     gene,
     color_map,
     title="Domain selection",
     show_domain_legend=False,
     legend2_coord=(1.05, 1),
     save=False,
-    filename="domain_selection.png"
+    filename="domain_selection.png",
+    pvalue_threshold = 0.05
     ):
 
     custom_markers = {"missense": "o", "truncating": "D"}  # 'o' = Circle, 'D' = Rotated Square
     custom_size = {"missense": 200, "truncating": 145}  # Larger for missense
 
 
-    df = df.drop(columns=["Begin", "End"]).drop_duplicates()
-    df["color"] = df["selection_id"].map(color_map)
-    df["edge_width"] = df["pvalue"].apply(lambda p: 1.5 if p < 0.0001 else 0.2)
+    domain_selection_in_gene = domain_selection_in_gene.drop(columns=["Begin", "End"]).drop_duplicates()
+
+    # this dictionary is defined in the gene plot with the gene--domain name
+    domain_selection_in_gene["color"] = domain_selection_in_gene["DOMAIN_ID"].map(color_map)
+
+    domain_selection_in_gene["edge_width"] = domain_selection_in_gene["pvalue"].apply(lambda p: 1.5 if p < pvalue_threshold else 0.2)
 
     fig = plt.figure(figsize=(5, 2.5))
 
     # H-line and V-line
-    plt.xlim(df["x_pos"].min() - 0.5, df["x_pos"].max() + 0.5)
+    plt.xlim(domain_selection_in_gene["x_pos"].min() - 0.5, domain_selection_in_gene["x_pos"].max() + 0.5)
     plt.hlines(1, *plt.xlim(), lw=1, zorder=1, alpha=1, color="gray", linestyles="dashed")
-    plt.vlines(df["x_pos"], ymin=df["lower"], ymax=df["upper"], lw=1, zorder=1, alpha=1, color="black")
+    plt.vlines(domain_selection_in_gene["x_pos"], ymin=domain_selection_in_gene["lower"], ymax=domain_selection_in_gene["upper"], lw=1, zorder=1, alpha=1, color="black")
 
     # Scatter plot
-    for selection_id, color in color_map.items():
+    for gene_domain_name, color in color_map.items():
         for impact, marker in custom_markers.items():
-            subset = df[(df["selection_id"] == selection_id) & (df["impact"] == impact)]
+            subset = domain_selection_in_gene[(domain_selection_in_gene["DOMAIN_ID"] == gene_domain_name)
+                                                & (domain_selection_in_gene["impact"] == impact)]
+
             plt.scatter(
                 subset["x_pos"], subset["dnds"], lw=0, edgecolor="black",
                 color="white", marker=marker, s=custom_size[impact]
@@ -1207,15 +1211,15 @@ def plot_domain_selection(
             )
 
     ax = plt.gca()
-    ax.set_xticks(range(len(df["selection_id"].unique())))
-    ax.set_xticklabels(df["selection_id"].unique(), rotation=45, ha="right")
-    plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)
+    ax.set_xticks(range(len(domain_selection_in_gene["DOMAIN_ID"].unique())))
+    ax.set_xticklabels(domain_selection_in_gene["DOMAIN_ID"].unique(), rotation=45, ha="right")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     plt.ylabel("dN/dS")
     plt.title(title)
 
     # Legends
-    selection_legend = [mpatches.Patch(color=color, label=selection_id) for selection_id, color in color_map.items()]
+    selection_legend = [mpatches.Patch(color=color, label=domain_id) for domain_id, color in color_map.items()]
     custom_size_legend = {"missense": 100, "truncating": 70}
     impact_legend = [
         plt.scatter(
@@ -1224,11 +1228,11 @@ def plot_domain_selection(
             ) for impact in custom_markers
         ]
 
-    legend1 = plt.legend(handles=selection_legend, title="Domain ID", bbox_to_anchor=(1.05, 0.65), loc="upper left", frameon=False)
-    legend2 = plt.legend(handles=impact_legend, title="Impact" if show_domain_legend else None, bbox_to_anchor=legend2_coord, loc="upper left", frameon=False)
 
+    legend2 = plt.legend(handles=impact_legend, title="Impact" if show_domain_legend else None, bbox_to_anchor=legend2_coord, loc="upper left", frameon=False)
     if show_domain_legend:
-        plt.gca().add_artist(legend1)
+        legend1 = plt.legend(handles=selection_legend, title="Domain ID", bbox_to_anchor=(1.05, 0.65), loc="upper left", frameon=False)
+        ax.add_artist(legend1)
 
     if save:
         fig.savefig(filename, dpi=300, bbox_inches='tight')
@@ -1278,10 +1282,10 @@ def mut_count_horizontal_barplot(
 def get_selection_groups(df, thr_selection):
 
     df = df.copy().rename(columns={"Protein_position": "Pos"})
-    g0 = df[df["Selection"] == 0]
-    g1 = df[(df["Selection"] != 0) & (df["p_value"] >= thr_selection)]
+    g0 = df[df["Selection"] == 0].copy()
+    g1 = df[(df["Selection"] != 0) & (df["p_value"] >= thr_selection)].copy()
 
-    g2 = df[df["p_value"] < thr_selection]
+    g2 = df[df["p_value"] < thr_selection].copy()
     g2 = g2.sort_values("Selection").reset_index(drop=True)
 
     g0["Group"] = "G0"
@@ -1387,18 +1391,22 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
         gene_mut = gene_mut[gene_mut["Consequence"] != "indel"].reset_index(drop=True)
 
     prot_len = int(exons_depth[exons_depth["GENE"] == gene].PROT_POS.max())
-    domain_gene = domain[domain["Gene"] == gene].reset_index(drop=True)
+    domain_gene = domain[domain["GENE"] == gene].reset_index(drop=True)
 
-    # Max exons depth across all exons
-    all_exons_depth = exons_depth[["GENE", "EXON_RANK", "DEPTH", "COVERED"]].groupby("GENE").apply(
-        lambda x: x.groupby("EXON_RANK", group_keys=False).apply(lambda x: np.nan if sum(x.COVERED) == 0 else sum(x.DEPTH) / sum(x.COVERED))).drop(
-        columns=["GENE", "EXON_RANK", "DEPTH", "COVERED"]).reset_index().rename(columns = {0 : "DEPTH"})
+    all_exons_depth = (
+                        exons_depth
+                        .groupby(["GENE", "EXON_RANK"], as_index=False)
+                        .agg(total_depth=("DEPTH", "sum"), total_covered=("COVERED", "sum"))
+                        .assign(DEPTH=lambda df: np.where(df["total_covered"] == 0, np.nan, df["total_depth"] / df["total_covered"]))
+                        .drop(columns=["total_depth", "total_covered"])
+                    )
+
     max_depth = all_exons_depth.DEPTH.max()
 
     gene_exons_depth = exons_depth[exons_depth["GENE"] == gene].sort_values("DNA_POS")
     gene_exons_depth = gene_exons_depth.dropna(subset=["EXON_RANK"]).reset_index(drop=True)
 
-    exon_selection_gene = exon_selection[exon_selection.gene.str.startswith(gene)]
+    exon_selection_gene = exon_selection[exon_selection["gene"].str.startswith(gene)]
     exon_selection_gene = exon_selection_gene.sort_values("exon_rank").reset_index(drop=True).rename(columns={"exon_rank" : "EXON_RANK"})
     exon_selection_gene = exon_selection_gene[["EXON_RANK", "impact", "dnds", "lower", "upper", "pvalue"]]
 
@@ -1550,15 +1558,15 @@ def data_loading(sample_name, domain):
                                     ].reset_index(drop=True)
 
     # Exon selection
-    exon_selection = omega_subgenic_table.merge(
+    omega_exon = omega_subgenic_table[omega_subgenic_table["gene"].str.contains('--exon_')]
+    exon_selection = omega_exon.merge(
         exons_depth.rename(columns={"EXON_ID" : "gene", "EXON_RANK" : "exon_rank"}).dropna()[["gene", "exon_rank"]].drop_duplicates().reset_index(drop=True),
         how="left").sort_values(["gene", "exon_rank", "impact"]).reset_index(drop=True)
     print("> exon_selection:", exon_selection.shape )
 
     # Domain selection
     domain_selection = omega_subgenic_table.copy()
-    domain_selection["selection_id"] = domain_selection["gene"].str.split("--").apply(lambda x: x[1].split("-")[0])
-    domain_selection = domain_selection[domain_selection["selection_id"].isin(domain["Description"].values)].reset_index(drop=True)
+    domain_selection = domain_selection[domain_selection["gene"].isin(domain["NAME"].values)].reset_index(drop=True)
     print("> domain_selection:", domain_selection.shape )
 
 
@@ -1585,15 +1593,10 @@ def get_reference_data(domain_file):
 
     # Oncodrive3D
     o3d_seq_df = pd.read_table("seq_for_mut_prob.tsv")
-
     o3d_pdb_tool_df = pd.read_table("pdb_tool_df.tsv")
 
-
-    # FIXME to make it universal for a fixed definition of domains,
-    # wait for merging of force-am branch
     # Domain annotations
     domain = pd.read_table(domain_file, sep="\t", low_memory=False)
-    domain = domain[(domain["Type"] == "DOMAIN") & (domain["Evidence"] == "Pfam")].reset_index(drop=True)
 
     return o3d_seq_df, o3d_pdb_tool_df, domain
 
@@ -1604,9 +1607,11 @@ def get_reference_data(domain_file):
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
 @click.option('--domain_file', type=click.Path(), help='Path to the domain file')
 def main(sample_name, outdir, domain_file):
-    click.echo("Plotting omega results...")
+    click.echo("Starting to run plot saturation results...")
     o3d_seq_df, o3d_pdb_tool_df, domain = get_reference_data(domain_file)
+    click.echo("Reference data loaded...")
     maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list = data_loading(sample_name, domain)
+    click.echo("Sample data loaded...")
     plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list, outdir, o3d_seq_df, o3d_pdb_tool_df, domain)
 
 

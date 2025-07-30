@@ -139,7 +139,6 @@ workflow DEEPCSA{
                                 ]).first()
                             : Channel.empty()
 
-
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
     custom_groups_table = params.custom_groups_file
@@ -150,7 +149,7 @@ workflow DEEPCSA{
     // otherwise I am using the input csv as a dummy value channel
     custom_bed_file     = params.custom_bedfile
                                 ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
-                                : Channel.fromPath(params.input)
+                                : Channel.fromPath( params.input )
 
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
@@ -506,7 +505,8 @@ workflow DEEPCSA{
                         TABLE2GROUP.out.json_allgroups,
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.panel_annotated_rich,
-                        seqinfo_df
+                        seqinfo_df,
+                        CREATEPANELS.out.domains_in_panel
                         )
     }
 

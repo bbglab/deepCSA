@@ -20,6 +20,7 @@ workflow PLOTTING_SUMMARY {
     panel
     full_panel_rich
     seqinfo_df
+    domain_df
 
 
     main:
@@ -27,12 +28,6 @@ workflow PLOTTING_SUMMARY {
     pdb_tool_df   = params.annotations3d
                             ? Channel.fromPath( "${params.annotations3d}/pdb_tool_df.tsv", checkIfExists: true).first()
                             : Channel.empty()
-
-    // replace by domains file
-    domain_df      = params.annotations3d
-                            ? Channel.fromPath( "${params.annotations3d}/uniprot_feat.tsv", checkIfExists: true).first()
-                            : Channel.empty()
-
 
     // think if we want to include this here
     // PLOTNEEDLES(muts_all_samples, sequence_information_df)

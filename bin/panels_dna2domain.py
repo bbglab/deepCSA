@@ -26,6 +26,7 @@ def parse_panel_n_domains(consensus_panel_rich_file, domains_file):
                                                 right_on = 'Feature',
                                                 how = 'inner'
                                                 ).drop(columns = ['Feature'])
+    pfam_domains_summary["DOMAIN_ID"] = pfam_domains_summary["NAME"].copy()
     pfam_domains_summary["NAME"] = pfam_domains_summary["GENE"] + '--' + pfam_domains_summary["NAME"]
 
     return all_protein_positions_summary, pfam_domains_summary
@@ -80,6 +81,7 @@ def generate_domains2dna_mapping(consensus_panel_rich_file, domains_file, output
     pfam_domains_genomic_summary["END"] = pfam_domains_genomic_summary["END"].astype(int)
 
     pfam_domains_genomic_summary.to_csv(output_file, header = False, index = False, sep = '\t')
+    domains_info.to_csv("domains_info.tsv", header = True, index = False, sep = '\t')
 
 
 
