@@ -252,6 +252,9 @@ if __name__ == '__main__':
     # json_filters = sys.argv[4]
     # req_plots    = sys.argv[5]
 
-    generate_all_side_figures(sample_name_,
-                                mut_filee,
-                                omega_filee)
+    try:
+        generate_all_side_figures(sample_name_,
+                                   mut_filee,
+                                   omega_filee)
+    except Exception as e:
+        print(f"Error occurred: {e}")
