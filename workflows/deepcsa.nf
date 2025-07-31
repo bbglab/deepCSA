@@ -70,7 +70,7 @@ include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkfl
 
 include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkflows/local/plottingsummary/main'
 
-include { REGRESSIONS               as REGRESSIONSMUTDENSITY          } from '../subworkflows/local/regressions/main'
+include { REGRESSIONS               as REGRESSIONSMUTDENSITY       } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGA            } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGAGLOB        } from '../subworkflows/local/regressions/main'
@@ -218,7 +218,11 @@ workflow DEEPCSA{
 
 
     if (params.vep_species == 'homo_sapiens'){
-        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples, CREATEPANELS.out.exons_consensus_panel)
+        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples,
+                            CREATEPANELS.out.exons_consensus_panel,
+                            ANNOTATEDEPTHS.out.all_samples_depths)
+        // depths_exons_positions
+        // panel_exons_bed
     }
 
 
@@ -495,7 +499,7 @@ workflow DEEPCSA{
         }
     }
 
-    if ( params.omega & params.oncodrive3d & params.oncodrivefml & params.indels ){
+    if ( params.omega & params.oncodrive3d & params.oncodrivefml & params.indels  & (params.vep_species == 'homo_sapiens') ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         all_mutdensities_file,
@@ -506,7 +510,8 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.panel_annotated_rich,
                         seqinfo_df,
-                        CREATEPANELS.out.domains_in_panel
+                        CREATEPANELS.out.domains_in_panel,
+                        DNA2PROTEINMAPPING.out.depths_exons_positions
                         )
     }
 

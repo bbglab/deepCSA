@@ -213,11 +213,6 @@ def plot_oncodrivefml_side(geneee_data):
     # Display the plot
     plt.show()
 
-#     # Annotate the Z-score, formula and p-value with LaTeX
-#     formula = (f'$Z = \\frac{{{observed_mean:.2f} - {background_mean:.2f}}}{{{background_std:.2f}}} = {z_score:.2f}$\n'
-#                f'$p$-value = {p_value:.2g}')
-#     plt.text(observed_mean - 2, mid_y * 1.25, formula,
-#              color='black', ha='center', va='center')
 
     return fig
 
@@ -275,17 +270,6 @@ def plotting_indels_side(data_gene):
             )
 
 
-    # # Arrows with annotations
-    # arrow_props = dict(facecolor='black', arrowstyle='<-')
-
-    # # Arrow 1
-    # ax.annotate('', xy=(line_pos1 + 15, 0.5), xytext=(max_syn/1.25, 1.2),
-    #             arrowprops=arrow_props)
-
-    # # Arrow 2
-    # ax.annotate('', xy=(line_pos2, 2.5), xytext=(max_syn, 1.75),
-    #             arrowprops=arrow_props)
-
     # formula_ratio = (f'$\\frac{{{data_gene["pa_TRUNC/NOTTRUNC"]:.2f}}}{{{data_gene["Npa_NM3/M3"]:.2f}}} = {data_gene["pa/Npa"]:.2f}$')
     # formula_ratio = (f'$\\frac{{{data_gene["pa_TRUNC/NOTTRUNC"]:.2f}}}{{{data_gene["Npa_NM3/M3"]:.2f}}} = {data_gene["pa/Npa"]:.2f}$')
     ax.text(max_syn, 1.5, f'$Score$ = {data_gene["pa/Npa"]:.2f}',
@@ -297,15 +281,11 @@ def plotting_indels_side(data_gene):
             fontsize=12, ha='center', va='center'
             )
 
-    # Add title and labels
     ax.set_xlabel('Count')
-
-    # Customize the ticks and labels
     ax.xaxis.set_ticks([])
     ax.set_xticklabels([])
     ax.set_yticklabels([])
 
-    # Update labels
     plt.xlabel('Number of indels')
     plt.ylabel('')
 
@@ -604,8 +584,11 @@ def get_all_data(sample, outdir, pvaluee = 0.05):
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
 def main(sample_name, outdir):
     click.echo("Plotting omega results...")
-    generate_all_side_figures(sample_name, outdir)
-    get_all_data(sample_name, outdir)
+    try:
+        generate_all_side_figures(sample_name, outdir)
+        get_all_data(sample_name, outdir)
+    except Exception as e:
+        print("Error in the process", e)
 
 if __name__ == '__main__':
     main()

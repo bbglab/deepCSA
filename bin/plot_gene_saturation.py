@@ -20,9 +20,6 @@ import matplotlib.patches as mpatches
 
 
 
-from utils_impacts import GROUPING_DICT, CONSEQUENCES_LIST
-
-
 #####
 # Define functions
 #####
@@ -75,7 +72,6 @@ def get_normal_maf(path_maf, gene_list = None, only_protein_pos=True, truncating
         "canonical_Feature" : "Ens_transcript_ID",
         "canonical_Protein_position" : "Pos",
         "plotting_broad_consequence" : "Consequence",
-        "CHROM" : "CHR",
         "POS" : "DNA_POS"}
         )
 
@@ -120,208 +116,6 @@ def get_o3d_gene_data(
     score_gene_df["Cluster"] = score_gene_df["Cluster"].fillna(0)
 
     return score_gene_df
-
-
-# Depth
-# =====
-
-
-# Get exons coord
-# ---------------
-
-def get_tr_lookup(transcript_id, max_iter = 20):
-
-    server = "https://rest.ensembl.org"
-    ext = f"/lookup/id/{transcript_id}?expand=1"
-
-    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-
-    iter_count = 0
-    while not r.ok and iter_count < max_iter:
-        print("Retrying lookup... (attempt {}/{})".format(iter_count+1, max_iter))
-        time.sleep(5)
-        r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-        iter_count += 1
-
-    return r.json()
-
-
-def get_cds_coord(transcript_id, len_cds_with_utr, max_iter = 20):
-
-    server = "https://rest.ensembl.org"
-    ext = f"/map/cds/{transcript_id}/1..{len_cds_with_utr}?"
-
-    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-
-    iter_count = 0
-    while not r.ok and iter_count < max_iter:
-        print("Retrying CDS map... (attempt {}/{})".format(iter_count+1, max_iter))
-        time.sleep(5)
-        r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-        iter_count += 1
-
-    return r.json()["mappings"]
-
-
-def parse_cds_coord(exon):
-
-    strand = exon["strand"]
-
-    if strand == 1:
-        start = exon["start"]
-        end = exon["end"]
-    else:
-        start = exon["end"]
-        end = exon["start"]
-
-    if "id" in exon:
-        exon_id = exon["id"]
-        chrom = f'chr{exon["seq_region_name"]}'
-
-        return exon_id, [chrom, start, end, strand]
-
-    else:
-        chrom = exon["seq_region_name"]
-
-        return [chrom, start, end, strand]
-
-
-# Get Exon coord to protein pos
-# -----------------------------
-
-def get_dna_exon_pos(exon_range, strand):
-
-    if strand == -1:
-        return np.arange(exon_range[1], exon_range[0] + 1)[::-1]
-    else:
-        return np.arange(exon_range[0], exon_range[1] + 1)
-
-
-def get_exon_ix(i, exon_range, strand):
-
-    len_exon = len(get_dna_exon_pos(exon_range, strand))
-
-    return np.repeat(i, len_exon)
-
-
-def get_dna_map_to_protein(coord_df):
-
-    strand = coord_df["Strand"].unique()[0]
-
-    exons_range = coord_df[["Start", "End"]].values
-    exons = np.concatenate([get_dna_exon_pos(exon, strand) for exon in exons_range])
-    exons_ix = np.concatenate([get_exon_ix(i, exon, strand) for i, exon in enumerate(exons_range)])
-    prot_pos = np.arange(len(exons)) // 3 + 1
-
-    df = pd.DataFrame({"GENE" : coord_df["Gene"].unique()[0],
-                        "CHR" : f'chr{coord_df["Chr"].unique()[0]}',
-                        "DNA_POS" : exons,
-                        "PROT_POS" : prot_pos,
-                        "REVERSE_STRAND" : strand,
-                        "EXON_RANK" : exons_ix,
-                        "TRANSCRIPT_ID" : coord_df["Ens_transcript_ID"].unique()[0]})
-
-    return df
-
-
-def get_prot_coverage(dna_prot_df, gene, filter_masked_depth=True):
-
-    gene_dna_prot_df = dna_prot_df[dna_prot_df["GENE"] == gene]
-    gene_dna_prot_df = gene_dna_prot_df.dropna(subset=["PROT_POS"])[["PROT_POS", "COVERED", "DEPTH"]].reset_index(drop=True)
-    gene_dna_prot_df = gene_dna_prot_df.groupby("PROT_POS").sum().reset_index()
-    gene_dna_prot_df.COVERED = (gene_dna_prot_df.COVERED > 0).astype(int)
-
-    return gene_dna_prot_df
-
-
-def get_exon_coord_wrapper(maf):
-
-    # Init df for coordinates
-    coord_df = maf[["Gene", "Ens_transcript_ID"]].drop_duplicates().reset_index(drop=True)
-
-    # Get coord
-    coord_df_lst = []
-    exons_coord_df_lst = []
-    for gene, transcript in coord_df.values:
-        print("Processing gene:", gene)
-        coord_lst = []
-
-        # Get the coord of exons with CDS and UTR as well as the lenght with UTR and exons ID
-        exons_lookup = get_tr_lookup(transcript) # We will use this to get Exons ID
-        for i, exon in enumerate(exons_lookup["Exon"]):
-            exon_id, exons_coord = parse_cds_coord(exon)
-            exons_coord_df_lst.append([f"{gene}--{i+1}_{transcript}_{exon_id}"] + exons_coord)
-
-        # Get the coord of the exons without UTR to map to protein positions
-        for i, exon in enumerate(get_cds_coord(transcript, exons_lookup["length"])):
-            coord_lst.append((parse_cds_coord(exon) + [i]))
-
-        gene_coord_df = pd.DataFrame(coord_lst, columns = ["Chr", "Start", "End", "Strand", "Exon_rank"])
-        gene_coord_df["Gene"] = gene
-        gene_coord_df["Ens_transcript_ID"] = transcript
-        coord_df_lst.append(gene_coord_df)
-
-    coord_df = pd.concat(coord_df_lst)
-    exons_coord_df = pd.DataFrame(exons_coord_df_lst, columns = ["ID", "Chr", "Start", "End", "Strand"])
-
-    return coord_df, exons_coord_df
-
-
-# Get a DNA to protein mapping and coverage info & DNA to GENE annotation
-# -----------------------------------------------------------------------
-
-def dna2prot_depth(maf, coord_df, dna_sites, depth_df):
-
-    # Map DNA to protein pos, get exons index to protein pos, etc
-    dna_prot_df_lst = []
-    for gene in maf["Gene"].unique():
-        gene_coord_df = coord_df[coord_df["Gene"] == gene]
-        dna_prot_df_lst.append(get_dna_map_to_protein(gene_coord_df))
-    dna_prot_df = pd.concat(dna_prot_df_lst)
-
-    # Merge CDS position with availble sites (not masked) and depth info
-    # and any other site that was included in the panel (splicing sites out of the CDS)
-    dna_prot_df = dna_sites.merge(dna_prot_df, on=["GENE", "CHR", "DNA_POS"], how="outer")
-    dna_prot_df["COVERED"] = dna_prot_df["CONTEXT"].notnull().astype(int)
-    dna_prot_df = dna_prot_df.merge(depth_df.rename(columns={"CHROM" : "CHR",
-                                                                "POS" : "DNA_POS"}),
-                                    how="left", on=["CHR", "DNA_POS"])
-    dna_prot_df.loc[dna_prot_df["COVERED"] == 0, "DEPTH"] = 0
-
-    return dna_prot_df
-
-
-def get_dna2prot_depth(maf, depth_df, consensus_df):
-
-    consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on = ["CHROM", "POS"], how = 'left')
-    consensus_df = consensus_df.rename(columns={"CHROM" : "CHR", "POS" : "DNA_POS"})
-
-    if "DEPTH" not in depth_df:
-        depth_df["DEPTH"] = depth_df.drop(columns=["CHROM", "POS", "CONTEXT"]).mean(1)
-    depth_df = depth_df[["CHROM", "POS", "DEPTH"]].rename(columns = {"CHROM" : "CHR", "POS" : "DNA_POS"})
-
-    coord_df, exons_coord_df = get_exon_coord_wrapper(maf)
-    dna_prot_df = dna2prot_depth(maf, coord_df, consensus_df, depth_df)
-
-    return dna_prot_df, exons_coord_df
-
-
-# Utils function to retrieve exon ID from coordinate
-
-def find_exon(x_coord, exon_coord_df):
-
-    dna_pos, chrom, strand = x_coord["DNA_POS"], x_coord["CHR"], x_coord["REVERSE_STRAND"]
-
-    if strand == -1:
-        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] <= dna_pos) & (dna_pos <= exon_coord_df['Start'])]
-
-    else:
-        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] >= dna_pos) & (dna_pos >= exon_coord_df['Start'])]
-
-    return matches['ID'].values[0] if not matches.empty else np.nan
-
-
-
 
 
 
@@ -1357,6 +1151,7 @@ def plot_feat_by_selection_group(df, figsize=(10, 4), save=False, filename="sele
 # - Check that max res depth equal max exon depth, if not use the one that's actually included in the plot
 
 def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, list_genes, output_directory = '.', o3d_seq_df=None, o3d_pdb_tool_df=None, domain=None):
+    # for gene in ["TP53"]:
     for gene in list_genes:
         try:
             plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, output_directory, o3d_seq_df, o3d_pdb_tool_df, domain)
@@ -1380,17 +1175,16 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
     gene_mut_count = gene_mut.groupby(['Consequence', 'Pos']).size().reset_index(name='Count')
     gene_mut_cnsq_count = gene_mut.groupby(['Consequence']).size().reset_index(name='Count')
 
-
     # Oncodrive3D
     o3d_gene_df = get_o3d_gene_data(gene, o3d_seq_df, o3d_df)
-    uni_id = o3d_seq_df[o3d_seq_df["Gene"] == gene].Uniprot_ID.values[0]
+    uni_id = o3d_seq_df[o3d_seq_df["Gene"] == gene]["Uniprot_ID"].values[0]
     pdb_tool_gene = o3d_pdb_tool_df[o3d_pdb_tool_df["Uniprot_ID"] == uni_id].reset_index(drop=True)
 
     if not indels :
         gene_mut_count = gene_mut_count[gene_mut_count["Consequence"] != "indel"].reset_index(drop=True)
         gene_mut = gene_mut[gene_mut["Consequence"] != "indel"].reset_index(drop=True)
 
-    prot_len = int(exons_depth[exons_depth["GENE"] == gene].PROT_POS.max())
+    prot_len = int(exons_depth[exons_depth["GENE"] == gene]["PROT_POS"].max())
     domain_gene = domain[domain["GENE"] == gene].reset_index(drop=True)
 
     all_exons_depth = (
@@ -1401,7 +1195,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
                         .drop(columns=["total_depth", "total_covered"])
                     )
 
-    max_depth = all_exons_depth.DEPTH.max()
+    max_depth = all_exons_depth["DEPTH"].max()
 
     gene_exons_depth = exons_depth[exons_depth["GENE"] == gene].sort_values("DNA_POS")
     gene_exons_depth = gene_exons_depth.dropna(subset=["EXON_RANK"]).reset_index(drop=True)
@@ -1517,37 +1311,19 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
 #####
 # Load cohort data
 #####
-def data_loading(sample_name, domain):
+def data_loading(sample_name, domain, exons_depth):
 
-    # TODO
-    # revise if this one or the DNA2PROTEINMAPPING already
-    consensus_df_file = "consensus.exons_splice_sites.unique.tsv"
-
-    # TODO
-    # replace with the depths for the sample we are plotting,
-    # only a single column
-    depth_df_file = f"all_samples_indv.depths.tsv.gz"
-    # depth_df_file = f"{sample_name}.depths.tsv.gz"
-    site_selection = f"{sample_name}.aminoacid.comparison.tsv.gz"
-
-
-    omega_file = f"output_mle.{sample_name}.global_loc.tsv"
-    o3d_df_file = f"{sample_name}.3d_clustering_pos.csv"
     mutations_file = f"{sample_name}.somatic.mutations.tsv"
-
 
     # Count each mutation only ones if it appears in multiple reads
     maf, list_of_genes = get_normal_maf(mutations_file, truncating=True)
 
-    # this consensus_df can come from the dna2proteinmapping step
-    # also there is a dn2proteinmapping file there as well
-    consensus_df = pd.read_table(consensus_df_file)
-    depth_df = pd.read_table(depth_df_file)
-    print(consensus_df.head())
-    print(depth_df.head())
 
-    exons_depth, exons_coord_id = get_dna2prot_depth(maf, depth_df, consensus_df)
-    exons_depth["EXON_ID"] = exons_depth.apply(lambda x: find_exon(x, exons_coord_id), axis=1)
+    ## Positive selection
+    site_selection = f"{sample_name}.aminoacid.comparison.tsv.gz"
+
+    omega_file = f"output_mle.{sample_name}.global_loc.tsv"
+    o3d_df_file = f"{sample_name}.3d_clustering_pos.csv"
 
 
     # Omega data
@@ -1586,7 +1362,7 @@ def data_loading(sample_name, domain):
 
 
 
-def get_reference_data(domain_file):
+def get_reference_data(domain_file, exons_depths):
     #####
     # Get reference data
     #####
@@ -1598,7 +1374,9 @@ def get_reference_data(domain_file):
     # Domain annotations
     domain = pd.read_table(domain_file, sep="\t", low_memory=False)
 
-    return o3d_seq_df, o3d_pdb_tool_df, domain
+    exons_depths_df = pd.read_table(exons_depths, sep="\t", low_memory=False)
+
+    return o3d_seq_df, o3d_pdb_tool_df, domain, exons_depths_df
 
 
 
@@ -1606,14 +1384,20 @@ def get_reference_data(domain_file):
 @click.option('--sample_name', type=str, default='all_samples', help='Name of the sample being processed.')
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
 @click.option('--domain_file', type=click.Path(), help='Path to the domain file')
-def main(sample_name, outdir, domain_file):
+@click.option('--exons_depths', type=click.Path(), help='Path to the exons depths file')
+def main(sample_name, outdir, domain_file, exons_depths):
     click.echo("Starting to run plot saturation results...")
-    o3d_seq_df, o3d_pdb_tool_df, domain = get_reference_data(domain_file)
-    click.echo("Reference data loaded...")
-    maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list = data_loading(sample_name, domain)
-    click.echo("Sample data loaded...")
-    plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list, outdir, o3d_seq_df, o3d_pdb_tool_df, domain)
 
+    try :
+        o3d_seq_df, o3d_pdb_tool_df, domain, exons_depths_df = get_reference_data(domain_file, exons_depths)
+        click.echo("Reference data loaded...")
+        maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list = data_loading(sample_name, domain, exons_depths_df)
+        click.echo("Sample data loaded...")
+        plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list, outdir, o3d_seq_df, o3d_pdb_tool_df, domain)
+
+    except Exception as e:
+        print("Error in the process", e)
 
 if __name__ == '__main__':
     main()
+

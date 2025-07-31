@@ -13,6 +13,7 @@ process PLOT_SATURATION {
     path (gene_data_df)
     path (pdb_df)
     path (domains_df)
+    tuple val(meta5), path (exons_depths_df)
 
     output:
     tuple val(meta), path("**.png")  , emit: plots
@@ -24,11 +25,11 @@ process PLOT_SATURATION {
     prefix = "${meta.id}${prefix}"
     """
     mkdir ${prefix}.plots
-    cut -f 1,2,6 ${panel_file} | uniq > consensus.exons_splice_sites.unique.tsv
     plot_gene_saturation.py \\
                     --sample_name ${prefix} \\
                     --outdir ${prefix}.plots \\
-                    --domain_file ${domains_df}
+                    --domain_file ${domains_df} \\
+                    --exons_depths ${exons_depths_df}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

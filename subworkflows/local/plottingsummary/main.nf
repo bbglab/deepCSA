@@ -21,6 +21,7 @@ workflow PLOTTING_SUMMARY {
     full_panel_rich
     seqinfo_df
     domain_df
+    exons_depths_df
 
 
     main:
@@ -47,7 +48,7 @@ workflow PLOTTING_SUMMARY {
     .join( site_comparison )
     .set{ all_samples_sites }
 
-    PLOTSATURATION(all_samples_results, all_samples_depth, all_samples_sites, panel, seqinfo_df, pdb_tool_df, domain_df)
+    PLOTSATURATION(all_samples_results, all_samples_depth, all_samples_sites, panel, seqinfo_df, pdb_tool_df, domain_df, exons_depths_df)
     // plot gene + site selection
     // omega selection per domain in gene
     // ? plot saturation kinetics curves
