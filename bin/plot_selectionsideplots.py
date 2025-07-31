@@ -504,4 +504,7 @@ if __name__ == '__main__':
     # maf = subset_mutation_dataframe(mut_file, json_filters)
     # plot_manager(sample_name, maf, req_plots)
     # manager(mut_file, o3d_seq_file_, sample_name_, sample_name_out_)
-    generate_all_side_figures(sample_name_)
+    try :
+        generate_all_side_figures(sample_name_)
+    except Exception as e:
+        print(f"Error generating figures for {sample_name_}: {e}")

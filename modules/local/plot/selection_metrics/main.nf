@@ -10,8 +10,8 @@ process PLOT_SELECTION_METRICS {
     path (gene_data_df)
 
     output:
-    tuple val(meta), path("**.pdf")  , emit: plots
-    path "versions.yml"              , topic: versions
+    tuple val(meta), path("**.pdf"), optional : true    , emit: plots
+    path "versions.yml"                                 , topic: versions
 
 
     script:
