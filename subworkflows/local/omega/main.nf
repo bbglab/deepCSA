@@ -36,18 +36,18 @@ workflow OMEGA_ANALYSIS{
     domains_file
     mutationdensities
     complete_panel
+    exons_file
 
 
     main:
 
     // Create a channel for the domains file if omega_autodomains is true
-    domains_ch = params.omega_autodomains ? domains_file : Channel.empty()
+    domains_ch = params.omega_autodomains ? domains_file.map{ it -> it[1]} : []
+    exons_ch = params.omega_autoexons ? exons_file.map{ it -> it[1]} : []
 
     // Create a channel for the hotspots bedfile if provided
-    hotspots_ch = params.omega_hotspots_bedfile ? Channel.fromPath(params.omega_hotspots_bedfile) : Channel.empty()
+    subgenic_ch = params.omega_subgenic_bedfile ? file(params.omega_subgenic_bedfile) : []
 
-    // Combine both channels
-    hotspots_bed_file = domains_ch.mix(hotspots_ch).collect().ifEmpty { file(params.input) }
 
     site_comparison_results = Channel.empty()
     global_loc_results = Channel.empty()
@@ -71,7 +71,7 @@ workflow OMEGA_ANALYSIS{
 
 
     if (params.omega_withingene){
-        EXPANDREGIONS(panel, hotspots_bed_file)
+        EXPANDREGIONS(panel, domains_ch, exons_ch, subgenic_ch)
         expanded_panel = EXPANDREGIONS.out.panel_increased.first()
         json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
     } else {

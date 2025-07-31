@@ -155,13 +155,13 @@ params {
 
 We can also customize omega by providing a file with a specific definition of genomic regions in which omega will be computed independently. For example this could be useful for a custom definition of protein domains, or for a definition of other genomic elements within genes in which the user wants to have an independent measurement of omega.
 
-The accompaining hotspot_expansion parameter is used for expanding the definition of this region to analyse a given number of aminoacids on each extreme. The goal of this is to be able to capture the signal focused on the area of interest but also including some more neighbouring areas to potenitally increase the stability of the values in case that the targeted area is very small. In summary, except for the cases in this the `omega_hotspots_bedfile` defined regions are very small <10 AA the `hotspot_expansion` parameter should be set to 0.
+The accompaining hotspot_expansion parameter is used for expanding the definition of this region to analyse a given number of aminoacids on each extreme. The goal of this is to be able to capture the signal focused on the area of interest but also including some more neighbouring areas to potenitally increase the stability of the values in case that the targeted area is very small. In summary, except for the cases in this the `omega_subgenic_bedfile` defined regions are very small <10 AA the `hotspot_expansion` parameter should be set to 0.
 
 #### Related parameters
 
 ```console
 params {
-    omega_hotspots_bedfile      = null
+    omega_subgenic_bedfile      = null
     hotspot_expansion           = 0
 }
 ```

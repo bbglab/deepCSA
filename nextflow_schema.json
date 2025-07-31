@@ -209,7 +209,7 @@
                     "help_text": "Path to domain definition file to use.",
                     "fa_icon": "far fa-file-code"
                 },
-                "omega_hotspots_bedfile": {
+                "omega_subgenic_bedfile": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,

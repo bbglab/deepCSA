@@ -7,7 +7,9 @@ process EXPAND_REGIONS {
 
     input:
     tuple val(meta), path(panel)
-    path (bedfile)
+    path (domains)
+    path (exons)
+    path (custom)
 
     output:
     tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
@@ -16,15 +18,15 @@ process EXPAND_REGIONS {
 
 
     script:
-    def expansion = task.ext.expansion ?: 0
-    def custom_bedfile = task.ext.using_bedfile ? "--bedfile custom_regions_bedfiles.bed" : ""
-    def autoexons = params.omega_autoexons ? "--autoexons" : ""
+    // def expansion = task.ext.expansion ?: 0
+    def autoexons = params.omega_autoexons ? "--autoexons ${exons}" : ""
+    def autodomains = params.omega_autodomains ? "--autodomains ${domains}" : ""
+    def custom_regions = params.omega_subgenic_bedfile ? "--custom ${custom}" : ""
     """
-    cat ${bedfile} >> custom_regions_bedfiles.bed
     add_hotspots.py --panel_file ${panel} \\
-                    ${custom_bedfile} \\
-                    --expand ${expansion} \\
-                    ${autoexons}
+                        ${autoexons} \\
+                        ${autodomains} \\
+                        ${custom_regions}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
