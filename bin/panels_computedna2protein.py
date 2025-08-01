@@ -238,7 +238,12 @@ def get_dna2prot_depth(gene_n_transcript_info, depth_file, consensus_file):
 
     dna_prot_df["EXON_ID"] = dna_prot_df.apply(lambda x: find_exon(x, exons_coord_df), axis=1)
 
-    return dna_prot_df, exons_coord_df
+    # fix coordinates order in exons_coord_df for BED
+    exons_coord_df_final = exons_coord_df.copy()
+    exons_coord_df_final.loc[exons_coord_df_final["Strand"] == -1, "Start"] = exons_coord_df.loc[exons_coord_df["Strand"] == -1, "End"]
+    exons_coord_df_final.loc[exons_coord_df_final["Strand"] == -1, "End"] = exons_coord_df.loc[exons_coord_df["Strand"] == -1, "Start"]
+
+    return dna_prot_df, exons_coord_df_final
 
 
 # Utils function to retrieve exon ID from coordinate

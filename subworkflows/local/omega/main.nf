@@ -42,7 +42,7 @@ workflow OMEGA_ANALYSIS{
     main:
 
     // Create a channel for the domains file if omega_autodomains is true
-    domains_ch = params.omega_autodomains ? domains_file.map{ it -> it[1]} : []
+    domains_ch = params.omega_autodomains ? domains_file : []  // .map{ it -> it[1]} : []
     exons_ch = params.omega_autoexons ? exons_file.map{ it -> it[1]} : []
 
     // Create a channel for the hotspots bedfile if provided
