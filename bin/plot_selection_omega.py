@@ -250,7 +250,10 @@ def plot_omega_vertical(df,
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
 def main(sample_name, mut_file, omega_file, outdir):
     click.echo("Plotting omega results...")
-    generate_all_side_figures(sample_name, mut_file, omega_file, outdir)
+    try:
+        generate_all_side_figures(sample_name, mut_file, omega_file, outdir)
+    except Exception as e:
+        click.echo(f"Error occurred: {e}")
 
 if __name__ == '__main__':
     main()
