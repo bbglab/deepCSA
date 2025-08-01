@@ -243,8 +243,6 @@ def plot_omega_vertical(df,
 
 
 
-
-
 @click.command()
 @click.option('--sample_name', type=str, help='Name of the sample being processed.')
 @click.option('--mut_file', type=click.Path(exists=True), help='Input mutations file')
