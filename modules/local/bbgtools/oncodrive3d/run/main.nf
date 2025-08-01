@@ -16,7 +16,7 @@ process ONCODRIVE3D_RUN {
     tuple val(meta), path("**mutations.processed.tsv")   , emit: mut_processed, optional: true
     tuple val(meta), path("**miss_prob.processed.json")  , emit: prob_processed, optional: true
     tuple val(meta), path("**seq_df.processed.tsv")      , emit: seq_processed, optional: true
-    tuple val(meta), path("**.log")                      , emit: log
+    tuple val(meta), path("**run_*.log")                 , emit: log
     path "versions.yml"                                  , topic: versions
 
 

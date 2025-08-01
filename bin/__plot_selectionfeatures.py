@@ -674,9 +674,7 @@ def generate_plot(gene,
                                                                                          gene_pos)
 
     # Domain
-    domain_gene = o3d_annot_df[(o3d_annot_df["Gene"] == gene) &
-                               (o3d_annot_df["Type"] == "DOMAIN") &
-                               (o3d_annot_df["Evidence"] == "Pfam")].reset_index(drop=True)
+    domain_gene = o3d_annot_df[(o3d_annot_df["Gene"] == gene)].reset_index(drop=True)
 
     # Transcripts and Uniprot ID
     canonical_tr, o3d_tr = get_transcript_ids(gene, maf_df_f, o3d_seq_df)

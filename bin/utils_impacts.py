@@ -203,6 +203,31 @@ def most_deleterious_within_variant(impact_vep_string):
         return '-'
 
 
+
+def get_broad_consequence(list_of_annotations):
+    """
+    Group variants into broader consequence types.
+    """
+
+    consequence_rank_dict = { consequence : rank for rank, consequence in enumerate(CONSEQUENCES_LIST) }
+    rank_consequence_dict = { rank : consequence for rank, consequence in enumerate(CONSEQUENCES_LIST) }
+
+    list_of_single_annotations = []
+    list_of_broad_annotations = []
+    for x in list_of_annotations:
+        all_consequences = x.split(",")
+        all_consequences_ranks = map(lambda x: consequence_rank_dict[x], all_consequences)
+        single_consequence = rank_consequence_dict[min(all_consequences_ranks)]
+        list_of_single_annotations.append(single_consequence)
+        if single_consequence in GROUPING_DICT:
+            list_of_broad_annotations.append(GROUPING_DICT[single_consequence])
+        else:
+            list_of_broad_annotations.append(single_consequence)
+
+    return list_of_broad_annotations
+
+
+
 broadimpact_grouping_dict = {
         "missense": ["missense"],
         "nonsense": ["nonsense"],

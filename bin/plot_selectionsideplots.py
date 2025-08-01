@@ -1,52 +1,29 @@
 #!/usr/bin/env python
 
-
-import sys, os
+import click
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import linregress,norm
-# import tabix
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
+
+from scipy.stats import norm
+
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from read_utils import custom_na_values
-
-
-# @click.command()
-# @click.option('--sample_name', type=str, help='Name of the sample being processed.')
-# @click.option('--mut_file', type=click.Path(exists=True), help='Input mutation file')
-# @click.option('--out_maf', type=click.Path(), help='Output MAF file')
-# @click.option('--json_filters', type=click.Path(exists=True), help='Input mutation filtering criteria file')
-# @click.option('--req_plots', type=click.Path(exists=True), help='Column names to output')
-# # @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
-
-# def main(sample_name, mut_file, out_maf, json_filters, req_plots): # , plot):
-#     click.echo(f"Subsetting MAF file...")
-#     subset_mutation_dataframe(sample_name, mut_file, out_maf, json_filters, req_plots)
-
-# if __name__ == '__main__':
-#     main()
-
-
-sample_name_  = sys.argv[1]
-mut_file     = sys.argv[2]
-o3d_seq_file_ = sys.argv[3]
-# sample_name_out_ = sys.argv[4]
-# out_maf      = sys.argv[3]
-# json_filters = sys.argv[4]
-# req_plots    = sys.argv[5]
+from utils_plot import metrics_colors_dictionary
+from plot_selection_omega import plot_omega_vertical, build_counts_from_df_complete
 
 
 
 def generate_all_side_figures(sample,
+                                outdir = '.',
                                 gene_list = None,
-                                tools = ["oncodrivefml", "oncodrive3d", "omega_trunc", "omega_mis", "excess_indels"]
+                                tools = ["oncodrivefml", "omega_trunc", "omega_mis", "excess_indels"]
                                 ):
 
-    snvs_maf = pd.read_table(f"{sample}.somatic.mutations.tsv", na_values = custom_na_values)
+    maf = pd.read_table(f"{sample}.somatic.mutations.tsv", na_values = custom_na_values)
+    snvs_maf = maf[maf["TYPE"] == "SNV"].reset_index(drop = True)
 
     possible_genes = []
     if "oncodrivefml" in tools:
@@ -59,16 +36,18 @@ def generate_all_side_figures(sample,
 
     if "omega_trunc" in tools or "omega_mis" in tools:
         omega_data = pd.read_table(f"output_mle.{sample}.tsv")
-        omega_data = omega_data[omega_data["impact"].isin(['missense', 'truncating'])]
+        omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
+                                    & ~(omega_data["gene"].str.contains('--'))        # select only genes
+                                ]
         if "omega_trunc" in tools :
-            omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-            omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
+            omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+            omega_truncating.columns = ["GENE", "mutations_trunc", "omega_trunc", "pvalue", "lower", "upper"]
             omega_truncating_genes = list(pd.unique(omega_truncating["GENE"]))
             possible_genes += omega_truncating_genes
 
         if "omega_mis" in tools :
-            omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-            omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
+            omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+            omega_missense.columns = ["GENE", "mutations_mis", "omega_mis", "pvalue", "lower", "upper"]
             omega_missense_genes = list(pd.unique(omega_truncating["GENE"]))
             possible_genes += omega_missense_genes
 
@@ -82,11 +61,8 @@ def generate_all_side_figures(sample,
 
     gene_list = list(set(possible_genes).intersection(set(snvs_maf["canonical_SYMBOL"].unique())))
 
-
-    os.makedirs(f"{sample}.plots")
-
     for genee in gene_list:
-        print(genee)
+        print(genee, end = '\t')
         try :
 
             if "oncodrivefml" in tools:
@@ -95,175 +71,36 @@ def generate_all_side_figures(sample,
                     oncodrivefml_gene_data = oncodrivefml_data[oncodrivefml_data["GENE"] == genee].to_dict(orient='records')[0]
 
                     fig_gene_fml = plot_oncodrivefml_side(oncodrivefml_gene_data)
-
-                    fig_gene_fml.savefig(f"{sample}.plots/{genee}.{sample}.oncodrivefml_side.pdf", bbox_inches='tight')
+                    fig_gene_fml.savefig(f"{outdir}/{genee}.{sample}.oncodrivefml.pdf", bbox_inches='tight', dpi = 100)
                     plt.show()
                     plt.close()
+                    print("ofml done", end = '\t')
 
             if "omega_trunc" in tools:
                 if genee in omega_truncating_genes and genee in omega_missense_genes:
                     omega_df = build_counts_from_df_complete(genee, snvs_maf, omega_truncating, omega_missense)
 
-                    fig_gene_omega = plot_omega_side_complete(omega_df)
-                    fig_gene_omega.savefig(f"{sample}.plots/{genee}.{sample}.omega_side.pdf", bbox_inches='tight')
+                    fig_gene_omega = plot_omega_vertical(omega_df)
+                    fig_gene_omega.savefig(f"{outdir}/{genee}.{sample}.omega.pdf", bbox_inches='tight', dpi = 100)
                     plt.show()
                     plt.close()
-
+                    print("omega done", end = '\t')
 
             if "excess_indels" in tools:
                 if genee in indels_genes:
                     indel_data_gene = indels_data[indels_data["SYMBOL"] == genee].to_dict(orient='records')[0]
+
                     fig_gene_indel = plotting_indels_side(indel_data_gene)
-                    fig_gene_indel.savefig(f"{sample}.plots/{genee}.{sample}.indels_side.pdf", bbox_inches='tight')
+                    fig_gene_indel.savefig(f"{outdir}/{genee}.{sample}.indels.pdf", bbox_inches='tight', dpi = 100)
                     plt.show()
                     plt.close()
+                    print("indels done")
 
         except Exception as exe:
+            print("failed processing of")
             print(genee)
             print(exe)
 
-
-
-
-
-
-
-def build_counts_from_df_complete(genee, snvs_maf, omega_truncating, omega_missense):
-
-    trunc_omega = float(omega_truncating[omega_truncating["GENE"] == genee]["omega_trunc"].values[0])
-    trunc_pvalue = float(omega_truncating[omega_truncating["GENE"] == genee]["pvalue"].values[0])
-
-    miss_omega = float(omega_missense[omega_missense["GENE"] == genee]["omega_mis"].values[0])
-    miss_pvalue = float(omega_missense[omega_missense["GENE"] == genee]["pvalue"].values[0])
-    snvs_gene = snvs_maf[snvs_maf["SYMBOL"] == genee].reset_index(drop = True)
-
-
-    # Calculate counts based on canonical consequences
-    truncating_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(['nonsense', "essential_splice"])].shape[0]
-    missense_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(['missense'])].shape[0]
-    synonymous_count = snvs_gene[snvs_gene["canonical_Consequence_broader"].isin(["synonymous"])].shape[0]
-
-    # Compute
-    expected_missense = (1 - ((miss_omega - 1) / miss_omega)) * missense_count
-    expected_truncating = (1 - ((trunc_omega - 1) / trunc_omega)) * truncating_count
-
-
-    # Create a dataframe from the counts and expected values
-    data = {
-        'type': ['truncating', 'synonymous', 'missense'],
-        'number_obs': [truncating_count, synonymous_count, missense_count],
-        'expected': [expected_truncating, None, expected_missense],
-        'omega': [trunc_omega, None, miss_omega],
-        'pvalue': [trunc_pvalue, None, miss_pvalue]
-    }
-    df = pd.DataFrame(data)
-
-    # Print the final dataframe
-    return df
-
-
-
-
-
-
-def plot_omega_side_complete(df):
-
-    consequence_order = ['truncating', "synonymous", "missense"]
-
-    # Define colors for each type
-    colors = {
-        'truncating': colors_dictionary["omega_trunc"],
-        'missense': colors_dictionary["omega_miss"],
-        'synonymous': colors_dictionary["omega_synon"]
-    }
-
-    t_omega = df[df['type'] == 'truncating']['omega'].item()
-    t_pvalue = df[df['type'] == 'truncating']['pvalue'].item()
-    m_omega = df[df['type'] == 'missense']['omega'].item()
-    m_pvalue = df[df['type'] == 'missense']['pvalue'].item()
-
-
-    # Plot for truncating, missense, and synonymous
-    fig, ax = plt.subplots(figsize=(4, 2))
-
-#     # Bar positions
-#     y_positions = np.arange(len(consequence_order)) * 2  # Add separation between bars
-
-#     # Plot the observed values as filled bars
-#     for i, cons in enumerate(consequence_order):
-#         obs_value = df[df['type'] == cons]['number_obs'].values[0]
-#         ax.barh(y_positions[i], obs_value, color=colors[cons], label=cons)
-
-    # Plot the observed values as filled bars
-    sns.barplot(data=df, y='type', x='number_obs',
-                hue = 'type', legend = False,
-                hue_order = consequence_order,
-                order=consequence_order, palette=[colors[x] for x in consequence_order],
-                ax = ax
-                )
-
-    # Overlay the expected values with shaded portions
-    leg = True
-    for i, row in df.iterrows():
-        if row['expected'] is not None:
-            # plt.barh(row['type'], row['expected'], color='gray', alpha=0.5, edgecolor='none')
-            # plt.barh(row['type'], row['expected'], color='none', edgecolor=colors[row['type']], hatch='//', linewidth=0)
-            if leg:
-                ax.barh(row['type'], row['expected'], color='none', edgecolor="gray", hatch='////', linewidth=0, label = 'expected')
-                leg = False
-            else:
-                ax.barh(row['type'], row['expected'], color='none', edgecolor="gray", hatch='////', linewidth=0)
-
-
-
-    # Remove the right and top spines
-    # ax = plt.gca()
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    # Customize the ticks and labels
-    ax.xaxis.set_ticks([])
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-
-
-    # Text annotations
-    text_separation = max(df['number_obs']) * 0.03
-    deviation_for_centering = text_separation * 12
-
-    # text_of_line_separation = line_separation / 3
-    text_pos1 = max(df[df['type'].isin(consequence_order[:2])]['number_obs']) + text_separation + deviation_for_centering
-    text_pos2 = max(df[df['type'].isin(consequence_order[1:])]['number_obs']) + text_separation + deviation_for_centering
-    # print(text_pos1, text_pos2)
-
-    ax.text(text_pos1, 0.05, r'$\omega_{trunc}$ = ' + f"{t_omega:.2f}",
-            # transform=ax.transAxes,
-            fontsize=13, ha='center', va='bottom',
-            color=colors['truncating'])
-                   #f'$p$-value = {p_value:.2g}')
-
-    ax.text(text_pos1, 0.45, f'$p$-value < {max(t_pvalue, 1e-6):.1e}',
-            # transform=ax.transAxes,
-            fontsize=12, ha='center', va='bottom',
-            color=colors['truncating'])
-
-    ax.text(text_pos2, 1.95, r'$\omega_{mis}$ = ' + f"{m_omega:.2f}",
-            # transform=ax.transAxes,
-            fontsize=13, ha='center', va='bottom',
-            color=colors['missense'])
-    ax.text(text_pos2, 2.35, f'$p$-value < {max(m_pvalue, 1e-6):.1e}',
-            # transform=ax.transAxes,
-            fontsize=12, ha='center', va='bottom',
-            color=colors['missense'])
-
-    # Update labels
-    plt.xlabel('Number of Mutations')
-    # plt.xscale('log')
-    plt.ylabel('')
-    plt.legend(loc='right', frameon=False)
-    # plt.legend(loc='right', frameon=False, fontsize=12, handlelength=3, markerscale=2)  # Increase legend text and marker size
-    # plt.show()
-    return fig
 
 
 
@@ -279,7 +116,7 @@ def plot_oncodrivefml_side(geneee_data):
     background_std = geneee_data['BACKGROUND_STD']
     p_value = geneee_data['pvalue']
 
-    observed_color = colors_dictionary["ofml_score"]
+    observed_color = metrics_colors_dictionary["ofml_score"]
 
     deviation = abs(observed_mean - background_mean)
 
@@ -376,11 +213,6 @@ def plot_oncodrivefml_side(geneee_data):
     # Display the plot
     plt.show()
 
-#     # Annotate the Z-score, formula and p-value with LaTeX
-#     formula = (f'$Z = \\frac{{{observed_mean:.2f} - {background_mean:.2f}}}{{{background_std:.2f}}} = {z_score:.2f}$\n'
-#                f'$p$-value = {p_value:.2g}')
-#     plt.text(observed_mean - 2, mid_y * 1.25, formula,
-#              color='black', ha='center', va='center')
 
     return fig
 
@@ -396,8 +228,8 @@ def plotting_indels_side(data_gene):
     values = [ data_gene[x] for x in labels ]
 
     # Colors:
-    truncating_indels_color = colors_dictionary["frameshift"]
-    nontruncating_color = colors_dictionary["inframe"]
+    truncating_indels_color = metrics_colors_dictionary["frameshift"]
+    nontruncating_color = metrics_colors_dictionary["inframe"]
     colors = ['none', 'none', nontruncating_color, truncating_indels_color]
     edgecolors = [nontruncating_color, truncating_indels_color, nontruncating_color, truncating_indels_color]
 
@@ -421,33 +253,22 @@ def plotting_indels_side(data_gene):
     line_pos2 = max(values[2:]) + line_separation
     line_margin = 0.04
     ax.axvline(x=line_pos1, ymin = line_margin, ymax = 0.5 - line_margin, color='black',
-               # linestyle='--',
-               linewidth=1)
+                # linestyle='--',
+                linewidth=1)
     ax.axvline(x=line_pos2, ymin = 0.5 + line_margin, ymax = 1 - line_margin, color='black',
-               # linestyle='--',
-               linewidth=1)
+                # linestyle='--',
+                linewidth=1)
 
     # Annotation for "PA" and "NPA" next to vertical lines
     ax.text(line_pos1 + 2.2*text_of_line_separation, 0.5, 'Non\ncoding', ha='center', va='center', fontsize=9,
             rotation = 270
             # bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.5)
-           )
+            )
     ax.text(line_pos2 + text_of_line_separation, 2.5, 'Coding', ha='center', va='center', fontsize=9,
             rotation = 270
             # bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.5)
-           )
+            )
 
-
-    # # Arrows with annotations
-    # arrow_props = dict(facecolor='black', arrowstyle='<-')
-
-    # # Arrow 1
-    # ax.annotate('', xy=(line_pos1 + 15, 0.5), xytext=(max_syn/1.25, 1.2),
-    #             arrowprops=arrow_props)
-
-    # # Arrow 2
-    # ax.annotate('', xy=(line_pos2, 2.5), xytext=(max_syn, 1.75),
-    #             arrowprops=arrow_props)
 
     # formula_ratio = (f'$\\frac{{{data_gene["pa_TRUNC/NOTTRUNC"]:.2f}}}{{{data_gene["Npa_NM3/M3"]:.2f}}} = {data_gene["pa/Npa"]:.2f}$')
     # formula_ratio = (f'$\\frac{{{data_gene["pa_TRUNC/NOTTRUNC"]:.2f}}}{{{data_gene["Npa_NM3/M3"]:.2f}}} = {data_gene["pa/Npa"]:.2f}$')
@@ -458,17 +279,13 @@ def plotting_indels_side(data_gene):
     ax.text(max_syn, 0.8, pvalue_tag,
             color=truncating_indels_color,
             fontsize=12, ha='center', va='center'
-           )
+            )
 
-    # Add title and labels
     ax.set_xlabel('Count')
-
-    # Customize the ticks and labels
     ax.xaxis.set_ticks([])
     ax.set_xticklabels([])
     ax.set_yticklabels([])
 
-    # Update labels
     plt.xlabel('Number of indels')
     plt.ylabel('')
 
@@ -479,32 +296,300 @@ def plotting_indels_side(data_gene):
 
 
 
-# generate_all_side_figures("all_samples", deepcsa_run_dir,
-#                           # store_plots_dir = "Fig3/plots/2024-07-08_side"
-#                          )
+# ## __Define functions__
+
+def plot_all_positive_selection(omega_truncating,
+                                omega_missense,
+                                indels_panel_df,
+                                oncodrive3d_data_scores,
+                                oncodrivefml_data,
+                                gene_order,
+                                title = None,
+                                pvalue_thres = 0.05,
+                                linewidth_def = 0.6
+                                ):
+
+    num_genes = len(gene_order)
+
+    # Create the figure and subplots
+    fig, (ax1, ax2, ax3, ax4, ax5, ) = plt.subplots(5, 1, figsize=(2.5, 2.9), gridspec_kw={'height_ratios': [5, 5, 5, 5, 5]})
+    if title:
+        fig.suptitle(title)
+
+    # Separate data based on significance of p-value
+    omega_truncating_sig = omega_truncating[omega_truncating["pvalue"] <= pvalue_thres].reset_index(drop = True)
+    omega_truncating_notsig = omega_truncating[omega_truncating["pvalue"] > pvalue_thres].reset_index(drop = True)
+
+    # Plot the second bar plot in the middle subplot
+    sns.barplot(data=omega_truncating_notsig, x='GENE', y='omega_trunc',
+                ax=ax1, alpha=1,
+                fill = False,
+                legend = False,
+                linewidth = linewidth_def,
+                order = gene_order,
+                color = metrics_colors_dictionary["omega_trunc"])
+
+
+    # Plot the second bar plot in the middle subplot
+    sns.barplot(data=omega_truncating_sig, x='GENE', y='omega_trunc',
+                ax=ax1, alpha=1,
+                legend = False,
+                linewidth = linewidth_def,
+                order = gene_order,
+                color = metrics_colors_dictionary["omega_trunc"],
+                edgecolor = None
+                )
+
+    ax1.set_xlabel('')
+    ax1.set_ylabel('dN/dS of\ntruncating', rotation = 0, labelpad=17, verticalalignment = 'center')
+    ax1.set_xticklabels([])  # Hide x-axis labels on the middle plot
+    ax1.axhline(1, color='black', linestyle='--')
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
 
 
 
-colors_dictionary = {"ofml"        : "viridis_r",
-                     "ofml_score"  : "#6A33E0",
-                     "omega_trunc" : "#FA5E32",
-                     "omega_synon" : "#89E4A2",
-                     "omega_miss"  : "#FABE4A",
-                     "o3d_score"   : "#6DBDCC",
-                     "o3d_cluster" : "skyblue",
-                     "o3d_prob"    : "darkgray",
-                     "frameshift"  : "#E4ACF4",
-                     "inframe"     : "C5",
-                     "hv_lines"    : "lightgray" # horizontal and vertical lines
-                    }
+
+    # Separate data based on significance of p-value
+    omega_missense_sig = omega_missense[omega_missense["pvalue"] <= pvalue_thres].reset_index(drop = True)
+    omega_missense_notsig = omega_missense[omega_missense["pvalue"] > pvalue_thres].reset_index(drop = True)
+
+    # Plot the second bar plot in the middle subplot
+    sns.barplot(data=omega_missense_notsig, x='GENE', y='omega_mis',
+                ax=ax2, alpha=1,
+                fill = False,
+                legend = False,
+                linewidth = linewidth_def,
+                order = gene_order,
+                color = metrics_colors_dictionary["omega_miss"])
 
 
+    # Plot the second bar plot in the middle subplot
+    sns.barplot(data=omega_missense_sig, x='GENE', y='omega_mis',
+                ax=ax2, alpha=1,
+                legend = False,
+                linewidth = linewidth_def,
+                order = gene_order,
+                color = metrics_colors_dictionary["omega_miss"],
+                edgecolor = None
+                )
+
+    ax2.set_xlabel('')
+    ax2.set_ylabel('dN/dS of\nmissense', rotation = 0, labelpad=17, verticalalignment = 'center')
+    ax2.set_xticklabels([])  # Hide x-axis labels on the upper plot
+    ax2.axhline(1, color='black', linestyle='--')
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+
+
+
+    df = oncodrive3d_data_scores
+    name_metric = "o3d_score"
+    variable_name = df.columns[1]
+    max_score = df[variable_name].max()
+    for j, gene in enumerate(gene_order):
+        try:
+            value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
+            value =  value_original / max_score * 5
+            pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
+            color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
+            edgecolor = metrics_colors_dictionary[name_metric]
+            size = value * 12  # Scale size for better visualization
+            ax3.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=0.9,)
+        except Exception as e:
+            print("Gene", gene, "failed because of", e)
+            continue
+
+    # Set axis labels
+    ax3.set_xticks(range(len(gene_order)))
+    ax3.set_xticklabels([])  # Hide x-axis labels on the middle plot
+    ax3.set_yticks([])
+    ax3.set_yticklabels([])
+    ax3.set_ylabel('3D\nclustering', rotation = 0, labelpad=17,
+                    verticalalignment = 'center',
+                    horizontalalignment = 'right'
+                    )
+    ax3.set_ylim(-0.5, 0.5)
+    ax3.spines['top'].set_visible(False)
+    ax3.spines['right'].set_visible(False)
+
+    # Set title and labels
+    ax3.set_xlabel('')
+
+
+
+
+    df = oncodrivefml_data
+    name_metric = "ofml_score"
+    variable_name = df.columns[1]
+    max_score = df[variable_name].max()
+    for j, gene in enumerate(gene_order):
+        try:
+            value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
+            value =  value_original / max_score * 5
+            pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
+            color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
+            edgecolor = metrics_colors_dictionary[name_metric]
+            size = value * 12  # Scale size for better visualization
+            if size > 0:
+                ax4.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=0.9)
+            else:
+                ax4.scatter(j, 0, s=-size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, linestyle = '--', alpha=0.9)
+        except Exception as e:
+            print("Gene", gene, "failed because of", e)
+            continue
+
+    # Set axis labels
+    ax4.set_xticks(range(len(gene_order)))
+    ax4.set_xticklabels([])
+    ax4.set_yticks([])
+    ax4.set_yticklabels([])
+    ax4.set_ylabel('Functional\nimpact\nbias', rotation = 0, labelpad=17,
+                    verticalalignment = 'center',
+                    horizontalalignment = 'right'
+                    )
+    ax4.set_ylim(-0.5, 0.5)
+    ax4.spines['top'].set_visible(False)
+    ax4.spines['right'].set_visible(False)
+
+
+
+
+    # Separate data based on significance of p-value
+    indels_panel_df_sig = indels_panel_df[indels_panel_df["pvalue"] <= pvalue_thres].reset_index(drop = True)
+    indels_panel_df_notsig = indels_panel_df[indels_panel_df["pvalue"] > pvalue_thres].reset_index(drop = True)
+
+    # Plot the second bar plot in the middle subplot
+    sns.barplot(data=indels_panel_df_notsig, x='GENE', y='Indels_score',
+                ax=ax5, alpha=1, #0.6,
+                fill = False,
+                legend = False,
+                linewidth = linewidth_def,
+                order = gene_order,
+                color = metrics_colors_dictionary["frameshift"])
+
+
+    # Plot the second bar plot in the middle subplot
+    sns.barplot(data=indels_panel_df_sig, x='GENE', y='Indels_score',
+                ax=ax5, alpha=1,
+                legend = False,
+                linewidth = linewidth_def,
+                order = gene_order,
+                color = metrics_colors_dictionary["frameshift"],
+                edgecolor = None
+                )
+
+    ax5.set_xlabel('')
+    ax5.set_ylabel('Excess of\nframeshift\nindels', rotation = 0,
+                    verticalalignment = 'center',
+                    horizontalalignment = 'right'
+                    )
+    ax5.set_xticks(range(num_genes))
+    ax5.set_xticklabels(gene_order, rotation=90)
+    ax5.axhline(1, color='black', linestyle='--')
+    ax5.spines['top'].set_visible(False)
+    ax5.spines['right'].set_visible(False)
+
+
+    # Set consistent x-axis limits for all subplots
+    separation = 2
+    ax1.set_xlim([-separation, num_genes - 1 + separation])
+    ax2.set_xlim([-separation, num_genes - 1 + separation])
+    ax3.set_xlim([-separation, num_genes - 1 + separation])
+    ax4.set_xlim([-separation, num_genes - 1 + separation])
+    ax5.set_xlim([-separation, num_genes - 1 + separation])
+
+    return fig
+
+
+def get_all_data(sample, outdir, pvaluee = 0.05):
+
+    oncodrivefml_data = pd.read_table(f"{sample}-oncodrivefml.tsv.gz")
+    oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
+    oncodrivefml_data.columns = ["GENE", "OncodriveFML", "pvalue", "OBSERVED_MEAN", "BACKGROUND_MEAN", "BACKGROUND_STD"]
+
+
+    omega_data = pd.read_table(f"output_mle.{sample}.tsv")
+    omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
+                                    & ~(omega_data["gene"].str.contains('--'))
+                                ]
+    omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
+    omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
+    truncating_decreasing = list(omega_truncating.sort_values("omega_trunc", ascending= False)["GENE"].values)
+    print("Truncating\n", truncating_decreasing)
+
+    omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
+    omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
+    missense_decreasing = list(omega_missense.sort_values("omega_mis", ascending= False)["GENE"].values)
+    print("Missense\n", missense_decreasing)
+
+    # merge omegas to decide sorting
+    omega_df = omega_truncating[["GENE", "omega_trunc", "pvalue"]].merge(omega_missense[["GENE", "omega_mis", "pvalue"]],
+                                                                            on = ["GENE"],
+                                                                            suffixes = ("_trunc", "_mis"))
+    omega_df["mean_omega"] = omega_df[["omega_trunc", "omega_mis"]].mean(axis = 1)
+    omega_df["any_signif"] = omega_df[["pvalue_trunc", "pvalue_mis"]].apply(lambda x: (x < 0.05).any(), axis = 1)
+    global_omega_decreasing = list(omega_df.sort_values(by = ["any_signif", "mean_omega"], ascending = False)["GENE"].values)
+    global_omega_decreasing.remove("ALL_GENES")
+
+    print("Global\n", global_omega_decreasing)
+    if len(global_omega_decreasing) > 20:
+        print("Keeping top 20 genes")
+        global_omega_decreasing = global_omega_decreasing[:20]
+
+    positively_selected_trunc = omega_truncating[(omega_truncating["pvalue"] < pvaluee) &
+                                                    (omega_truncating["omega_trunc"] > 1)
+                                                ]["GENE"].values
+    positively_selected_mis = omega_missense[(omega_missense["pvalue"] < pvaluee) &
+                                                (omega_missense["omega_mis"] > 1)
+                                            ]["GENE"].values
+
+    all_positively_selected = set(positively_selected_trunc).union(set(positively_selected_mis))
+    print( "all_positively_selected", sorted(all_positively_selected))
+    positively_selected_both = set(positively_selected_trunc).intersection(set(positively_selected_mis))
+    print( "positively_selected_both", sorted(positively_selected_both))
+    positively_selected_trunc_only = set(positively_selected_trunc) - set(positively_selected_mis)
+    print( "positively_selected_trunc_only", sorted(positively_selected_trunc_only))
+    positively_selected_mis_only = set(positively_selected_mis) - set(positively_selected_trunc)
+    print( "positively_selected_mis_only", sorted(positively_selected_mis_only))
+
+
+    oncodrive3d_data = pd.read_table(f"{sample}.3d_clustering_genes.csv", sep = ',')
+    oncodrive3d_data_scores = oncodrive3d_data[["Gene", "Score_obs_sim_top_vol", "qval"]]
+    oncodrive3d_data_scores.columns = ["GENE", "Oncodrive3D", 'pvalue']
+
+
+    indels_data = pd.read_table(f"{sample}.sample.indels.tsv")
+    indels_panel_df = indels_data[["SYMBOL", "pa/Npa", "pvalue"]]
+    indels_panel_df.columns = ["GENE", "Indels_score", "pvalue"]
+
+
+    figuree = plot_all_positive_selection(omega_truncating,
+                                            omega_missense,
+                                            indels_panel_df,
+                                            oncodrive3d_data_scores,
+                                            oncodrivefml_data,
+                                            global_omega_decreasing,
+                                            title = sample,
+                                            pvalue_thres = pvaluee)
+
+
+    figuree.savefig(f"{outdir}/{sample}.positive_selection_summary.pdf", bbox_inches='tight')
+
+
+
+
+@click.command()
+@click.option('--sample_name', type=str, help='Name of the sample being processed.')
+@click.option('--outdir', type=click.Path(), help='Output path for plots')
+def main(sample_name, outdir):
+    click.echo("Plotting omega results...")
+    try:
+        generate_all_side_figures(sample_name, outdir)
+        get_all_data(sample_name, outdir)
+    except Exception as e:
+        print("Error in the process", e)
 
 if __name__ == '__main__':
-    # maf = subset_mutation_dataframe(mut_file, json_filters)
-    # plot_manager(sample_name, maf, req_plots)
-    # manager(mut_file, o3d_seq_file_, sample_name_, sample_name_out_)
-    try :
-        generate_all_side_figures(sample_name_)
-    except Exception as e:
-        print(f"Error generating figures for {sample_name_}: {e}")
+    main()
+

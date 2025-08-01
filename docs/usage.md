@@ -254,7 +254,7 @@ params {
 
 
     // definition of specific regions within genes with specific interest on computing dN/dS
-    omega_hotspots_bedfile      = null
+    omega_subgenic_bedfile      = null
 
     // define a file of mutations that should not be trusted
     //  and you want to remove from all the analysis
