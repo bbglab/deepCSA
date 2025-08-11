@@ -2,8 +2,6 @@ include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS  } from '../../../modules
 
 include { SUBSET_MAF                as SUBSETMUTDENSITYADJUSTED   } from '../../../modules/local/subsetmaf/main'
 
-// include { MUTATION_DENSITY          as MUTDENSITY_FLAT  } from '../../../modules/local/computemutdensity/main'
-
 include { MUTATION_DENSITY          as MUTDENSITY       } from '../../../modules/local/mut_density/main'
 
 

@@ -8,12 +8,12 @@ process MUTATION_DENSITY {
     input:
     tuple val(meta), path(somatic_mutations_file), path(depths_file), path(mutability_file)
     tuple val(meta2), path(panel_file)
-    tuple val(meta3), path(trinucleotide_counts_file)
+    path(trinucleotide_counts_file)
 
 
     output:
     tuple val(meta), path("*.mutdensities.tsv") ,        emit: mutdensities
-    path "versions.yml" ,                               topic: versions
+    path "versions.yml" ,                                topic: versions
 
     script:
     def sample_name = "${meta.id}"
