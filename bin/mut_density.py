@@ -85,7 +85,7 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
             # compute vector of sum of depths per trinucleotide context
 
             region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)].copy()
-            dh = pd.merge(region_df[['CHROM', 'POS']], depth_df[['CHROM', 'POS', 'CONTEXT', sample]], on=['CHROM', 'POS'], how='left')
+            dh = pd.merge(region_df[['CHROM', 'POS']], depths_df[['CHROM', 'POS', 'CONTEXT', sample]], on=['CHROM', 'POS'], how='left')
             depth_sum_df = dh.groupby(by='CONTEXT').agg({sample: 'sum'}).reset_index()
             depth_region_dict = dict(zip(depth_sum_df['CONTEXT'], depth_sum_df[sample]))
             depth_region_vect = np.array([depth_region_dict.get(k[:3], 0) for k in triplet_contexts])
