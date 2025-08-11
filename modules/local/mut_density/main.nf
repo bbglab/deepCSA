@@ -35,9 +35,8 @@ process MUTATION_DENSITY {
 
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
-    def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    touch ${prefix}.${panel_version}.mutdensities.tsv
+    touch ${prefix}.mutdensities.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
