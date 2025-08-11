@@ -38,7 +38,7 @@ triplet_contexts = list(triplet_context_iterator())
 # The following function computes the normalization factor so that the mutation density
 # matches the equivalent to 1 mut/(Mb-genome) on average across the mappable genome.
 
-def get_correction_factor(trinucleotide_counts_df, mutability_df, flat=False):
+def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, flat=False):
 
     # vector of triplet count in 96-channel canonical sorting
 
@@ -55,7 +55,7 @@ def get_correction_factor(trinucleotide_counts_df, mutability_df, flat=False):
     if flat:
         relative_mutability = (1 / 96) * np.ones(96)
     else:
-        d = dict(zip(mutability_df['CONTEXT_MUT'], mutability_df[f'{sample}.all']))
+        d = dict(zip(mutability_df['CONTEXT_MUT'], mutability_df[f'{sample_name}.all']))
         relative_mutability = np.array([d.get(k, 0) for k in triplet_contexts])
 
     # return correction factor a.k.a. "alpha hat"
@@ -92,7 +92,7 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
 
             # compute correction factor "alpha hat"
 
-            correction_factor, relative_mutability = get_correction_factor(trinucleotide_counts_df, mutability_df)
+            correction_factor, relative_mutability = get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df)
 
             # compute effective length
 
