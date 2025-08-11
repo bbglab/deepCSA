@@ -39,6 +39,8 @@ include { MUTATION_DENSITY          as MUTDENSITYPROT          } from '../subwor
 include { MUTATION_DENSITY          as MUTDENSITYNONPROT       } from '../subworkflows/local/mutationdensity/main'
 include { MUTATION_DENSITY          as MUTDENSITYSYNONYMOUS    } from '../subworkflows/local/mutationdensity/main'
 
+include { MUTATION_DENSITY          as MUTDENSITYADJUSTED      } from '../subworkflows/local/mut_density/main'
+
 include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILEEXONS      } from '../subworkflows/local/mutationprofile/main'
@@ -238,7 +240,6 @@ workflow DEEPCSA{
         DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
     }
 
-
     if (run_mutdensity){
         // Mutation Density
         MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
@@ -262,7 +263,7 @@ workflow DEEPCSA{
         .concat(MUTDENSITYNONPROT.out.mutdensities.map{ it -> it[1]}.flatten())
         .concat(MUTDENSITYSYNONYMOUS.out.mutdensities.map{ it -> it[1]}.flatten())
         .set{ all_mutdensities }
-        all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
+        all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensityflat", skip: 1, keepHeader: true).set{ all_mutdensities_file }
 
     }
 
@@ -270,6 +271,8 @@ workflow DEEPCSA{
     // Mutational profile
     if (params.profileall){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
+        MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
+
     }
     if (params.profilenonprot){
         MUTPROFILENONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
@@ -281,6 +284,7 @@ workflow DEEPCSA{
         DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
         MUTPROFILEINTRONS(somatic_mutations, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
     }
+
 
 
     if (run_mutabilities) {
