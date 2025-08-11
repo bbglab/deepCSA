@@ -125,7 +125,7 @@ def main(sample_name, depths_file, somatic_mutations_file, mutability_file, pane
 
     click.echo(f"Running the mutability adjusted mutation density estimation...")
     res = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file)
-    res.to_csv(f'{sample_name}.mutdensities.tsv', sep='\t', index=False)
+    res.to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
 
 
 if __name__ == '__main__':
