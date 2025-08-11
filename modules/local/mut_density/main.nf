@@ -12,7 +12,7 @@ process MUTATION_DENSITY {
 
 
     output:
-    tuple val(meta), path("*.mutdensities.tsv") ,        emit: mut_density_results
+    tuple val(meta), path("*.mutdensities.tsv") ,        emit: mutdensities
     path "versions.yml" ,                               topic: versions
 
     script:
