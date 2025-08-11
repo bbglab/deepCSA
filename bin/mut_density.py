@@ -121,7 +121,7 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
 @click.option('--mutability_file', type=click.Path(exists=True), help='Relative mutability per trinucleotide context')
 @click.option('--panel_file', type=click.Path(exists=True), help='All possible SNVs with csqn type')
 @click.option('--trinucleotide_counts_file', type=click.Path(exists=True), help='How many trinucleotides of each type are in the entire genome')
-def main(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, output_file):
+def main(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file):
 
     click.echo(f"Running the mutability adjusted mutation density estimation...")
     res = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file)
