@@ -12,8 +12,9 @@ process MUTATION_DENSITY {
 
 
     output:
-    tuple val(meta), path("*.mutdensities.tsv") ,        emit: mutdensities
-    path "versions.yml" ,                                topic: versions
+    tuple val(meta), path("*.mutdensities.tsv") ,    emit: mutdensities
+    path("*.logfoldchangeplot.pdf") ,                emit: mutdensities_plots
+    path "versions.yml" ,                            topic: versions
 
     script:
     def sample_name = "${meta.id}"
@@ -37,6 +38,7 @@ process MUTATION_DENSITY {
     def prefix = task.ext.prefix ?: "all_samples"
     """
     touch ${prefix}.mutdensities.tsv
+    touch ${prefix}.logfoldchangeplot.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

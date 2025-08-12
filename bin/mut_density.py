@@ -3,6 +3,7 @@
 import click
 import pandas as pd
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 # Consequence type ontology
@@ -65,7 +66,7 @@ def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, f
     return correction_factor, relative_mutability
 
 
-def mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file):
+def mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False):
 
     depths_df = pd.read_csv(depths_file, sep='\t')
     somatic_mutations_df = pd.read_csv(somatic_mutations_file, sep='\t')
@@ -92,7 +93,7 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
 
             # compute correction factor "alpha hat"
 
-            correction_factor, relative_mutability = get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df)
+            correction_factor, relative_mutability = get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, flat=flat)
 
             # compute effective length
 
@@ -113,6 +114,39 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
     return res
 
 
+def logfoldchange_plot(df, df_flat, output_file):
+    """
+    Heatmap representing log-FC between mutability adjusted and flat mutation density.
+    This can be useful as a diagnostic tool of the mutation density calculation.
+    """
+
+    dh = (df + 0.01) / (df_flat + 0.01)  # Include a pseudocount
+    dh = np.log2(dh.astype(float))
+    with PdfPages(output_file) as pdf:
+
+        plt.figure(figsize=(8, 6)) # Set the size of the plot
+        sns.heatmap(
+            dh,
+            annot=False,       
+            cmap='coolwarm',   # Choose a colormap (e.g., 'coolwarm', 'viridis', 'YlGnBu')
+            fmt=".2f",         # Format the annotations to two decimal places
+            linewidths=.5,     # Add lines between cells for better readability
+            cbar=True,         # Show the color bar
+            square=True,       # Make the cells square
+            vmin=-1, vmax=1, 
+            cbar_kws={'label': 'log2 fold-change'}
+        )
+
+        # Set the title and labels
+        plt.title(f'{sample}\nlog2 fold-change mutability adjusted vs flat', fontsize=16)
+        plt.xticks(rotation=45, ha='right')
+        plt.yticks(rotation=0)
+
+        # Display the plot
+        plt.tight_layout() # Adjust plot to ensure everything fits
+        pdf.savefig()
+        plt.close()
+
 
 @click.command()
 @click.option('--sample_name', type=str, help='Name of the sample being processed.')
@@ -124,8 +158,14 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
 def main(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file):
 
     click.echo(f"Running the mutability adjusted mutation density estimation...")
-    res = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file)
+    
+    # main calculations
+    res = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False)
+    res_flat = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=True)
+    
+    # save results
     res.to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
+    logfoldchange_plot(res, res_flat, f'{sample}.logfoldchangeplot.pdf')
 
 
 if __name__ == '__main__':
