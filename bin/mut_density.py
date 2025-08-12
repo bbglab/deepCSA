@@ -114,7 +114,7 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
     return res
 
 
-def logfoldchange_plot(df, df_flat, output_file):
+def logfoldchange_plot(sample_name, df, df_flat):
     """
     Heatmap representing log-FC between mutability adjusted and flat mutation density.
     This can be useful as a diagnostic tool of the mutation density calculation.
@@ -122,7 +122,7 @@ def logfoldchange_plot(df, df_flat, output_file):
 
     dh = (df + 0.01) / (df_flat + 0.01)  # Include a pseudocount
     dh = np.log2(dh.astype(float))
-    with PdfPages(output_file) as pdf:
+    with PdfPages(f'{sample_name}.logfoldchangeplot.pdf') as pdf:
 
         plt.figure(figsize=(8, 6)) # Set the size of the plot
         sns.heatmap(
@@ -138,7 +138,7 @@ def logfoldchange_plot(df, df_flat, output_file):
         )
 
         # Set the title and labels
-        plt.title(f'{sample}\nlog2 fold-change mutability adjusted vs flat', fontsize=16)
+        plt.title(f'{sample_name}\nlog2 fold-change mutability adjusted vs flat', fontsize=16)
         plt.xticks(rotation=45, ha='right')
         plt.yticks(rotation=0)
 
@@ -165,7 +165,7 @@ def main(sample_name, depths_file, somatic_mutations_file, mutability_file, pane
     
     # save results
     res.to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
-    logfoldchange_plot(res, res_flat, f'{sample}.logfoldchangeplot.pdf')
+    logfoldchange_plot(sample_name, res, res_flat)
 
 
 if __name__ == '__main__':
