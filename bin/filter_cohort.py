@@ -153,6 +153,9 @@ if "gnomAD_SNP" in maf_df.columns:
 for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
     maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))
 
+for filtt in [ "not_covered", "not_in_exons"]:
+    if f"FILTER.{filtt}" not in maf_df.columns:
+        maf_df[f"FILTER.{filtt}"] = False
 
 maf_df.to_csv(f"{samp_name}.cohort.filtered.tsv.gz",
                         sep = "\t",
