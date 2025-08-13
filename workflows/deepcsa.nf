@@ -271,8 +271,9 @@ workflow DEEPCSA{
     // Mutational profile
     if (params.profileall){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
-        MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
-
+        if (run_mutdensity){
+            MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
+        }
     }
     if (params.profilenonprot){
         MUTPROFILENONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
@@ -284,7 +285,6 @@ workflow DEEPCSA{
         DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
         MUTPROFILEINTRONS(somatic_mutations, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs)
     }
-
 
 
     if (run_mutabilities) {

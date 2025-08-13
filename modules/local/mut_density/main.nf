@@ -18,7 +18,6 @@ process MUTATION_DENSITY {
 
     script:
     def sample_name = "${meta.id}"
-    def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
     mut_density.py \\
                         --sample_name ${sample_name} \\
