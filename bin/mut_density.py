@@ -151,6 +151,7 @@ def main(sample_name, depths_file, somatic_mutations_file, mutability_file, pane
     
     # save results
     res.to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
+    res_flat.to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
     logfoldchange_plot(sample_name, res, res_flat)
 
 

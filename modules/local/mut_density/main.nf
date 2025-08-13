@@ -12,8 +12,9 @@ process MUTATION_DENSITY {
 
 
     output:
-    tuple val(meta), path("*.mutdensities.tsv") ,    emit: mutdensities
-    path("*.logfoldchangeplot.pdf") ,                emit: mutdensities_plots
+    tuple val(meta), path("*.mutdensities.tsv")         , emit: mutdensities
+    tuple val(meta), path("*.mutdensities_flat.tsv")    , emit: mutdensities_flat   
+    path("*.logfoldchangeplot.pdf")                     , emit: mutdensities_plots
     path "versions.yml" ,                            topic: versions
 
     script:
