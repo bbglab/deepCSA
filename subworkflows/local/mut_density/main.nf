@@ -30,6 +30,7 @@ workflow MUTATION_DENSITY{
 
 
     emit:
-    mutdensities = MUTDENSITY.out.mutdensities
-    mutdensities_plots = MUTDENSITY.out.mutdensities_plots
+    mutdensities        = MUTDENSITY.out.mutdensities
+    mutdensities_flat   = MUTDENSITY.out.mutdensities_flat
+    mutdensities_plots  = MUTDENSITY.out.mutdensities_plots
 }
