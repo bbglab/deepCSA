@@ -23,8 +23,6 @@ def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, f
     The following function computes the normalization factor so that the mutation density
         that we will compute downstream matches the equivalent to 1 mut/(Mb-genome)
         on average across the genome.
-    
-    More specifically here
     """
 
     # vector of triplet count in 96-channel canonical sorting
@@ -33,7 +31,7 @@ def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, f
     triplet_counts = np.array(l)
 
     # genome length in Mb
-    genome_length = (sum(triplet_counts) / 3) * 1e6
+    genome_length = sum(triplet_counts) / (3 * 1e6)
 
     # vector of relative mutabilities in 96-channel canonical sorting
     if flat:
