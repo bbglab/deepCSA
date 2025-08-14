@@ -146,11 +146,14 @@ def main(sample_name, depths_file, somatic_mutations_file, mutability_file, pane
     # main calculations
     res = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False)
     res_flat = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=True)
-    
-    # save results
-    res.to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
-    res_flat.to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
     logfoldchange_plot(sample_name, res, res_flat)
+
+    # save results
+    res["SAMPLE"] = sample_name
+    res_flat["SAMPLE"] = sample_name
+    res[['SAMPLE'] + [col for col in res.columns if col != 'SAMPLE']].to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
+    res_flat[['SAMPLE'] + [col for col in res_flat.columns if col != 'SAMPLE']].to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
+
 
 
 if __name__ == '__main__':
