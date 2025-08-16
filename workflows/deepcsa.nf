@@ -263,7 +263,7 @@ workflow DEEPCSA{
         .concat(MUTDENSITYNONPROT.out.mutdensities.map{ it -> it[1]}.flatten())
         .concat(MUTDENSITYSYNONYMOUS.out.mutdensities.map{ it -> it[1]}.flatten())
         .set{ all_mutdensities }
-        all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensityflat", skip: 1, keepHeader: true).set{ all_mutdensities_file }
+        all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
 
     }
 
@@ -277,11 +277,11 @@ workflow DEEPCSA{
             // Concatenate all outputs into a single file
             MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities }
-            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true)
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
 
             MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities_flat }
-            all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true)
+            all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
         }
     }
     if (params.profilenonprot){
