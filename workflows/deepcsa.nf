@@ -39,6 +39,8 @@ include { MUTATION_DENSITY          as MUTDENSITYPROT          } from '../subwor
 include { MUTATION_DENSITY          as MUTDENSITYNONPROT       } from '../subworkflows/local/mutationdensity/main'
 include { MUTATION_DENSITY          as MUTDENSITYSYNONYMOUS    } from '../subworkflows/local/mutationdensity/main'
 
+include { MUTATION_DENSITY          as MUTDENSITYADJUSTED      } from '../subworkflows/local/mut_density/main'
+
 include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILEEXONS      } from '../subworkflows/local/mutationprofile/main'
@@ -238,7 +240,6 @@ workflow DEEPCSA{
         DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
     }
 
-
     if (run_mutdensity){
         // Mutation Density
         MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
@@ -270,6 +271,18 @@ workflow DEEPCSA{
     // Mutational profile
     if (params.profileall){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
+        if (run_mutdensity){
+            MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
+
+            // Concatenate all outputs into a single file
+            MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
+            .set{ all_adjusted_mutdensities }
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
+
+            MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
+            .set{ all_adjusted_mutdensities_flat }
+            all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
+        }
     }
     if (params.profilenonprot){
         MUTPROFILENONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)

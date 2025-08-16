@@ -1,6 +1,6 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSETMUTDENSITY        } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETMUTDENSITY     } from '../../../modules/local/subsetmaf/main'
 
 include { MUTATION_DENSITY          as MUTDENSITY           } from '../../../modules/local/computemutdensity/main'
 
