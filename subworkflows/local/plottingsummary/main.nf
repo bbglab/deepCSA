@@ -64,9 +64,10 @@ workflow PLOTTING_SUMMARY {
     // //          missense
 
 
-    // PLOTINTERINDIVIDUALVARIABILITY()
-    // // heatmap driver mutations per gene/sample
-    // // other heatmaps:
+    // PLOTINTERINDIVIDUALVARIABILITY(all_mutrates, all_samples_depth, )
+    // // heatmaps:
+    // //     mutations per gene/sample (total, SNV only, INDEL only, per consequence type)
+    // //     driver mutations per gene/sample
     // //     mutation density
     // //     mutation burden
     // //     omega
