@@ -491,11 +491,13 @@ workflow DEEPCSA{
     }
 
 
+
+
     if (params.signatures){
 
         // Signature Analysis
         if (params.profileall){
-            SIGNATURESALL(MUTPROFILEALL.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
+            SIGNATURESALL(somatic_mutations, MUTPROFILEALL.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
 
             somatic_mutations
             .join(SIGNATURESALL.out.mutation_probs)
@@ -505,13 +507,13 @@ workflow DEEPCSA{
 
         }
         if (params.profilenonprot){
-            SIGNATURESNONPROT(MUTPROFILENONPROT.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
+            SIGNATURESNONPROT(somatic_mutations,MUTPROFILENONPROT.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileexons){
-            SIGNATURESEXONS(MUTPROFILEEXONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
+            SIGNATURESEXONS(somatic_mutations, MUTPROFILEEXONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
         if (params.profileintrons){
-            SIGNATURESINTRONS(MUTPROFILEINTRONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
+            SIGNATURESINTRONS(somatic_mutations,MUTPROFILEINTRONS.out.wgs_sigprofiler, cosmic_ref, TABLE2GROUP.out.json_samples)
         }
     }
 

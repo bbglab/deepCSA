@@ -1,12 +1,16 @@
-include { MATRIX_CONCAT                        as MATRIXCONCATWGS   } from '../../../modules/local/sig_matrix_concat/main'
+include { MATRIX_CONCAT                 as MATRIXCONCATWGS          } from '../../../modules/local/sig_matrix_concat/main'
 include { SIGPROFILERASSIGNMENT                                     } from '../../../modules/local/signatures/sigprofiler/assignment/main'
-include { SIGNATURES_PROBABILITIES             as SIGPROBS          } from '../../../modules/local/combine_sbs/main'
-// include { MSIGHDP                                                   } from '../../../modules/local/signatures/msighdp/main'
-include { HDP_EXTRACTION                       as HDPEXTRACTION     } from '../signatures_hdp/main'
+include { SIGNATURES_PROBABILITIES      as SIGPROBS                 } from '../../../modules/local/combine_sbs/main'
+// include { MSIGHDP                                                } from '../../../modules/local/signatures/msighdp/main'
+include { HDP_EXTRACTION                as HDPEXTRACTION            } from '../signatures_hdp/main'
+
+include { MAF_2_VCF                     as MAF2VCF                  } from '../../../modules/local/maf2vcf.nf'
+include { SIGPROFILER_MATRIX_GENERATOR  as SIGPROMATRIXGENERATOR    } from '../../../modules/local/sigprofiler_matrix_generator.nf'
 
 
 workflow SIGNATURES {
     take:
+    somatic_mutations
     matrix_wgs
     reference_signatures
     samples
@@ -43,6 +47,20 @@ workflow SIGNATURES {
     // MATRIXCONCAT(all_matrices, samples)
     // MATRIXCONCAT.out.wgs_tsv.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_matrices }
     // MSIGHDP(matrix)
+
+    Channel.of([ [ id: "all_samples" ] ])
+    .join( somatic_mutations )
+    .set{ maf2vcf_inputs }
+
+
+    MAF2VCF(maf2vcf_inputs)
+    vcf_files = MAF2VCF.out.vcf_files.flatten().collect()
+
+
+    SIGPROMATRIXGENERATOR(
+        vcf_files,
+        )
+
 
     emit:
     plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]
