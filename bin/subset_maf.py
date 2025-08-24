@@ -9,7 +9,7 @@ from utils import filter_maf
 from read_utils import custom_na_values
 
 
-def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, json_filters, requested_fields):
+def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, json_filters, requested_fields, minimum_mutations):
     """
     INFO
     """
@@ -43,6 +43,10 @@ def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, j
     with open(requested_fields, 'r') as file:
         output_format = json.load(file)
 
+    if annotated_maf.shape[0] < minimum_mutations:
+        print(f"{mutations_file_out} file will not be written since it has not reached the minimum number of mutations required for per sample analysis")
+        return False
+
     if output_format:
         header_ = output_format.get("header", False)
         columns = output_format.get("columns", annotated_maf.columns.values)
@@ -73,11 +77,12 @@ def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, j
 @click.option('--out_maf', type=click.Path(), help='Output MAF file')
 @click.option('--json_filters', type=click.Path(exists=True), help='Input mutation filtering criteria file')
 @click.option('--req_fields', type=click.Path(exists=True), help='Column names to output')
+@click.option('--min_mutations', type=int, default=-1, help='Minimum number of mutations for sample to be outputted.')
 # @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 
-def main(sample_name, mut_file, out_maf, json_filters, req_fields): # , plot):
+def main(sample_name, mut_file, out_maf, json_filters, req_fields, min_mutations): # , plot):
     click.echo(f"Subsetting MAF file...")
-    subset_mutation_dataframe(sample_name, mut_file, out_maf, json_filters, req_fields)
+    subset_mutation_dataframe(sample_name, mut_file, out_maf, json_filters, req_fields, min_mutations)
 
 if __name__ == '__main__':
     main()
