@@ -6,23 +6,23 @@ process RUNREGRESSIONS {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    val  (metric_name)
-    path (metric_data)
-    val  (metric_params)
+    val metric_name
+    path metric_data
+    val metric_params
 
-    val  (responses_subset_regressions)
-    val  (responses_excluded_regressions)
-    val  (samples_subset_regressions)
-    path (predictors_file_regressions)
-    val  (predictors_plot_config_regressions)
-    val  (multipletesting_join_regressions)
-    val  (multivariate_rules_regressions)
+    val responses_subset_regressions
+    val responses_excluded_regressions
+    val samples_subset_regressions
+    path predictors_file_regressions
+    val predictors_plot_config_regressions
+    val multipletesting_join_regressions
+    val multivariate_rules_regressions
 
     output:
-    path ("inputs/*")       , emit: regression_inputs
-    path (metric_name)      , emit: res_tables
-    path ("*.pdf")          , emit: res_pdf
-    path "versions.yml"     , topic: versions
+    path ("inputs/*"), emit: regression_inputs
+    path (metric_name), emit: res_tables
+    path ("*.pdf"), emit: res_pdf
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ""
@@ -61,5 +61,4 @@ process RUNREGRESSIONS {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

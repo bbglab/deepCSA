@@ -1,5 +1,5 @@
 process SUMMARIZE_ANNOTATION {
-    tag "$meta.id"
+    tag "${meta.id}"
 
     label 'cpu_low'
     label 'process_high_memory'
@@ -8,14 +8,13 @@ process SUMMARIZE_ANNOTATION {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta)  , path(tab_files)
-    path(hotspots_annotation_file)
+    tuple val(meta), path(tab_files)
+    path hotspots_annotation_file
 
     output:
-    tuple val(meta), path("*.summary.tab.gz")   , emit: tab
-    tuple val(meta), path("*.vep.tab.gz")       , emit: tab_all
-    path "versions.yml"                         , topic: versions
-
+    tuple val(meta), path("*.summary.tab.gz"), emit: tab
+    tuple val(meta), path("*.vep.tab.gz"), emit: tab_all
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

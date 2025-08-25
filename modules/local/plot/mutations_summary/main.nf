@@ -1,6 +1,6 @@
 process PLOT_MUTATIONS {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -9,9 +9,8 @@ process PLOT_MUTATIONS {
     tuple val(meta), path(mut_files)
 
     output:
-    tuple val(meta), path("*.pdf")  , emit: plots
-    path "versions.yml"             , topic: versions
-
+    tuple val(meta), path("*.pdf"), emit: plots
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ""

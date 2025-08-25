@@ -9,15 +9,13 @@ process CUSTOM_ANNOTATION_PROCESSING {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta) , path(panel_annotated)
-    path (custom_regions)
-
+    tuple val(meta), path(panel_annotated)
+    path custom_regions
 
     output:
-    tuple val(meta), path("*.custom.tsv")      , emit: custom_panel_annotation
-    tuple val(meta), path("added_regions.tsv") , emit: added_regions
-    path  "versions.yml"                       , topic: versions
-
+    tuple val(meta), path("*.custom.tsv"), emit: custom_panel_annotation
+    tuple val(meta), path("added_regions.tsv"), emit: added_regions
+    path "versions.yml", topic: versions
 
     script:
     def simple = task.ext.simple ? "True" : "False"

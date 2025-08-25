@@ -1,5 +1,5 @@
 process MERGE_BATCH {
-    tag "$meta.id"
+    tag "${meta.id}"
 
     label 'process_high_memory'
     label 'time_low'
@@ -10,9 +10,8 @@ process MERGE_BATCH {
     tuple val(meta), path(mafs)
 
     output:
-    tuple val(meta), path("*.cohort.tsv.gz") , emit: cohort_maf
-    path "versions.yml"                      , topic: versions
-
+    tuple val(meta), path("*.cohort.tsv.gz"), emit: cohort_maf
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

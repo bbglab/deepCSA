@@ -8,15 +8,13 @@ process POSTPROCESS_VEP_ANNOTATION {
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
-
     input:
-    tuple val(meta) , path(vep_annotated_file)
+    tuple val(meta), path(vep_annotated_file)
 
     output:
-    tuple val(meta), path("*.compact.tsv")      , emit: compact_panel_annotation
-    tuple val(meta), path("*.compact_rich.tsv") , emit: rich_panel_annotation
-    path  "versions.yml"                        , topic: versions
-
+    tuple val(meta), path("*.compact.tsv"), emit: compact_panel_annotation
+    tuple val(meta), path("*.compact_rich.tsv"), emit: rich_panel_annotation
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

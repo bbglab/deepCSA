@@ -28,9 +28,8 @@ include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_deep
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
 workflow BBGTOOLS {
-    main:
-    
-    DEEPCSA ()
+
+    DEEPCSA()
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,10 +39,8 @@ workflow BBGTOOLS {
 
 workflow {
 
-    main:
-
     // SUBWORKFLOW: Run initialisation tasks
-    PIPELINE_INITIALISATION (
+    PIPELINE_INITIALISATION(
         params.version,
         params.help,
         params.validate_params,
@@ -56,11 +53,4 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     BBGTOOLS()
-
 }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    THE END
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/

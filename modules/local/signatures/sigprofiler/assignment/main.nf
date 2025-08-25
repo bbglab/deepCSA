@@ -1,19 +1,18 @@
 process SIGPROFILERASSIGNMENT {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_medium'
 
     container 'docker.io/ferriolcalvet/sigprofilerassignment'
 
     input:
     tuple val(meta), val(type), path(matrix)
-    path(reference_signatures)
+    path reference_signatures
 
     output:
-    tuple val(meta), path("**.pdf")                                         , emit: plots
-    tuple val(meta), path("**.txt")                                         , emit: stats
-    tuple val(meta), path("**Decomposed_MutationType_Probabilities.*.txt")  , emit: mutation_probs
-    path "versions.yml"                                                     , topic: versions
-
+    tuple val(meta), path("**.pdf"), emit: plots
+    tuple val(meta), path("**.txt"), emit: stats
+    tuple val(meta), path("**Decomposed_MutationType_Probabilities.*.txt"), emit: mutation_probs
+    path "versions.yml", topic: versions
 
     script:
     def name = "${meta.id}.${type}"

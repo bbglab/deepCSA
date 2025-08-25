@@ -1,6 +1,6 @@
 process PLOT_OMEGA {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -9,9 +9,8 @@ process PLOT_OMEGA {
     tuple val(meta), path(mutations), path(omegas)
 
     output:
-    tuple val(meta), path("**.pdf")  , optional: true   , emit: plots
-    path "versions.yml"                                 , topic: versions
-
+    tuple val(meta), path("**.pdf"), optional: true, emit: plots
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

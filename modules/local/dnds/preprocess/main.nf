@@ -1,5 +1,5 @@
 process PREPROCESS_DNDS {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'cpu_single_fixed'
     label 'time_low'
     label 'process_high_memory'
@@ -7,14 +7,12 @@ process PREPROCESS_DNDS {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta) , path(depths)
-    tuple val(meta2), path (annotated_panel)
-
+    tuple val(meta), path(depths)
+    tuple val(meta2), path(annotated_panel)
 
     output:
-    tuple val(meta), path("*.depths_input.tsv") , emit: depths
-    path "versions.yml"                         , topic: versions
-
+    tuple val(meta), path("*.depths_input.tsv"), emit: depths
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -40,4 +38,3 @@ process PREPROCESS_DNDS {
     END_VERSIONS
     """
 }
-

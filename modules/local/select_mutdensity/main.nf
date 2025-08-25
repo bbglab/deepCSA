@@ -1,5 +1,5 @@
 process SELECT_MUTDENSITIES {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -8,10 +8,8 @@ process SELECT_MUTDENSITIES {
     tuple val(meta), path(mutation_densities)
 
     output:
-    tuple val(meta), path("*.gene_mutdensities.tsv") , emit: mutdensity
-    path  "versions.yml"                         , topic: versions
-
-
+    tuple val(meta), path("*.gene_mutdensities.tsv"), emit: mutdensity
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -39,5 +37,4 @@ process SELECT_MUTDENSITIES {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

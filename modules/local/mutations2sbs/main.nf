@@ -5,14 +5,12 @@ process MUTATIONS_2_SIGNATURES {
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
-
     input:
-    tuple val(meta), path (maf), path (signature_probabilities)
+    tuple val(meta), path(maf), path(signature_probabilities)
 
     output:
-    tuple val(meta), path ("*.sigs.annotated.tsv.gz")   , emit: mafs_sigs_info
-    path "versions.yml"                                 , topic: versions
-
+    tuple val(meta), path("*.sigs.annotated.tsv.gz"), emit: mafs_sigs_info
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

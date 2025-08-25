@@ -1,21 +1,18 @@
 process DNA_2_PROTEIN_MAPPING {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
-
     input:
-    tuple val(meta) , path(mutations_file)
+    tuple val(meta), path(mutations_file)
     tuple val(meta2), path(panel_file)
     tuple val(meta3), path(all_samples_depths)
 
-
     output:
-    tuple val(meta2), path("depths_per_position_exon_gene.tsv") , emit: depths_exons_positions
-    tuple val(meta2), path("panel_exons.bed4.bed")              , emit: panel_exons_bed
-    path  "versions.yml"                                        , topic: versions
-
+    tuple val(meta2), path("depths_per_position_exon_gene.tsv"), emit: depths_exons_positions
+    tuple val(meta2), path("panel_exons.bed4.bed"), emit: panel_exons_bed
+    path "versions.yml", topic: versions
 
     script:
     """
@@ -41,5 +38,4 @@ process DNA_2_PROTEIN_MAPPING {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

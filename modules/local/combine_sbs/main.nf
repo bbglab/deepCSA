@@ -5,14 +5,12 @@ process SIGNATURES_PROBABILITIES {
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
-
     input:
-    tuple val(meta), path (signature_probabilities)
+    tuple val(meta), path(signature_probabilities)
 
     output:
-    path ("*.decomposed_probabilities.tsv") , emit: signature_probs
-    path "versions.yml"                     , topic: versions
-
+    path ("*.decomposed_probabilities.tsv"), emit: signature_probs
+    path "versions.yml", topic: versions
 
     script:
     """

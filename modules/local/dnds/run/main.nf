@@ -1,5 +1,5 @@
 process RUN_DNDS {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'cpu_single_fixed'
     label 'time_low'
     label 'process_high_memory'
@@ -8,14 +8,13 @@ process RUN_DNDS {
     container 'docker.io/ferriolcalvet/dnds:latest'
 
     input:
-    tuple val(meta) , path(mutations_table), path(depths)
+    tuple val(meta), path(mutations_table), path(depths)
     tuple val(meta2), path(ref_cds)
-    path (covariates)
+    path covariates
 
     output:
-    tuple val(meta), path("*.out.tsv*") , emit: results
-    path "versions.yml"                 , topic: versions
-
+    tuple val(meta), path("*.out.tsv*"), emit: results
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -46,18 +45,3 @@ process RUN_DNDS {
     END_VERSIONS
     """
 }
-
-// "--referencetranscripts"
-// default="/workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda",
-// --covariates
-//     "/workspace/projects/prominent/analysis/dNdScv/data/reference_files/covariates_hg19_hg38_epigenome_pcawg.rda",
-//             help="Human GRCh38 covariates file [default= %default]", metavar="character"),
-// --genelist"), type="character",
-//             default=NULL,
-//             help="Gene list file [default= %default]", metavar="character"),
-// --genedepth"), type="character",
-//             default=NULL,
-//             help="Gene depth file (2 columns: GENE\tAVG_DEPTH) [default= %default]", metavar="character"),
-// --snvsonly"), type="logical",
-//             default=FALSE,
-//             help="Only use SNVs for the analysis [default= %default]", metavar="logical")

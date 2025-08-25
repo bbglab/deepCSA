@@ -1,19 +1,18 @@
 process CREATECUSTOMBEDFILE {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
 
     conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-            'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
-            'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0'
+        : 'biocontainers/pybedtools:0.9.1--py38he0f268d_0'}"
 
     input:
-    tuple val(meta) , path(panel_tsv)
+    tuple val(meta), path(panel_tsv)
 
     output:
     tuple val(meta), path("*.bed"), emit: bed
-    path "versions.yml"           , topic: versions
-
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

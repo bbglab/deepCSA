@@ -1,6 +1,6 @@
 process MUTATION_DENSITY {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -8,14 +8,13 @@ process MUTATION_DENSITY {
     input:
     tuple val(meta), path(somatic_mutations_file), path(depths_file), path(mutability_file)
     tuple val(meta2), path(panel_file)
-    path(trinucleotide_counts_file)
-
+    path trinucleotide_counts_file
 
     output:
-    tuple val(meta), path("*.mutdensities.tsv")         , emit: mutdensities
-    tuple val(meta), path("*.mutdensities_flat.tsv")    , emit: mutdensities_flat   
-    path("*.logfoldchangeplot.pdf")                     , emit: mutdensities_plots
-    path "versions.yml" ,                            topic: versions
+    tuple val(meta), path("*.mutdensities.tsv"), emit: mutdensities
+    tuple val(meta), path("*.mutdensities_flat.tsv"), emit: mutdensities_flat
+    path ("*.logfoldchangeplot.pdf"), emit: mutdensities_plots
+    path "versions.yml", topic: versions
 
     script:
     def sample_name = "${meta.id}"

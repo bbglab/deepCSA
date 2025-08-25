@@ -1,6 +1,6 @@
 process COMPUTE_TRINUCLEOTIDE {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -10,8 +10,7 @@ process COMPUTE_TRINUCLEOTIDE {
 
     output:
     tuple val(meta), path("*.trinucleotides.tsv.gz"), emit: trinucleotides
-    path "versions.yml"                             , topic: versions
-
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ""
@@ -27,7 +26,6 @@ process COMPUTE_TRINUCLEOTIDE {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 
     stub:
     def prefix = task.ext.prefix ?: ""

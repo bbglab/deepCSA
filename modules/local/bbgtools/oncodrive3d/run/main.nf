@@ -1,24 +1,21 @@
 process ONCODRIVE3D_RUN {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     container 'docker.io/bbglab/oncodrive3d:1.0.5'
 
-
     input:
     tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
-    path (datasets)
-
+    path datasets
 
     output:
-    tuple val(meta), path("**genes.csv")                 , emit: csv_genes
-    tuple val(meta), path("**pos.csv")                   , emit: csv_pos
-    tuple val(meta), path("**mutations.processed.tsv")   , emit: mut_processed, optional: true
-    tuple val(meta), path("**miss_prob.processed.json")  , emit: prob_processed, optional: true
-    tuple val(meta), path("**seq_df.processed.tsv")      , emit: seq_processed, optional: true
-    tuple val(meta), path("**run_*.log")                 , emit: log
-    path "versions.yml"                                  , topic: versions
-
+    tuple val(meta), path("**genes.csv"), emit: csv_genes
+    tuple val(meta), path("**pos.csv"), emit: csv_pos
+    tuple val(meta), path("**mutations.processed.tsv"), emit: mut_processed, optional: true
+    tuple val(meta), path("**miss_prob.processed.json"), emit: prob_processed, optional: true
+    tuple val(meta), path("**seq_df.processed.tsv"), emit: seq_processed, optional: true
+    tuple val(meta), path("**run_*.log"), emit: log
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ""
@@ -42,12 +39,12 @@ process ONCODRIVE3D_RUN {
     }
     EOF
 
-    oncodrive3D run -i $mutations \\
+    oncodrive3D run -i ${mutations} \\
                     -m oncodrive3d.mutability.conf \\
-                    -d $datasets \\
-                    -C $prefix \\
-                    -o $prefix \\
-                    $args \\
+                    -d ${datasets} \\
+                    -C ${prefix} \\
+                    -o ${prefix} \\
+                    ${args} \\
                     -c ${task.cpus} \\
                     ${vep_raw} \\
                     ${mane}
@@ -71,4 +68,3 @@ process ONCODRIVE3D_RUN {
     END_VERSIONS
     """
 }
-

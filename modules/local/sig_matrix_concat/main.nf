@@ -1,22 +1,22 @@
 process MATRIX_CONCAT {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(matrix_files)
-    path (json_samples)
+    path json_samples
 
     output:
-    path("*_matrix*.sp.tsv")        , emit: wgs_tsv
-    path("*_matrix*.hdp.tsv")       , emit: wgs_tsv_hdp
-    path("*_matrix*.sp.round.tsv")  , emit: wgs_round_tsv
-    path "versions.yml"             , topic: versions
-
+    path ("*_matrix*.sp.tsv"), emit: wgs_tsv
+    path ("*_matrix*.hdp.tsv"), emit: wgs_tsv_hdp
+    path ("*_matrix*.sp.round.tsv"), emit: wgs_round_tsv
+    path "versions.yml", topic: versions
 
     script:
-    def prefix = task.ext.prefix ?: "" // type of profile. e.g. all, nonproteinaffecting, ...
+    def prefix = task.ext.prefix ?: ""
+    // type of profile. e.g. all, nonproteinaffecting, ...
     """
     ls ${matrix_files} > all_files.txt;
     concat_sigprot_matrices.py \\

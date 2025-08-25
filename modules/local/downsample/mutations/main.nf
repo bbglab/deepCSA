@@ -3,7 +3,7 @@ process DOWNSAMPLE_MUTATIONS {
     // mutations should be downsampled differently in different runs
     cache false
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -12,8 +12,8 @@ process DOWNSAMPLE_MUTATIONS {
     tuple val(meta), path(mutations_file)
 
     output:
-    tuple val(meta), path("*.downsampled.mutations.tsv") , emit: downsampled_muts
-    path "versions.yml"                                  , topic: versions
+    tuple val(meta), path("*.downsampled.mutations.tsv"), emit: downsampled_muts
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

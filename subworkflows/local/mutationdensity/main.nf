@@ -1,11 +1,11 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY as SUBSETMUTATIONS } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSETMUTDENSITY     } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF as SUBSETMUTDENSITY            } from '../../../modules/local/subsetmaf/main'
 
-include { MUTATION_DENSITY          as MUTDENSITY           } from '../../../modules/local/computemutdensity/main'
+include { MUTATION_DENSITY as MUTDENSITY            } from '../../../modules/local/computemutdensity/main'
 
 
-workflow MUTATION_DENSITY{
+workflow MUTATION_DENSITY {
     take:
     mutations
     depth
@@ -20,11 +20,10 @@ workflow MUTATION_DENSITY{
     SUBSETMUTDENSITY(SUBSETMUTATIONS.out.subset)
 
     SUBSETMUTDENSITY.out.mutations
-    .join(depth)
-    .set{ mutations_n_depth }
+        .join(depth)
+        .set { mutations_n_depth }
 
     MUTDENSITY(mutations_n_depth, panel)
-
 
     emit:
     mutdensities = MUTDENSITY.out.mutdensities

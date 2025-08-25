@@ -1,13 +1,13 @@
 process TABIX_BGZIPTABIX {
     cache false
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/tabix:1.11--hdfd78af_0' :
-        'biocontainers/tabix:1.11--hdfd78af_0' }"
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/tabix:1.11--hdfd78af_0'
+        : 'biocontainers/tabix:1.11--hdfd78af_0'}"
 
     input:
     tuple val(meta), path(input)
@@ -15,8 +15,7 @@ process TABIX_BGZIPTABIX {
     output:
     tuple val(meta), path("*.gz"), path("*.tbi"), optional: true, emit: gz_tbi
     tuple val(meta), path("*.gz"), path("*.csi"), optional: true, emit: gz_csi
-    path  "versions.yml" ,                        topic: versions
-
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ''
@@ -24,8 +23,8 @@ process TABIX_BGZIPTABIX {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    bgzip  --threads ${task.cpus} -c $args $input > ${prefix}.${input.getExtension()}.gz
-    tabix $args2 ${prefix}.${input.getExtension()}.gz
+    bgzip  --threads ${task.cpus} -c ${args} ${input} > ${prefix}.${input.getExtension()}.gz
+    tabix ${args2} ${prefix}.${input.getExtension()}.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

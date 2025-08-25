@@ -1,5 +1,5 @@
 process MSIGHDP {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_medium'
 
     container 'docker.io/ferriolcalvet/msighdp:latest'
@@ -8,10 +8,9 @@ process MSIGHDP {
     tuple val(meta), path(matrix)
 
     output:
-    tuple val(meta), path("**.pdf")     , emit: plots
-    tuple val(meta), path("**.csv")     , emit: stats
-    path "versions.yml"                 , topic: versions
-
+    tuple val(meta), path("**.pdf"), emit: plots
+    tuple val(meta), path("**.csv"), emit: stats
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

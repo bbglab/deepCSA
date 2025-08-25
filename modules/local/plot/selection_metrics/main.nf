@@ -1,18 +1,17 @@
 process PLOT_SELECTION_METRICS {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(results_files)
-    path (gene_data_df)
+    path gene_data_df
 
     output:
-    tuple val(meta), path("**.pdf"), optional : true    , emit: plots
-    path "versions.yml"                                 , topic: versions
-
+    tuple val(meta), path("**.pdf"), optional: true, emit: plots
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -41,16 +40,3 @@ process PLOT_SELECTION_METRICS {
     END_VERSIONS
     """
 }
-
-
-//     cat > mutations_subset.conf << EOF
-//     {
-//         ${filters}
-//     }
-//     EOF
-
-//     cat > requested_plots.conf << EOF
-//     {
-//         ${requested_plots}
-//     }
-//     EOF

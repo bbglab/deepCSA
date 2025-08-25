@@ -1,25 +1,24 @@
-include { PREPARE_INPUT                                         } from '../../../modules/local/signatures/hdp/prepareinput/main'
-include { RUN_HDP_CHAIN_SAMPLING                                } from '../../../modules/local/signatures/hdp/chainsampling/main'
+include { PREPARE_INPUT                           } from '../../../modules/local/signatures/hdp/prepareinput/main'
+include { RUN_HDP_CHAIN_SAMPLING                  } from '../../../modules/local/signatures/hdp/chainsampling/main'
 // include { NORMALIZE_SIGNATURES                                  } from '../../../modules/local/signatures/hdp/normalize_sigs/main'
-include { PROCESS_HDP_RESULTS                                   } from '../../../modules/local/signatures/hdp/process_results/main'
+include { PROCESS_HDP_RESULTS                     } from '../../../modules/local/signatures/hdp/process_results/main'
 // include { COMPARE_SIGNATURES as COMPARENORMALIZEDSIGNATURES     } from '../../../modules/local/signatures/hdp/compare_sigs/main'
-include { COMPARE_SIGNATURES as COMPARESIGNATURES               } from '../../../modules/local/signatures/hdp/compare_sigs/main'
+include { COMPARE_SIGNATURES as COMPARESIGNATURES } from '../../../modules/local/signatures/hdp/compare_sigs/main'
 // include { COMPARE_SIGNATURES as COMPARECANCERSIGNATURES         } from '../../../modules/local/signatures/hdp/compare_sigs/main'
 
 
 
 
 workflow HDP_EXTRACTION {
-
     take:
     matrix
     reference_signatures
 
     main:
 
-    Channel.of([ [ id: "samples_matrix" ] ])
-    .join( matrix )
-    .set{ samples_matrix }
+    Channel.of([[id: "samples_matrix"]])
+        .join(matrix)
+        .set { samples_matrix }
 
     PREPARE_INPUT(samples_matrix)
 
@@ -43,12 +42,4 @@ workflow HDP_EXTRACTION {
     // }
 
     COMPARESIGNATURES(PROCESS_HDP_RESULTS.out.processed_results, reference_signatures)
-
-    // final_results_ch = COMPARECANCERSIGNATURES(compared_results_ch, reference_signatures)
-
-
-    // emit:
-    // plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]
-    // // plots_extraction    = MSIGHDP.out.plots                     // channel: [ val(meta), file(depths) ]
-    // mutation_probs      = signature_probs_samples
 }
