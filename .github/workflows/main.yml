@@ -1,4 +1,4 @@
-name: Nextflow Lint
+name: Nextflow Lint and Auto-fix
 
 on:
   pull_request:
@@ -8,12 +8,14 @@ on:
 
 jobs:
   lint:
-    name: Run Nextflow lint
+    name: Run Nextflow lint and commit fixes
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history needed to push changes
 
       - name: Setup Nextflow
         uses: nf-core/setup-nextflow@v2.0.0
@@ -23,3 +25,15 @@ jobs:
 
       - name: Run Nextflow lint
         run: nextflow lint -format -harshil-alignment *
+
+      - name: Commit changes if any
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: apply Nextflow lint auto-fixes"
+            git push
+          else
+            echo "No changes to commit"
+          fi
