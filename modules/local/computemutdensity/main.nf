@@ -1,5 +1,5 @@
 process MUTATION_DENSITY {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -10,7 +10,7 @@ process MUTATION_DENSITY {
 
     output:
     tuple val(meta), path("*.mutdensities.tsv"), emit: mutdensities
-    path  "versions.yml"                   , topic: versions
+    path "versions.yml", topic: versions
 
     script:
     def sample_name = "${meta.id}"
@@ -40,5 +40,4 @@ process MUTATION_DENSITY {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

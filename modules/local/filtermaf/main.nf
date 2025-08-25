@@ -1,5 +1,5 @@
 process FILTER_BATCH {
-    tag "$meta.id"
+    tag "${meta.id}"
 
     label 'process_high_memory'
     label 'time_low'
@@ -10,9 +10,8 @@ process FILTER_BATCH {
     tuple val(meta), path(maf)
 
     output:
-    tuple val(meta), path("*.cohort.filtered.tsv.gz") , emit: cohort_maf
-    path "versions.yml"                               , topic: versions
-
+    tuple val(meta), path("*.cohort.filtered.tsv.gz"), emit: cohort_maf
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

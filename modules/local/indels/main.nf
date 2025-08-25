@@ -1,5 +1,5 @@
 process INDELS_COMPARISON {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -8,9 +8,8 @@ process INDELS_COMPARISON {
     tuple val(meta), path(mutations)
 
     output:
-    tuple val(meta), path("*.indels.tsv") , emit: indels
-    path  "versions.yml"                  , topic: versions
-
+    tuple val(meta), path("*.indels.tsv"), emit: indels
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -37,5 +36,4 @@ process INDELS_COMPARISON {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

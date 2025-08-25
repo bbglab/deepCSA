@@ -1,19 +1,17 @@
-
 process PREPARE_INPUT {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_medium'
 
     container 'docker.io/ferriolcalvet/hdp_stefano:0.1.0'
 
     input:
-    tuple val(meta) , val(type), path(matrix)
+    tuple val(meta), val(type), path(matrix)
 
     output:
-    tuple val(meta), path("*.hdp.rds"), path("*.hdp.treelayer.rds") , emit: input_data
-    tuple val(meta), path("*.csv")                                  , emit: csv_matrices
-    path "versions.yml"                                             , topic: versions
-
+    tuple val(meta), path("*.hdp.rds"), path("*.hdp.treelayer.rds"), emit: input_data
+    tuple val(meta), path("*.csv"), emit: csv_matrices
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -69,5 +67,4 @@ process PREPARE_INPUT {
         HDP     : original
     END_VERSIONS
     """
-
 }

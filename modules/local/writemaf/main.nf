@@ -7,12 +7,11 @@ process WRITE_MAFS {
 
     input:
     tuple val(meta), path(maf)
-    path (json_groups)
+    path json_groups
 
     output:
-    path("*.filtered.tsv.gz") , emit: mafs
-    path "versions.yml"       , topic: versions
-
+    path ("*.filtered.tsv.gz"), emit: mafs
+    path "versions.yml", topic: versions
 
     script:
     // TODO reimplement with click

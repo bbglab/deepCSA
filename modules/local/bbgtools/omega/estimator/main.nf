@@ -1,5 +1,5 @@
 process OMEGA_ESTIMATOR {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'cpu_single_fixed'
     label 'time_low'
     label 'process_high_memory'
@@ -8,14 +8,13 @@ process OMEGA_ESTIMATOR {
     container 'docker.io/ferriolcalvet/omega:20250716'
 
     input:
-    tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
+    tuple val(meta), path(mutabilities_table), path(mutations_table), path(depths)
     tuple val(meta2), path(annotated_panel)
-    path (genes_json)
+    path genes_json
 
     output:
     tuple val(meta), path("output_*.tsv"), emit: results
-    path "versions.yml"                  , topic: versions
-
+    path "versions.yml", topic: versions
 
     script:
     def option = task.ext.option ?: ""
@@ -74,4 +73,3 @@ process OMEGA_ESTIMATOR {
     END_VERSIONS
     """
 }
-

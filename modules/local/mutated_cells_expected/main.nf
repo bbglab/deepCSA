@@ -1,5 +1,5 @@
 process EXPECTED_MUTATED_CELLS {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_medium'
 
     container 'docker.io/axelrosendahlhuber/expected_mutrate:latest'
@@ -10,20 +10,18 @@ process EXPECTED_MUTATED_CELLS {
     tuple val(meta3), path(depths)
     tuple val(meta4), path(annotated_panel)
     tuple val(meta5), path(annotated_bed_file)
-    path (features_table)
-
+    path features_table
 
     output:
-    tuple val(meta), path("**.png")     , emit: plots
-    tuple val(meta), path("**.tsv")     , emit: stats
-    tuple val(meta), path("**.rds")     , emit: rds_file
-    tuple val(meta), path("**.rda")     , emit: rda_file
+    tuple val(meta), path("**.png"), emit: plots
+    tuple val(meta), path("**.tsv"), emit: stats
+    tuple val(meta), path("**.rds"), emit: rds_file
+    tuple val(meta), path("**.rda"), emit: rda_file
 
-    path "versions.yml"                 , topic: versions
-
+    path "versions.yml", topic: versions
 
     script:
-    def metadata_file = task.ext.metadata_file ? "${features_table}": ""
+    def metadata_file = task.ext.metadata_file ? "${features_table}" : ""
     """
     mkdir expected_mutdensity
     mutgenomes_expected_mutrisk.R \\

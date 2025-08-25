@@ -6,14 +6,13 @@ process TABLE_2_GROUP {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    path(features_table)
+    path features_table
 
     output:
-    path("samples.json")                        , emit: json_samples
-    path("groups.json")       , optional : true , emit: json_groups
-    path("all_groups.json")                     , emit: json_allgroups
-    path "versions.yml"                         , topic: versions
-
+    path ("samples.json"), emit: json_samples
+    path ("groups.json"), optional: true, emit: json_groups
+    path ("all_groups.json"), emit: json_allgroups
+    path "versions.yml", topic: versions
 
     script:
     def separator = task.ext.separator ?: "comma"

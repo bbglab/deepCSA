@@ -1,16 +1,14 @@
+include { TABIX_BGZIPTABIX_QUERY as SUBSETMUTATIONS         } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { SUBSET_MAF as SUBSETMUTABILITY                    } from '../../../modules/local/subsetmaf/main'
 
-include { SUBSET_MAF                    as SUBSETMUTABILITY         } from '../../../modules/local/subsetmaf/main'
+include { COMPUTE_RELATIVE_MUTABILITY as RELATIVEMUTABILITY } from '../../../modules/local/compute_mutability/main'
 
-include { COMPUTE_RELATIVE_MUTABILITY   as RELATIVEMUTABILITY       } from '../../../modules/local/compute_mutability/main'
-
-include { TABIX_BGZIPTABIX              as MUTABILITY_BGZIPTABIX    } from '../../../modules/nf-core/tabix/bgziptabix/main'
+include { TABIX_BGZIPTABIX as MUTABILITY_BGZIPTABIX         } from '../../../modules/nf-core/tabix/bgziptabix/main'
 
 
 
 workflow MUTABILITY {
-
     take:
     mutations
     depth
@@ -30,15 +28,14 @@ workflow MUTABILITY {
 
     SUBSETMUTABILITY(SUBSETMUTATIONS.out.subset)
     SUBSETMUTABILITY.out.mutations
-    .join(profile)
-    .join(depth)
-    .set{ mutations_n_profile_n_depth }
+        .join(profile)
+        .join(depth)
+        .set { mutations_n_profile_n_depth }
 
-    RELATIVEMUTABILITY( mutations_n_profile_n_depth, panel_file)
+    RELATIVEMUTABILITY(mutations_n_profile_n_depth, panel_file)
 
-    MUTABILITY_BGZIPTABIX( RELATIVEMUTABILITY.out.mutability )
-
+    MUTABILITY_BGZIPTABIX(RELATIVEMUTABILITY.out.mutability)
 
     emit:
-    mutability      = MUTABILITY_BGZIPTABIX.out.gz_tbi      // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
+    mutability = MUTABILITY_BGZIPTABIX.out.gz_tbi // channel: [ val(meta), file(mutabilities), file(mutabilities_index) ]
 }

@@ -1,6 +1,6 @@
 process COMPUTE_CONTAMINATION {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -9,11 +9,10 @@ process COMPUTE_CONTAMINATION {
     tuple val(meta), path(maf)
     tuple val(meta2), path(somatic_maf)
 
-
     output:
-    tuple val(meta), path("*.tsv")  ,                   emit: contamination_results
-    tuple val(meta2), path("*.pdf") ,   optional:true,  emit: contamination_plots
-    path "versions.yml" ,                               topic: versions
+    tuple val(meta), path("*.tsv"), emit: contamination_results
+    tuple val(meta2), path("*.pdf"), optional: true, emit: contamination_plots
+    path "versions.yml", topic: versions
 
     script:
     """

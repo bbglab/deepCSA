@@ -1,23 +1,22 @@
 process TABIX_BGZIPTABIX_QUERY {
     cache false
-    
-    tag "$meta.id"
+
+    tag "${meta.id}"
     label 'process_high'
     label 'process_high_memory'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/tabix:1.11--hdfd78af_0' :
-        'biocontainers/tabix:1.11--hdfd78af_0' }"
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/tabix:1.11--hdfd78af_0'
+        : 'biocontainers/tabix:1.11--hdfd78af_0'}"
 
     input:
-    tuple val(meta)   , path(input)
-    tuple val(meta2)  , path(bedfile)
+    tuple val(meta), path(input)
+    tuple val(meta2), path(bedfile)
 
     output:
-    tuple val(meta), path("*.gz")   , emit: subset
-    path  "versions.yml"            , topic: versions
-
+    tuple val(meta), path("*.gz"), emit: subset
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ''

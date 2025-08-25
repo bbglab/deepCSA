@@ -1,18 +1,17 @@
 process MUTATED_CELLS_FROM_VAF {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
     label 'memory_medium'
 
     container 'docker.io/ferranmuinos/test_mutated_genomes'
 
     input:
-    tuple val(meta), path (mutated_genomes_results)
-    path (clinical_features)
+    tuple val(meta), path(mutated_genomes_results)
+    path clinical_features
 
     output:
-    tuple val(meta), path("*.tsv") , emit: mutated_cells_sample
-    path  "versions.yml" , topic: versions
-
+    tuple val(meta), path("*.tsv"), emit: mutated_cells_sample
+    path "versions.yml", topic: versions
 
     script:
     """
@@ -35,5 +34,4 @@ process MUTATED_CELLS_FROM_VAF {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

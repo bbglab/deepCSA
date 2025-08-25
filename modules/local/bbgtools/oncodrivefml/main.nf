@@ -1,5 +1,5 @@
 process ONCODRIVEFML {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     // // conda "YOUR-TOOL-HERE"
@@ -9,21 +9,21 @@ process ONCODRIVEFML {
     container 'docker.io/ferriolcalvet/oncodrivefml:latest'
 
     input:
-    tuple val(meta) , path(mutations), path(mutabilities), path(mutabilities_ind)
-    tuple val(meta2), path (bed_file)
+    tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
+    tuple val(meta2), path(bed_file)
     tuple path(cadd_scores_file), path(cadd_scores_index)
-    val(mode)
+    val mode
 
     output:
-    tuple val(meta), path("**.tsv.gz")  , emit: tsv
-    tuple val(meta), path("**.png")     , emit: png
-    tuple val(meta), path("**.html")    , emit: html
-    tuple val(meta), path("${meta.id}.${mode}/")         , emit: folder
-    path "versions.yml"                 , topic: versions
-
+    tuple val(meta), path("**.tsv.gz"), emit: tsv
+    tuple val(meta), path("**.png"), emit: png
+    tuple val(meta), path("**.html"), emit: html
+    tuple val(meta), path("${meta.id}.${mode}/"), emit: folder
+    path "versions.yml", topic: versions
 
     script:
-    def args = task.ext.args ?: "" // "-s ${params.seed}"
+    def args = task.ext.args ?: ""
+    // "-s ${params.seed}"
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     // TODO: See if we can provide the entire json as an input parameter
@@ -38,7 +38,7 @@ process ONCODRIVEFML {
 
     [mutability]
     adjusting = True
-    file = '$mutabilities'
+    file = '${mutabilities}'
     format = 'tabix'
     chr = 0
     chr_prefix = "chr"
@@ -90,10 +90,10 @@ process ONCODRIVEFML {
     seed = 123
     EOF
 
-    oncodrivefml -i $mutations \\
-                    -e $bed_file \\
-                    -o $prefix \\
-                    $args \\
+    oncodrivefml -i ${mutations} \\
+                    -e ${bed_file} \\
+                    -o ${prefix} \\
+                    ${args} \\
                     -c oncodrivefml_v2.mutability.conf
 
     cat <<-END_VERSIONS > versions.yml

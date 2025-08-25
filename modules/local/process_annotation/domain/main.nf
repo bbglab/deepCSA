@@ -9,14 +9,13 @@ process DOMAIN_ANNOTATION {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta) , path(panel_annotated)
-    path (domains_file)
+    tuple val(meta), path(panel_annotated)
+    path domains_file
 
     output:
-    path("*.domains.bed4.bed")  , emit: domains_bed
-    path("domains_info.tsv")    , emit: domains_tsv
-    path  "versions.yml"        , topic: versions
-
+    path ("*.domains.bed4.bed"), emit: domains_bed
+    path ("domains_info.tsv"), emit: domains_tsv
+    path "versions.yml", topic: versions
 
     script:
     """

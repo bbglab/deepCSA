@@ -1,5 +1,5 @@
 process ONCODRIVECLUSTL {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     // // conda "YOUR-TOOL-HERE"
@@ -9,16 +9,15 @@ process ONCODRIVECLUSTL {
     container 'docker.io/ferriolcalvet/oncodriveclustl:latest'
 
     input:
-    tuple val(meta) , path (mutations), path(mutabilities), path(mutabilities_ind)
-    tuple val(meta2), path (bed_file)
+    tuple val(meta), path(mutations), path(mutabilities), path(mutabilities_ind)
+    tuple val(meta2), path(bed_file)
 
     output:
-    tuple val(meta), path("**.tsv")                 , emit: tsv
-    tuple val(meta), path("**.txt")                 , emit: txt
-    tuple val(meta), path("**.png")  , optional:true, emit: png
-    tuple val(meta), path("**.log")                 , emit: log
-    path "versions.yml"                             , topic: versions
-
+    tuple val(meta), path("**.tsv"), emit: tsv
+    tuple val(meta), path("**.txt"), emit: txt
+    tuple val(meta), path("**.png"), optional: true, emit: png
+    tuple val(meta), path("**.log"), emit: log
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ""
@@ -28,7 +27,7 @@ process ONCODRIVECLUSTL {
     """
     cat > mutability_config.json << EOF
     {
-        "file" : "$mutabilities",
+        "file" : "${mutabilities}",
         "format" : "tabix",
         "chr" : 0,
         "chr_prefix" : "chr",

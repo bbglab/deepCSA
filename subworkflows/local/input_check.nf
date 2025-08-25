@@ -9,33 +9,29 @@ workflow INPUT_CHECK {
     samplesheet // file: /path/to/samplesheet.csv
 
     main:
-    SAMPLESHEET_CHECK ( samplesheet )
-        .csv
-        .splitCsv ( header:true, sep:',' )
-        .map { create_input_channel(it) }
-        .set { mutations }
+    SAMPLESHEET_CHECK(samplesheet).csv.splitCsv(header: true, sep: ',').map { create_input_channel(it) }.set { mutations }
 
     emit:
-    mutations                                 // channel: [ val(meta), file(row.vcf), file(row.bam) ]
+    mutations // channel: [ val(meta), file(row.vcf), file(row.bam) ]
 }
 
 // Function to get list of [ meta, [ fastq_1, fastq_2 ] ]
 def create_input_channel(LinkedHashMap row) {
     // create meta map
     def meta = [:]
-    meta.id       = row.sample
-    meta.batch    = row.batch
+    meta.id = row.sample
+    meta.batch = row.batch
 
     // add path(s) of the fastq file(s) to the meta map
     def vcf_bam_meta = []
     if (!file(row.vcf).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> VCF file does not exist!\n${row.vcf}"
+        exit(1, "ERROR: Please check input samplesheet -> VCF file does not exist!\n${row.vcf}")
     }
     if (!file(row.bam).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> BAM file does not exist!\n${row.bam}"
+        exit(1, "ERROR: Please check input samplesheet -> BAM file does not exist!\n${row.bam}")
     }
 
-    vcf_bam_meta = [ meta, file(row.vcf), file(row.bam) ]
+    vcf_bam_meta = [meta, file(row.vcf), file(row.bam)]
 
     return vcf_bam_meta
 }

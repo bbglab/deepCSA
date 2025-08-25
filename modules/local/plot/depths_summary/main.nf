@@ -1,6 +1,6 @@
 process PLOT_DEPTHS {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
     label 'time_low'
     label 'process_high_memory'
@@ -8,16 +8,14 @@ process PLOT_DEPTHS {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta) , path(depth)
+    tuple val(meta), path(depth)
     tuple val(meta2), path(panel)
 
     output:
-    tuple val(meta), path("*.pdf")                      , emit: plots
-    tuple val(meta), path("*.avgdepth_per_sample.tsv")  , emit: average_per_sample
-    tuple val(meta), path("*depth*.tsv")                , emit: depths
-    path  "versions.yml"                                , topic: versions
-
-
+    tuple val(meta), path("*.pdf"), emit: plots
+    tuple val(meta), path("*.avgdepth_per_sample.tsv"), emit: average_per_sample
+    tuple val(meta), path("*depth*.tsv"), emit: depths
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -49,5 +47,4 @@ process PLOT_DEPTHS {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

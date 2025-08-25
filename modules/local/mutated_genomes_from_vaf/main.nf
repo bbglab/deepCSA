@@ -1,17 +1,16 @@
 process MUTATED_GENOMES_FROM_VAF {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
     label 'memory_medium'
 
     container 'docker.io/ferranmuinos/test_mutated_genomes'
 
     input:
-    tuple val(meta) , path(mutations), path(omegas)
+    tuple val(meta), path(mutations), path(omegas)
 
     output:
-    tuple val(meta), path("*.covered_genomes_summary.tsv") , emit: mutated_gen_sample
-    path  "versions.yml"                                   , topic: versions
-
+    tuple val(meta), path("*.covered_genomes_summary.tsv"), emit: mutated_gen_sample
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -40,5 +39,4 @@ process MUTATED_GENOMES_FROM_VAF {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }

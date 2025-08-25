@@ -1,6 +1,6 @@
 process COMPUTE_PROFILE {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
 
@@ -8,19 +8,18 @@ process COMPUTE_PROFILE {
 
     input:
     tuple val(meta), path(matrix), path(trinucleotide)
-    path( wgs_trinucleotides )
+    path wgs_trinucleotides
 
     output:
-    tuple val(meta), path("*.profile.tsv")                                  , emit: profile
-    tuple val(meta), path("*.proportion_mutations.tsv")     , optional:true , emit: panel_proportions
-    tuple val(meta), path("*.proportion_mutations.WGS.tsv") , optional:true , emit: wgs_proportions
-    tuple val(meta), path("*.matrix.WGS.tsv")               , optional:true , emit: wgs
-    tuple val(meta), path("*.matrix.WGS.sigprofiler.tsv")   , optional:true , emit: wgs_sigprofiler
+    tuple val(meta), path("*.profile.tsv"), emit: profile
+    tuple val(meta), path("*.proportion_mutations.tsv"), optional: true, emit: panel_proportions
+    tuple val(meta), path("*.proportion_mutations.WGS.tsv"), optional: true, emit: wgs_proportions
+    tuple val(meta), path("*.matrix.WGS.tsv"), optional: true, emit: wgs
+    tuple val(meta), path("*.matrix.WGS.sigprofiler.tsv"), optional: true, emit: wgs_sigprofiler
 
-    tuple val(meta), path("*.pdf")                          , optional:true , emit: plots
+    tuple val(meta), path("*.pdf"), optional: true, emit: plots
 
-    path "versions.yml"                                                     , topic: versions
-
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ""
@@ -39,7 +38,6 @@ process COMPUTE_PROFILE {
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 
     stub:
     def prefix = task.ext.prefix ?: ""

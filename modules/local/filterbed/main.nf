@@ -1,18 +1,17 @@
 process FILTERBED {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta)     , path(maf)
-    tuple val(meta2)    , path(bedfile)
+    tuple val(meta), path(maf)
+    tuple val(meta2), path(bedfile)
 
     output:
-    tuple val(meta), path("*.tsv.gz")  , emit: maf
-    path "versions.yml"                , topic: versions
-
+    tuple val(meta), path("*.tsv.gz"), emit: maf
+    path "versions.yml", topic: versions
 
     script:
     def filtername = task.ext.filtername ?: "covered"

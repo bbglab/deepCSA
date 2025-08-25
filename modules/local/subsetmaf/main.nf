@@ -1,6 +1,6 @@
 process SUBSET_MAF {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -9,9 +9,8 @@ process SUBSET_MAF {
     tuple val(meta), path(mut_files)
 
     output:
-    tuple val(meta), path("*.mutations.tsv")  , emit: mutations
-    path "versions.yml"                       , topic: versions
-
+    tuple val(meta), path("*.mutations.tsv"), emit: mutations
+    path "versions.yml", topic: versions
 
     script:
     def args = task.ext.args ?: ""

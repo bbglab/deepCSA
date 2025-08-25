@@ -1,5 +1,5 @@
 process SITE_COMPARISON {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'cpu_single_fixed'
     label 'time_low'
     label 'process_high_memory'
@@ -7,18 +7,18 @@ process SITE_COMPARISON {
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
-    tuple val(meta) , path(mutations), path(mutabilities_per_site)
+    tuple val(meta), path(mutations), path(mutabilities_per_site)
     tuple val(meta2), path(annotated_panel_richer)
 
     output:
-    tuple val(meta), path("*.comparison.tsv.gz") , emit: comparisons
-    path "versions.yml"                          , topic: versions
-
+    tuple val(meta), path("*.comparison.tsv.gz"), emit: comparisons
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def size = task.ext.size ?: "all" // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
+    def size = task.ext.size ?: "all"
+    // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
     """
     omega_comparison_per_site.py --mutations-file ${mutations} \\
                                     --panel-file ${annotated_panel_richer} \\
@@ -44,4 +44,3 @@ process SITE_COMPARISON {
     END_VERSIONS
     """
 }
-

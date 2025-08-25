@@ -1,21 +1,20 @@
 process EXPAND_REGIONS {
 
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_high'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
     input:
     tuple val(meta), path(panel)
-    path (domains)
-    path (exons)
-    path (custom)
+    path domains
+    path exons
+    path custom
 
     output:
-    tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
-    tuple val(meta), path("hotspot_names.json") , emit: new_regions_json
-    path "versions.yml"                         , topic: versions
-
+    tuple val(meta), path("*with_hotspots.tsv"), emit: panel_increased
+    tuple val(meta), path("hotspot_names.json"), emit: new_regions_json
+    path "versions.yml", topic: versions
 
     script:
     // def expansion = task.ext.expansion ?: 0

@@ -1,5 +1,5 @@
 process OMEGA_PREPROCESS {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'cpu_single_fixed'
     label 'time_low'
     label 'process_high_memory'
@@ -8,17 +8,15 @@ process OMEGA_PREPROCESS {
     container 'docker.io/ferriolcalvet/omega:20250716'
 
     input:
-    tuple val(meta) , path(mutations), path(depths), path(mutation_profile)
-    tuple val(meta2), path (annotated_panel)
-    tuple val(meta3), path (syn_muts_global)
-    tuple val(meta4), path (mut_profile_global, stageAs: 'global_mutprofile.tsv')
-
+    tuple val(meta), path(mutations), path(depths), path(mutation_profile)
+    tuple val(meta2), path(annotated_panel)
+    tuple val(meta3), path(syn_muts_global)
+    tuple val(meta4), path(mut_profile_global, stageAs: 'global_mutprofile.tsv')
 
     output:
-    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv")   , emit: mutabs_n_mutations_tsv
-    tuple val(meta), path("syn_muts.*.tsv")                                                                                     , emit: syn_muts_tsv
-    path "versions.yml"                                                                                                         , topic: versions
-
+    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv"), emit: mutabs_n_mutations_tsv
+    tuple val(meta), path("syn_muts.*.tsv"), emit: syn_muts_tsv
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
@@ -58,16 +56,3 @@ process OMEGA_PREPROCESS {
     END_VERSIONS
     """
 }
-
-// omega preprocessing --preprocessing-mode compute_mutabilities
-//                      --depths-file all_samples.subset_depths.tsv.gz
-//                      --mutations-file all_samples.mutations.tsv
-//                      --input-vep-postprocessed-file consensus.exons_splice_sites.tsv
-//                      --table-observed-muts mutations_per_sample_gene_impact_context.all_samples2.global_loc.gLoc.tsv
-//                      --mutabilities-table mutability_per_sample_gene_context.all_samples2.global_loc.gLoc.tsv
-//                      --synonymous-muts-table syn_muts.all_samples2.global_loc.gLoc.tsv
-//                      --mutational-profile-file all_samples.all.profile.tsv
-//                      --mutational-profile-global-file P19_0033_BTR_01.all.profile.tsv
-//                      --single-sample all_samples
-//                      --absent-synonymous infer_global_custom
-//                      --synonymous-mutrates-file mutdensities_per_gene.tsv

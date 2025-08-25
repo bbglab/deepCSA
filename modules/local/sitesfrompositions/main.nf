@@ -8,14 +8,12 @@ process SITESFROMPOSITIONS {
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
 
-
     input:
     tuple val(meta), path(depths)
 
     output:
-    tuple val(meta), path("*.sites4VEP.tsv")  , emit: annotated_panel_reg
-    path  "versions.yml"                      , topic: versions
-
+    tuple val(meta), path("*.sites4VEP.tsv"), emit: annotated_panel_reg
+    path "versions.yml", topic: versions
 
     script:
     def assembly = task.ext.assembly ?: "hg38"

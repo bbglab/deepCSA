@@ -1,24 +1,22 @@
 process CREATESAMPLEPANELS {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
     label 'time_low'
 
     conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-            'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
-            'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
-
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0'
+        : 'biocontainers/pybedtools:0.9.1--py38he0f268d_0'}"
 
     input:
-    tuple val(meta) , path(compact_captured_panel_annotation)
+    tuple val(meta), path(compact_captured_panel_annotation)
     tuple val(meta2), path(depths)
-    val(min_depth)
+    val min_depth
 
     output:
-    path("*.tsv")           , emit: sample_specific_panel
-    path("*.bed")           , emit: sample_specific_panel_bed
-    path "versions.yml"     , topic: versions
-
+    path ("*.tsv"), emit: sample_specific_panel
+    path ("*.bed"), emit: sample_specific_panel_bed
+    path "versions.yml", topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""

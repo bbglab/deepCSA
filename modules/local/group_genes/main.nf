@@ -6,14 +6,13 @@ process GROUP_GENES {
 
     input:
     tuple val(meta), path(mutations_table)
-    path (features_table)
+    path features_table
     tuple val(meta2), path(hotspots_file)
 
     output:
-    path("genes2group_out.json")                        , emit: json_genes
-    path("pathway_groups_out.json") , optional : true   , emit: json_pathways
-    path "versions.yml"                                 , topic: versions
-
+    path ("genes2group_out.json"), emit: json_genes
+    path ("pathway_groups_out.json"), optional: true, emit: json_pathways
+    path "versions.yml", topic: versions
 
     script:
     def separator = task.ext.separator ?: "tab"
@@ -40,4 +39,3 @@ process GROUP_GENES {
     END_VERSIONS
     """
 }
-    // features_1table2groups.py ${features_table} ${separator} features_table_information.json
