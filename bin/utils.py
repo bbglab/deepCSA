@@ -87,7 +87,7 @@ def filter_maf(maf_df, filter_criteria):
 
 def vartype(x,
             letters = ['A', 'T', 'C', 'G'],
-            len_SV_lim = 100
+            len_SV_lim = 50
             ):
     """
     Define the TYPE of a variant
