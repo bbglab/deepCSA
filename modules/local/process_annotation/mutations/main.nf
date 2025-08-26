@@ -20,9 +20,10 @@ process SUMMARIZE_ANNOTATION {
     script:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def assembly = task.ext.assembly ?: "hg38"
-    def hotspots = task.ext.hotspots_annotation ? "${hotspots_annotation_file}" : ""
-    // TODO reimplement python script with click
+    def assembly = task.ext.assembly ? "--assembly-name ${task.ext.assembly}" : ""
+    def hotspots = task.ext.hotspots_annotation ? "--hotspots-annotation-file ${hotspots_annotation_file}" : ""
+    def gnomad_threshold = task.ext.gnomad_af_threshold ? "--gnomad-af-threshold ${task.ext.gnomad_af_threshold}" : ""
+    def all_underscore = task.ext.underscore ? "--all-underscore" : ""
     """
     zcat <\$(ls *.tab.gz | head -1) | grep '#' | grep -v '##' > header.tsv;
     for file in *.tab.gz; do
@@ -32,11 +33,14 @@ process SUMMARIZE_ANNOTATION {
     cat header.tsv <(sort -u ${prefix}.vep.tab.tmp | grep -v '#' | sed 's/^chr//g' | awk -F ':' 'length(\$1) <= 2' | awk '{ printf "chr"\$0"\\n" }') > ${prefix}.vep.tab ;
     rm ${prefix}.vep.tab.tmp;
 
-    postprocessing_annotation.py ${prefix}.vep.tab \\
-                                    ${prefix}.vep.summary.tab \\
-                                    ${assembly} \\
-                                    False \\
-                                    ${hotspots} ;
+    postprocessing_annotation.py \\
+        ${prefix}.vep.tab \\
+        ${prefix}.vep.summary.tab \\
+        ${assembly} \\
+        ${all_underscore} \\
+        ${hotspots} \\
+        ${gnomad_threshold} \\
+
     gzip ${prefix}.vep.summary.tab;
     gzip ${prefix}.vep.tab;
 

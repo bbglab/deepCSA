@@ -607,6 +607,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "gnomad_af_threshold": {
+                    "type": "number",
+                    "description": "Allele frequency threshold for filtering variants based on gnomAD data.",
+                    "default": 0.001,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "downsample": {
                     "type": "boolean",
                     "description": "Decide if you want to do downsampling of the mutations and depth to a given proportion of the maximum. Uniform across samples.",
