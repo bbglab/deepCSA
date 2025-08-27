@@ -311,6 +311,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Define which is the unit of comparison of the per site mutabilities exp. vs obs. The options are: 'site', 'aminoacid', 'aminoacid_change'. You can provide a comma separated list of the preferred options or also all."
                 },
+                "positive_selection_non_protein_affecting": {
+                    "type": "boolean",
+                    "description": "Do you want to run positive selection metrics with non-protein affecting mutational profile?",
+                    "fa_icon": "fas fa-book",
+                    "hidden" : true,
+                    "help_text": "Do you want to run positive selection metrics with non-protein affecting mutational profile?"
+                },
                 "dnds": {
                     "type": "boolean",
                     "description": "Do you want to run dNdScv?",
@@ -569,7 +576,6 @@
                 "selected_genes": {
                     "type": "string",
                     "description": "Comma-separeted list of genes to focus the analysis",
-                    "default": "",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },

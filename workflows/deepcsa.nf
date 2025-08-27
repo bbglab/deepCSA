@@ -350,7 +350,7 @@ workflow DEEPCSA{
                 oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLALL.out.results_snvs_folder.map{ it -> it[1] })
             }
         }
-        if (params.profilenonprot){
+        if (params.profilenonprot & params.positive_selection_non_protein_affecting){
             mode = "non_prot_aff"
             ONCODRIVEFMLNONPROT(somatic_mutations, MUTABILITYNONPROT.out.mutability,
                                     CREATEPANELS.out.exons_consensus_panel,
@@ -429,7 +429,7 @@ workflow DEEPCSA{
                 }
             }
         }
-        if (params.profilenonprot){
+        if (params.profilenonprot & params.positive_selection_non_protein_affecting){
             OMEGANONPROT(somatic_mutations,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
