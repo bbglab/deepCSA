@@ -15,17 +15,15 @@ process PLOT_NEEDLES {
 
 
     script:
-    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def output_prefix = task.ext.output_prefix ?: ""
     """
+    mkdir ${prefix}.needles ;
     plot_needles.py \\
-                    ${prefix} \\
-                    ${mut_files} \\
-                    ${gene_data_df} \\
-                    ${prefix}${output_prefix} \\
-                    ${args}
+                    --sample_name ${prefix} \\
+                    --mut_file ${mut_files} \\
+                    --o3d_seq_file ${gene_data_df} \\
+                    --outdir ${prefix}.needles
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -16,13 +16,13 @@ process PLOT_OMEGA {
     script:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def requested_plots = task.ext.plots ?: "truncating,missense"
     """
+    mkdir ${prefix}.plots
     plot_selection_omega.py \\
-                    ${prefix} \\
-                    ${mutations} \\
-                    ${omegas} \\
-                    ${requested_plots} \\
+                    --sample_name ${prefix} \\
+                    --mut_file ${mutations} \\
+                    --omega_file ${omegas} \\
+                    --outdir ${prefix}.plots
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

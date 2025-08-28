@@ -86,9 +86,8 @@ workflow CREATE_PANELS {
         added_regions = Channel.empty()
     }
 
-    // Generate BED file with genomic coordinates of sequenced domains
-    domains_file = file("${params.annotations3d}/pfam.tsv")
-    DOMAINANNOTATION(rich_annotated, domains_file)
+    domains = file(params.domains_file, checkIfExists: true)
+    DOMAINANNOTATION(rich_annotated, domains)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
@@ -118,27 +117,27 @@ workflow CREATE_PANELS {
 
 
     // Create consensus panel: all modalities
-    CREATECONSENSUSPANELSALL(all_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSNONPROTAFFECT(nonprot_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSEXONS(exons_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSINTRONS(introns_panel, depths, params.consensus_panel_min_depth)
-    CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths, params.consensus_panel_min_depth)
+    CREATECONSENSUSPANELSALL(all_panel, depths)
+    CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths)
+    CREATECONSENSUSPANELSNONPROTAFFECT(nonprot_panel, depths)
+    CREATECONSENSUSPANELSEXONS(exons_panel, depths)
+    CREATECONSENSUSPANELSINTRONS(introns_panel, depths)
+    CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
     emit:
-    full_panel_annotated     = VCFANNOTATEPANEL.out.tab
-    all_panel               = all_panel.first()
-    all_bed                 = all_bed.first()
-    prot_panel              = prot_panel.first()
-    prot_bed                = prot_bed.first()
-    nonprot_panel           = nonprot_panel.first()
-    nonprot_bed             = nonprot_bed.first()
-    exons_panel             = exons_panel.first()
-    exons_bed               = exons_bed.first()
-    introns_panel           = introns_panel.first()
-    introns_bed             = introns_bed.first()
-    synonymous_panel        = synonymous_panel.first()
-    synonymous_bed          = synonymous_bed.first()
+    full_panel_annotated        = VCFANNOTATEPANEL.out.tab
+    all_panel                   = all_panel.first()
+    all_bed                     = all_bed.first()
+    prot_panel                  = prot_panel.first()
+    prot_bed                    = prot_bed.first()
+    nonprot_panel               = nonprot_panel.first()
+    nonprot_bed                 = nonprot_bed.first()
+    exons_panel                 = exons_panel.first()
+    exons_bed                   = exons_bed.first()
+    introns_panel               = introns_panel.first()
+    introns_bed                 = introns_bed.first()
+    synonymous_panel            = synonymous_panel.first()
+    synonymous_bed              = synonymous_bed.first()
 
 
     all_consensus_panel         = CREATECONSENSUSPANELSALL.out.consensus_panel.first()
@@ -157,6 +156,10 @@ workflow CREATE_PANELS {
     panel_annotated_rich        = rich_annotated
     added_custom_regions        = added_regions
     domains_panel_bed           = DOMAINANNOTATION.out.domains_bed
+    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv
+
+    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation
+    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())

@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 
+
 import click
 import pandas as pd
 import numpy as np
 from utils import vartype
 from read_utils import custom_na_values
 
-
+######
+# Read VCF file coming from VarDict2
+#      Note that the file can only contain one sample
+#      if two samples are given in the same VCF it will remove the first sample in the file
+# also it takes advantage of the fields in the FORMAT field that are coming from the recomputed depths the result from the
+######
 
 
 def read_from_vardict_VCF_all(sample,
                                 name,
                                 columns_to_keep = ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'REF_DEPTH', 'ALT_DEPTH', 'VAF',
-                                                    'vd_DEPTH', 'vd_REF_DEPTH', 'vd_ALT_DEPTH'],
-                                all_mols_fields = False
-                                ):
+                                                    'vd_DEPTH', 'vd_REF_DEPTH', 'vd_ALT_DEPTH']):
     """
     Read VCF file coming from Vardict2
     Note that the file can only contain one sample
@@ -138,55 +142,51 @@ def read_from_vardict_VCF_all(sample,
     ##
     # All molecule depths
     ##
-    if all_mols_fields:
-        for ele in ["CDPAM", "CADAM", "NDPAM"]:
-            if ele not in dat_full.columns:
-                print(f"{ele} not present in the format field, revise the VCF reading function")
-                return dat_full
-        # assign it to the column
-        dat_full["ALT_DEPTH_AM"] = [int(v[1]) for v in dat_full["CADAM"].str.split(",")]
-        dat_full["REF_DEPTH_AM"] = [int(v[0]) for v in dat_full["CADAM"].str.split(",")]
-        dat_full["DEPTH_AM"] = dat_full["CDPAM"].astype(int)
+    for ele in ["CDPAM", "CADAM", "NDPAM"]:
+        if ele not in dat_full.columns:
+            print(f"{ele} not present in the format field, revise your VCF")
+            # return dat_full
+            print(f"In the meantime, we are using {ele[:3]} to fill the information for {ele}")
+            dat_full[ele] = dat_full[ele[:3]].astype(int)
 
-        # compute VAF_AM
-        dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
+    # assign it to the column
+    dat_full["ALT_DEPTH_AM"] = [int(v[1]) for v in dat_full["CADAM"].str.split(",")]
+    dat_full["REF_DEPTH_AM"] = [int(v[0]) for v in dat_full["CADAM"].str.split(",")]
+    dat_full["DEPTH_AM"] = dat_full["CDPAM"].astype(int)
 
-        dat_full["numNs_AM"] = dat_full["NDPAM"].astype(int)
-        dat_full["VAF_Ns_AM"] = dat_full["numNs_AM"] / (dat_full["DEPTH_AM"] + dat_full["numNs_AM"])
+    # compute VAF_AM
+    dat_full["VAF_AM"] = dat_full["ALT_DEPTH_AM"] / dat_full["DEPTH_AM"]
 
-        # compute VAF_ND
-        dat_full["ALT_DEPTH_ND"] = dat_full["ALT_DEPTH_AM"] - dat_full["ALT_DEPTH"]
-        dat_full["DEPTH_ND"] = dat_full["DEPTH_AM"] - dat_full["DEPTH"]
-        dat_full["VAF_ND"] = dat_full["ALT_DEPTH_ND"] / dat_full["DEPTH_ND"]
+    dat_full["numNs_AM"] = dat_full["NDPAM"].astype(int)
+    dat_full["VAF_Ns_AM"] = dat_full["numNs_AM"] / (dat_full["DEPTH_AM"] + dat_full["numNs_AM"])
 
+    # Compute ND values
+    dat_full["ALT_DEPTH_ND"] = dat_full["ALT_DEPTH_AM"] - dat_full["ALT_DEPTH"]
+    dat_full["DEPTH_ND"] = dat_full["DEPTH_AM"] - dat_full["DEPTH"]
 
-        # compute VAF distortion
-        dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
-        dat_full["VAF_distortion_sq"] = np.log10(dat_full["VAF"]) / np.log10(dat_full["VAF_AM"])
-
-        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
-        dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
-
-
-        dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
-        dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF_distorted_expanded_sq"].fillna(True)
-
-        # dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
-        # dat_full["VAF_distorted_reduced"] = (1 / dat_full["VAF_distortion"]) > 3
-
-        # dat_full["VAF_distorted_reduced"] = dat_full["VAF_distorted_reduced"].fillna(True)
-        # dat_full["VAF_distorted"] = dat_full["VAF_distorted_reduced"] | dat_full["VAF_distorted_expanded"]
-
-
-
+    # If all ND depths are 0 → set VAF_ND = 0 and warn
+    if (dat_full["DEPTH_ND"] == 0).all():
+        print("ALT_DEPTH_AM is the same as ALT_DEPTH, you should not use VAF_ND")
+        dat_full["VAF_ND"] = 0
     else:
-        dat_full["VAF_distortion"] = 1
-        dat_full["VAF_distortion_sq"] = 1
-        # dat_full["VAF_distorted"] = False
-        # dat_full["VAF_distorted_reduced"] = False
-        dat_full["VAF_distorted_expanded"] = False
-        dat_full["VAF_distorted_expanded_sq"] = False
+        dat_full["VAF_ND"] = np.where(
+            dat_full["DEPTH_ND"] > 0,
+            dat_full["ALT_DEPTH_ND"] / dat_full["DEPTH_ND"],
+            0
+        )
 
+
+    # compute VAF distortion
+    dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
+    dat_full["VAF_distortion_sq"] = np.log10(dat_full["VAF"]) / np.log10(dat_full["VAF_AM"])
+
+    dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
+    dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
+
+    dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
+    dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF_distorted_expanded_sq"].fillna(True)
+
+    
     # define mean position in read 
     dat_full["PMEAN"] = dat_full["PMN"].astype(float) if "PMN" in dat_full.columns else -1
     dat_full["PSTD"] = dat_full["PST"].astype(float) if "PST" in dat_full.columns else -1
@@ -274,19 +274,6 @@ def add_alternative_format_columns(dataframe):
 
     new_format_muts.columns = ["CHROM_ensembl", "POS_ensembl", "REF_ensembl", "ALT_ensembl"]
 
-    ## in principle this should be solved by the modification I made to the previous function
-    ## but I keep it here just in case
-#     new_full_dataframe = pd.concat((dataframe, new_format_muts), axis = 1)
-#     # this is to fix the columns that have NANs and then mess up the format of the columns
-#     for column in ["CHROM", "POS", "REF", "ALT"]:
-#         new_full_dataframe[f'{column}_ensembl'] = maf_df[f'{column}_ensembl'].fillna(maf_df[f'{column}'])
-#         if column == "CHROM":
-#             maf_df[f'{column}_ensembl'] = maf_df[f'{column}_ensembl'].astype(str).str.replace("chr", "")
-
-#         if column in ["CHROM", "POS"]:
-#             maf_df[f'{column}_ensembl'] = maf_df[f'{column}_ensembl'].astype(float).round().astype(int)
-
-
     return pd.concat((dataframe, new_format_muts), axis = 1)
 
 def update_indel_info(df):
@@ -338,92 +325,55 @@ def update_indel_info(df):
 
 
 
+
 @click.command()
 @click.option('--vcf', type=click.Path(exists=True), required=True, help='Path to the VCF file.')
 @click.option('--sampleid', type=str, required=True, help='Sample ID.')
-@click.option('--level', type=str, required=True, help='Level.')
+@click.option('--level', type=str, default = 'med', help='Level of confidence of the mutations.')
 @click.option('--annotation_file', type=click.Path(exists=True), required=True, help='Path to the annotation file.')
-@click.option('--vaf_all_molecules', is_flag=True, help='Set this flag if vaf_all_molecules is true.')
-def main(vcf, sampleid, level, annotation_file, vaf_all_molecules):
+def main(vcf, sampleid, level, annotation_file):
+    keep_all_columns = [
+        "CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
+        "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
+        'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
+        "numNs", 'VAF_Ns',
+        'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "VAF_AM",
+        "numNs_AM", "VAF_Ns_AM",
+        'DEPTH_ND', 'ALT_DEPTH_ND',
+        "VAF_ND",
+        "VAF_distorted_expanded",
+        "VAF_distorted_expanded_sq",
+        "VAF_distortion",
+        "VAF_distortion_sq",
+        "PMEAN", "PSTD"
+    ]
 
-    # TODO
-    # fix this, force all molecules to be always active,
-    # when not specified copy same values as the duplex
-    if vaf_all_molecules:
-        keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
-                            "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                            'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
-                            "numNs", 'VAF_Ns',
-                            'DEPTH_AM', 'ALT_DEPTH_AM', 'REF_DEPTH_AM', "VAF_AM",
-                            "numNs_AM", "VAF_Ns_AM",
-                            'DEPTH_ND', 'ALT_DEPTH_ND',
-                            # 'REF_DEPTH_ND', "numNs_ND",
-                            "VAF_ND",
-                            # "VAF_distorted", "VAF_distorted_reduced",
-                            "VAF_distorted_expanded",
-                            "VAF_distorted_expanded_sq",
-                            "VAF_distortion",
-                            "VAF_distortion_sq",
-                            "PMEAN", "PSTD"
-                            ]
-        print("Using also information on all molecules, duplex and non-duplex.")
-    else:
-        keep_all_columns = ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
-                            "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
-                            'vd_DEPTH', 'vd_ALT_DEPTH', 'vd_REF_DEPTH', 'vd_VAF',
-                            "numNs", 'VAF_Ns',
-                            # "VAF_distorted", "VAF_distorted_reduced",
-                            "VAF_distorted_expanded",
-                            "VAF_distorted_expanded_sq",
-                            "VAF_distortion",
-                            "VAF_distortion_sq",
-                            "PMEAN", "PSTD"
-                            ]
-        print("Not using information on non-duplex molecules.")
+    annotated_variants = pd.read_csv(annotation_file, header=0, sep="\t", na_values=custom_na_values)
 
+    sample_muts = read_from_vardict_VCF_all(
+        sampleid,
+        vcf,
+        columns_to_keep=keep_all_columns
+    )
 
-    ## read all mutations
-    # recompute the VAF since it might not have enough resolution
-    sample_muts = read_from_vardict_VCF_all(sampleid, vcf,
-                                            columns_to_keep = keep_all_columns,
-                                            all_mols_fields = vaf_all_molecules
-                                            )
-
-    # Define some metadata related fields
     sample_muts["SAMPLE_ID"] = sampleid
     sample_muts["METHOD"] = level
 
-    sample_muts = sample_muts[sample_muts["CHROM"].apply(lambda x: '_' not in x)].reset_index(drop = True)
+    # remove non canonical chromosomes
+    sample_muts = sample_muts[sample_muts["CHROM"].apply(lambda x: '_' not in x)].reset_index(drop=True)
 
-
-    # annotate the variants
-    annotated_variants = pd.read_csv(annotation_file, header = 0, sep = "\t", na_values = custom_na_values)
-
-    # use the MUT_ID field to intersect with the EnsemblVEP annotation
-    samp_annotated = sample_muts.merge(annotated_variants, on = "MUT_ID", how  = 'left')
-    annotated_variants_cols = [ x for x in annotated_variants.columns if x != "MUT_ID" ]
+    samp_annotated = sample_muts.merge(annotated_variants, on="MUT_ID", how='left')
+    annotated_variants_cols = [x for x in annotated_variants.columns if x != "MUT_ID"]
     samp_annotated[annotated_variants_cols] = samp_annotated[annotated_variants_cols].fillna("-")
 
-    # add columns with alleles in Ensembl-like format
-    # format wanted by OncodriveFML
     samp_annotated_ensembl_allelles = add_alternative_format_columns(samp_annotated)
-
-
-    # Define mutation type
-    # revise that you agree on the criteria
-    samp_annotated_ensembl_allelles["TYPE"] = samp_annotated_ensembl_allelles[["REF", "ALT"]].apply(vartype, axis = 1)
-
-
-    # Update indels information
+    samp_annotated_ensembl_allelles["TYPE"] = samp_annotated_ensembl_allelles[["REF", "ALT"]].apply(vartype, axis=1)
     full_dataframe_indels_updated = update_indel_info(samp_annotated_ensembl_allelles)
 
-
-    full_dataframe_indels_updated.to_csv(f"{sampleid}.{level}.maf.annot.tsv.gz",
-                                            sep = "\t",
-                                            header = True,
-                                            index = False)
-    print("File written:", f"{sampleid}.{level}.maf.annot.tsv.gz")
-
+    outname = f"{sampleid}.{level}.maf.annot.tsv.gz"
+    full_dataframe_indels_updated.to_csv(outname, sep="\t", header=True, index=False)
+    print("File written:", outname)
 
 if __name__ == '__main__':
     main()
+

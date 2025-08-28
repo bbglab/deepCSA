@@ -14,6 +14,7 @@ process DOMAIN_ANNOTATION {
 
     output:
     path("*.domains.bed4.bed")  , emit: domains_bed
+    path("domains_info.tsv")    , emit: domains_tsv
     path  "versions.yml"        , topic: versions
 
 

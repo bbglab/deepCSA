@@ -16,17 +16,15 @@ process VCF2MAF {
 
 
     script:
+    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def level = task.ext.level ?: "high"
-    def all_molecules_dp = task.ext.all_molecules_dp ? "--vaf_all_molecules" : ""
-    // TODO level and all_molecules can be defined in the modules.config file think about making all molecules mandatory
     """
-    vcf2maf.py --vcf ${vcf} \\
-                --sampleid ${prefix} \\
-                --level ${level} \\
-                --annotation_file ${annotation} \\
-                ${all_molecules_dp}                
+    vcf2maf.py  \\
+        --vcf ${vcf} \\
+        --sampleid ${prefix} \\
+        --annotation_file ${annotation} \\
+        ${args}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
