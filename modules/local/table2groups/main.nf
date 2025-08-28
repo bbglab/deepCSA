@@ -16,7 +16,7 @@ process TABLE_2_GROUP {
 
     script:
     def separator = task.ext.separator ?: "comma"
-    def custom_groups = task.ext.feature_groups ? "--groups ${task.ext.feature_groups}" : ""
+    def custom_groups = task.ext.feature_groups ? "--groups \"${task.ext.feature_groups}\" " : ""
     def unique_identifier = task.ext.unique_identifier ? "--unique-identifier ${task.ext.unique_identifier}" : ""
     """
     features_1table2groups.py \\

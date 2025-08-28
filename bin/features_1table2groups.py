@@ -31,7 +31,8 @@ def main(table_filename, separator, unique_identifier, groups):
 
     groups_of_interest = []
     for comparison in groups_of_interest_init:
-        comparison_group = [item for item in comparison if item != '']
+        comparison_group_clean = [item.strip() for item in comparison]
+        comparison_group = [item for item in comparison_group_clean if item != '']
         if len(comparison_group) > 0:
             groups_of_interest.append(comparison_group)
 
