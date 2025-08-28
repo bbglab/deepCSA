@@ -21,7 +21,8 @@ sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
 
 
 #######
-###  Filter repetitive variants
+###  Filter repetitive variants,
+###     both based on frequency and including information on position in read
 #######
 
 max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
@@ -41,6 +42,7 @@ else:
     maf_df_f_somatic_pivot = maf_df_f_somatic.groupby("MUT_ID")["count"].sum().reset_index()
 
     repetitive_variants = maf_df_f_somatic_pivot[maf_df_f_somatic_pivot["count"] >= repetitive_variant_threshold]["MUT_ID"]
+    print("Repetitive variants: ", len(repetitive_variants))
 
     maf_df["repetitive_variant"] = maf_df["MUT_ID"].isin(repetitive_variants)
 
@@ -60,9 +62,10 @@ else:
         maf_df_f_somatic_compiled_pos = maf_df_f_somatic_pos_info.groupby("MUT_ID")["PMEAN"].nunique().reset_index()
 
         variants_with_rep_position = maf_df_f_somatic_compiled_pos[(maf_df_f_somatic_compiled_pos["PMEAN"] == 1)]["MUT_ID"]
-        print("Variants always found in the same position: ", variants_with_rep_position)
+        print("Variants always found in the same position: ", len(variants_with_rep_position))
+
         variants_with_rep_position = set(variants_with_rep_position).intersection(set(repetitive_variants))
-        print("Repetitive variants always found in the same position: ", variants_with_rep_position)
+        print("Repetitive variants always found in the same position: ", len(variants_with_rep_position))
 
         maf_df["repetitive_mapping_variant"] = maf_df["MUT_ID"].isin(variants_with_rep_position)
 
