@@ -1146,6 +1146,82 @@ def plot_feat_by_selection_group(df, figsize=(10, 4), save=False, filename="sele
     plt.show()
 
 
+def plot_all_domain_selection(df, color_map, figsize=(10, 3), show_domain_legend=True, save=False, filename="all_domain_selection.png"):
+
+    custom_markers = {"missense": "o", "truncating": "D"}  # 'o' = Circle, 'D' = Rotated Square
+    custom_size = {"missense": 150, "truncating": 100}  # Larger for missense
+    df["color"] = df["selection_id"].map(color_map) 
+    df["edge_width"] = df["pvalue"].apply(lambda p: 1.5 if p < 0.05 else 0.2)
+
+    fig = plt.figure(figsize=figsize)
+
+    # H-line and V-line
+    plt.xlim(df["x_pos"].min() - 0.5, df["x_pos"].max() + 0.5) 
+    plt.hlines(1, *plt.xlim(), lw=1, zorder=1, alpha=1, color="gray", linestyles="dashed")
+    plt.vlines(df["x_pos"], ymin=df["lower"], ymax=df["upper"], lw=1, zorder=1, alpha=1, color="black")
+
+    # Scatter plot
+    for gene, color in color_map.items():
+        for impact, marker in custom_markers.items():
+            subset = df[(df["gene"] == gene) & (df["impact"] == impact)]
+            plt.scatter(
+                subset["x_pos"], subset["dnds"], lw=0,
+                color="white", marker=marker, s=custom_size[impact]
+            )
+            plt.scatter(
+                subset["x_pos"], subset["dnds"],
+                color=color, marker=marker, s=custom_size[impact], 
+                edgecolor="black", lw=subset["edge_width"], alpha=0.7
+            )
+
+    ax = plt.gca()
+    ax.set_xticks(range(len(df["selection_id"].unique()))) 
+    ax.set_xticklabels(df["selection_id"].unique(), rotation=45, ha="right") 
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['right'].set_visible(False)
+    plt.xlabel("Domain ID")
+    plt.ylabel("dN/dS")
+    plt.title(f"Top  domain selection")
+
+    # Legends
+    selection_legend = [mpatches.Patch(color=color, label=selection_id) for selection_id, color in color_map.items()]
+    custom_size_legend = {"missense": 100, "truncating": 70}
+    impact_legend = [plt.scatter(
+        [], [], marker=custom_markers[impact], s=custom_size_legend[impact], 
+        color="white", edgecolor="black", label=impact) for impact in custom_markers]
+
+    legend1 = plt.legend(handles=selection_legend, title="Gene", bbox_to_anchor=(1.05, 0.65), loc="upper left", frameon=False)
+    legend2 = plt.legend(handles=impact_legend, title="Impact", bbox_to_anchor=(1.05, 1), loc="upper left", frameon=False)
+    
+    if show_domain_legend:
+        plt.gca().add_artist(legend1)
+        
+    if save:
+        fig.savefig(filename, dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    
+def format_domain_selection(df, xshift=0.15, sort_by="average_dnds", palette=sns.color_palette("Paired")):
+    
+    df = df.copy()
+    df["domain_id"] = df["gene"].str.split("--").apply(lambda x : x[1])
+    df["gene"] = df["gene"].str.split("--").apply(lambda x: x[0])
+
+    if sort_by == "average_dnds":
+        sort_map = df.groupby("domain_id").apply(lambda x: x["dnds"].mean()).to_dict()
+    else:
+        sort_map = df.groupby("domain_id").apply(lambda x: x[x["impact"] == sort_by]["dnds"].max()).to_dict()
+
+    df["sort"] = df["domain_id"].map(sort_map)
+    df = df.sort_values(["sort", "impact"], ascending=[False, True]).reset_index(drop=True)
+
+    df["x_pos"] = df["domain_id"].astype("category").cat.set_categories(df["domain_id"].unique()).cat.codes
+    df["x_pos"] += np.where(df["impact"] == "missense", -xshift, xshift)
+    
+    gene_color_dict = {gene: mcolors.to_hex(color) for gene, color in zip(df.gene.unique(), palette)}
+    
+    return df, gene_color_dict
+
 
 # TODO:
 # - Check that max res depth equal max exon depth, if not use the one that's actually included in the plot
@@ -1158,6 +1234,22 @@ def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection,
         except Exception as e:
             print(f"Saturation plots for gene: {gene} did not work.")
             print("Error", e)
+
+
+    try :
+        # TODO revise if here some lines can be skipped,
+        # and the formatting of domain selection can be done only once
+        df, gene_color_dict = format_domain_selection(domain_selection, xshift=0.22)
+        df = df.copy()[:60]
+        plot_all_domain_selection(df, gene_color_dict, figsize=(16,6), save=True, filename="plots/domain_selection.missense_truncating.pdf")
+        for impact in ["missense", "truncating"]:
+            df, gene_color_dict = format_domain_selection(domain_selection[domain_selection["impact"] == impact], sort_by=impact, xshift=0)[:60]
+            plot_all_domain_selection(df, gene_color_dict, figsize=(14,6), save=True, filename=f"plots/domain_selection.{impact}.pdf")
+    
+    except Exception as e:
+        print(f"Plots for domain selection at cohort level did not work.")
+        print("Error", e)
+
 
 
 
