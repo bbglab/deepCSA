@@ -37,6 +37,7 @@ workflow OMEGA_ANALYSIS{
     mutationdensities
     complete_panel
     exons_file
+    suffix
 
 
     main:
@@ -50,7 +51,8 @@ workflow OMEGA_ANALYSIS{
 
 
     site_comparison_results = Channel.empty()
-    global_loc_results = Channel.empty()
+    global_loc_results      = Channel.empty()
+    all_gloc_results        = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
@@ -144,6 +146,10 @@ workflow OMEGA_ANALYSIS{
                             GROUPGENES.out.json_genes.first())
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
+        
+        global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
+        all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
+
 
         if (params.omega_plot){
             SUBSETMUTATIONS.out.subset
@@ -184,14 +190,18 @@ workflow OMEGA_ANALYSIS{
     }.set{ site_comparison_results_flattened }
 
 
+    ESTIMATOR.out.results.map{ it -> it[1]}.flatten().set{ all_indv_results }
+    all_indv_results.collectFile(name: "all_omegas${suffix}.tsv", storeDir:"${params.outdir}/omega", skip: 1, keepHeader: true).set{ all_results }
+
 
     emit:
-    results         = ESTIMATOR.out.results
-    results_global  = global_loc_results
-    expanded_panel  = expanded_panel
-    site_comparison = site_comparison_results_flattened
+    results                 = ESTIMATOR.out.results
+    results_global          = global_loc_results
+    expanded_panel          = expanded_panel
+    site_comparison         = site_comparison_results_flattened
 
-
+    all_compiled            = all_results
+    all_globalloc_compiled  = all_gloc_results
     // plots = ONCODRIVE3D.out.plots
 
 }

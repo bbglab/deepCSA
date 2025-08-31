@@ -385,7 +385,8 @@ workflow DEEPCSA{
                     CREATEPANELS.out.domains_panel_bed,
                     SYNMUTDENSITY.out.mutdensity,
                     CREATEPANELS.out.panel_annotated_rich,
-                    DNA2PROTEINMAPPING.out.panel_exons_bed
+                    DNA2PROTEINMAPPING.out.panel_exons_bed,
+                    ""
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -407,7 +408,8 @@ workflow DEEPCSA{
                             CREATEPANELS.out.domains_panel_bed,
                             SYNMUTREADSRATE.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich,
-                            DNA2PROTEINMAPPING.out.panel_exons_bed
+                            DNA2PROTEINMAPPING.out.panel_exons_bed,
+                            ".multi"
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -427,7 +429,8 @@ workflow DEEPCSA{
                             CREATEPANELS.out.domains_panel_bed,
                             SYNMUTDENSITY.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich,
-                            DNA2PROTEINMAPPING.out.panel_exons_bed
+                            DNA2PROTEINMAPPING.out.panel_exons_bed,
+                            ".non_protein_affecting"
                             )
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
@@ -444,7 +447,8 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.domains_panel_bed,
                                     SYNMUTREADSRATE.out.mutdensity,
                                     CREATEPANELS.out.panel_annotated_rich,
-                                    DNA2PROTEINMAPPING.out.panel_exons_bed
+                                    DNA2PROTEINMAPPING.out.panel_exons_bed,
+                                    ".multi.non_protein_affecting"
                                     )
 
                 if (params.regressions){
