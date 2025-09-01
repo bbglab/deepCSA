@@ -286,7 +286,7 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         heatmap_data = bed6_probesByGene_df.pivot(index="GENE", columns="SAMPLE_ID", values="MEAN_GENE_DEPTH")
         heatmap_data = heatmap_data.reindex(index=genes_list, columns=samples_list)
         plt.figure(figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(genes_list))))
-        sns.heatmap(heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Gene Depth"})
+        sns.heatmap(data = heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Gene Depth"})
         plt.title("Mean Gene Depth per Gene per Sample")
         plt.xlabel("Sample ID")
         plt.ylabel("Gene")
