@@ -139,21 +139,18 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
 # main function
 
 @click.command()
-@click.option("--input-file", required=True, type=click.Path(exists=True, file_okay=False),
+@click.option("--input-file", required=True, type=click.Path(exists=True),
               help="Directory containing mutdensity/all_mutdensities.tsv")
-@click.option("--output-dir", required=True, type=click.Path(file_okay=False, writable=True),
+@click.option("--output-dir", required=True, type=click.Path(writable=True),
               help="Directory where output files will be written")
-@click.option("--panel", required=True, type=click.Path(exists=True, dir_okay=False),
+@click.option("--panel", required=True, type=click.Path(exists=True),
               help="File with a list of panel genes (one gene per line)")
-@click.option("--samples", required=True, type=click.Path(exists=True, dir_okay=False),
+@click.option("--samples", required=True, type=click.Path(exists=True),
               help="json file with the list of samples to be included in the analysis")
 
 def main(input_file, output_dir, panel, samples) :
 
-    # Ensure directory exists
-    os.makedirs(output_dir, exist_ok=True)
-
-    mutden_df = pd.read_table(f"{input_file}", sep='\t')
+    mutden_df = pd.read_table(input_file, sep='\t')
     panel = pd.read_table(panel)
 
     panel_genes_init = panel['GENE'].unique().tolist()
