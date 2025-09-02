@@ -94,9 +94,15 @@
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 },
-                "features_table_dict": {
+                "features_groups_list": {
                     "type": "string",
-                    "description": "String in JSON-like format defining the groups of samples.",
+                    "description": "String in list format defining the variables that have to be used for grouping samples.",
+                    "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_unique_identifier": {
+                    "type": "string",
+                    "description": "String defining the column with the unique identifier in the features_table that should include all the names of the samples that want to be used for the analysis.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
                     "fa_icon": "far fa-file-code"
                 }
