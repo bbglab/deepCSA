@@ -306,203 +306,220 @@ def plot_all_positive_selection(omega_truncating,
                                 gene_order,
                                 title = None,
                                 pvalue_thres = 0.05,
-                                linewidth_def = 0.6
+                                linewidth_def = 0.6,
+                                tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml")
                                 ):
 
     num_genes = len(gene_order)
-
-    # Create the figure and subplots
-    fig, (ax1, ax2, ax3, ax4, ax5, ) = plt.subplots(5, 1, figsize=(2.5, 2.9), gridspec_kw={'height_ratios': [5, 5, 5, 5, 5]})
+    # Determine which tracks to plot and their order
+    all_tracks = ["omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml", "indels"]
+    plot_tracks = [t for t in all_tracks if t in tracks]
+    n_tracks = len(plot_tracks)
+    fig, axes = plt.subplots(n_tracks, 1, figsize=(2.5, 0.6 + 0.6 * n_tracks), gridspec_kw={'height_ratios': [5]*n_tracks})
+    if n_tracks == 1:
+        axes = [axes]
     if title:
         fig.suptitle(title)
+    ax_idx = 0
 
-    # Separate data based on significance of p-value
-    omega_truncating_sig = omega_truncating[omega_truncating["pvalue"] <= pvalue_thres].reset_index(drop = True)
-    omega_truncating_notsig = omega_truncating[omega_truncating["pvalue"] > pvalue_thres].reset_index(drop = True)
-
-    # Plot the second bar plot in the middle subplot
-    sns.barplot(data=omega_truncating_notsig, x='GENE', y='omega_trunc',
-                ax=ax1, alpha=1,
-                fill = False,
-                legend = False,
-                linewidth = linewidth_def,
-                order = gene_order,
-                color = metrics_colors_dictionary["omega_trunc"])
-
-
-    # Plot the second bar plot in the middle subplot
-    sns.barplot(data=omega_truncating_sig, x='GENE', y='omega_trunc',
-                ax=ax1, alpha=1,
-                legend = False,
-                linewidth = linewidth_def,
-                order = gene_order,
-                color = metrics_colors_dictionary["omega_trunc"],
-                edgecolor = None
-                )
-
-    ax1.set_xlabel('')
-    ax1.set_ylabel('dN/dS of\ntruncating', rotation = 0, labelpad=17, verticalalignment = 'center')
-    ax1.set_xticklabels([])  # Hide x-axis labels on the middle plot
-    ax1.axhline(1, color='black', linestyle='--')
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['right'].set_visible(False)
-
-
-
-
-    # Separate data based on significance of p-value
-    omega_missense_sig = omega_missense[omega_missense["pvalue"] <= pvalue_thres].reset_index(drop = True)
-    omega_missense_notsig = omega_missense[omega_missense["pvalue"] > pvalue_thres].reset_index(drop = True)
-
-    # Plot the second bar plot in the middle subplot
-    sns.barplot(data=omega_missense_notsig, x='GENE', y='omega_mis',
-                ax=ax2, alpha=1,
-                fill = False,
-                legend = False,
-                linewidth = linewidth_def,
-                order = gene_order,
-                color = metrics_colors_dictionary["omega_miss"])
-
-
-    # Plot the second bar plot in the middle subplot
-    sns.barplot(data=omega_missense_sig, x='GENE', y='omega_mis',
-                ax=ax2, alpha=1,
-                legend = False,
-                linewidth = linewidth_def,
-                order = gene_order,
-                color = metrics_colors_dictionary["omega_miss"],
-                edgecolor = None
-                )
-
-    ax2.set_xlabel('')
-    ax2.set_ylabel('dN/dS of\nmissense', rotation = 0, labelpad=17, verticalalignment = 'center')
-    ax2.set_xticklabels([])  # Hide x-axis labels on the upper plot
-    ax2.axhline(1, color='black', linestyle='--')
-    ax2.spines['top'].set_visible(False)
-    ax2.spines['right'].set_visible(False)
-
-
-
-    df = oncodrive3d_data_scores
-    name_metric = "o3d_score"
-    variable_name = df.columns[1]
-    max_score = df[variable_name].max()
-    for j, gene in enumerate(gene_order):
-        try:
-            value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
-            value =  value_original / max_score * 5
-            pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
-            color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
-            edgecolor = metrics_colors_dictionary[name_metric]
-            size = value * 12  # Scale size for better visualization
-            ax3.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=0.9,)
-        except Exception as e:
-            print("Gene", gene, "failed because of", e)
-            continue
-
-    # Set axis labels
-    ax3.set_xticks(range(len(gene_order)))
-    ax3.set_xticklabels([])  # Hide x-axis labels on the middle plot
-    ax3.set_yticks([])
-    ax3.set_yticklabels([])
-    ax3.set_ylabel('3D\nclustering', rotation = 0, labelpad=17,
-                    verticalalignment = 'center',
-                    horizontalalignment = 'right'
+    if "omega_trunc" in plot_tracks:
+        ax = axes[ax_idx]
+        omega_truncating_sig = omega_truncating[omega_truncating["pvalue"] <= pvalue_thres].reset_index(drop = True)
+        omega_truncating_notsig = omega_truncating[omega_truncating["pvalue"] > pvalue_thres].reset_index(drop = True)
+        sns.barplot(data=omega_truncating_notsig, x='GENE', y='omega_trunc',
+                    ax=ax, alpha=1,
+                    fill = False,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    color = metrics_colors_dictionary["omega_trunc"])
+        sns.barplot(data=omega_truncating_sig, x='GENE', y='omega_trunc',
+                    ax=ax, alpha=1,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    color = metrics_colors_dictionary["omega_trunc"],
+                    edgecolor = None
                     )
-    ax3.set_ylim(-0.5, 0.5)
-    ax3.spines['top'].set_visible(False)
-    ax3.spines['right'].set_visible(False)
+        ax.set_xlabel('')
+        ax.set_ylabel('dN/dS of\ntruncating', rotation = 0, labelpad=17, verticalalignment = 'center')
+        # Only set xticklabels on last axis
+        if ax_idx == n_tracks - 1:
+            ax.set_xticks(range(num_genes))
+            ax.set_xticklabels(gene_order, rotation=90)
+        else:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels([])
+        ax.axhline(1, color='black', linestyle='--')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax_idx += 1
 
-    # Set title and labels
-    ax3.set_xlabel('')
 
 
 
-
-    df = oncodrivefml_data
-    name_metric = "ofml_score"
-    variable_name = df.columns[1]
-    max_score = df[variable_name].max()
-    for j, gene in enumerate(gene_order):
-        try:
-            value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
-            value =  value_original / max_score * 5
-            pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
-            color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
-            edgecolor = metrics_colors_dictionary[name_metric]
-            size = value * 12  # Scale size for better visualization
-            if size > 0:
-                ax4.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=0.9)
-            else:
-                ax4.scatter(j, 0, s=-size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, linestyle = '--', alpha=0.9)
-        except Exception as e:
-            print("Gene", gene, "failed because of", e)
-            continue
-
-    # Set axis labels
-    ax4.set_xticks(range(len(gene_order)))
-    ax4.set_xticklabels([])
-    ax4.set_yticks([])
-    ax4.set_yticklabels([])
-    ax4.set_ylabel('Functional\nimpact\nbias', rotation = 0, labelpad=17,
-                    verticalalignment = 'center',
-                    horizontalalignment = 'right'
+    if "omega_mis" in plot_tracks:
+        ax = axes[ax_idx]
+        omega_missense_sig = omega_missense[omega_missense["pvalue"] <= pvalue_thres].reset_index(drop = True)
+        omega_missense_notsig = omega_missense[omega_missense["pvalue"] > pvalue_thres].reset_index(drop = True)
+        sns.barplot(data=omega_missense_notsig, x='GENE', y='omega_mis',
+                    ax=ax, alpha=1,
+                    fill = False,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    color = metrics_colors_dictionary["omega_miss"])
+        sns.barplot(data=omega_missense_sig, x='GENE', y='omega_mis',
+                    ax=ax, alpha=1,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    color = metrics_colors_dictionary["omega_miss"],
+                    edgecolor = None
                     )
-    ax4.set_ylim(-0.5, 0.5)
-    ax4.spines['top'].set_visible(False)
-    ax4.spines['right'].set_visible(False)
+        ax.set_xlabel('')
+        ax.set_ylabel('dN/dS of\nmissense', rotation = 0, labelpad=17, verticalalignment = 'center')
+        if ax_idx == n_tracks - 1:
+            ax.set_xticks(range(num_genes))
+            ax.set_xticklabels(gene_order, rotation=90)
+        else:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels([])
+        ax.axhline(1, color='black', linestyle='--')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax_idx += 1
+
+
+
+    if "oncodrive3d" in plot_tracks:
+        ax = axes[ax_idx]
+        df = oncodrive3d_data_scores
+        name_metric = "o3d_score"
+        variable_name = df.columns[1]
+        max_score = df[variable_name].max()
+        for j, gene in enumerate(gene_order):
+            try:
+                value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
+                value =  value_original / max_score * 5
+                pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
+                color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
+                edgecolor = metrics_colors_dictionary[name_metric]
+                size = value * 12  # Scale size for better visualization
+                ax.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=0.9,)
+            except Exception as e:
+                print("Gene", gene, "failed because of", e)
+                continue
+        if ax_idx == n_tracks - 1:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels(gene_order, rotation=90)
+        else:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels([])
+        ax.set_yticks([])
+        ax.set_yticklabels([])
+        ax.set_ylabel('3D\nclustering', rotation = 0, labelpad=17,
+                        verticalalignment = 'center',
+                        horizontalalignment = 'right'
+                        )
+        ax.set_ylim(-0.5, 0.5)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.set_xlabel('')
+        ax_idx += 1
 
 
 
 
-    # Separate data based on significance of p-value
-    indels_panel_df_sig = indels_panel_df[indels_panel_df["pvalue"] <= pvalue_thres].reset_index(drop = True)
-    indels_panel_df_notsig = indels_panel_df[indels_panel_df["pvalue"] > pvalue_thres].reset_index(drop = True)
+    if "oncodrivefml" in plot_tracks:
+        ax = axes[ax_idx]
+        df = oncodrivefml_data
+        name_metric = "ofml_score"
+        variable_name = df.columns[1]
+        max_score = df[variable_name].max()
+        for j, gene in enumerate(gene_order):
+            try:
+                value_original = df.loc[df['GENE'] == gene, variable_name].values[0]
+                value =  value_original / max_score * 5
+                pvalue = df.loc[df['GENE'] == gene, 'pvalue'].values[0]
+                color = metrics_colors_dictionary[name_metric] if pvalue < pvalue_thres else 'none'
+                edgecolor = metrics_colors_dictionary[name_metric]
+                size = value * 12  # Scale size for better visualization
+                if size > 0:
+                    ax.scatter(j, 0, s=size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, alpha=0.9)
+                else:
+                    ax.scatter(j, 0, s=-size, color=color, edgecolors=edgecolor, linewidth = linewidth_def, linestyle = '--', alpha=0.9)
+            except Exception as e:
+                print("Gene", gene, "failed because of", e)
+                continue
+        if ax_idx == n_tracks - 1:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels(gene_order, rotation=90)
+        else:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels([])
+        ax.set_yticks([])
+        ax.set_yticklabels([])
+        ax.set_ylabel('Functional\nimpact\nbias', rotation = 0, labelpad=17,
+                        verticalalignment = 'center',
+                        horizontalalignment = 'right'
+                        )
+        ax.set_ylim(-0.5, 0.5)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax_idx += 1
 
-    # Plot the second bar plot in the middle subplot
-    sns.barplot(data=indels_panel_df_notsig, x='GENE', y='Indels_score',
-                ax=ax5, alpha=1, #0.6,
-                fill = False,
-                legend = False,
-                linewidth = linewidth_def,
-                order = gene_order,
-                color = metrics_colors_dictionary["frameshift"])
 
 
-    # Plot the second bar plot in the middle subplot
-    sns.barplot(data=indels_panel_df_sig, x='GENE', y='Indels_score',
-                ax=ax5, alpha=1,
-                legend = False,
-                linewidth = linewidth_def,
-                order = gene_order,
-                color = metrics_colors_dictionary["frameshift"],
-                edgecolor = None
-                )
 
-    ax5.set_xlabel('')
-    ax5.set_ylabel('Excess of\nframeshift\nindels', rotation = 0,
-                    verticalalignment = 'center',
-                    horizontalalignment = 'right'
+    if "indels" in plot_tracks:
+        ax = axes[ax_idx]
+        indels_panel_df_sig = indels_panel_df[indels_panel_df["pvalue"] <= pvalue_thres].reset_index(drop = True)
+        indels_panel_df_notsig = indels_panel_df[indels_panel_df["pvalue"] > pvalue_thres].reset_index(drop = True)
+        sns.barplot(data=indels_panel_df_notsig, x='GENE', y='Indels_score',
+                    ax=ax, alpha=1, #0.6,
+                    fill = False,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    color = metrics_colors_dictionary["frameshift"])
+        sns.barplot(data=indels_panel_df_sig, x='GENE', y='Indels_score',
+                    ax=ax, alpha=1,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    color = metrics_colors_dictionary["frameshift"],
+                    edgecolor = None
                     )
-    ax5.set_xticks(range(num_genes))
-    ax5.set_xticklabels(gene_order, rotation=90)
-    ax5.axhline(1, color='black', linestyle='--')
-    ax5.spines['top'].set_visible(False)
-    ax5.spines['right'].set_visible(False)
-
+        ax.set_xlabel('')
+        ax.set_ylabel('Excess of\nframeshift\nindels', rotation = 0,
+                        verticalalignment = 'center',
+                        horizontalalignment = 'right'
+                        )
+        if ax_idx == n_tracks - 1:
+            ax.set_xticks(range(num_genes))
+            ax.set_xticklabels(gene_order, rotation=90)
+        else:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels([])
+        ax.axhline(1, color='black', linestyle='--')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax_idx += 1
 
     # Set consistent x-axis limits for all subplots
     separation = 2
-    ax1.set_xlim([-separation, num_genes - 1 + separation])
-    ax2.set_xlim([-separation, num_genes - 1 + separation])
-    ax3.set_xlim([-separation, num_genes - 1 + separation])
-    ax4.set_xlim([-separation, num_genes - 1 + separation])
-    ax5.set_xlim([-separation, num_genes - 1 + separation])
+    for ax in axes:
+        ax.set_xlim([-separation, num_genes - 1 + separation])
 
     return fig
 
 
-def get_all_data(sample, outdir, pvaluee = 0.05):
+def get_all_data(sample, outdir,
+                 pvaluee = 0.05,
+                 tracks=("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml"),
+                 gene_order = None
+                 ):
 
     oncodrivefml_data = pd.read_table(f"{sample}-oncodrivefml.tsv.gz")
     oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
@@ -569,9 +586,10 @@ def get_all_data(sample, outdir, pvaluee = 0.05):
                                             indels_panel_df,
                                             oncodrive3d_data_scores,
                                             oncodrivefml_data,
-                                            global_omega_decreasing,
+                                            global_omega_decreasing if gene_order is None else gene_order,
                                             title = sample,
-                                            pvalue_thres = pvaluee)
+                                            pvalue_thres = pvaluee,
+                                            tracks = tracks)
 
 
     figuree.savefig(f"{outdir}/{sample}.positive_selection_summary.pdf", bbox_inches='tight')
@@ -579,14 +597,20 @@ def get_all_data(sample, outdir, pvaluee = 0.05):
 
 
 
+
 @click.command()
 @click.option('--sample_name', type=str, help='Name of the sample being processed.')
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
-def main(sample_name, outdir):
+@click.option('--include_indels', is_flag=True, default=False, help='Include indels track in the summary plot')
+def main(sample_name, outdir, include_indels):
     click.echo("Plotting omega results...")
     try:
         generate_all_side_figures(sample_name, outdir)
-        get_all_data(sample_name, outdir)
+        # By default, exclude indels unless --include_indels is set
+        tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml")
+        if include_indels:
+            tracks = tracks + ("indels",)
+        get_all_data(sample_name, outdir, tracks=tracks)
     except Exception as e:
         print("Error in the process", e)
 
