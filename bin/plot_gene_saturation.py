@@ -1150,7 +1150,7 @@ def plot_all_domain_selection(df, color_map, figsize=(10, 3), show_domain_legend
 
     custom_markers = {"missense": "o", "truncating": "D"}  # 'o' = Circle, 'D' = Rotated Square
     custom_size = {"missense": 150, "truncating": 100}  # Larger for missense
-    df["color"] = df["selection_id"].map(color_map) 
+    df["color"] = df["domain_id"].map(color_map) 
     df["edge_width"] = df["pvalue"].apply(lambda p: 1.5 if p < 0.05 else 0.2)
 
     fig = plt.figure(figsize=figsize)
@@ -1175,8 +1175,8 @@ def plot_all_domain_selection(df, color_map, figsize=(10, 3), show_domain_legend
             )
 
     ax = plt.gca()
-    ax.set_xticks(range(len(df["selection_id"].unique()))) 
-    ax.set_xticklabels(df["selection_id"].unique(), rotation=45, ha="right") 
+    ax.set_xticks(range(len(df["domain_id"].unique()))) 
+    ax.set_xticklabels(df["domain_id"].unique(), rotation=45, ha="right") 
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     plt.xlabel("Domain ID")
@@ -1184,7 +1184,7 @@ def plot_all_domain_selection(df, color_map, figsize=(10, 3), show_domain_legend
     plt.title(f"Top  domain selection")
 
     # Legends
-    selection_legend = [mpatches.Patch(color=color, label=selection_id) for selection_id, color in color_map.items()]
+    selection_legend = [mpatches.Patch(color=color, label=domain_id) for domain_id, color in color_map.items()]
     custom_size_legend = {"missense": 100, "truncating": 70}
     impact_legend = [plt.scatter(
         [], [], marker=custom_markers[impact], s=custom_size_legend[impact], 
@@ -1241,11 +1241,11 @@ def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection,
         # and the formatting of domain selection can be done only once
         df, gene_color_dict = format_domain_selection(domain_selection, xshift=0.22)
         df = df.copy()[:60]
-        plot_all_domain_selection(df, gene_color_dict, figsize=(16,6), save=True, filename="plots/domain_selection.missense_truncating.pdf")
+        plot_all_domain_selection(df, gene_color_dict, figsize=(16,6), save=True, filename=f"{output_directory}/domain_selection.missense_truncating.pdf")
         for impact in ["missense", "truncating"]:
             df, gene_color_dict = format_domain_selection(domain_selection[domain_selection["impact"] == impact], sort_by=impact, xshift=0)[:60]
-            plot_all_domain_selection(df, gene_color_dict, figsize=(14,6), save=True, filename=f"plots/domain_selection.{impact}.pdf")
-    
+            plot_all_domain_selection(df, gene_color_dict, figsize=(14,6), save=True, filename=f"{output_directory}/domain_selection.{impact}.pdf")
+
     except Exception as e:
         print(f"Plots for domain selection at cohort level did not work.")
         print("Error", e)
