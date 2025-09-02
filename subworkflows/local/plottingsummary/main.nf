@@ -4,7 +4,6 @@
 include { PLOT_SELECTION_METRICS            as PLOTSELECTION                    } from '../../../modules/local/plot/selection_metrics/main'
 include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/saturation/main'
 // include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/selection_metrics/main'
-include { PLOT_METRICS_QC                   as PLOTMETRICSQC                    } from '../../../modules/local/plot/qc/mutation_densities/main'
 
 
 
@@ -52,18 +51,6 @@ workflow PLOTTING_SUMMARY {
     // plot gene + site selection
     // omega selection per domain in gene
     // ? plot saturation kinetics curves
-
-
-
-    PLOTMETRICSQC(all_mutrates, panel, samples)
-    // mutation density per gene cohort-level
-    // mutation density per gene & sample
-    //      synonymous
-    //      non-protein-affecting
-    // pending:
-    //      protein-affecting
-    //          truncating
-    //          missense
 
 
     // PLOTINTERINDIVIDUALVARIABILITY()

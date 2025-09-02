@@ -1,6 +1,6 @@
-process PLOT_METRICS_QC {
+process PLOT_MUTDENSITY_QC {
 
-    tag "$meta.id"
+    tag "all"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
@@ -12,8 +12,8 @@ process PLOT_METRICS_QC {
     path (samples_json)
 
     output:
-    tuple val(meta), path("**.pdf")  , emit: plots
-    tuple val(meta), path("**.csv")  , emit: tables
+    path("**.pdf")  , emit: plots
+    path("**.csv")  , emit: tables
 
     path "versions.yml"              , topic: versions
 
@@ -36,8 +36,7 @@ process PLOT_METRICS_QC {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: ""
-    prefix = "${meta.id}${prefix}"
+    def prefix = task.ext.prefix ?: "all_samples"
     """
     touch ${prefix}.png
 
