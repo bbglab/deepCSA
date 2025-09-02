@@ -9,9 +9,9 @@ workflow PLOTTING_QC {
     // positive_selection_results_ready
     all_mutdensities
     // all_samples_depth
-    samples
     // all_groups
     panel
+    samples
     // full_panel_rich
     // seqinfo_df
     // domain_df
