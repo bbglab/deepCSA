@@ -4,7 +4,7 @@ process COMPUTE_RELATIVE_MUTABILITY {
     label 'process_low_fixed_cpus'
     label 'process_high_memory'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(matrix), path(mut_profile), path(depths)
