@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys
+
+import click
 import pandas as pd
 from read_utils import custom_na_values
 
@@ -30,12 +31,18 @@ def prepare_depths(depths_path, annot_panel_path, filee):
 
 
 
-if __name__ == '__main__':
-    # TODO reimplement with click
-    depths_path = sys.argv[1]
-    annot_panel_path = sys.argv[2]
-    file_name = sys.argv[3]
 
-    prepare_depths(depths_path, annot_panel_path, file_name)
+@click.command()
+@click.option('--depths-path', required=True, type=click.Path(exists=True), help='Input depths file (TSV)')
+@click.option('--annot-panel-path', required=True, type=click.Path(exists=True), help='Input annotation panel file (TSV)')
+@click.option('--output', required=True, type=click.Path(), help='Output file for gene depths (TSV)')
+def main(depths_path, annot_panel_path, output):
+    """
+    Prepare gene depths from depths and annotation panel files.
+    """
+    prepare_depths(depths_path, annot_panel_path, output)
+
+if __name__ == '__main__':
+    main()
 
 

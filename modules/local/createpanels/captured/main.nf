@@ -33,8 +33,8 @@ process CREATECAPTUREDPANELS {
     prefix = "${meta.id}${prefix}"
     """
     create_panel_versions.py \\
-                    ${compact_captured_panel_annotation} \\
-                    ${prefix};
+        --compact-annot-panel-path ${compact_captured_panel_annotation} \\
+        --output ${prefix};
     for captured_panel in \$(ls -l *.tsv | grep -v '^l' | awk '{print \$NF}'); do
         bedtools merge \\
             -i <(
