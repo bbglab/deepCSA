@@ -4,7 +4,6 @@
 include { PLOT_SELECTION_METRICS            as PLOTSELECTION                    } from '../../../modules/local/plot/selection_metrics/main'
 include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/saturation/main'
 include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/interindividual_variability/main'
-// include { PLOT_METRICS_QC                   as PLOTMETRICSQC                    } from '../../../modules/local/plot/selection_metrics/main'
 
 
 
@@ -54,26 +53,15 @@ workflow PLOTTING_SUMMARY {
     // ? plot saturation kinetics curves
 
 
-
-    // PLOTMETRICSQC(all_mutrates, )
-    // // mutation density per gene cohort-level
-    // // mutation density per gene & sample
-    // //      synonymous
-    // //      protein-affecting
-    // //          truncating
-    // //          missense
-
-
-
     PLOTINTERINDIVIDUALVARIABILITY(samples, panel,  all_mutdensities)
-    // // heatmaps:
-    // //     mutations per gene/sample (total, SNV only, INDEL only, per consequence type)
-    // //     driver mutations per gene/sample
-    // //     mutation density
-    // //     mutation burden
-    // //     omega
-    // //     siteselection per group
-    // // define features based on PLOTMETRICSQC()
+    // heatmaps:
+    //     mutations per gene/sample (total, SNV only, INDEL only, per consequence type)
+    //     driver mutations per gene/sample
+    //     mutation density
+    //     mutation burden
+    //     omega
+    //     siteselection per group
+    // define features based on PLOTMETRICSQC()
 
 
     emit:

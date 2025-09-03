@@ -3,7 +3,7 @@ process COMPUTE_CONTAMINATION {
     tag "$meta.id"
     label 'process_high'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(maf)

@@ -60,6 +60,7 @@ include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkfl
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
 include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkflows/local/plottingsummary/main'
+include { PLOTTING_QC               as PLOTTINGQC           } from '../subworkflows/local/plotting_qc/main'
 
 include { REGRESSIONS               as REGRESSIONSMUTDENSITY       } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
@@ -543,6 +544,23 @@ workflow DEEPCSA{
                         seqinfo_df,
                         CREATEPANELS.out.domains_in_panel,
                         DNA2PROTEINMAPPING.out.depths_exons_positions
+                        )
+    }    
+    
+    if ( run_mutdensity ){
+        // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+        PLOTTINGQC(
+                        // positive_selection_results_ready,
+                        all_mutdensities_file,
+                        // site_comparison_results,
+                        // ANNOTATEDEPTHS.out.all_samples_depths,
+                        // TABLE2GROUP.out.json_allgroups,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        TABLE2GROUP.out.json_samples,
+                        // CREATEPANELS.out.panel_annotated_rich,
+                        // seqinfo_df,
+                        // CREATEPANELS.out.domains_in_panel,
+                        // DNA2PROTEINMAPPING.out.depths_exons_positions
                         )
     }
 
