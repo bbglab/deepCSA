@@ -54,16 +54,12 @@ def plot_count_track(count_df,
 
     for batch_idx, batch in enumerate(batches):
         for cnsq in ['nonsense', 'missense', 'synonymous']:
-
             if indel == False and cnsq == "indel":
                 continue
-
             count_cnsq_df = batch[batch["Consequence"] == cnsq].reset_index(drop=True)
             count_cnsq_df = pos_df.merge(count_cnsq_df, on="Pos", how="left")
-
             axes[ax].vlines(count_cnsq_df["Pos"], ymin=0, ymax=count_cnsq_df["Count"], lw=1, zorder=1, alpha=0.5, color=colors_dict["hv_lines_needle"])
             axes[ax].scatter(count_cnsq_df["Pos"], count_cnsq_df["Count"], s=20, color='white', zorder=3, lw=0.1, ec="none") # To cover the overlapping needle top part
-
             if cnsq not in legend_list:
                 axes[ax].scatter(count_cnsq_df["Pos"].values, count_cnsq_df["Count"].values, zorder=4,
                                     alpha=alpha, lw=0.1, ec="none", s=20, label= "Truncating" if cnsq == 'nonsense' else cnsq.capitalize(), color=colors_dict[cnsq])
@@ -74,11 +70,25 @@ def plot_count_track(count_df,
 
     axes[ax].spines['right'].set_visible(False)
     axes[ax].spines['top'].set_visible(False)
-
-    # ax.set_ylim(0,2.6)
     axes[ax].set_ylabel("Mutation count")
     axes[ax].set_xlabel("Protein position")
-    # axes[ax].set_xticklabels([])
+
+    # Add right Y axis with proportion labels
+    total_mutations = count_df["Count"].sum()
+    if total_mutations > 0:
+        ax_right = axes[ax].twinx()
+        left_ticks = axes[ax].get_yticks()
+        right_ticks = left_ticks / total_mutations
+        ax_right.set_ylim(axes[ax].get_ylim())
+        ax_right.set_yticks(left_ticks)
+        ax_right.set_yticklabels([f"{rt:.2f}" for rt in right_ticks])
+        ax_right.set_ylabel("Proportion of mutations")
+    else:
+        ax_right = axes[ax].twinx()
+        ax_right.set_ylim(axes[ax].get_ylim())
+        ax_right.set_yticks(axes[ax].get_yticks())
+        ax_right.set_yticklabels(["0.00"] * len(axes[ax].get_yticks()))
+        ax_right.set_ylabel("Proportion of mutations")
 
 def plot_stacked_bar_track_binned(count_df,
                                     gene_len,
@@ -147,11 +157,29 @@ def plot_stacked_bar_track_binned(count_df,
         )
         bottom += binned_df[cnsq].values
 
+
     # Clean up plot
     axes[ax].spines['right'].set_visible(False)
     axes[ax].spines['top'].set_visible(False)
     axes[ax].set_ylabel(f"Mutation count\n({bin_size} AA bin)")
     axes[ax].set_xlabel("Protein position")
+
+    # Add right Y axis with proportion labels
+    total_mutations = count_df["Count"].sum()
+    if total_mutations > 0:
+        ax_right = axes[ax].twinx()
+        left_ticks = axes[ax].get_yticks()
+        right_ticks = left_ticks / total_mutations
+        ax_right.set_ylim(axes[ax].get_ylim())
+        ax_right.set_yticks(left_ticks)
+        ax_right.set_yticklabels([f"{rt:.2f}" for rt in right_ticks])
+        ax_right.set_ylabel("Proportion of mutations")
+    else:
+        ax_right = axes[ax].twinx()
+        ax_right.set_ylim(axes[ax].get_ylim())
+        ax_right.set_yticks(axes[ax].get_yticks())
+        ax_right.set_yticklabels(["0.00"] * len(axes[ax].get_yticks()))
+        ax_right.set_ylabel("Proportion of mutations")
 
     # Sparse x-ticks
     tick_every = len(all_bins) // num_ticks
@@ -169,25 +197,24 @@ def manager(sample_name, mutations_file, o3d_seq_file, outdir):
 
     gene_order = sorted(pd.unique(counts_per_position["Gene"]))
 
+
     # Loop over each gene to plot
     for gene in gene_order:
         print(gene)
-        try :
+        try:
             mut_count_df = counts_per_position[(counts_per_position["Gene"] == gene)]
-            mut_count_df = mut_count_df.groupby(by = ["Pos", "Consequence"])["Count"].sum().reset_index()
+            mut_count_df = mut_count_df.groupby(by=["Pos", "Consequence"])["Count"].sum().reset_index()
 
-            fig, ax = plt.subplots(1,1, figsize = (5,1.2) )
-            plot_count_track(mut_count_df,
+            fig, ax = plt.subplots(1, 1, figsize=(5, 1.2))
+            plot_count_track(
+                mut_count_df,
+                gene_len=mut_count_df["Pos"].max(),  # FIXME: this is not ideal, the max position is the biggest position with mutation
 
-                                # FIXME: this is not ideal, the max position is the biggest position with mutation
-                                gene_len=mut_count_df["Pos"].max(),
-
-                                axes=[ax], ax=0,
-                                colors_dict=metrics_colors_dictionary, indel=False, alpha = 0.7)
-
+                axes=[ax], ax=0,
+                colors_dict=metrics_colors_dictionary, indel=False, alpha=0.7
+            )
             ax.set_title(f"{gene}")
-
-            plt.savefig(f"{outdir}/{gene}.needle.pdf", bbox_inches='tight', dpi = 100)
+            plt.savefig(f"{outdir}/{gene}.needle.pdf", bbox_inches='tight', dpi=100)
             plt.show()
             plt.close()
 
@@ -195,24 +222,22 @@ def manager(sample_name, mutations_file, o3d_seq_file, outdir):
             print(gene)
             print(exe)
 
-
         # stacked version
-        try :
+        try:
             mut_count_df = counts_per_position[(counts_per_position["Gene"] == gene)]
-            mut_count_df = mut_count_df.groupby(by = ["Pos", "Consequence"])["Count"].sum().reset_index()
+            mut_count_df = mut_count_df.groupby(by=["Pos", "Consequence"])["Count"].sum().reset_index()
 
-            fig, ax = plt.subplots(1,1, figsize = (5,1.2) )
+            fig, ax = plt.subplots(1, 1, figsize=(5, 1.2))
             plot_stacked_bar_track_binned(
-                                count_df=mut_count_df,
-                                gene_len=mut_count_df["Pos"].max(),
-                                axes=[ax], ax=0,
-                                colors_dict=metrics_colors_dictionary,
-                                alpha=1,
-                                indel=False
-                            )
+                count_df=mut_count_df,
+                gene_len=mut_count_df["Pos"].max(),  # FIXME: this is not ideal, the max position is the biggest position with mutation
+                axes=[ax], ax=0,
+                colors_dict=metrics_colors_dictionary,
+                alpha=1,
+                indel=False
+            )
             ax.set_title(f"{gene}")
-
-            plt.savefig(f"{outdir}/{gene}.stacked.pdf", bbox_inches='tight', dpi = 100)
+            plt.savefig(f"{outdir}/{gene}.stacked.pdf", bbox_inches='tight', dpi=100)
             plt.show()
             plt.close()
 

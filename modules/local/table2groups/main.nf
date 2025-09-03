@@ -14,20 +14,16 @@ process TABLE_2_GROUP {
     path("all_groups.json")                     , emit: json_allgroups
     path "versions.yml"                         , topic: versions
 
-
     script:
     def separator = task.ext.separator ?: "comma"
-    def features = task.ext.features ?: ""
-    // TODO reimplement with click
+    def custom_groups = task.ext.feature_groups ? "--groups \"${task.ext.feature_groups}\" " : ""
+    def unique_identifier = task.ext.unique_identifier ? "--unique-identifier ${task.ext.unique_identifier}" : ""
     """
-    cat > features_table_information.json << EOF
-    {
-        ${features}
-    }
-    EOF
-
-    features_1table2groups.py ${features_table} ${separator} features_table_information.json
-
+    features_1table2groups.py \\
+                --table-filename ${features_table} \\
+                --separator ${separator} \\
+                ${unique_identifier} \\
+                ${custom_groups}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
