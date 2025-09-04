@@ -21,7 +21,12 @@ process FILTER_BATCH {
     def germline_threshold = task.ext.germline_threshold ?: "${params.germline_threshold}"
     def proportion_samples_nrich = task.ext.prop_samples_nrich ?: "${params.prop_samples_nrich}"
     """
-    filter_cohort.py ${maf} ${prefix} ${repetitive_variant} ${germline_threshold} ${proportion_samples_nrich}
+    filter_cohort.py \\
+        --maf-df-file ${maf} \\
+        --sample-name ${prefix} \\
+        --repetitive-variant-threshold ${repetitive_variant} \\
+        --somatic-vaf-boundary ${germline_threshold} \\
+        --n-rich-cohort-proportion ${proportion_samples_nrich}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

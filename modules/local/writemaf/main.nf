@@ -13,11 +13,11 @@ process WRITE_MAFS {
     path("*.filtered.tsv.gz") , emit: mafs
     path "versions.yml"       , topic: versions
 
-
     script:
-    // TODO reimplement with click
     """
-    write_mafs.py ${maf} ${json_groups}
+    write_mafs.py \\
+        --maf-file ${maf} \\
+        --groups-json ${json_groups}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

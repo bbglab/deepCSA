@@ -25,14 +25,14 @@ process SITESFROMPOSITIONS {
     // that are not the canonical ones right now doing it by
     // filtering the size of the chromosome name to be smaller of equal to 2
 
-    // TODO
-    // reimplement this with click
     """
     cat <(printf "CHROM\\tPOS\\n") <( zcat ${depths} | cut -f1,2  | sed 's/^chr//g' | awk 'length(\$1) <= 2' ) > captured_positions.tsv;
     sites_table_from_positions.py \\
-                    captured_positions.tsv \\
-                    ${assembly} \\
-                    captured_positions.sites4VEP.tmp.tsv;
+        --input-positions captured_positions.tsv \\
+        --genome-assembly ${assembly} \\
+        --output-file-with-sites captured_positions.sites4VEP.tmp.tsv;
+    
+    rm captured_positions.tsv
 
     awk '{print "chr"\$0}' captured_positions.sites4VEP.tmp.tsv > captured_positions.sites4VEP.tsv
     cat <<-END_VERSIONS > versions.yml

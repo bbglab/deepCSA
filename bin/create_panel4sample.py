@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
+
+import click
 import pandas as pd
-import sys
 
 # -- Main function -- #
 
@@ -9,7 +10,6 @@ def create_panel4sample(compact_annot_panel_path, depths_path, panel_name, min_d
 
     # Load captured panel and depths
     compact_annot_panel_df = pd.read_csv(compact_annot_panel_path, sep = "\t")
-    # version = compact_annot_panel_path.split("/")[-1].split(".")[2]
 
     depths_df = pd.read_csv(depths_path, sep = "\t")
     depths_df.iloc[:, 1:] = depths_df.iloc[:, 1:].astype(int)
@@ -25,10 +25,14 @@ def create_panel4sample(compact_annot_panel_path, depths_path, panel_name, min_d
         sample_panel.to_csv(f"{sample.split('.')[0]}.{panel_name}.tsv", index = False, sep = "\t")
 
 
-if __name__ == '__main__':
-    compact_annot_panel_path = sys.argv[1]
-    depths_path = sys.argv[2]
-    panel_v = sys.argv[3]
-    min_depth = sys.argv[4]
 
-    create_panel4sample(compact_annot_panel_path, depths_path, panel_v, min_depth)
+@click.command()
+@click.option('--compact-annot-panel-path', required=True, type=click.Path(exists=True), help='Input compact annotation panel file (TSV)')
+@click.option('--depths-path', required=True, type=click.Path(exists=True), help='Input depths file (TSV)')
+@click.option('--panel-name', required=True, type=str, help='Panel name for output files')
+@click.option('--min-depth', required=True, type=int, help='Minimum depth threshold')
+def main(compact_annot_panel_path, depths_path, panel_name, min_depth):
+    create_panel4sample(compact_annot_panel_path, depths_path, panel_name, min_depth)
+
+if __name__ == '__main__':
+    main()
