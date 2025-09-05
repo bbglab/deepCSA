@@ -7,6 +7,7 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
 
     input:
     path(samples_json)
+    path(all_groups_json)
     tuple val(meta), path(panel_file)
     path(mutdensities_file)
 
@@ -24,7 +25,8 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
                     --mutdensities ${mutdensities_file} \\
                     --panel-regions ${panel_file} \\
                     --outdir ${prefix}.variability_plots \\
-                    --samples_json ${samples_json}
+                    --samples-json ${samples_json} \\
+                    --all-groups-json ${all_groups_json} \\
 
 
     cat <<-END_VERSIONS > versions.yml
