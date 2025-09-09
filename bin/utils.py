@@ -113,6 +113,22 @@ def vartype(x,
     return "COMPLEX"
 
 
+def load_samples_info():
+
+    with open(f'all_groups.json', 'r') as f:
+        groups_n_samples_definition = json.load(f)
+    all_unit_names = list(groups_n_samples_definition.keys())
+
+    with open(f'samples.json', 'r') as f:
+        samples_definition = json.load(f)
+    all_samples_names = list(samples_definition.keys())
+
+    with open(f'groups.json', 'r') as f:
+        groups_definition = json.load(f)
+    all_group_names = list(groups_definition.keys())
+    
+    return all_samples_names, all_group_names, all_unit_names, groups_n_samples_definition
+
 
 
 contexts_formatted = ['ACA>A', 'ACC>A', 'ACG>A', 'ACT>A', 'CCA>A', 'CCC>A', 'CCG>A', 'CCT>A', 'GCA>A', 'GCC>A', 'GCG>A', 'GCT>A', 'TCA>A', 'TCC>A', 'TCG>A', 'TCT>A',

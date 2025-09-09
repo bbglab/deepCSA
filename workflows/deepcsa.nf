@@ -60,6 +60,7 @@ include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkfl
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
 include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkflows/local/plottingsummary/main'
+include { PLOTTING_QC               as PLOTTINGQC           } from '../subworkflows/local/plotting_qc/main'
 
 include { REGRESSIONS               as REGRESSIONSMUTDENSITY       } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
@@ -350,7 +351,7 @@ workflow DEEPCSA{
                 oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLALL.out.results_snvs_folder.map{ it -> it[1] })
             }
         }
-        if (params.profilenonprot){
+        if (params.profilenonprot & params.positive_selection_non_protein_affecting){
             mode = "non_prot_aff"
             ONCODRIVEFMLNONPROT(somatic_mutations, MUTABILITYNONPROT.out.mutability,
                                     CREATEPANELS.out.exons_consensus_panel,
@@ -397,7 +398,8 @@ workflow DEEPCSA{
                     CREATEPANELS.out.domains_panel_bed,
                     SYNMUTDENSITY.out.mutdensity,
                     CREATEPANELS.out.panel_annotated_rich,
-                    DNA2PROTEINMAPPING.out.panel_exons_bed
+                    DNA2PROTEINMAPPING.out.panel_exons_bed,
+                    ""
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -419,7 +421,8 @@ workflow DEEPCSA{
                             CREATEPANELS.out.domains_panel_bed,
                             SYNMUTREADSRATE.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich,
-                            DNA2PROTEINMAPPING.out.panel_exons_bed
+                            DNA2PROTEINMAPPING.out.panel_exons_bed,
+                            ".multi"
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -429,7 +432,7 @@ workflow DEEPCSA{
                 }
             }
         }
-        if (params.profilenonprot){
+        if (params.profilenonprot & params.positive_selection_non_protein_affecting){
             OMEGANONPROT(somatic_mutations,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
@@ -439,7 +442,8 @@ workflow DEEPCSA{
                             CREATEPANELS.out.domains_panel_bed,
                             SYNMUTDENSITY.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich,
-                            DNA2PROTEINMAPPING.out.panel_exons_bed
+                            DNA2PROTEINMAPPING.out.panel_exons_bed,
+                            ".non_protein_affecting"
                             )
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
@@ -456,7 +460,8 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.domains_panel_bed,
                                     SYNMUTREADSRATE.out.mutdensity,
                                     CREATEPANELS.out.panel_annotated_rich,
-                                    DNA2PROTEINMAPPING.out.panel_exons_bed
+                                    DNA2PROTEINMAPPING.out.panel_exons_bed,
+                                    ".multi.non_protein_affecting"
                                     )
 
                 if (params.regressions){
@@ -539,6 +544,23 @@ workflow DEEPCSA{
                         seqinfo_df,
                         CREATEPANELS.out.domains_in_panel,
                         DNA2PROTEINMAPPING.out.depths_exons_positions
+                        )
+    }    
+    
+    if ( run_mutdensity ){
+        // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+        PLOTTINGQC(
+                        // positive_selection_results_ready,
+                        all_mutdensities_file,
+                        // site_comparison_results,
+                        // ANNOTATEDEPTHS.out.all_samples_depths,
+                        // TABLE2GROUP.out.json_allgroups,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        TABLE2GROUP.out.json_samples,
+                        // CREATEPANELS.out.panel_annotated_rich,
+                        // seqinfo_df,
+                        // CREATEPANELS.out.domains_in_panel,
+                        // DNA2PROTEINMAPPING.out.depths_exons_positions
                         )
     }
 

@@ -94,9 +94,15 @@
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 },
-                "features_table_dict": {
+                "features_groups_list": {
                     "type": "string",
-                    "description": "String in JSON-like format defining the groups of samples.",
+                    "description": "String in list format defining the variables that have to be used for grouping samples.",
+                    "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_unique_identifier": {
+                    "type": "string",
+                    "description": "String defining the column with the unique identifier in the features_table that should include all the names of the samples that want to be used for the analysis.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
                     "fa_icon": "far fa-file-code"
                 }
@@ -310,6 +316,13 @@
                     "default": "aminoacid_change",
                     "fa_icon": "fas fa-book",
                     "help_text": "Define which is the unit of comparison of the per site mutabilities exp. vs obs. The options are: 'site', 'aminoacid', 'aminoacid_change'. You can provide a comma separated list of the preferred options or also all."
+                },
+                "positive_selection_non_protein_affecting": {
+                    "type": "boolean",
+                    "description": "Do you want to run positive selection metrics with non-protein affecting mutational profile?",
+                    "fa_icon": "fas fa-book",
+                    "hidden" : true,
+                    "help_text": "Do you want to run positive selection metrics with non-protein affecting mutational profile?"
                 },
                 "dnds": {
                     "type": "boolean",
@@ -569,7 +582,6 @@
                 "selected_genes": {
                     "type": "string",
                     "description": "Comma-separeted list of genes to focus the analysis",
-                    "default": "",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },

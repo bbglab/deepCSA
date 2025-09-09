@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 
-import sys
 import click
 import pandas as pd
 import numpy as np
 from utils import vartype
 from read_utils import custom_na_values
-
 
 ######
 # Read VCF file coming from VarDict2
@@ -16,27 +14,25 @@ from read_utils import custom_na_values
 # also it takes advantage of the fields in the FORMAT field that are coming from the recomputed depths the result from the
 ######
 
+
 def read_from_vardict_VCF_all(sample,
                                 name,
                                 columns_to_keep = ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'REF_DEPTH', 'ALT_DEPTH', 'VAF',
-                                                    'vd_DEPTH', 'vd_REF_DEPTH', 'vd_ALT_DEPTH']
-                                ):
+                                                    'vd_DEPTH', 'vd_REF_DEPTH', 'vd_ALT_DEPTH']):
     """
-    Read VCF file coming from Vardict
+    Read VCF file coming from Vardict2
     Note that the file can only contain one sample
     if two samples are given in the same VCF it will remove the first sample in the file
+    also it takes advantage of the fields in the FORMAT field that are coming from the
+    recomputed depths scripts in deepUMIcaller
+
 
     Mandatory arguments:
         sample,
         name,
 
     Optional arguments:
-        subset_val = 0.35,
         columns_to_keep = ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH', 'VAF'], # add 'PID' for phased mutations
-        n_bins = 100,
-        location = "",
-        plottingDist = True,
-        only_SNVs = True
     """
 
     print(f"Processing {sample}")
@@ -187,9 +183,13 @@ def read_from_vardict_VCF_all(sample,
     dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
     dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
 
-
     dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
     dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF_distorted_expanded_sq"].fillna(True)
+
+    
+    # define mean position in read 
+    dat_full["PMEAN"] = dat_full["PMN"].astype(float) if "PMN" in dat_full.columns else -1
+    dat_full["PSTD"] = dat_full["PST"].astype(float) if "PST" in dat_full.columns else -1
 
 
     # subset dataframe to the columns of interest
@@ -207,9 +207,6 @@ def read_from_vardict_VCF_all(sample,
 
 
     return dat_full_reduced
-
-
-
 
 def reformat_alleles_to_OncodriveFML(dat, letters = ['A', 'T', 'C', 'G']):
     """
@@ -250,8 +247,6 @@ def reformat_alleles_to_OncodriveFML(dat, letters = ['A', 'T', 'C', 'G']):
 
     return chromosome, dat['POS'], dat['REF'], dat['ALT']
 
-
-
 def add_alternative_format_columns(dataframe):
     """
     This function receives a dataframe
@@ -279,22 +274,7 @@ def add_alternative_format_columns(dataframe):
 
     new_format_muts.columns = ["CHROM_ensembl", "POS_ensembl", "REF_ensembl", "ALT_ensembl"]
 
-    ## in principle this should be solved by the modification I made to the previous function
-    ## but I keep it here just in case
-#     new_full_dataframe = pd.concat((dataframe, new_format_muts), axis = 1)
-#     # this is to fix the columns that have NANs and then mess up the format of the columns
-#     for column in ["CHROM", "POS", "REF", "ALT"]:
-#         new_full_dataframe[f'{column}_ensembl'] = maf_df[f'{column}_ensembl'].fillna(maf_df[f'{column}'])
-#         if column == "CHROM":
-#             maf_df[f'{column}_ensembl'] = maf_df[f'{column}_ensembl'].astype(str).str.replace("chr", "")
-
-#         if column in ["CHROM", "POS"]:
-#             maf_df[f'{column}_ensembl'] = maf_df[f'{column}_ensembl'].astype(float).round().astype(int)
-
-
     return pd.concat((dataframe, new_format_muts), axis = 1)
-
-
 
 def update_indel_info(df):
     """
@@ -346,8 +326,6 @@ def update_indel_info(df):
 
 
 
-
-
 @click.command()
 @click.option('--vcf', type=click.Path(exists=True), required=True, help='Path to the VCF file.')
 @click.option('--sampleid', type=str, required=True, help='Sample ID.')
@@ -366,7 +344,8 @@ def main(vcf, sampleid, level, annotation_file):
         "VAF_distorted_expanded",
         "VAF_distorted_expanded_sq",
         "VAF_distortion",
-        "VAF_distortion_sq"
+        "VAF_distortion_sq",
+        "PMEAN", "PSTD"
     ]
 
     annotated_variants = pd.read_csv(annotation_file, header=0, sep="\t", na_values=custom_na_values)
@@ -397,3 +376,4 @@ def main(vcf, sampleid, level, annotation_file):
 
 if __name__ == '__main__':
     main()
+
