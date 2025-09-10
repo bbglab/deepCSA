@@ -112,7 +112,16 @@ workflow MUTATION_PREPROCESSING {
 
     PLOTSOMATICMAF(muts_all_samples)
 
-    PLOTNEEDLES(muts_all_samples, sequence_information_df)
+    // Load group keys from JSON file in 'groups' channel
+    def group_keys = groups.map { json_path ->
+        def json = file(json_path).text
+        groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
+    }.flatten().toSet()
+
+    // Filter SOMATICMUTATIONS.out.mutations by meta.id in group_keys
+    SOMATICMUTATIONS.out.mutations.filter { it[0].id in group_keys }.set { muts_for_plotting }
+
+    PLOTNEEDLES(muts_for_plotting, sequence_information_df)
 
 
     // Compile a BED file with all the mutations that are discarded due to:
