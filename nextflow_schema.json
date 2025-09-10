@@ -368,6 +368,13 @@
                     "type": "boolean",
                     "description": "Do you want to run regression analysis?",
                     "fa_icon": "fas fa-book"
+                },
+                "plot_only_allsamples": {
+                    "type": "boolean",
+                    "description": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?",
+                    "fa_icon": "fas fa-book",
+                    "default": true,
+                    "help_text": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?"
                 }
             }
         },

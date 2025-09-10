@@ -183,6 +183,13 @@ workflow DEEPCSA{
 
     TABLE2GROUP(features_table)
 
+    // Load group keys from JSON file in 'groups' channel
+    def group_keys = TABLE2GROUP.out.json_groups.map { json_path ->
+        def json = file(json_path).text
+        groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
+    }.flatten().unique()
+    .set { group_keys_ch } // this is a channel that contains only the group names as elements of the channel
+
 
     // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
@@ -211,6 +218,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.all_consensus_bed,
                         CREATEPANELS.out.exons_bed,
                         TABLE2GROUP.out.json_allgroups,
+                        group_keys_ch,
                         seqinfo_df,
                         CREATEPANELS.out.added_custom_regions
                         )
@@ -543,7 +551,8 @@ workflow DEEPCSA{
                         CREATEPANELS.out.panel_annotated_rich,
                         seqinfo_df,
                         CREATEPANELS.out.domains_in_panel,
-                        DNA2PROTEINMAPPING.out.depths_exons_positions
+                        DNA2PROTEINMAPPING.out.depths_exons_positions,
+                        group_keys_ch
                         )
     }    
     

@@ -26,6 +26,7 @@ workflow MUTATION_PREPROCESSING {
     vcfs
     bedfile
     bedfile_exons
+    all_groups
     groups
     sequence_information_df
     custom_annotation_tsv
@@ -70,7 +71,7 @@ workflow MUTATION_PREPROCESSING {
 
     PLOTMAF(FILTERBATCH.out.cohort_maf)
 
-    WRITEMAF(FILTERBATCH.out.cohort_maf, groups)
+    WRITEMAF(FILTERBATCH.out.cohort_maf, all_groups)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
@@ -112,14 +113,12 @@ workflow MUTATION_PREPROCESSING {
 
     PLOTSOMATICMAF(muts_all_samples)
 
-    // Load group keys from JSON file in 'groups' channel
-    def group_keys = groups.map { json_path ->
-        def json = file(json_path).text
-        groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
-    }.flatten().toSet()
-
     // Filter SOMATICMUTATIONS.out.mutations by meta.id in group_keys
-    SOMATICMUTATIONS.out.mutations.filter { it[0].id in group_keys }.set { muts_for_plotting }
+    SOMATICMUTATIONS.out.mutations
+    .map { mut -> tuple(mut[0].id, mut) }
+    .join(groups)
+    .map { it[1] }
+    .set { muts_for_plotting }
 
     PLOTNEEDLES(muts_for_plotting, sequence_information_df)
 
