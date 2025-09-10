@@ -3,8 +3,6 @@ process COMPARE_SIGNATURES {
     tag "$meta.id"
     label 'process_medium'
 
-    errorStrategy 'ignore'
-
     container 'docker.io/ferriolcalvet/hdp_wrapper'
 
     input:
