@@ -51,7 +51,7 @@ workflow PLOTTING_SUMMARY {
     groups_results
     .join( site_comparison )
     .set{ groups_results_sites }
-    
+
     PLOTSELECTION(groups_results, seqinfo_df)
     // needles with consequence type
     // plot selection at cohort/group level, all the different methods available

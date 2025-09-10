@@ -6,7 +6,7 @@ process PLOT_SATURATION {
     container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
-    tuple val(meta) , path(results_files)  // includes all positive selection results and site comparisons
+    tuple val(meta) , path(results_files) , path(site_comparison) // includes all positive selection results and site comparisons
     tuple val(meta2), path(all_samples_indv_depths)
     tuple val(meta3), path(panel_file)
     path (gene_data_df)

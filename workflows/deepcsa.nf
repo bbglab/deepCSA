@@ -542,16 +542,16 @@ workflow DEEPCSA{
     if ( params.omega & params.oncodrive3d & params.oncodrivefml & params.indels  & (params.vep_species == 'homo_sapiens') ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
-                        all_mutdensities_file,
+                        all_mutdensities_file.first(),
                         site_comparison_results,
-                        ANNOTATEDEPTHS.out.all_samples_depths,
-                        TABLE2GROUP.out.json_samples,
-                        TABLE2GROUP.out.json_allgroups,
+                        ANNOTATEDEPTHS.out.all_samples_depths.first(),
+                        TABLE2GROUP.out.json_samples.first(),
+                        TABLE2GROUP.out.json_allgroups.first(),
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.panel_annotated_rich,
                         seqinfo_df,
-                        CREATEPANELS.out.domains_in_panel,
-                        DNA2PROTEINMAPPING.out.depths_exons_positions,
+                        CREATEPANELS.out.domains_in_panel.first(),
+                        DNA2PROTEINMAPPING.out.depths_exons_positions.first(),
                         group_keys_ch
                         )
     }    
