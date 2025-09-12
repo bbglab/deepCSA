@@ -5,22 +5,25 @@ process CONCAT_PROFILES {
 
     input:
     tuple val(meta), path(mutation_profiles_list)
+    path (all_groups)
 
     output:
-    path("cosine_similarity_heatmap.png")      , emit: heatmap
-    path("cosine_similarity_clustermap.png")   , emit: clustermap
-    path("*.compiled_profiles.tsv")            , emit: compiled_profiles
-    path "versions.yml"                        , topic: versions
+    path("*_heatmap*.png")               , emit: heatmap
+    path("*_clustermap*.png")            , emit: clustermap
+    path("*.cosine_similarity*.tsv")     , emit: cosine_similarity
+    path("*.compiled_profiles.tsv")      , emit: compiled_profiles
+    path "versions.yml"                  , topic: versions
 
     script:
     """
     ls ${mutation_profiles_list} > mutation_profiles_list.txt
     concat_profiles.py \\
-            --mutation-profiles-list mutation_profiles_list.txt
+            --mutation-profiles-list mutation_profiles_list.txt \\
+            --groups-json ${all_groups}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: $(python --version | sed 's/Python //g')
+        python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
 
@@ -31,7 +34,7 @@ process CONCAT_PROFILES {
     touch dummy.compiled_profiles.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: $(python --version | sed 's/Python //g')
+        python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
 }

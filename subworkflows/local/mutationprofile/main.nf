@@ -17,6 +17,7 @@ workflow MUTATIONAL_PROFILE {
     depth
     bedfile
     wgs_trinuc
+    all_groups
 
     main:
     // actual code
@@ -46,10 +47,8 @@ workflow MUTATIONAL_PROFILE {
     .concat(COMPUTEPROFILE.out.wgs_sigprofiler)
     .set{ sigprofiler_wgs }
 
-    compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1]}.collect().flatten().map {it -> [ [id:'all_profiles'], it] }
-    compile_all_profiles.view()
-
-    CONCATPROFILES(compile_all_profiles)
+    compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1] }.collect().map { files -> [ [id:'all_profiles'], files ] }
+    CONCATPROFILES(compile_all_profiles, all_groups)
 
     emit:
     profile         = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
