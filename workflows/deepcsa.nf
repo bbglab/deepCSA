@@ -183,6 +183,13 @@ workflow DEEPCSA{
 
     TABLE2GROUP(features_table)
 
+    // Load group keys from JSON file in 'groups' channel
+    def group_keys = TABLE2GROUP.out.json_groups.map { json_path ->
+        def json = file(json_path).text
+        groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
+    }.flatten().unique()
+    .set { group_keys_ch } // this is a channel that contains only the group names as elements of the channel
+
 
     // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
@@ -211,6 +218,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.all_consensus_bed,
                         CREATEPANELS.out.exons_bed,
                         TABLE2GROUP.out.json_allgroups,
+                        group_keys_ch,
                         seqinfo_df,
                         CREATEPANELS.out.added_custom_regions
                         )
@@ -534,16 +542,17 @@ workflow DEEPCSA{
     if ( params.omega & params.oncodrive3d & params.oncodrivefml & params.indels  & (params.vep_species == 'homo_sapiens') ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
-                        all_mutdensities_file,
+                        all_mutdensities_file.first(),
                         site_comparison_results,
-                        ANNOTATEDEPTHS.out.all_samples_depths,
-                        TABLE2GROUP.out.json_samples,
-                        TABLE2GROUP.out.json_allgroups,
+                        ANNOTATEDEPTHS.out.all_samples_depths.first(),
+                        TABLE2GROUP.out.json_samples.first(),
+                        TABLE2GROUP.out.json_allgroups.first(),
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.panel_annotated_rich,
                         seqinfo_df,
-                        CREATEPANELS.out.domains_in_panel,
-                        DNA2PROTEINMAPPING.out.depths_exons_positions
+                        CREATEPANELS.out.domains_in_panel.first(),
+                        DNA2PROTEINMAPPING.out.depths_exons_positions.first(),
+                        group_keys_ch
                         )
     }    
     

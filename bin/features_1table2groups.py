@@ -64,14 +64,14 @@ def main(table_filename, separator, unique_identifier, groups):
     with open("samples.json", "w") as outfile:
         json.dump(samples_json, outfile)
 
-    if len(json_groups) > 0:
-        # Write groups json
-        with open("groups.json", "w") as outfile:
-            json.dump(json_groups, outfile)
+    json_groups["all_samples"] = [str(x) for x in samples_json.keys()]
+
+    # Write groups json
+    with open("groups.json", "w") as outfile:
+        json.dump(json_groups, outfile)
 
     # Write all samples and groups json
     json_groups.update(samples_json)
-    json_groups["all_samples"] = [str(x) for x in samples_json.keys()]
     with open("all_groups.json", "w") as outfile:
         json.dump(json_groups, outfile)
 
