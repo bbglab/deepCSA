@@ -113,13 +113,16 @@ workflow MUTATION_PREPROCESSING {
 
     PLOTSOMATICMAF(muts_all_samples)
 
-    // Filter SOMATICMUTATIONS.out.mutations by meta.id in group_keys
-    SOMATICMUTATIONS.out.mutations
-    .map { mut -> tuple(mut[0].id, mut) }
-    .join(groups)
-    .map { it[1] }
-    .set { muts_for_plotting }
-
+    if ( params.plot_only_allsamples ) {
+        muts_for_plotting = muts_all_samples
+    } else {
+        // Filter SOMATICMUTATIONS.out.mutations by meta.id in group_keys
+        SOMATICMUTATIONS.out.mutations
+        .map { mut -> tuple(mut[0].id, mut) }
+        .join(groups)
+        .map { it[1] }
+        .set { muts_for_plotting }
+    }
     PLOTNEEDLES(muts_for_plotting, sequence_information_df)
 
 
