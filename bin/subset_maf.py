@@ -43,7 +43,8 @@ def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, j
     with open(requested_fields, 'r') as file:
         output_format = json.load(file)
 
-    if annotated_maf.shape[0] < minimum_mutations:
+    # do not store any empty file
+    if annotated_maf.shape[0] < max(1, minimum_mutations):
         print(f"{mutations_file_out} file will not be written since it has not reached the minimum number of mutations required for per sample analysis")
         return False
 
@@ -77,7 +78,7 @@ def subset_mutation_dataframe(sample_name, mutations_file, mutations_file_out, j
 @click.option('--out_maf', type=click.Path(), help='Output MAF file')
 @click.option('--json_filters', type=click.Path(exists=True), help='Input mutation filtering criteria file')
 @click.option('--req_fields', type=click.Path(exists=True), help='Column names to output')
-@click.option('--min_mutations', type=int, default=-1, help='Minimum number of mutations for sample to be outputted.')
+@click.option('--min_mutations', type=int, default=1, help='Minimum number of mutations for sample to be outputted.')
 # @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 
 def main(sample_name, mut_file, out_maf, json_filters, req_fields, min_mutations): # , plot):
