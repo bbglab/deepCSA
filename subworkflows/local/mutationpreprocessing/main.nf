@@ -7,6 +7,8 @@ include { CUSTOM_MUTATION_PROCESSING    as CUSTOMANNOTATION } from '../../../mod
 include { VCF2MAF                       as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
 include { FILTERBED                     as FILTERPANEL      } from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTEREXONS      } from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQSNP } from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQNOISE} from '../../../modules/local/filterbed/main'
 include { MERGE_BATCH                   as MERGEBATCH       } from '../../../modules/local/mergemafs/main'
 include { FILTER_BATCH                  as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                    as WRITEMAF         } from '../../../modules/local/writemaf/main'
@@ -26,6 +28,8 @@ workflow MUTATION_PREPROCESSING {
     vcfs
     bedfile
     bedfile_exons
+    nanoseq_snp_file
+    nanoseq_noise_file
     all_groups
     groups
     sequence_information_df
@@ -62,8 +66,21 @@ workflow MUTATION_PREPROCESSING {
 
     FILTERPANEL(FILTEREXONS.out.maf, bedfile)
 
+    def maf_for_next = FILTERPANEL.out.maf
+
+    // Apply Nanoseq mask only if species is human and files are provided and the filters are not already applied
+    if (params.vep_species == "homo_sapiens" && params.nanoseq_snp && params.nanoseq_noise) {
+        
+        FILTERNANOSEQSNP(maf_for_next, nanoseq_snp_file)
+
+        FILTERNANOSEQNOISE(FILTERNANOSEQSNP.out.maf, nanoseq_noise_file)
+
+        maf_for_next = FILTERNANOSEQNOISE.out.maf
+
+    }
+
     // Join all samples' MAFs and put them in a channel to be merged
-    FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
+    maf_for_next.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
 
     MERGEBATCH(samples_maf)
 

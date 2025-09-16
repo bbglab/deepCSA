@@ -743,7 +743,21 @@
                     "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "fa_icon": "far fa-file-code",
                     "default": "covariates_hg19_hg38_epigenome_pcawg.rda"
-                }
+                },
+                "nanoseq_snp": {
+                    "type": "string",
+                    "description": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+                },
+                "nanoseq_noise": {
+                    "type": "string",
+                    "description": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+            }
             }
         },
         "ensembl_vep_options": {

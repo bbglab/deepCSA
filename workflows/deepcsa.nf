@@ -140,6 +140,13 @@ workflow DEEPCSA{
                                 file(params.cadd_scores_ind, checkIfExists : true)
                                 ]).first()
                             : Channel.empty()
+    nanoseq_snp_file   = params.nanoseq_snp
+                            ? Channel.fromPath( params.nanoseq_snp, checkIfExists: true).map{ path -> [ [id: "nanoseq_snp"], path ] }.first()
+                            : Channel.empty()
+    nanoseq_noise_file = params.nanoseq_noise
+                            ? Channel.fromPath( params.nanoseq_noise, checkIfExists: true).map{ path -> [ [id: "nanoseq_noise"], path ] }.first()
+                            : Channel.empty()
+
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -217,13 +224,18 @@ workflow DEEPCSA{
     MUT_PREPROCESSING(meta_vcfs_alone,
                         CREATEPANELS.out.all_consensus_bed,
                         CREATEPANELS.out.exons_bed,
+                        nanoseq_snp_file,
+                        nanoseq_noise_file,
                         TABLE2GROUP.out.json_allgroups,
                         group_keys_ch,
                         seqinfo_df,
                         CREATEPANELS.out.added_custom_regions
                         )
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-
+    
+    //STOP WORKFLOW
+    return
+    
     positive_selection_results = somatic_mutations
 
 
