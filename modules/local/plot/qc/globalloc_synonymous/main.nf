@@ -19,16 +19,17 @@ process PLOT_OMEGASYN_QC {
 
 
     script:
-    def prefix = task.ext.prefix ?: "omega_qc"
+    def prefix = task.ext.prefix ?: ""
+    def name = "omega_qc${prefix}"
 
     """
-    mkdir ${prefix}.plots
+    mkdir ${name}.plots
     ls -1 ${all_obs_syn_muts} > observed.txt
     ls -1 ${all_syn_muts_gloc} > estimated.txt
     omega_syn_qc.py \\
                     --observed-syn observed.txt \\
                     --estimated-syn estimated.txt \\
-                    --output-prefix ${prefix}.plots/${prefix}
+                    --output-prefix ${name}.plots/${name}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

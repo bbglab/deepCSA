@@ -183,7 +183,6 @@ workflow DEEPCSA{
 
     TABLE2GROUP(features_table)
     grouping_definitions = TABLE2GROUP.out.json_samples.concat(TABLE2GROUP.out.json_groups).concat(TABLE2GROUP.out.json_allgroups).collect()
-    grouping_definitions.view()
 
     // Load group keys from JSON file in 'groups' channel
     def group_keys = TABLE2GROUP.out.json_groups.map { json_path ->

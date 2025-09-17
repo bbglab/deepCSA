@@ -17,6 +17,22 @@ from scipy.stats import linregress
 
 from utils import load_samples_info
 
+
+import matplotlib as mpl
+from read_utils import custom_na_values
+from utils_plot import metrics_colors_dictionary, plots_general_config
+
+
+mpl.rcParams.update({
+    'axes.titlesize'    : plots_general_config["title_fontsize"],       # Title font size
+    'axes.labelsize'    : plots_general_config["xylabel_fontsize"],     # X and Y axis labels
+    'xtick.labelsize'   : plots_general_config["xyticks_fontsize"],     # X tick labels
+    'ytick.labelsize'   : plots_general_config["xyticks_fontsize"],     # Y tick labels
+    'legend.fontsize'   : plots_general_config["legend_fontsize"],      # Legend text
+    'figure.titlesize'  : plots_general_config["title_fontsize"],       # Figure suptitle (if used)
+})
+
+dot_size = plots_general_config["dot_size_scplot"]
 # ### Functions ###
 
 # # Function to filter mutdensity dataframes
@@ -187,7 +203,7 @@ def add_diagonal_line(dff, ax):
 
 
 def plot_general(df, output_prefix):
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(4, 4))
     ax = sns.scatterplot(
         data=df,
         x='Observed_synonymous',
@@ -197,9 +213,9 @@ def plot_general(df, output_prefix):
         legend = False
     )
     add_diagonal_line(df, ax)
-    plt.title('General Scatterplot: Observed vs Estimated Synonymous', fontsize=14)
-    plt.xlabel('Observed_synonymous', fontsize=12)
-    plt.ylabel('Estimated_synonymous', fontsize=12)
+    plt.title('Across genes and samples')
+    plt.xlabel('Observed_synonymous')
+    plt.ylabel('Estimated_synonymous')
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.savefig(f"{output_prefix}.general_scatter.png", bbox_inches='tight', dpi=300)
     plt.close()
@@ -216,7 +232,7 @@ def plot_per_gene_separated(df, output_prefix):
         # Legend page
         fig_legend, ax_legend = plt.subplots(figsize=(6, 2))
         handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=sample2color[s], label=s, markersize=8) for s in samples]
-        ax_legend.legend(handles=handles, title='SAMPLE', loc='center', ncol=4, fontsize=10)
+        ax_legend.legend(handles=handles, title='SAMPLE', loc='center', ncol=4)
         ax_legend.axis('off')
         fig_legend.tight_layout()
         pdf.savefig(fig_legend)
@@ -224,21 +240,21 @@ def plot_per_gene_separated(df, output_prefix):
         # Data pages
         for gene in genes:
             gene_df = df[df['GENE'] == gene]
-            fig, ax = plt.subplots(figsize=(6, 4))
+            fig, ax = plt.subplots(figsize=(3, 3))
             sns.scatterplot(
                 data=gene_df,
                 x='Observed_synonymous',
                 y='Estimated_synonymous',
                 hue='SAMPLE',
                 palette=sample2color,
-                s=100,
+                s=dot_size,
                 ax=ax,
                 legend=False
             )
             add_diagonal_line(gene_df, ax)
-            ax.set_title(f'{gene} Scatterplot: Observed vs Estimated Synonymous', fontsize=14)
-            ax.set_xlabel('Observed_synonymous', fontsize=12)
-            ax.set_ylabel('Estimated_synonymous', fontsize=12)
+            ax.set_title(f'{gene}',)
+            ax.set_xlabel('Observed_synonymous')
+            ax.set_ylabel('Estimated_synonymous')
             ax.grid(True, linestyle='--', alpha=0.7)
             fig.tight_layout()
             pdf.savefig(fig)
@@ -262,7 +278,7 @@ def plot_per_sample_separated(df, output_prefix, gene2color=None):
         # Legend page
         fig_legend, ax_legend = plt.subplots(figsize=(6, 2))
         handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=gene2color[g], label=g, markersize=8) for g in genes]
-        ax_legend.legend(handles=handles, title='GENE', loc='center', ncol=4, fontsize=10)
+        ax_legend.legend(handles=handles, title='GENE', loc='center', ncol=3)
         ax_legend.axis('off')
         fig_legend.tight_layout()
         pdf.savefig(fig_legend)
@@ -270,21 +286,21 @@ def plot_per_sample_separated(df, output_prefix, gene2color=None):
         # Data pages
         for sample in samples:
             sample_df = df[df['SAMPLE'] == sample]
-            fig, ax = plt.subplots(figsize=(6, 4))
+            fig, ax = plt.subplots(figsize=(3, 3))
             sns.scatterplot(
                 data=sample_df,
                 x='Observed_synonymous',
                 y='Estimated_synonymous',
                 hue='GENE',
                 palette=gene2color,
-                s=100,
+                s=dot_size,
                 ax=ax,
                 legend=False
             )
             add_diagonal_line(sample_df, ax)
-            ax.set_title(f'{sample} Scatterplot: Observed vs Estimated Synonymous', fontsize=14)
-            ax.set_xlabel('Observed_synonymous', fontsize=12)
-            ax.set_ylabel('Estimated_synonymous', fontsize=12)
+            ax.set_title(f'{sample}')
+            ax.set_xlabel('Observed_synonymous')
+            ax.set_ylabel('Estimated_synonymous')
             ax.grid(True, linestyle='--', alpha=0.7)
             fig.tight_layout()
             pdf.savefig(fig)
@@ -315,7 +331,7 @@ def plot_samples_grid(df, output_prefix, gene2color=None):
                         y='Estimated_synonymous',
                         hue='GENE',
                         palette=gene2color,
-                        s=30,
+                        s=dot_size,
                         ax=axs[i],
                         legend=False)
         min_val = -0.05
@@ -342,9 +358,9 @@ def plot_samples_grid(df, output_prefix, gene2color=None):
             if p_value < 0.05:
                 p_value = " < 0.05"
             else:
-                p_value = r'$\\geq0.05$'
+                p_value = " ≥ 0.05"
             axs[i].annotate(f'R-squared: {r_squared:.2f} (p{p_value})', xy=(0.25, 0.98), xycoords='axes fraction',
-                            fontsize=7, color='black')
+                            fontsize=plots_general_config["annots_fontsize"], color='black')
             sample_results.append({'SAMPLE': sample,
                                    'R_squared': r_squared,
                                    'p_value': res.pvalue,
@@ -354,7 +370,7 @@ def plot_samples_grid(df, output_prefix, gene2color=None):
             r_squared = "NA"
             p_value = "NA"
             axs[i].annotate(f'R-squared: {r_squared} (p-value: {p_value})', xy=(0.25, 0.98), xycoords='axes fraction',
-                            fontsize=7, color='black')
+                            fontsize=plots_general_config["annots_fontsize"], color='black')
             sample_results.append({'SAMPLE': sample,
                                    'R_squared': None,
                                    'p_value': 1,
@@ -363,13 +379,14 @@ def plot_samples_grid(df, output_prefix, gene2color=None):
         axs[i].grid(True, linestyle='--', alpha=0.7)
         axs[i].set_ylabel(f"Estimated_synonymous")
         axs[i].set_xlabel(f"Observed_synonymous")
-        axs[i].set_title(f"{sample}", fontsize=10)
+        axs[i].set_title(f"{sample}")
         axs[i].spines['right'].set_visible(False)
         axs[i].spines['top'].set_visible(False)
     # Hide unused subplots
     for j in range(i+1, len(axs)):
         fig.delaxes(axs[j])
     sample_results_df = pd.DataFrame(sample_results)
+    plt.tight_layout()
     fig.savefig(f"{output_prefix}.samples_grid.png", bbox_inches='tight', dpi=300)
     plt.close(fig)
     # Save results to TSV
@@ -397,7 +414,7 @@ def plot_genes_grid(df, output_prefix):
                         y='Estimated_synonymous',
                         hue='SAMPLE',
                         palette='Set2',
-                        s=30,
+                        s=dot_size,
                         ax=axs[i], legend=False)
         min_val = -0.05
         max_val = max(subset_df["Observed_synonymous"].max()*1.1, subset_df["Estimated_synonymous"].max()*1.1)
@@ -422,9 +439,9 @@ def plot_genes_grid(df, output_prefix):
             if p_value < 0.05:
                 p_value = " < 0.05"
             else:
-                p_value = r'$\\geq0.05$'
-            axs[i].annotate(f'R-squared: {r_squared:.2f} (p{p_value})', xy=(0.25, 0.98), xycoords='axes fraction',
-                            fontsize=7, color='black')
+                p_value = " ≥ 0.05"
+            axs[i].annotate(f'R-squared: {r_squared:.2f} (p{p_value})', xy=(0.25, 1), xycoords='axes fraction',
+                            fontsize=plots_general_config["annots_fontsize"], color='black')
             gene_results.append({'GENE': gene,
                                 'R_squared': r_squared,
                                 'p_value': res.pvalue,
@@ -433,8 +450,8 @@ def plot_genes_grid(df, output_prefix):
         except ValueError:
             r_squared = "NA"
             p_value = "NA"
-            axs[i].annotate(f'R-squared: {r_squared} (p-value: {p_value})', xy=(0.25, 0.98), xycoords='axes fraction',
-                            fontsize=7, color='black')
+            axs[i].annotate(f'R-squared: {r_squared} (p-value: {p_value})', xy=(0.25, 1), xycoords='axes fraction',
+                            fontsize=plots_general_config["annots_fontsize"], color='black')
             gene_results.append({'GENE': gene,
                                 'R_squared': None,
                                 'p_value': 1,
@@ -443,13 +460,14 @@ def plot_genes_grid(df, output_prefix):
         axs[i].grid(True, linestyle='--', alpha=0.7)
         axs[i].set_ylabel(f"Estimated_synonymous")
         axs[i].set_xlabel(f"Observed_synonymous")
-        axs[i].set_title(f"{gene}", fontsize=10)
+        axs[i].set_title(f"{gene}")
         axs[i].spines['right'].set_visible(False)
         axs[i].spines['top'].set_visible(False)
     # Hide unused subplots
     for j in range(i+1, len(axs)):
         fig.delaxes(axs[j])
     gene_results_df = pd.DataFrame(gene_results)
+    plt.tight_layout()
     fig.savefig(f"{output_prefix}.genes_grid.png", bbox_inches='tight', dpi=300)
     plt.close(fig)
     # Save results to TSV
@@ -466,13 +484,13 @@ def plot_genes_grid(df, output_prefix):
 
 def plot_progressive_samples(sample_results_df, output_prefix):
     sorted_results_df = sample_results_df.sort_values(by='R_squared', ascending=True)
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    fig, ax1 = plt.subplots(figsize=(6, 4))
     ax1.plot(sorted_results_df['SAMPLE'], sorted_results_df['R_squared'], marker='o', color='b', label='R-squared')
     ax1.set_xlabel("Samples (sorted by R-squared)")
     ax1.set_ylabel("R-squared", color='b')
     ax1.tick_params(axis='y', labelcolor='b')
     ax1.set_xticks(range(len(sorted_results_df['SAMPLE'])))
-    ax1.set_xticklabels(sorted_results_df['SAMPLE'], rotation=90, fontsize=8)
+    ax1.set_xticklabels(sorted_results_df['SAMPLE'], rotation=90)
     ax2 = ax1.twinx()
     sns.scatterplot(
         x=range(len(sorted_results_df['number_mutations'])),
@@ -480,14 +498,14 @@ def plot_progressive_samples(sample_results_df, output_prefix):
         ax=ax2,
         color='red',
         label='Number of mutations',
-        s=50
+        s=dot_size
     )
     ax2.set_ylabel("Number of mutations", color='red')
     ax2.tick_params(axis='y', labelcolor='red')
     ax1.legend(loc='upper left')
     ax2.legend(loc='upper right')
     ax1.grid(axis='x', linestyle='--', alpha=0.7)
-    plt.title("Progressive Plot of R-squared and P-values Across Samples")
+    plt.title("R-squared and P-values Across Samples")
     fig.savefig(f"{output_prefix}.progressive_samples.png", bbox_inches='tight', dpi=300)
     plt.close(fig)
     return None
@@ -495,13 +513,13 @@ def plot_progressive_samples(sample_results_df, output_prefix):
 
 def plot_progressive_genes(gene_results_df, output_prefix):
     sorted_results_df = gene_results_df.sort_values(by='R_squared', ascending=True)
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    fig, ax1 = plt.subplots(figsize=(6, 4))
     ax1.plot(sorted_results_df['GENE'], sorted_results_df['R_squared'], marker='o', color='b', label='R-squared')
     ax1.set_xlabel("Genes (sorted by R-squared)")
     ax1.set_ylabel("R-squared", color='b')
     ax1.tick_params(axis='y', labelcolor='b')
     ax1.set_xticks(range(len(sorted_results_df['GENE'])))
-    ax1.set_xticklabels(sorted_results_df['GENE'], rotation=90, fontsize=8)
+    ax1.set_xticklabels(sorted_results_df['GENE'], rotation=90)
     ax2 = ax1.twinx()
     sns.scatterplot(
         x=range(len(sorted_results_df['number_mutations'])),
@@ -509,14 +527,14 @@ def plot_progressive_genes(gene_results_df, output_prefix):
         ax=ax2,
         color='red',
         label='Number of mutations',
-        s=50
+        s=dot_size
     )
     ax2.set_ylabel("Number of mutations", color='red')
     ax2.tick_params(axis='y', labelcolor='red')
     ax1.legend(loc='upper left')
     ax2.legend(loc='lower right')
     ax1.grid(axis='x', linestyle='--', alpha=0.7)
-    plt.title("Progressive Plot of R-squared and P-values Across Genes")
+    plt.title("R-squared and P-values Across Genes")
     fig.savefig(f"{output_prefix}.progressive_genes.png", bbox_inches='tight', dpi=300)
     plt.close(fig)
     return None
@@ -530,9 +548,9 @@ def plot_progressive_genes(gene_results_df, output_prefix):
 @click.command()
 @click.option("--observed-syn", required=True, type=click.Path(exists=True),
               help="File containing an omega preprocessing synonymous mutation file per row (observed)")
-@click.option("--estimated-syn", required=True, type=click.Path(writable=True),
+@click.option("--estimated-syn", required=True, type=click.Path(exists=True),
               help="File containing an omega preprocessing synonymous mutation file per row (expected)")
-@click.option("--output-prefix", required=True, type=click.Path(exists=True),
+@click.option("--output-prefix", required=True, type=str,
               help="Prefix for the outputs")
 
 def main(observed_syn, estimated_syn, output_prefix):

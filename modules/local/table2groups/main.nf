@@ -9,10 +9,10 @@ process TABLE_2_GROUP {
     path(features_table)
 
     output:
-    path("samples.json")                        , emit: json_samples
-    path("groups.json")       , optional : true , emit: json_groups
-    path("all_groups.json")                     , emit: json_allgroups
-    path "versions.yml"                         , topic: versions
+    path("samples.json")      , emit: json_samples
+    path("groups.json")       , emit: json_groups
+    path("all_groups.json")   , emit: json_allgroups
+    path "versions.yml"       , topic: versions
 
     script:
     def separator = task.ext.separator ?: "comma"
