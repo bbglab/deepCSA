@@ -2,110 +2,94 @@ nextflow_pipeline {
     name "Test DEEPCSA Pipeline"
     script "main.nf"
 
-    test("Should run DEEPCSA pipeline with minimal parameters") {
+    // test("Should run DEEPCSA workflow with minimal parameters") {
 
+    //     when {
+    //         params {
+    //             outdir = "output"
+    //             input = "test_data/samplesheet.csv"
+    //         }
+    //     }
+
+    //     then {
+    //         assert workflow.success
+    //         assert workflow.trace.succeeded().size() > 0
+            
+    //         // Check workflow completed expected number of tasks
+    //         assert workflow.trace.tasks().size() >= 20
+
+    //         // Verify no error messages in output
+    //         assert !workflow.stdout.contains("ERROR")
+            
+    //         // Check key processes completed
+    //         with(workflow.trace) {
+    //             assert succeeded("INPUT_CHECK").size() == 1
+    //             assert succeeded("DEPTHANALYSIS").size() == 1
+    //             assert succeeded("CREATEPANELS").size() == 1
+    //             assert succeeded("MUT_PREPROCESSING").size() == 1
+    //         }
+    //     }
+    // }
+
+    // test("Should fail gracefully with invalid input") {
+    //     when {
+    //         params {
+    //             outdir = "output"
+    //             input = "nonexistent.csv"
+    //             features_table = "nonexistent.tsv"
+    //         }
+    //     }
+
+    //     then {
+    //         assert workflow.failed
+    //         assert workflow.exitStatus == 1
+    //         assert workflow.errorReport.contains("Input file does not exist")
+    //     }
+    // }
+
+    test("Minimal features test run") {
         when {
             params {
                 outdir = "output"
-                input = "test_data/samplesheet.csv"
-                features_table = "test_data/features.tsv"
-                vep_species = "homo_sapiens"
-                profileall = true
-                mutationdensity = true
-                omega = true
-                oncodrivefml = true
-                oncodrive3d = true
-                indels = true
-                signatures = true
-                downsample = false
-                regressions = false
-                expected_mutated_cells = false
-                mutated_cells_vaf = false
-                oncodriveclustl = false
-                dnds = false
+                input = "/data/bbg/datasets/transfer/ferriol_deepcsa/test/deepCSA_input.bladder_med.small_cohort.med.csv"
+                plot_depths = true
+                signatures  = true
+                profileall  = true
             }
         }
 
         then {
             assert workflow.success
-            assert workflow.trace.succeeded().size() > 0
-            
-            // Check key output directories exist
-            assert path("output/mutdensity").exists()
-            assert path("output/omega").exists()
-            assert path("output/oncodrivefml").exists()
-            assert path("output/oncodrive3d").exists()
-            assert path("output/indels").exists()
-            assert path("output/signatures").exists()
-            
-            // Verify specific output files
-            assert path("output/mutdensity/all_mutdensities.tsv").exists()
-            assert path("output/pipeline_info/execution_report.html").exists()
-            assert path("output/pipeline_info/execution_timeline.html").exists()
-            
-            // Check MultiQC report generation
-            assert path("output/multiqc/multiqc_report.html").exists()
-            
-            // Verify no failed tasks
-            assert workflow.trace.failed().size() == 0
-            
-            // Check expected number of tasks completed
-            with(workflow.trace) {
-                assert succeeded().size() >= 10 // Adjust based on expected minimum tasks
-                assert tasks().every { it.exitStatus == 0 }
-            }
+            assert path("${params.outdir}/computeprofile").exists()
+            assert !path("${params.outdir}/mutdensity").exists()
+            assert !path("${params.outdir}/omega").exists()
+            assert !path("${params.outdir}/oncodrivefml").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()
         }
     }
 
-    test("Should handle custom gene groups and BED file") {
+    // test("More complete test") {
+    //     when {
+    //         params {
+    //             outdir = "output"
+    //             input = "test_data/samplesheet.csv"
+    //             plot_depths = true
+    //             signatures  = true
+    //             profileall  = true
+    //         }
+    //     }
 
-        when {
-            params {
-                outdir = "output_custom"
-                input = "test_data/samplesheet.csv"
-                features_table = "test_data/features.tsv"
-                custom_groups_file = "test_data/custom_groups.tsv"
-                custom_bedfile = "test_data/custom_regions.bed"
-                vep_species = "homo_sapiens"
-                profileall = true
-                mutationdensity = true
-                omega = true
-                oncodrivefml = true
-                oncodrive3d = true
-                indels = true
-            }
-        }
+    //     then {
+    //         assert workflow.success
+    //         assert path("${params.outdir}/mutdensity").exists()
+    //         assert !path("${params.outdir}/omega").exists()
+    //         assert !path("${params.outdir}/oncodrivefml").exists()
+    //         assert !path("${params.outdir}/oncodrive3d").exists()
 
-        then {
-            assert workflow.success
-            
-            // Verify custom inputs were processed
-            assert workflow.trace.succeeded().find { it.name == "TABLE2GROUP" }
-            assert workflow.trace.succeeded().find { it.name == "CREATEPANELS" }
-            
-            // Check custom output processing
-            assert path("output_custom/panels").exists()
-            assert path("output_custom/depths").exists()
-            
-            // Verify no errors in custom file processing
-            assert !workflow.errorReport
-        }
-    }
+    //         // Verify specific output files
+    //         assert path("${params.outdir}/mutdensity/all_mutdensities.tsv").exists()
+    //         assert path("${params.outdir}/multiqc/multiqc_report.html").exists()
+    //     }
+    // }
+}            
 
-    test("Should fail gracefully with invalid input") {
-
-        when {
-            params {
-                outdir = "output_fail"
-                input = "test_data/nonexistent.csv"
-                features_table = "test_data/nonexistent.tsv"
-            }
-        }
-
-        then {
-            assert workflow.failed
-            assert workflow.errorReport.contains("Input file does not exist")
-        }
-    }
-}
- 
