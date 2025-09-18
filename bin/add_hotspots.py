@@ -43,6 +43,7 @@ def main(panel_file, autoexons, autodomains, custom):
 
     current_chr = ""
     region_counters = {}  # Dictionary to track exon numbers for each gene
+    chr_data = panel_data
     for _ind, row in exons_bed.iterrows():
         try:
             if row["CHROM"] != current_chr:

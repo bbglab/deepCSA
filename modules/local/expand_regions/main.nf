@@ -38,7 +38,8 @@ process EXPAND_REGIONS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.vep.summary.tab.gz
+    touch panel.with_hotspots.tsv
+    touch hotspot_names.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

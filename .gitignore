@@ -11,3 +11,5 @@ nf-*-reports.tsv
 *.sif
 ste_notes.txt
 assets/HDP_files*
+scratch/
+scratchhhh/
