@@ -7,9 +7,10 @@ This document provides an overview of the issues identified during the developme
 ## Table of Contents
 
 1. [BedTools merge: 0-len interval wrongly merged](#issue-1)
-2. [Issue 2: Description of the issue](#issue-2)
-3. [Issue 3: Description of the issue](#issue-3)
-4. ...
+2. [Addition of pseudocount to fill the mutational profile](#issue-2)
+3. [Incomplete coverage of subgenic element raises error in expanded panel building](#issue-3)
+4. [Issue 4: Description of the issue](#issue-4)
+5. ...
 
 ## 1. BedTools merge: 0-len interval wrongly merged  <a name="issue-1"></a>
 
@@ -82,7 +83,25 @@ Specifically add one third of the smallest non-zero value of the normalized prof
 
 
 
-## 3. Issue 3: Description of the issue <a name="issue-3"></a>
+## 3. Incomplete coverage of subgenic element raises error in expanded panel building <a name="issue-3"></a>
+
+This becomes a problem when subgenic elements that are not fully covered by the consensus exons panel are excluded from the resulting expanded regions file.
+
+### Processes affected:
+- `EXPANDREGIONS`
+
+
+### GitHub tracking
+
+- **GitHub Issue:** [Link to GitHub Issue](https://github.com/bbglab/deepCSA/issues/363)
+- **GitHub PR (Resolution):** [Link to GitHub PR](https://github.com/bbglab/deepCSA/issues/373)
+
+### Resolution <a name="resolution"></a>
+
+The solution is that even if a region is partially covered include those covered areas in the expanded panel that is created. This ensures the full representation of all the elements in the downstream analysis, but does not guarantee the full comparison between runs since different groups of samples might result in different panel definitions and then potentially different subgenic-regions definition.
+
+
+## 4. Issue 3: Description of the issue <a name="issue-4"></a>
 
 Description of the issue, including its impact and context.
 
