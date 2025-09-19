@@ -94,14 +94,14 @@ This becomes a problem when subgenic elements that are not fully covered by the 
 ### GitHub tracking
 
 - **GitHub Issue:** [Link to GitHub Issue](https://github.com/bbglab/deepCSA/issues/363)
-- **GitHub PR (Resolution):** [Link to GitHub PR](https://github.com/bbglab/deepCSA/issues/373)
+- **GitHub PR (Resolution):** [Link to GitHub PR](https://github.com/bbglab/deepCSA/pull/373)
 
 ### Resolution <a name="resolution"></a>
 
-The solution is that even if a region is partially covered include those covered areas in the expanded panel that is created. This ensures the full representation of all the elements in the downstream analysis, but does not guarantee the full comparison between runs since different groups of samples might result in different panel definitions and then potentially different subgenic-regions definition.
+The solution is to include the covered portions of a region in the expanded panel even if the region is only partially covered. This ensures representation of all elements in downstream analyses, but it does not guarantee full comparability between runs because different sample groups may yield different panel and subgenic-region definitions.
 
 
-## 4. Issue 3: Description of the issue <a name="issue-4"></a>
+## 4. Issue 4: Description of the issue <a name="issue-4"></a>
 
 Description of the issue, including its impact and context.
 
