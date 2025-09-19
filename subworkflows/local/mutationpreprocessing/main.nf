@@ -28,8 +28,6 @@ workflow MUTATION_PREPROCESSING {
     vcfs
     bedfile
     bedfile_exons
-    nanoseq_snp_file
-    nanoseq_noise_file
     all_groups
     groups
     sequence_information_df
@@ -37,6 +35,12 @@ workflow MUTATION_PREPROCESSING {
 
     main:
 
+    nanoseq_snp_file   = params.nanoseq_snp
+                            ? Channel.fromPath( params.nanoseq_snp, checkIfExists: true).map{ path -> [ [id: "nanoseq_snp_mask"], path ] }.first()
+                            : Channel.empty()
+    nanoseq_noise_file = params.nanoseq_noise
+                            ? Channel.fromPath( params.nanoseq_noise, checkIfExists: true).map{ path -> [ [id: "nanoseq_noise_mask"], path ] }.first()
+                            : Channel.empty()
 
     VCFANNOTATE(vcfs,
                     params.fasta,
