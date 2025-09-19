@@ -35,8 +35,6 @@ process EXPAND_REGIONS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: ""
-    prefix = "${meta.id}${prefix}"
     """
     touch panel.with_hotspots.tsv
     touch hotspot_names.json

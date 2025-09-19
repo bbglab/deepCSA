@@ -28,34 +28,32 @@ nextflow_process {
         }
     }
 
-    // test("Should run with autoexons and autodomains") {
-    //     when {
-    //         params {
-    //             omega_autoexons = true
-    //             omega_autodomains = true
-    //             omega_subgenic_bedfile = false
-    //         }
-    //         process {
-    //             """
-    //             input[0] = tuple(
-    //                 [ id:'test2', single_end:false ], 
-    //                 file("${projectDir}/test_data/modules/consensus.exons_splice_sites.PPM1D.tsv")
-    //             )
-    //             input[1] = file("${projectDir}/test_data/modules/PPM1D_domains.bed4.bed")
-    //             input[2] = file("${projectDir}/test_data/modules/PPM1D_exons.bed4.bed")
-    //             input[3] = file("${projectDir}/test_data/dummy_file.tsv")
-    //             """
-    //         }
-    //     }
+    test("Should run with autoexons and autodomains") {
+        when {
+            params {
+                omega_autoexons = true
+                omega_autodomains = true
+                omega_subgenic_bedfile = false
+            }
+            process {
+                """
+                input[0] = tuple(
+                    [ id:'test2', single_end:false ], 
+                    file("${projectDir}/test_data/modules/consensus.exons_splice_sites.PPM1D.tsv")
+                )
+                input[1] = file("${projectDir}/test_data/modules/PPM1D_domains.bed4.bed")
+                input[2] = file("${projectDir}/test_data/modules/PPM1D_exons.bed4.bed")
+                input[3] = file("${projectDir}/test_data/dummy_file.tsv")
+                """
+            }
+        }
 
-    //     then {
-    //         assert process.success
-    //         assert snapshot(process.out).match()
-    //         assert path(process.out.panel_increased.get(0)[1]).exists()
-    //         assert path(process.out.new_regions_json.get(0)[1]).exists()
-    //         assert path(process.out.versions).exists()
-    //     }
-    // }
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+
 
     // test("Should run in stub mode") {
     //     when {
