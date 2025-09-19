@@ -52,8 +52,39 @@ def main(panel_file, autoexons, autodomains, custom):
                 print("Updating chromosome to:", current_chr)
 
             # Get start and end indices
-            ind_start = np.where(chr_data["POS"] == row["START"])[0][0]
-            ind_end = np.where(chr_data.iloc[ind_start:,:]["POS"] == row["END"])[0][0]
+            start_matches = np.where(chr_data["POS"] == row["START"])[0]
+            start_found = len(start_matches) > 0
+            if start_found:
+                ind_start = start_matches[0]
+            else:
+                # Use the first position greater than or equal to START, or the last if none
+                start_matches = np.where(chr_data["POS"] >= row["START"])[0]
+                if len(start_matches) > 0:
+                    ind_start = start_matches[0]
+                    start_found = True
+                else:
+                    print("No start match for row:", row)
+                    continue
+
+            # If you reach ths point, ind_start is defined and valid
+            # Search for END position starting from ind_start
+            search_end = chr_data.iloc[ind_start:,:]
+            end_matches = np.where(search_end["POS"] == row["END"])[0]
+
+            end_found = len(end_matches) > 0
+            if end_found:
+                ind_end = end_matches[-1]
+            else:
+                # Use the last position less than or equal to END, or the last available
+                end_matches = np.where(search_end["POS"] <= row["END"])[-1]
+                if len(end_matches) > 0:
+                    ind_end = end_matches[-1]
+                    end_found = True
+                else:
+                    print("No end match found for row:", row)
+                    continue
+
+            # if you reach this point, start and end are defined and valid
             gene = chr_data.iloc[ind_start]["GENE"]
 
             ind_end += ind_start
