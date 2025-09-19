@@ -80,10 +80,6 @@ def main(sample_maf_file, bedfile, filtername, positive):
         positions_df["CHROM"] = "chr" + positions_df["CHROM"]
     elif not sample_maf.iloc[0,0].startswith("chr") and positions_df.iloc[0,0].startswith("chr"):
         positions_df["CHROM"] = positions_df["CHROM"].str.replace("chr", "")
-    print("MAF")
-    print(sample_maf.head())
-    print("BED")
-    print(panel_reg.head())
     if positive:
         filtered_maf = filter_panel_regions(sample_maf, positions_df, filtername)
     else:
