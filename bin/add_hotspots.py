@@ -72,7 +72,7 @@ def main(panel_file, autoexons, autodomains, custom):
 
             end_found = len(end_matches) > 0
             if end_found:
-                ind_end = end_matches[0]
+                ind_end = end_matches[-1]
             else:
                 # Use the last position less than or equal to END, or the last available
                 end_matches = np.where(search_end["POS"] <= row["END"])[-1]
