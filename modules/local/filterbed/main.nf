@@ -16,9 +16,15 @@ process FILTERBED {
 
     script:
     def filtername = task.ext.filtername ?: "covered"
-    // TODO reimplement it with click
+    def positive = task.ext.positive ?: false
+    def positive_flag = positive ? "--positive" : ""
+
     """
-    filterbed.py ${maf} ${bedfile} ${filtername};
+    filterbed.py \\
+        --sample-maf-file ${maf} \\
+        --bedfile ${bedfile} \\
+        --filtername ${filtername} \\
+        ${positive_flag};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
