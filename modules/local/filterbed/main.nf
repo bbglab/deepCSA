@@ -15,9 +15,8 @@ process FILTERBED {
 
 
     script:
-    def filtername = task.ext.filtername ?: "covered"
-    def positive = task.ext.positive ?: false
-    def positive_flag = positive ? "--positive" : ""
+    def filtername = task.ext.filtername ?: ""
+    def positive_flag = task.ext.positive ? "--positive" : ""
 
     """
     filterbed.py \\
