@@ -13,8 +13,8 @@ include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../..
 include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES     } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISON           } from '../../../modules/local/bbgtools/sitecomparison/main'
-include { SITE_COMPARISON           as SITECOMPARISONMULTI           } from '../../../modules/local/bbgtools/sitecomparison/main'
-
+include { SITE_COMPARISON           as SITECOMPARISONMULTI      } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { PLOT_OMEGASYN_QC          as EVALOMEGAGLOCESTIMATION  } from '../../../modules/local/plot/qc/globalloc_synonymous/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
@@ -22,7 +22,6 @@ include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } fro
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC  } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI  } from '../../../modules/local/bbgtools/sitecomparison/main'
-
 
 workflow OMEGA_ANALYSIS{
 
@@ -38,6 +37,7 @@ workflow OMEGA_ANALYSIS{
     complete_panel
     exons_file
     suffix
+    grouping_defs
 
 
     main:
@@ -150,6 +150,9 @@ workflow OMEGA_ANALYSIS{
         global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
         all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
 
+        PREPROCESSING.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts }
+        PREPROCESSINGGLOBALLOC.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts_gloc }
+        EVALOMEGAGLOCESTIMATION(all_syn_muts, all_syn_muts_gloc, grouping_defs)
 
         if (params.omega_plot){
             SUBSETMUTATIONS.out.subset

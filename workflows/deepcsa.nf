@@ -183,6 +183,7 @@ workflow DEEPCSA{
 
 
     TABLE2GROUP(features_table)
+    grouping_definitions = TABLE2GROUP.out.json_samples.concat(TABLE2GROUP.out.json_groups).concat(TABLE2GROUP.out.json_allgroups).collect()
 
     // Load group keys from JSON file in 'groups' channel
     def group_keys = TABLE2GROUP.out.json_groups.map { json_path ->
@@ -408,7 +409,8 @@ workflow DEEPCSA{
                     SYNMUTDENSITY.out.mutdensity,
                     CREATEPANELS.out.panel_annotated_rich,
                     DNA2PROTEINMAPPING.out.panel_exons_bed,
-                    ""
+                    "",
+                    grouping_definitions
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -431,7 +433,8 @@ workflow DEEPCSA{
                             SYNMUTREADSRATE.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich,
                             DNA2PROTEINMAPPING.out.panel_exons_bed,
-                            ".multi"
+                            ".multi",
+                            grouping_definitions
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -452,7 +455,8 @@ workflow DEEPCSA{
                             SYNMUTDENSITY.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich,
                             DNA2PROTEINMAPPING.out.panel_exons_bed,
-                            ".non_protein_affecting"
+                            ".non_protein_affecting",
+                            grouping_definitions
                             )
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
@@ -470,7 +474,8 @@ workflow DEEPCSA{
                                     SYNMUTREADSRATE.out.mutdensity,
                                     CREATEPANELS.out.panel_annotated_rich,
                                     DNA2PROTEINMAPPING.out.panel_exons_bed,
-                                    ".multi.non_protein_affecting"
+                                    ".multi.non_protein_affecting",
+                                    grouping_definitions
                                     )
 
                 if (params.regressions){
