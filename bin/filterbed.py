@@ -2,6 +2,7 @@
 
 import click
 import pandas as pd
+import re
 from utils import add_filter, to_int_if_possible
 from read_utils import custom_na_values
 
@@ -27,11 +28,11 @@ def filter_panel(mutations_df, positions_df, filtername, positive):
     return mutations_df.drop(col, axis=1)
 
 def remove_non_canonical_chromosomes(positions_df):
-    """ Keeps only canonical chromosomes (1-22, X, Y or chr1-22, chrX, chrY)"""
-    canonical_chromosomes = [str(i) for i in range(1, 23)] + ["X", "Y"]
-    canonical_chromosomes += ["chr" + chrom for chrom in canonical_chromosomes]
-
-    positions_df = positions_df[positions_df["CHROM"].isin(canonical_chromosomes)]
+    """ Keeps only canonical chromosomes"""
+    # Regular expression to match standard chromosomes
+    # Only works for human and mouse genomes
+    canonical_pattern = re.compile(r'^(chr)?([0-9][0-9]?|X|Y|M(T)?)$', re.IGNORECASE)
+    positions_df = positions_df[positions_df["CHROM"].apply(lambda x: canonical_pattern.match(x) is not None)].reset_index(drop=True)
 
     return positions_df
 
@@ -65,7 +66,6 @@ def main(sample_maf_file, bedfile, filtername, positive):
     positions_df = panel_reg.explode("POS").reset_index(drop = True)
     positions_df = positions_df[["CHROM", "POS"]].drop_duplicates()
     positions_df = remove_non_canonical_chromosomes(positions_df)
-    positions_df = positions_df.reset_index(drop = True)
 
     # adjust the CHROM field to adapt to the way it is being represented in the mutations list
     if sample_maf.iloc[0,0].startswith("chr") and not positions_df.iloc[0,0].startswith("chr"):
