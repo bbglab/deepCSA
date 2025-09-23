@@ -6,43 +6,34 @@ from utils import add_filter, to_int_if_possible
 from read_utils import custom_na_values
 
 
-
-def negative_filter_panel_regions(mutations_df, positions_df, filtername):
+def filter_panel(mutations_df, positions_df, filtername, positive):
     """
-    Negative filter
+    If positive is True, marks mutations inside the panel.
+    If positive is False, marks mutations outside the panel.
     """
+    col = "in_panel" if positive else "not_in_panel"
+    val = True if positive else False
+    fill = False if positive else True
 
-    positions_df["not_in_panel"] = False
+    # Column "in_panel" == True if positive True, column "not_in_panel" == False if positive False
+    positions_df[col] = val
+    mutations_df = mutations_df.merge(positions_df, on=["CHROM", "POS"], how='left')
+    # If positive True, fill NaN with False ("in_panel" == False), if positive False, fill NaN with True ("not_in_panel" == True)
+    mutations_df[col] = mutations_df[col].fillna(fill)
+    mutations_df["FILTER"] = mutations_df[["FILTER", col]].apply(
+                                                            lambda x: add_filter(x["FILTER"], x[col], filtername),
+                                                            axis=1
+                                                            )
+    return mutations_df.drop(col, axis=1)
 
-    # filter mutations not inside the panel
-    mutations_df = mutations_df.merge(positions_df, on = ["CHROM", "POS"], how = 'left')
-    mutations_df["not_in_panel"] = mutations_df["not_in_panel"].fillna(True)
-    mutations_df["FILTER"] = mutations_df[["FILTER","not_in_panel"]].apply(
-                                                                    lambda x: add_filter(x["FILTER"], x["not_in_panel"], filtername),
-                                                                    axis = 1
-                                                                    )
+def remove_non_canonical_chromosomes(positions_df):
+    """ Keeps only canonical chromosomes (1-22, X, Y or chr1-22, chrX, chrY)"""
+    canonical_chromosomes = [str(i) for i in range(1, 23)] + ["X", "Y"]
+    canonical_chromosomes += ["chr" + chrom for chrom in canonical_chromosomes]
 
-    return mutations_df.drop("not_in_panel", axis = 1)
+    positions_df = positions_df[positions_df["CHROM"].isin(canonical_chromosomes)]
 
-
-def filter_panel_regions(mutations_df, positions_df, filtername):
-    """
-    Positive filter
-    """
-
-    positions_df["in_panel"] = True
-
-    # filter mutations not inside the panel
-    mutations_df = mutations_df.merge(positions_df, on = ["CHROM", "POS"], how = 'left')
-    mutations_df["in_panel"] = mutations_df["in_panel"].fillna(False)
-    mutations_df["FILTER"] = mutations_df[["FILTER","in_panel"]].apply(
-                                                                    lambda x: add_filter(x["FILTER"], x["in_panel"], filtername),
-                                                                    axis = 1
-                                                                    )
-
-    return mutations_df.drop("in_panel", axis = 1)
-
-
+    return positions_df
 
 @click.command()
 @click.option('--sample-maf-file', required=True, type=click.Path(exists=True), help='Input sample MAF file (TSV)')
@@ -73,6 +64,7 @@ def main(sample_maf_file, bedfile, filtername, positive):
     panel_reg["POS"] = [ list(range(x+1, y+1)) for x, y in panel_reg[["START", "END"]].values ]
     positions_df = panel_reg.explode("POS").reset_index(drop = True)
     positions_df = positions_df[["CHROM", "POS"]].drop_duplicates()
+    positions_df = remove_non_canonical_chromosomes(positions_df)
     positions_df = positions_df.reset_index(drop = True)
 
     # adjust the CHROM field to adapt to the way it is being represented in the mutations list
@@ -81,9 +73,9 @@ def main(sample_maf_file, bedfile, filtername, positive):
     elif not sample_maf.iloc[0,0].startswith("chr") and positions_df.iloc[0,0].startswith("chr"):
         positions_df["CHROM"] = positions_df["CHROM"].str.replace("chr", "")
     if positive:
-        filtered_maf = filter_panel_regions(sample_maf, positions_df, filtername)
+        filtered_maf = filter_panel(sample_maf, positions_df, filtername, positive = True)
     else:
-        filtered_maf = negative_filter_panel_regions(sample_maf, positions_df, filtername)
+        filtered_maf = filter_panel(sample_maf, positions_df, filtername, positive = False)
 
     filtered_maf.to_csv(f"{'.'.join(sample_maf_file.split('.')[:-2])}.filtered.tsv.gz",
                                             sep = "\t",
