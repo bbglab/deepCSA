@@ -70,21 +70,32 @@ workflow MUTATION_PREPROCESSING {
 
     FILTERPANEL(FILTEREXONS.out.maf, bedfile)
 
-    def maf_for_next = FILTERPANEL.out.maf
+    // Apply Nanoseq mask only if species is human
+    if (params.vep_species == "homo_sapiens"){
 
-    // Apply Nanoseq mask only if species is human and files are provided and the filters are not already applied
-    if (params.vep_species == "homo_sapiens" && params.nanoseq_snp && params.nanoseq_noise) {
-        
-        FILTERNANOSEQSNP(maf_for_next, nanoseq_snp_file)
+        // Apply SNP filter only if nanoseq_snp is provided
+        if (params.nanoseq_snp) {
+        FILTERNANOSEQSNP(FILTERPANEL.out.maf, nanoseq_snp_file)
+        filtered_maf_snp = FILTERNANOSEQSNP.out.maf
 
-        FILTERNANOSEQNOISE(FILTERNANOSEQSNP.out.maf, nanoseq_noise_file)
+            } else {
+                filtered_maf_snp = FILTERPANEL.out.maf
+            }
 
-        maf_for_next = FILTERNANOSEQNOISE.out.maf
-
+        // Apply NOISE filter only if nanoseq_noise is provided
+        if (params.nanoseq_noise) {
+            FILTERNANOSEQNOISE(filtered_maf_snp, nanoseq_noise_file)
+            filtered_maf_noise = FILTERNANOSEQNOISE.out.maf
+            
+        } else {
+            filtered_maf_noise = filtered_maf_snp
+            }
     }
 
+    filtered_maf_masks = filtered_maf_noise
+
     // Join all samples' MAFs and put them in a channel to be merged
-    maf_for_next.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
+    filtered_maf_masks.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
 
     MERGEBATCH(samples_maf)
 
