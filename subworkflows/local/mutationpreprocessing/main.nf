@@ -7,6 +7,8 @@ include { CUSTOM_MUTATION_PROCESSING    as CUSTOMANNOTATION } from '../../../mod
 include { VCF2MAF                       as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
 include { FILTERBED                     as FILTERPANEL      } from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTEREXONS      } from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQSNP } from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQNOISE} from '../../../modules/local/filterbed/main'
 include { MERGE_BATCH                   as MERGEBATCH       } from '../../../modules/local/mergemafs/main'
 include { FILTER_BATCH                  as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                    as WRITEMAF         } from '../../../modules/local/writemaf/main'
@@ -33,6 +35,12 @@ workflow MUTATION_PREPROCESSING {
 
     main:
 
+    nanoseq_snp_file   = params.nanoseq_snp
+                            ? Channel.fromPath( params.nanoseq_snp, checkIfExists: true).map{ path -> [ [id: "nanoseq_snp_mask"], path ] }.first()
+                            : Channel.empty()
+    nanoseq_noise_file = params.nanoseq_noise
+                            ? Channel.fromPath( params.nanoseq_noise, checkIfExists: true).map{ path -> [ [id: "nanoseq_noise_mask"], path ] }.first()
+                            : Channel.empty()
 
     VCFANNOTATE(vcfs,
                     params.fasta,
@@ -62,8 +70,26 @@ workflow MUTATION_PREPROCESSING {
 
     FILTERPANEL(FILTEREXONS.out.maf, bedfile)
 
+    // Apply Nanoseq mask only if species is human
+    masks_applied = false
+    if (params.vep_species == "homo_sapiens"){
+        // Apply SNP filter only if nanoseq_snp is provided
+        if (params.nanoseq_snp) {
+            FILTERNANOSEQSNP(FILTERPANEL.out.maf, nanoseq_snp_file)
+            masks_applied = true
+        }
+        filtered_maf_snp = params.nanoseq_snp ? FILTERNANOSEQSNP.out.maf : FILTERPANEL.out.maf
+
+        // Apply NOISE filter only if nanoseq_noise is provided
+        if (params.nanoseq_noise) {
+            FILTERNANOSEQNOISE(filtered_maf_snp, nanoseq_noise_file)
+            masks_applied = true
+        }
+        filtered_maf_masks = params.nanoseq_noise ? FILTERNANOSEQNOISE.out.maf : filtered_maf_snp
+    }
+    filtered_maf_panels = masks_applied ? filtered_maf_masks : FILTERPANEL.out.maf
     // Join all samples' MAFs and put them in a channel to be merged
-    FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
+    filtered_maf_panels.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
 
     MERGEBATCH(samples_maf)
 

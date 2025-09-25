@@ -141,6 +141,7 @@ workflow DEEPCSA{
                                 ]).first()
                             : Channel.empty()
 
+
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
     custom_groups_table = params.custom_groups_file
@@ -224,7 +225,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.added_custom_regions
                         )
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-
+    
     positive_selection_results = somatic_mutations
 
 
