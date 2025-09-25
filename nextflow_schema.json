@@ -94,15 +94,15 @@
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 },
-                "features_groups_list": {
-                    "type": "string",
-                    "description": "String in list format defining the variables that have to be used for grouping samples.",
-                    "help_text": "This is required when the features_table dataset wants to be used.",
-                    "fa_icon": "far fa-file-code"
-                },
                 "features_unique_identifier": {
                     "type": "string",
                     "description": "String defining the column with the unique identifier in the features_table that should include all the names of the samples that want to be used for the analysis.",
+                    "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_groups_list": {
+                    "type": "string",
+                    "description": "String in list format defining the variables that have to be used for grouping samples.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
                     "fa_icon": "far fa-file-code"
                 }
@@ -364,17 +364,17 @@
                     "description": "Do you want to run plot_depths?",
                     "fa_icon": "fas fa-book"
                 },
-                "regressions": {
-                    "type": "boolean",
-                    "description": "Do you want to run regression analysis?",
-                    "fa_icon": "fas fa-book"
-                },
                 "plot_only_allsamples": {
                     "type": "boolean",
                     "description": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?",
                     "fa_icon": "fas fa-book",
                     "default": true,
                     "help_text": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?"
+                },
+                "regressions": {
+                    "type": "boolean",
+                    "description": "Do you want to run regression analysis?",
+                    "fa_icon": "fas fa-book"
                 }
             }
         },
