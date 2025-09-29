@@ -321,7 +321,7 @@ def plot_samples_grid(df, output_prefix, gene2color=None):
     ncols = min(4, n_samples)
     nrows = math.ceil(n_samples / ncols)
     fig, axs = plt.subplots(nrows, ncols, figsize=(2.5 * ncols, 2.5 * nrows), sharey=False)
-    axs = axs.flatten()
+    axs = axs.flatten() if type(axs) is np.ndarray else [axs]
     sample_results = []
     for i, sample in enumerate(samples):
         sample_df = df[df['SAMPLE'] == sample]
@@ -398,13 +398,12 @@ def plot_samples_grid(df, output_prefix, gene2color=None):
 
 
 def plot_genes_grid(df, output_prefix):
-    import math
     genes = df['GENE'].unique()
     n_genes = len(genes)
     ncols = min(4, n_genes)
     nrows = math.ceil(n_genes / ncols)
     fig, axs = plt.subplots(nrows, ncols, figsize=(2.5 * ncols, 2.5 * nrows), sharey=False)
-    axs = axs.flatten()
+    axs = axs.flatten() if type(axs) is np.ndarray else [axs]
     gene_results = []
     for i, gene in enumerate(genes):
         gene_df = df[df['GENE'] == gene]

@@ -295,10 +295,11 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         pdf.savefig()
         plt.close()
 
-        # Clustermap
-        sns.clustermap(data=heatmap_data, cmap="viridis", figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(genes_list))))
-        pdf.savefig()
-        plt.close()
+        if heatmap_data.shape[0] > 1 and heatmap_data.shape[1] > 1:
+            # Clustermap
+            sns.clustermap(data=heatmap_data, cmap="viridis", figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(genes_list))))
+            pdf.savefig()
+            plt.close()
 
 
 def process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names):
