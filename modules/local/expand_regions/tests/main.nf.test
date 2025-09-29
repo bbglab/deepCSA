@@ -3,7 +3,7 @@ nextflow_process {
     script "modules/local/expand_regions/main.nf"
     process "EXPAND_REGIONS"
 
-    test("Should run without autoexons and autodomains") {
+    test("Testing a run without autoexons and autodomains, it should fail") {
         when {
             params {
                 omega_autoexons = false

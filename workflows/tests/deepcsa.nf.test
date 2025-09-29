@@ -2,6 +2,32 @@ nextflow_pipeline {
     name "Test DEEPCSA Pipeline"
     script "main.nf"
 
+
+    test("Minimal features test run") {
+        when {
+            params {
+                outdir = "output"
+                input = "/data/bbg/datasets/transfer/ferriol_deepcsa/test/deepCSA_input.bladder_med.small_cohort.med.csv"
+                plot_depths = true
+                signatures  = true
+                profileall  = true
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert path("${params.outdir}/computeprofile").exists()
+            assert !path("${params.outdir}/mutdensity").exists()
+            assert !path("${params.outdir}/omega").exists()
+            assert !path("${params.outdir}/oncodrivefml").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()
+        }
+    }
+
+
+    // // ALL THE CODE BELOW IS HERE FOR REFERENCE, TO BE ADAPTED LATER
+    // // AS THE TEST DATASET IMPROVES AND WE WANT TO IMPROVE TEST COVERAGE
+
     // test("Should run DEEPCSA workflow with minimal parameters") {
 
     //     when {
@@ -46,27 +72,6 @@ nextflow_pipeline {
     //         assert workflow.errorReport.contains("Input file does not exist")
     //     }
     // }
-
-    test("Minimal features test run") {
-        when {
-            params {
-                outdir = "output"
-                input = "/data/bbg/datasets/transfer/ferriol_deepcsa/test/deepCSA_input.bladder_med.small_cohort.med.csv"
-                plot_depths = true
-                signatures  = true
-                profileall  = true
-            }
-        }
-
-        then {
-            assert workflow.success
-            assert path("${params.outdir}/computeprofile").exists()
-            assert !path("${params.outdir}/mutdensity").exists()
-            assert !path("${params.outdir}/omega").exists()
-            assert !path("${params.outdir}/oncodrivefml").exists()
-            assert !path("${params.outdir}/oncodrive3d").exists()
-        }
-    }
 
     // test("More complete test") {
     //     when {
