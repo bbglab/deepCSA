@@ -198,7 +198,7 @@ See [File formatting docs](file_formatting.md) for more details on the structure
 ```console
 params {
 
-    fasta                       = null
+    fasta                      = null
 
     cosmic_ref_signatures      = "COSMIC_v3.4_SBS_GRCh38.txt"
     wgs_trinuc_counts          = "assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
@@ -261,6 +261,15 @@ params {
     blacklist_mutations        = null
 }
 ```
+
+#### Nanoseq genomic masks
+
+These files identify sites overlapping common SNPs and noisy or variable genomic regions, as described in [Abascal et al, 2021](https://www.nature.com/articles/s41586-021-03477-4) and used in the [Nanoseq pipeline](https://github.com/cancerit/NanoSeq). Two BED files are available to be used:
+
+- Nanoseq SNP: Common SNP positions that should be excluded from analysis
+- Nanoseq Noise: Regions with high noise or variability
+
+Both files are available for GRCh37 and GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
 
 ## Additional customizable parameters
 
