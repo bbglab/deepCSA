@@ -16,12 +16,11 @@ VCF file needs to be a single sample VCF with the format field following the spe
 
 More details on this can be found in the [Usage docs](usage.md#custom-mutation-calls).
 
-
 ### Domain definition file
 
 This must be a tab separated file with these 4 columns, each of them is self-explanatory, the only comment is that the coordinates for Begin and End must be protein coordinates.
 
-```
+```bash
 Ens_Transcr_ID	Begin	End	NAME
 ENST00000240079	30	167	CCDC53
 ENST00000447540	2482	2520	BRK
@@ -72,11 +71,13 @@ See example below.
 params {
     features_table              = null
     features_table_separator    = 'comma'
-    features_table_dict         = ''
+    features_unique_identifier  = null
+    features_groups_list        = null
 }
 ```
 
 #### Example features file and parameters
+
 ```csv
 SAMPLE_ID,BLADDER_LOCATION,SEX,SMOKING_STATUS
 donor1_BDO,dome,M,never
@@ -92,11 +93,10 @@ donor5_BTR,trigone,F,never
 
 ```console
 params {
-    features_table           = "features_example.csv"
-    features_table_separator =  'comma'
-    features_table_dict      =  ['"unique_identifier" : "SAMPLE_ID"',
-                                    '"groups_of_interest" : [ ["BLADDER_LOCATION"], ["BLADDER_LOCATION", "SEX"], ["BLADDER_LOCATION", "SEX", "SMOKING_STATUS"] ]'
-                                    ].join(',\t').trim()
+    features_table              = "features_example.csv"
+    features_table_separator    = 'comma'
+    features_unique_identifier  = 'SAMPLE_ID'
+    features_groups_list        = [ ["BLADDER_LOCATION"], ["BLADDER_LOCATION", "SEX"], ["BLADDER_LOCATION", "SEX", "SMOKING_STATUS"] ]
 }
 ```
 
