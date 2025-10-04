@@ -6,13 +6,6 @@
 
 ![deepCSA workflow overview](docs/images/deepCSA.png)
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
-
-<!-- 1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/)) -->
-
 ## Usage
 
 First, prepare a samplesheet with your input data that looks as follows:
@@ -43,12 +36,6 @@ nextflow run main.nf --outdir <OUTDIR> -profile singularity,<DESIRED PROFILE> -p
 
 The input can be provided by the `--input` option but it is more recommended to define this and all the other parameters in a parameter file (i.e. `pipeline_params.yml`), that can be provided to the pipeline for running the analysis with the specified configuration. This will also allow the definition of the remaining required parameters.
 
-### Warning
-
-Please provide pipeline parameters via the Nextflow `-params-file` option or CLI. Custom config files including those
-provided by the `-c` Nextflow option can be used to provide any configuration **except for parameters**_;
-see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
-
 ## Credits
 
 bbglab/deepCSA was originally written by Ferriol Calvet.
@@ -62,12 +49,8 @@ We thank the following people for their extensive assistance in the development 
 * @AxelRosendahlHuber
 * @andrianovam
 * @migrau
-
-<!-- TODO 
-## Contributions and Support
-
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
- -->
+* @rochamorro1
+* @m-huertasp
 
 ## Citations
 
@@ -89,3 +72,7 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 ## Documentation
 
 Find the documentation ([link to docs](https://github.com/bbglab/deepCSA/tree/main/docs)).
+
+We are working to provide the biggest possible detail on the [usage](docs/usage.md) and explanation of the rationale and [tools](docs/tools.md), but this is still in progress.
+
+## Publications

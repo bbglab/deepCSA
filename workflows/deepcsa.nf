@@ -28,7 +28,7 @@ include { MUTATION_DENSITY          as MUTDENSITYPROT          } from '../subwor
 include { MUTATION_DENSITY          as MUTDENSITYNONPROT       } from '../subworkflows/local/mutationdensity/main'
 include { MUTATION_DENSITY          as MUTDENSITYSYNONYMOUS    } from '../subworkflows/local/mutationdensity/main'
 
-include { MUTATION_DENSITY          as MUTDENSITYADJUSTED      } from '../subworkflows/local/mut_density/main'
+include { MUTATION_DENSITY          as MUTDENSITYADJUSTED      } from '../subworkflows/local/adjmutdensity/main'
 
 include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
