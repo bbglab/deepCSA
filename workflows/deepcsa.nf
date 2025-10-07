@@ -361,7 +361,7 @@ workflow DEEPCSA{
                 oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLALL.out.results_snvs_folder.map{ it -> it[1] })
             }
         }
-        if (params.profilenonprot & params.positive_selection_non_protein_affecting){
+        if (params.profilenonprot && params.positive_selection_non_protein_affecting){
             mode = "non_prot_aff"
             ONCODRIVEFMLNONPROT(somatic_mutations, MUTABILITYNONPROT.out.mutability,
                                     CREATEPANELS.out.exons_consensus_panel,
@@ -444,7 +444,7 @@ workflow DEEPCSA{
                 }
             }
         }
-        if (params.profilenonprot & params.positive_selection_non_protein_affecting){
+        if (params.profilenonprot && params.positive_selection_non_protein_affecting){
             OMEGANONPROT(somatic_mutations,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
@@ -545,7 +545,7 @@ workflow DEEPCSA{
         }
     }
 
-    if ( params.omega & params.oncodrive3d & params.oncodrivefml & params.indels  & (params.vep_species == 'homo_sapiens') ){
+    if ( params.omega && params.oncodrive3d && params.oncodrivefml && params.indels  && (params.vep_species == 'homo_sapiens') ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         all_mutdensities_file.first(),
