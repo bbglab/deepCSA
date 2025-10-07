@@ -588,7 +588,7 @@
                 },
                 "selected_genes": {
                     "type": "string",
-                    "description": "Comma-separeted list of genes to focus the analysis",
+                    "description": "Comma-separated list of genes to focus the analysis",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },

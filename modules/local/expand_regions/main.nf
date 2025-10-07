@@ -7,9 +7,9 @@ process EXPAND_REGIONS {
 
     input:
     tuple val(meta), path(panel)
-    path (domains)
-    path (exons)
-    path (custom)
+    path (domains, optional: true)
+    path (exons, optional: true)
+    path (custom, optional: true)
 
     output:
     tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
