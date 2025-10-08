@@ -4,7 +4,7 @@
 
 This document describes the output produced by the pipeline.
 
-## Pipeline overview <!-- omit in toc -->
+## Pipeline overview 
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
@@ -121,6 +121,24 @@ See Usage docs for extensive explanation on required inputs and format. Includin
 
 - Definition of regions to analyze
   Only genomic areas that have been properly covered across samples will be used for the analysis.
+
+**Note 1:** There is a depth difference between the depth reported in the files in the annotated depths directory and the values of depth reported in each of the mutations. This difference is because we do not count Ns when computing th depth of specific mutations. This means that the values of VAF are computed with N-discounted depth, while other metrics are not.
+
+### Detailed explanation of depthssummary depths versions
+
+In this directory you will find different versions of TSVs and PDFs summarizing the depths of the samples/genes sequenced.
+
+Each of the versions provides slightly different information, as you can see in the image below:
+
+![depths summary slide](images/deepCSA_depths_summary.png)
+
+- exons contains the average depth in all the exonic regions sequenced in the genome no matter which minimum consensus coverage was reached.
+- exons_cons contains the average depth in the exonic regions sequenced in the genome to a minimum consensus depth threshold. (only exons in the well covered regions)
+- all_cons contains the average depth of all sequenced regions of the genome that are well covered across the samples in the cohort, without any distinction of exons/introns/others.
+
+We will work on a better representation of the different metrics of depth so that is it more understandable, but for now we include this schematic and brief explanations.
+
+Reach out if you have more questions!
 
 ### Outputs
 

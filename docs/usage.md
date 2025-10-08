@@ -7,6 +7,7 @@
 - [Introduction](#introduction)
 - [How to run the pipeline](#how-to-run-the-pipeline)
 - [Samplesheet input](#samplesheet-input)
+- [Available genomes](#available-genomes)
 - [Proposed run modes](#proposed-run-modes)
   - [Initial run. Data exploration](#initial-run-data-exploration)
   - [Clonal structure definition](#clonal-structure-definition-complete-run-with-a-focus-on-positive-selection-at-the-cohort-level)
@@ -53,6 +54,10 @@ sample2,sample2.high.filtered.vcf,sample2.sorted.bam
 | `bam` | Full path to BAM file containing the duplex aligned reads that were used for the variant calling.                                                             |
 
 An [example samplesheet](../assets/example_inputs/input_example.csv) has been provided with the pipeline.
+
+## Available genomes
+
+deepCSA pipeline heavily relies on bgreference and bgdata tools so the use of this pipeline is limited to those genomes available in these packages. In particular, the default containers that are being used already have the hg38 and mm39 genomes cached, if you want to use any other genome, open an issue and we will address it as soon as we can.
 
 ## Proposed run modes
 

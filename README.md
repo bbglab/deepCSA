@@ -8,6 +8,8 @@
 
 ## Usage
 
+You can find a detailed documentation in the [docs section](docs/README.md), but here there is a minimal summary on how to prepare the inputs. Still for your first runs if you need to make the complete set up you have to check the deeper documentation.
+
 First, prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
@@ -54,11 +56,6 @@ We thank the following people for their extensive assistance in the development 
 
 ## Citations
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use  bbglab/deepCSA for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
-
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
-
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
 This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
@@ -76,3 +73,5 @@ Find the documentation ([link to docs](https://github.com/bbglab/deepCSA/tree/ma
 We are working to provide the biggest possible detail on the [usage](docs/usage.md) and explanation of the rationale and [tools](docs/tools.md), but this is still in progress.
 
 ## Publications
+
+> [Sex and smoking bias in the selection of somatic mutations in human bladder](https://www.nature.com/articles/s41586-025-09521-x)
