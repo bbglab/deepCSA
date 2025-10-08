@@ -94,9 +94,15 @@
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 },
-                "features_table_dict": {
+                "features_unique_identifier": {
                     "type": "string",
-                    "description": "String in JSON-like format defining the groups of samples.",
+                    "description": "String defining the column with the unique identifier in the features_table that should include all the names of the samples that want to be used for the analysis.",
+                    "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_groups_list": {
+                    "type": "string",
+                    "description": "String in list format defining the variables that have to be used for grouping samples.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
                     "fa_icon": "far fa-file-code"
                 }
@@ -200,7 +206,16 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to analyze omega hotspots independently?"
                 },
-                "omega_hotspots_bedfile": {
+                "domains_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "description": "Path to domain definition file to use.",
+                    "help_text": "Path to domain definition file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "omega_subgenic_bedfile": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
@@ -302,6 +317,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Define which is the unit of comparison of the per site mutabilities exp. vs obs. The options are: 'site', 'aminoacid', 'aminoacid_change'. You can provide a comma separated list of the preferred options or also all."
                 },
+                "positive_selection_non_protein_affecting": {
+                    "type": "boolean",
+                    "description": "Do you want to run positive selection metrics with non-protein affecting mutational profile?",
+                    "fa_icon": "fas fa-book",
+                    "hidden" : true,
+                    "help_text": "Do you want to run positive selection metrics with non-protein affecting mutational profile?"
+                },
                 "dnds": {
                     "type": "boolean",
                     "description": "Do you want to run dNdScv?",
@@ -341,6 +363,13 @@
                     "type": "boolean",
                     "description": "Do you want to run plot_depths?",
                     "fa_icon": "fas fa-book"
+                },
+                "plot_only_allsamples": {
+                    "type": "boolean",
+                    "description": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?",
+                    "fa_icon": "fas fa-book",
+                    "default": true,
+                    "help_text": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?"
                 },
                 "regressions": {
                     "type": "boolean",
@@ -517,11 +546,6 @@
                     "default": "med",
                     "fa_icon": "fas fa-book"
                 },
-                "all_duplex_counts": {
-                    "type": "boolean",
-                    "description": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules.",
-                    "fa_icon": "fas fa-question-circle"
-                },
                 "pileup_all_duplex": {
                     "type": "boolean",
                     "description": "Whether the BAM provided for the pileup is the mediumhigh quality BAM file or the whole duplex BAM.",
@@ -556,9 +580,15 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "min_muts_per_sample": {
+                    "type": "number",
+                    "description": "Threshold on minimum number of mutations that a sample needs to have for doing a per-sample analysis of that specific case",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "selected_genes": {
                     "type": "string",
-                    "description": "Comma-separeted list of genes to focus the analysis",
+                    "description": "Comma-separated list of genes to focus the analysis",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -593,6 +623,13 @@
                     "type": "number",
                     "description": "Any variant that is n_rich in this proportion of samples is flagged as cohort_n_rich variant.",
                     "default": 0.1,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "gnomad_af_threshold": {
+                    "type": "number",
+                    "description": "Allele frequency threshold for filtering variants based on gnomAD data.",
+                    "default": 0.001,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -706,7 +743,21 @@
                     "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "fa_icon": "far fa-file-code",
                     "default": "covariates_hg19_hg38_epigenome_pcawg.rda"
-                }
+                },
+                "nanoseq_snp": {
+                    "type": "string",
+                    "description": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+                },
+                "nanoseq_noise": {
+                    "type": "string",
+                    "description": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+            }
             }
         },
         "ensembl_vep_options": {
@@ -1043,7 +1094,7 @@
         {
             "$ref": "#/$defs/signature_extraction_parameters"
         },
-        {   
+        {
             "$ref": "#/$defs/max_job_request_options"
         },
         {

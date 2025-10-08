@@ -86,9 +86,8 @@ workflow CREATE_PANELS {
         added_regions = Channel.empty()
     }
 
-    // Generate BED file with genomic coordinates of sequenced domains
-    domains_file = file("${params.annotations3d}/pfam.tsv")
-    DOMAINANNOTATION(rich_annotated, domains_file)
+    domains = file(params.domains_file, checkIfExists: true)
+    DOMAINANNOTATION(rich_annotated, domains)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
@@ -157,6 +156,7 @@ workflow CREATE_PANELS {
     panel_annotated_rich        = rich_annotated
     added_custom_regions        = added_regions
     domains_panel_bed           = DOMAINANNOTATION.out.domains_bed
+    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv
 
     postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation
     postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation

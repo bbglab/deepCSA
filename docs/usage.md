@@ -7,6 +7,7 @@
 - [Introduction](#introduction)
 - [How to run the pipeline](#how-to-run-the-pipeline)
 - [Samplesheet input](#samplesheet-input)
+- [Available genomes](#available-genomes)
 - [Proposed run modes](#proposed-run-modes)
   - [Initial run. Data exploration](#initial-run-data-exploration)
   - [Clonal structure definition](#clonal-structure-definition-complete-run-with-a-focus-on-positive-selection-at-the-cohort-level)
@@ -53,6 +54,10 @@ sample2,sample2.high.filtered.vcf,sample2.sorted.bam
 | `bam` | Full path to BAM file containing the duplex aligned reads that were used for the variant calling.                                                             |
 
 An [example samplesheet](../assets/example_inputs/input_example.csv) has been provided with the pipeline.
+
+## Available genomes
+
+deepCSA pipeline heavily relies on bgreference and bgdata tools so the use of this pipeline is limited to those genomes available in these packages. In particular, the default containers that are being used already have the hg38 and mm39 genomes cached, if you want to use any other genome, open an issue and we will address it as soon as we can.
 
 ## Proposed run modes
 
@@ -113,7 +118,7 @@ params {
     omega_withingene            = true
     omega_autodomains           = true
     omega_autoexons             = true
-    
+
     mutated_cells_vaf           = true
     mutepi_genes_to_recode      = null
 
@@ -170,7 +175,7 @@ params {
     omega_withingene            = true
     omega_autodomains           = true
     omega_autoexons             = true
-    
+
     regressions                 = true
     // additional regression parameters, see nextflow_schema.json for more info
       ...
@@ -187,8 +192,10 @@ params {
   <!-- TODO we should revise if we can provide more specific information on how to download the cache -->
   - CADD scores (see: [CADD downloads page](https://cadd.gs.washington.edu/download) "All possible SNVs of GRCh38/hg38" file)
   - COSMIC signatures (i.e. [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/) (select context size = 96 and your desired species of interest))
+
+- Provide custom domain definition file.
   <!-- * dNdScv datasets (see: ) -->
-  
+
 ### Mandatory parameter configuration
 
 See [File formatting docs](file_formatting.md) for more details on the structure of files that can be provided to deepCSA.
@@ -196,7 +203,7 @@ See [File formatting docs](file_formatting.md) for more details on the structure
 ```console
 params {
 
-    fasta                       = null
+    fasta                      = null
 
     cosmic_ref_signatures      = "COSMIC_v3.4_SBS_GRCh38.txt"
     wgs_trinuc_counts          = "assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
@@ -212,11 +219,12 @@ params {
     // oncodrive3d + fancy plots
     datasets3d                 = "oncodrive3d/datasets"
     annotations3d              = "oncodrive3d/annotations"
+    domains_file               = "pfam.tsv"
 
 
     vep_cache                  = ".vep"
 
-    // Ensembl VEP for homo_sapiens, but should be adjusted accordingly to species and cache version 
+    // Ensembl VEP for homo_sapiens, but should be adjusted accordingly to species and cache version
     vep_genome                 = "GRCh38"
     vep_species                = "homo_sapiens"
     vep_cache_version          = 111
@@ -239,25 +247,34 @@ params {
     custom_groups               = false
     custom_groups_file          = null
     custom_groups_separator     = 'tab'
-    
+
     // customize the annotation of certain regions i.e. TERT promoter mutations, other non-coding drivers...
     customize_annotation        = false
     custom_annotation_tsv       = ''
 
-    
+
     // define a set of common known hotspots
     hotspots_annotation         = false
     hotspots_definition_file    = ''
 
-    
+
     // definition of specific regions within genes with specific interest on computing dN/dS
-    omega_hotspots_bedfile      = null
+    omega_subgenic_bedfile      = null
 
     // define a file of mutations that should not be trusted
     //  and you want to remove from all the analysis
     blacklist_mutations        = null
 }
 ```
+
+#### Nanoseq genomic masks
+
+These files identify sites overlapping common SNPs and noisy or variable genomic regions, as described in [Abascal et al, 2021](https://www.nature.com/articles/s41586-021-03477-4) and used in the [Nanoseq pipeline](https://github.com/cancerit/NanoSeq). Two BED files are available to be used:
+
+- Nanoseq SNP: Common SNP positions that should be excluded from analysis
+- Nanoseq Noise: Regions with high noise or variability
+
+Both files are available for GRCh37 and GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
 
 ## Additional customizable parameters
 
@@ -304,7 +321,7 @@ The script itself contains this brief explanation on the usage and required para
 #######
 
 #######
-# Usage: 
+# Usage:
 #######
 ## If your sample names are NOT in a column called SAMPLE_ID,
 ## you can use the --sample-name-column option to specify it.
@@ -318,7 +335,7 @@ The script itself contains this brief explanation on the usage and required para
 
 
 #######
-# Mandatory columns in input mutations: 
+# Mandatory columns in input mutations:
 #######
 
 # if the maf is from deepCSA, it must contain the following columns, as they were originally generated

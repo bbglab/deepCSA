@@ -2,13 +2,7 @@ process ONCODRIVE3D_PLOT {
     tag "$meta.id"
     label 'process_medium'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-
-    // TODO pending to push the container somewhere and be able to retrieve it
-    container 'docker.io/ferriolcalvet/oncodrive3d:latest'
+    container 'docker.io/bbglab/oncodrive3d:1.0.5'
 
 
     input:
@@ -23,7 +17,7 @@ process ONCODRIVE3D_PLOT {
     tuple val(meta), path("**.associations_plots/**.volcano_plot.png")         , emit: volcano_plot, optional: true
     tuple val(meta), path("**.associations_plots/**.volcano_plot_gene.png")    , emit: volcano_plot_gene, optional: true
     tuple val(meta), path("**.3d_clustering_pos.annotated.csv")                , emit: pos_annotated_csv, optional: true
-    tuple val(meta), path("**.log")                                            , emit: log
+    tuple val(meta), path("**plot_*.log")                                      , emit: log
     path "versions.yml"                                                        , topic: versions
 
 
@@ -32,21 +26,20 @@ process ONCODRIVE3D_PLOT {
     prefix = "${meta.id}${prefix}"
     """
     oncodrive3D plot -o $prefix \\
-                     -g $genes_csv \\
-                     -p $pos_csv \\
-                     -i $mutations_csv \\
-                     -m $miss_prob_json \\
-                     -s $seq_df_tsv \\
-                     -d $datasets \\
-                     -a $annotations \\
-                     -c $prefix \\
-                     --output_csv \\
-                     --title $prefix
+                        -g $genes_csv \\
+                        -p $pos_csv \\
+                        -i $mutations_csv \\
+                        -m $miss_prob_json \\
+                        -s $seq_df_tsv \\
+                        -d $datasets \\
+                        -a $annotations \\
+                        -c $prefix \\
+                        --output_csv \\
 
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 
@@ -58,7 +51,7 @@ process ONCODRIVE3D_PLOT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 }

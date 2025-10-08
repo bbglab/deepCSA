@@ -7,6 +7,8 @@ include { CUSTOM_MUTATION_PROCESSING    as CUSTOMANNOTATION } from '../../../mod
 include { VCF2MAF                       as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
 include { FILTERBED                     as FILTERPANEL      } from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTEREXONS      } from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQSNP } from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQNOISE} from '../../../modules/local/filterbed/main'
 include { MERGE_BATCH                   as MERGEBATCH       } from '../../../modules/local/mergemafs/main'
 include { FILTER_BATCH                  as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                    as WRITEMAF         } from '../../../modules/local/writemaf/main'
@@ -17,6 +19,7 @@ include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../mod
 include { PLOT_MUTATIONS                as PLOTSOMATICMAF   } from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
 include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   } from '../../../modules/local/downsample/mutations/main'
+include { COMPUTE_CONTAMINATION         as CONTAMINATION    } from '../../../modules/local/contamination/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -25,12 +28,19 @@ workflow MUTATION_PREPROCESSING {
     vcfs
     bedfile
     bedfile_exons
+    all_groups
     groups
     sequence_information_df
     custom_annotation_tsv
 
     main:
 
+    nanoseq_snp_file   = params.nanoseq_snp
+                            ? Channel.fromPath( params.nanoseq_snp, checkIfExists: true).map{ path -> [ [id: "nanoseq_snp_mask"], path ] }.first()
+                            : Channel.empty()
+    nanoseq_noise_file = params.nanoseq_noise
+                            ? Channel.fromPath( params.nanoseq_noise, checkIfExists: true).map{ path -> [ [id: "nanoseq_noise_mask"], path ] }.first()
+                            : Channel.empty()
 
     VCFANNOTATE(vcfs,
                     params.fasta,
@@ -60,8 +70,26 @@ workflow MUTATION_PREPROCESSING {
 
     FILTERPANEL(FILTEREXONS.out.maf, bedfile)
 
+    // Apply Nanoseq mask only if species is human
+    masks_applied = false
+    if (params.vep_species == "homo_sapiens"){
+        // Apply SNP filter only if nanoseq_snp is provided
+        if (params.nanoseq_snp) {
+            FILTERNANOSEQSNP(FILTERPANEL.out.maf, nanoseq_snp_file)
+            masks_applied = true
+        }
+        filtered_maf_snp = params.nanoseq_snp ? FILTERNANOSEQSNP.out.maf : FILTERPANEL.out.maf
+
+        // Apply NOISE filter only if nanoseq_noise is provided
+        if (params.nanoseq_noise) {
+            FILTERNANOSEQNOISE(filtered_maf_snp, nanoseq_noise_file)
+            masks_applied = true
+        }
+        filtered_maf_masks = params.nanoseq_noise ? FILTERNANOSEQNOISE.out.maf : filtered_maf_snp
+    }
+    filtered_maf_panels = masks_applied ? filtered_maf_masks : FILTERPANEL.out.maf
     // Join all samples' MAFs and put them in a channel to be merged
-    FILTERPANEL.out.maf.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
+    filtered_maf_panels.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
 
     MERGEBATCH(samples_maf)
 
@@ -69,7 +97,7 @@ workflow MUTATION_PREPROCESSING {
 
     PLOTMAF(FILTERBATCH.out.cohort_maf)
 
-    WRITEMAF(FILTERBATCH.out.cohort_maf, groups)
+    WRITEMAF(FILTERBATCH.out.cohort_maf, all_groups)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
@@ -97,14 +125,31 @@ workflow MUTATION_PREPROCESSING {
     // Keep only somatic mutations
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
 
+    
+
+    Channel.of([["id": "all_samples"]])
+    .join(named_mafs).first()
+    .set{raw_muts_all_samples}
 
     Channel.of([["id": "all_samples"]])
     .join(SOMATICMUTATIONS.out.mutations).first()
     .set{muts_all_samples}
 
+    CONTAMINATION(raw_muts_all_samples, muts_all_samples)
+
     PLOTSOMATICMAF(muts_all_samples)
 
-    PLOTNEEDLES(muts_all_samples, sequence_information_df)
+    if ( params.plot_only_allsamples ) {
+        muts_for_plotting = muts_all_samples
+    } else {
+        // Filter SOMATICMUTATIONS.out.mutations by meta.id in group_keys
+        SOMATICMUTATIONS.out.mutations
+        .map { mut -> tuple(mut[0].id, mut) }
+        .join(groups)
+        .map { it[1] }
+        .set { muts_for_plotting }
+    }
+    PLOTNEEDLES(muts_for_plotting, sequence_information_df)
 
 
     // Compile a BED file with all the mutations that are discarded due to:

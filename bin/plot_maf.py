@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-# import click
+import click
 import sys
 import json
 import pandas as pd
@@ -250,7 +250,7 @@ dict_plotname2func = {
     "plot_stats" : variable_plot_wrapper
 }
 
-def plot_manager(sample_name, maf, plotting_criteria_file):
+def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
     # Load the filter criteria from the JSON file
     with open(plotting_criteria_file, 'r') as file:
         plotting_criteria = json.load(file)
@@ -258,7 +258,7 @@ def plot_manager(sample_name, maf, plotting_criteria_file):
     for suffix, criteria_list in plotting_criteria.items():
         suffix = suffix.strip('.')
 
-        with PdfPages(f'{sample_name}.{suffix}.pdf') as pdf:
+        with PdfPages(f'{out_maf}.{suffix}.pdf') as pdf:
             for criterion in criteria_list:
                 if criterion.startswith("filter_stats"):
                     main_criterion = criterion.split(' ')[0]
@@ -323,15 +323,20 @@ def plot_manager(sample_name, maf, plotting_criteria_file):
 #     main()
 
 
-sample_name  = sys.argv[1]
-mut_file     = sys.argv[2]
-out_maf      = sys.argv[3]
-json_filters = sys.argv[4]
-req_plots    = sys.argv[5]
 
-
-# TODO
-# handle with click
-if __name__ == '__main__':
+@click.command()
+@click.option('--sample_name', type=str, required=True, help='Name of the sample being processed.')
+@click.option('--mut_file', type=click.Path(exists=True), required=True, help='Input mutation file')
+@click.option('--out_maf', type=click.Path(), required=False, help='Output MAF file')
+@click.option('--json_filters', type=click.Path(exists=True), required=True, help='Input mutation filtering criteria file')
+@click.option('--req_plots', type=click.Path(exists=True), required=True, help='Plotting criteria file')
+def main(sample_name, mut_file, out_maf, json_filters, req_plots):
+    """
+    CLI entry point for processing MAF and generating plots.
+    """
     maf = subset_mutation_dataframe(mut_file, json_filters)
-    plot_manager(sample_name, maf, req_plots)
+    plot_manager(sample_name, maf, out_maf, req_plots)
+
+
+if __name__ == '__main__':
+    main()

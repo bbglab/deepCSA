@@ -1,8 +1,4 @@
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    PRINT PARAMS SUMMARY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
+
 
 include { paramsSummaryMap          } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -11,15 +7,8 @@ include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_d
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    CONFIG FILES
+    IMPORT LOCAL SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT LOCAL MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Consisting of a mix of local and nf-core/modules.
 */
 
 // SUBWORKFLOW
@@ -38,6 +27,8 @@ include { MUTATION_DENSITY          as MUTDENSITYALL           } from '../subwor
 include { MUTATION_DENSITY          as MUTDENSITYPROT          } from '../subworkflows/local/mutationdensity/main'
 include { MUTATION_DENSITY          as MUTDENSITYNONPROT       } from '../subworkflows/local/mutationdensity/main'
 include { MUTATION_DENSITY          as MUTDENSITYSYNONYMOUS    } from '../subworkflows/local/mutationdensity/main'
+
+include { MUTATION_DENSITY          as MUTDENSITYADJUSTED      } from '../subworkflows/local/adjmutdensity/main'
 
 include { MUTATIONAL_PROFILE        as MUTPROFILEALL        } from '../subworkflows/local/mutationprofile/main'
 include { MUTATIONAL_PROFILE        as MUTPROFILENONPROT    } from '../subworkflows/local/mutationprofile/main'
@@ -68,9 +59,10 @@ include { SIGNATURES                as SIGNATURESNONPROT    } from '../subworkfl
 include { SIGNATURES                as SIGNATURESEXONS      } from '../subworkflows/local/signatures/main'
 include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkflows/local/signatures/main'
 
-include { PLOT_SELECTION_METRICS    as PLOTSELECTION        } from '../modules/local/plot/selection_metrics/main'
+include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkflows/local/plottingsummary/main'
+include { PLOTTING_QC               as PLOTTINGQC           } from '../subworkflows/local/plotting_qc/main'
 
-include { REGRESSIONS               as REGRESSIONSMUTDENSITY          } from '../subworkflows/local/regressions/main'
+include { REGRESSIONS               as REGRESSIONSMUTDENSITY       } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGA            } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGAGLOB        } from '../subworkflows/local/regressions/main'
@@ -84,25 +76,36 @@ include { TABIX_BGZIPTABIX_QUERY    as DEPTHSNONPROTCONS    } from '../modules/n
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSINTRONSCONS    } from '../modules/nf-core/tabix/bgziptabixquery/main'
 include { TABIX_BGZIPTABIX_QUERY    as DEPTHSSYNONYMOUSCONS } from '../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SELECT_MUTDENSITIES           as SYNMUTDENSITY           } from '../modules/local/select_mutdensity/main'
-include { SELECT_MUTDENSITIES           as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
-include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
-
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Installed directly from nf-core/modules.
 */
 
 // MODULE
 include { MULTIQC                                           } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    IMPORT CUSTOM MODULES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
 include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS       } from '../modules/local/annotatedepth/main'
 include { DOWNSAMPLE_DEPTHS         as DOWNSAMPLEDEPTHS     } from '../modules/local/downsample/depths/main'
-include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
+
+include { SELECT_MUTDENSITIES       as SYNMUTDENSITY        } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES       as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
+
+include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
+
+include { MAF_2_VCF                     as MAF2VCF                  } from '../modules/local/maf2vcf/main'
+include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR    } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
+
 include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/local/mutations2sbs/main'
 
 /*
@@ -149,7 +152,7 @@ workflow DEEPCSA{
     // otherwise I am using the input csv as a dummy value channel
     custom_bed_file     = params.custom_bedfile
                                 ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
-                                : Channel.fromPath(params.input)
+                                : Channel.fromPath( params.input )
 
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
@@ -180,6 +183,14 @@ workflow DEEPCSA{
 
 
     TABLE2GROUP(features_table)
+    grouping_definitions = TABLE2GROUP.out.json_samples.concat(TABLE2GROUP.out.json_groups).concat(TABLE2GROUP.out.json_allgroups).collect()
+
+    // Load group keys from JSON file in 'groups' channel
+    def group_keys = TABLE2GROUP.out.json_groups.map { json_path ->
+        def json = file(json_path).text
+        groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
+    }.flatten().unique()
+    .set { group_keys_ch } // this is a channel that contains only the group names as elements of the channel
 
 
     // Depths and panel creation should be a single subworkflow
@@ -209,16 +220,21 @@ workflow DEEPCSA{
                         CREATEPANELS.out.all_consensus_bed,
                         CREATEPANELS.out.exons_bed,
                         TABLE2GROUP.out.json_allgroups,
+                        group_keys_ch,
                         seqinfo_df,
                         CREATEPANELS.out.added_custom_regions
                         )
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-
+    
     positive_selection_results = somatic_mutations
 
 
     if (params.vep_species == 'homo_sapiens'){
-        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples, CREATEPANELS.out.exons_consensus_panel)
+        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples,
+                            CREATEPANELS.out.exons_consensus_panel,
+                            ANNOTATEDEPTHS.out.all_samples_depths)
+        // depths_exons_positions
+        // panel_exons_bed
     }
 
 
@@ -233,11 +249,9 @@ workflow DEEPCSA{
         DEPTHSPROTCONS(annotated_depths, CREATEPANELS.out.prot_consensus_bed)
         DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
     }
-    
-
 
     if (run_mutdensity){
-        // Mutation Rate
+        // Mutation Density
         MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
         MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, CREATEPANELS.out.prot_consensus_panel)
         MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, CREATEPANELS.out.nonprot_consensus_panel)
@@ -267,6 +281,18 @@ workflow DEEPCSA{
     // Mutational profile
     if (params.profileall){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs)
+        if (run_mutdensity){
+            MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
+
+            // Concatenate all outputs into a single file
+            MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
+            .set{ all_adjusted_mutdensities }
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
+
+            MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
+            .set{ all_adjusted_mutdensities_flat }
+            all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
+        }
     }
     if (params.profilenonprot){
         MUTPROFILENONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs)
@@ -335,7 +361,7 @@ workflow DEEPCSA{
                 oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLALL.out.results_snvs_folder.map{ it -> it[1] })
             }
         }
-        if (params.profilenonprot){
+        if (params.profilenonprot && params.positive_selection_non_protein_affecting){
             mode = "non_prot_aff"
             ONCODRIVEFMLNONPROT(somatic_mutations, MUTABILITYNONPROT.out.mutability,
                                     CREATEPANELS.out.exons_consensus_panel,
@@ -352,19 +378,18 @@ workflow DEEPCSA{
             // Oncodrive3D
             ONCODRIVE3D(somatic_mutations, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
                         datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
+            positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results, remainder: true)
+            positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results_pos, remainder: true)
+
         }
     }
 
     // if (params.expected_mutated_cells & params.dnds){
     if (params.dnds){
-        covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
-        ref_transcripts = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
         DNDS(somatic_mutations,
                     DEPTHSEXONSCONS.out.subset,
                     CREATEPANELS.out.exons_consensus_bed,
-                    CREATEPANELS.out.exons_consensus_panel,
-                    covariates,
-                    ref_transcripts
+                    CREATEPANELS.out.exons_consensus_panel
                     )
     }
 
@@ -382,10 +407,14 @@ workflow DEEPCSA{
                     custom_groups_table,
                     CREATEPANELS.out.domains_panel_bed,
                     SYNMUTDENSITY.out.mutdensity,
-                    CREATEPANELS.out.panel_annotated_rich
+                    CREATEPANELS.out.panel_annotated_rich,
+                    DNA2PROTEINMAPPING.out.panel_exons_bed,
+                    "",
+                    grouping_definitions
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
+            site_comparison_results = OMEGA.out.site_comparison
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
@@ -402,7 +431,10 @@ workflow DEEPCSA{
                             custom_groups_table,
                             CREATEPANELS.out.domains_panel_bed,
                             SYNMUTREADSRATE.out.mutdensity,
-                            CREATEPANELS.out.panel_annotated_rich
+                            CREATEPANELS.out.panel_annotated_rich,
+                            DNA2PROTEINMAPPING.out.panel_exons_bed,
+                            ".multi",
+                            grouping_definitions
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -412,7 +444,7 @@ workflow DEEPCSA{
                 }
             }
         }
-        if (params.profilenonprot){
+        if (params.profilenonprot && params.positive_selection_non_protein_affecting){
             OMEGANONPROT(somatic_mutations,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
@@ -421,7 +453,10 @@ workflow DEEPCSA{
                             custom_groups_table,
                             CREATEPANELS.out.domains_panel_bed,
                             SYNMUTDENSITY.out.mutdensity,
-                            CREATEPANELS.out.panel_annotated_rich
+                            CREATEPANELS.out.panel_annotated_rich,
+                            DNA2PROTEINMAPPING.out.panel_exons_bed,
+                            ".non_protein_affecting",
+                            grouping_definitions
                             )
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
@@ -437,7 +472,10 @@ workflow DEEPCSA{
                                     custom_groups_table,
                                     CREATEPANELS.out.domains_panel_bed,
                                     SYNMUTREADSRATE.out.mutdensity,
-                                    CREATEPANELS.out.panel_annotated_rich
+                                    CREATEPANELS.out.panel_annotated_rich,
+                                    DNA2PROTEINMAPPING.out.panel_exons_bed,
+                                    ".multi.non_protein_affecting",
+                                    grouping_definitions
                                     )
 
                 if (params.regressions){
@@ -459,7 +497,6 @@ workflow DEEPCSA{
                                 CREATEPANELS.out.exons_consensus_bed,
                                 OMEGA.out.results_global,
                                 features_table
-                                // OMEGAMULTI.out.results_global
                                 )
     }
 
@@ -472,7 +509,20 @@ workflow DEEPCSA{
     }
 
 
+
+
     if (params.signatures){
+
+        Channel.of([ [ id: "all_samples" ] ])
+        .join( somatic_mutations )
+        .set{ maf2vcf_inputs }
+
+        MAF2VCF(maf2vcf_inputs)
+        vcf_files = MAF2VCF.out.vcf_files.flatten().collect()
+
+        SIGPROMATRIXGENERATOR(
+            vcf_files,
+            )
 
         // Signature Analysis
         if (params.profileall){
@@ -482,7 +532,6 @@ workflow DEEPCSA{
             .join(SIGNATURESALL.out.mutation_probs)
             .set{mutations_n_sbs}
             MUTS2SIGS(mutations_n_sbs)
-
 
         }
         if (params.profilenonprot){
@@ -496,9 +545,38 @@ workflow DEEPCSA{
         }
     }
 
-    if ( params.indels & params.oncodrivefml & params.omega ){
+    if ( params.omega && params.oncodrive3d && params.oncodrivefml && params.indels  && (params.vep_species == 'homo_sapiens') ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-        PLOTSELECTION(positive_selection_results_ready, seqinfo_df)
+        PLOTTINGSUMMARY(positive_selection_results_ready,
+                        all_mutdensities_file.first(),
+                        site_comparison_results,
+                        ANNOTATEDEPTHS.out.all_samples_depths.first(),
+                        TABLE2GROUP.out.json_samples.first(),
+                        TABLE2GROUP.out.json_allgroups.first(),
+                        CREATEPANELS.out.exons_consensus_panel,
+                        CREATEPANELS.out.panel_annotated_rich,
+                        seqinfo_df,
+                        CREATEPANELS.out.domains_in_panel.first(),
+                        DNA2PROTEINMAPPING.out.depths_exons_positions.first(),
+                        group_keys_ch
+                        )
+    }    
+    
+    if ( run_mutdensity ){
+        // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+        PLOTTINGQC(
+                        // positive_selection_results_ready,
+                        all_mutdensities_file,
+                        // site_comparison_results,
+                        // ANNOTATEDEPTHS.out.all_samples_depths,
+                        // TABLE2GROUP.out.json_allgroups,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        TABLE2GROUP.out.json_samples,
+                        // CREATEPANELS.out.panel_annotated_rich,
+                        // seqinfo_df,
+                        // CREATEPANELS.out.domains_in_panel,
+                        // DNA2PROTEINMAPPING.out.depths_exons_positions
+                        )
     }
 
     // Regressions

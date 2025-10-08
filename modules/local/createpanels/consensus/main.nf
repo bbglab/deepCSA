@@ -20,7 +20,7 @@ process CREATECONSENSUSPANELS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     def args = task.ext.args ?: ""
-    def genes_subset = task.ext.genes_subset
+    def genes_subset = task.ext.genes_subset ?: ""
     target_genes = genes_subset != "" ? "--genes ${genes_subset}": ""
     """
     ## ${target_genes}

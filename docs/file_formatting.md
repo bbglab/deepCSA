@@ -16,6 +16,25 @@ VCF file needs to be a single sample VCF with the format field following the spe
 
 More details on this can be found in the [Usage docs](usage.md#custom-mutation-calls).
 
+### Domain definition file
+
+This must be a tab separated file with these 4 columns, each of them is self-explanatory, the only comment is that the coordinates for Begin and End must be protein coordinates.
+
+```bash
+Ens_Transcr_ID	Begin	End	NAME
+ENST00000240079	30	167	CCDC53
+ENST00000447540	2482	2520	BRK
+ENST00000447540	2555	2598	BRK
+ENST00000447540	878	1150	SNF2_rel_dom
+ENST00000447540	1183	1296	Helicase_C
+ENST00000447540	774	826	Chromo
+ENST00000447540	691	750	Chromo
+ENST00000256319	8	118	Erg28
+ENST00000278618	125	244	ACPS
+```
+
+We suggest getting this information from sources such as Pfam, InterPro or (in a near future) our in-house catalog of domains, [bbgdomains](https://github.com/bbglab/bbgdomains) which is still work in progress.
+
 ## Optional input files
 
 Check the `assets/example_inputs` directory for full information on which are the expected file formats for the different required and mandatory inputs.
@@ -44,15 +63,44 @@ Long story short:
 * indicate whether the previous file is comma or tab separated
 * a dictionary to define which column contains the name of the samples and then combinations of columns that will be used for the groupings. Note that the columns indicated for groupings will be treated as categorical variables even if they contains numerical values. Note also that there should not be missing values in any of the columns used for the groupings, instead replace them (i.e. replace by Unknown)
 
+See example below.
+
 #### Related parameters
 
 ```console
 params {
     features_table              = null
     features_table_separator    = 'comma'
-    features_table_dict         = ''
+    features_unique_identifier  = null
+    features_groups_list        = null
 }
 ```
+
+#### Example features file and parameters
+
+```csv
+SAMPLE_ID,BLADDER_LOCATION,SEX,SMOKING_STATUS
+donor1_BDO,dome,M,never
+donor1_BTR,trigone,M,never
+donor2_BDO,dome,F,former
+donor2_BTR,trigone,F,former
+donor3_BDO,dome,F,former
+donor4_BDO,dome,M,former
+donor4_BTR,trigone,M,former
+donor5_BDO,dome,F,never
+donor5_BTR,trigone,F,never
+```
+
+```console
+params {
+    features_table              = "features_example.csv"
+    features_table_separator    = 'comma'
+    features_unique_identifier  = 'SAMPLE_ID'
+    features_groups_list        = [ ["BLADDER_LOCATION"], ["BLADDER_LOCATION", "SEX"], ["BLADDER_LOCATION", "SEX", "SMOKING_STATUS"] ]
+}
+```
+
+
 
 ### Gene groups
 
@@ -107,13 +155,13 @@ params {
 
 We can also customize omega by providing a file with a specific definition of genomic regions in which omega will be computed independently. For example this could be useful for a custom definition of protein domains, or for a definition of other genomic elements within genes in which the user wants to have an independent measurement of omega.
 
-The accompaining hotspot_expansion parameter is used for expanding the definition of this region to analyse a given number of aminoacids on each extreme. The goal of this is to be able to capture the signal focused on the area of interest but also including some more neighbouring areas to potenitally increase the stability of the values in case that the targeted area is very small. In summary, except for the cases in this the `omega_hotspots_bedfile` defined regions are very small <10 AA the `hotspot_expansion` parameter should be set to 0.
+The accompanying hotspot_expansion parameter is used for expanding the definition of this region to analyse a given number of aminoacids on each extreme. The goal of this is to be able to capture the signal focused on the area of interest but also including some more neighbouring areas to potenitally increase the stability of the values in case that the targeted area is very small. In summary, except for the cases in this the `omega_subgenic_bedfile` defined regions are very small <10 AA the `hotspot_expansion` parameter should be set to 0.
 
 #### Related parameters
 
 ```console
 params {
-    omega_hotspots_bedfile      = null
+    omega_subgenic_bedfile      = null
     hotspot_expansion           = 0
 }
 ```

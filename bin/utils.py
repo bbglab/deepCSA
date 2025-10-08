@@ -87,7 +87,7 @@ def filter_maf(maf_df, filter_criteria):
 
 def vartype(x,
             letters = ['A', 'T', 'C', 'G'],
-            len_SV_lim = 100
+            len_SV_lim = 50
             ):
     """
     Define the TYPE of a variant
@@ -112,6 +112,22 @@ def vartype(x,
 
     return "COMPLEX"
 
+
+def load_samples_info():
+
+    with open(f'all_groups.json', 'r') as f:
+        groups_n_samples_definition = json.load(f)
+    all_unit_names = list(groups_n_samples_definition.keys())
+
+    with open(f'samples.json', 'r') as f:
+        samples_definition = json.load(f)
+    all_samples_names = list(samples_definition.keys())
+
+    with open(f'groups.json', 'r') as f:
+        groups_definition = json.load(f)
+    all_group_names = list(groups_definition.keys())
+    
+    return all_samples_names, all_group_names, all_unit_names, groups_n_samples_definition
 
 
 

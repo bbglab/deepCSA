@@ -3,7 +3,7 @@ process PLOT_MUTATIONS {
     tag "$meta.id"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(mut_files)
@@ -34,19 +34,13 @@ process PLOT_MUTATIONS {
     EOF
 
     plot_maf.py \\
-                    ${prefix} \\
-                    ${mut_files} \\
-                    ${prefix}${output_prefix} \\
-                    mutations_subset.conf \\
-                    requested_plots.conf \\
+        --sample_name ${prefix} \\
+        --mut_file ${mut_files} \\
+        --out_maf ${prefix}${output_prefix} \\
+        --json_filters mutations_subset.conf \\
+        --req_plots requested_plots.conf \\
+        ${args}
 
-    # plot_maf.py \\
-    #                 --sample_name ${prefix} \\
-    #                 --mut_file ${mut_files} \\
-    #                 --out_maf ${prefix}${output_prefix}.mutations.tsv \\
-    #                 --json_filters mutations_subset.conf \\
-    #                 --req_fields output_formats.conf \\
-    #                 ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

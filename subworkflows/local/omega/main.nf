@@ -13,8 +13,8 @@ include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../..
 include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES     } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISON           } from '../../../modules/local/bbgtools/sitecomparison/main'
-include { SITE_COMPARISON           as SITECOMPARISONMULTI           } from '../../../modules/local/bbgtools/sitecomparison/main'
-
+include { SITE_COMPARISON           as SITECOMPARISONMULTI      } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { PLOT_OMEGASYN_QC          as EVALOMEGAGLOCESTIMATION  } from '../../../modules/local/plot/qc/globalloc_synonymous/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
@@ -22,7 +22,6 @@ include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } fro
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC  } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI  } from '../../../modules/local/bbgtools/sitecomparison/main'
-
 
 workflow OMEGA_ANALYSIS{
 
@@ -36,19 +35,24 @@ workflow OMEGA_ANALYSIS{
     domains_file
     mutationdensities
     complete_panel
+    exons_file
+    suffix
+    grouping_defs
 
 
     main:
 
     // Create a channel for the domains file if omega_autodomains is true
-    domains_ch = params.omega_autodomains ? domains_file : Channel.empty()
+    domains_ch = params.omega_autodomains ? domains_file : []  // .map{ it -> it[1]} : []
+    exons_ch = params.omega_autoexons ? exons_file.map{ it -> it[1]} : []
 
     // Create a channel for the hotspots bedfile if provided
-    hotspots_ch = params.omega_hotspots_bedfile ? Channel.fromPath(params.omega_hotspots_bedfile) : Channel.empty()
+    subgenic_ch = params.omega_subgenic_bedfile ? file(params.omega_subgenic_bedfile) : []
 
-    // Combine both channels
-    hotspots_bed_file = domains_ch.mix(hotspots_ch).collect().ifEmpty { file(params.input) }
 
+    site_comparison_results = Channel.empty()
+    global_loc_results      = Channel.empty()
+    all_gloc_results        = Channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
@@ -69,7 +73,7 @@ workflow OMEGA_ANALYSIS{
 
 
     if (params.omega_withingene){
-        EXPANDREGIONS(panel, hotspots_bed_file)
+        EXPANDREGIONS(panel, domains_ch, exons_ch, subgenic_ch)
         expanded_panel = EXPANDREGIONS.out.panel_increased.first()
         json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
     } else {
@@ -113,6 +117,7 @@ workflow OMEGA_ANALYSIS{
 
         SITECOMPARISON(mutations_n_mutabilities,
                         SUBSETPANEL.out.subset.first())
+        site_comparison_results = SITECOMPARISON.out.comparisons
 
         SUBSETOMEGAMULTI.out.mutations
         .join(ABSOLUTEMUTABILITIES.out.mutabilities)
@@ -120,6 +125,8 @@ workflow OMEGA_ANALYSIS{
 
         SITECOMPARISONMULTI(mutations_n_mutabilities_globalloc,
                                 SUBSETPANEL.out.subset.first())
+        // site_comparison_results = site_comparison_results.join(SITECOMPARISONMULTI.out.comparisons, remainder: true)
+
     }
 
 
@@ -139,6 +146,13 @@ workflow OMEGA_ANALYSIS{
                             GROUPGENES.out.json_genes.first())
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
+        
+        global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
+        all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
+
+        PREPROCESSING.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts }
+        PREPROCESSINGGLOBALLOC.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts_gloc }
+        EVALOMEGAGLOCESTIMATION(all_syn_muts, all_syn_muts_gloc, grouping_defs)
 
         if (params.omega_plot){
             SUBSETMUTATIONS.out.subset
@@ -158,6 +172,8 @@ workflow OMEGA_ANALYSIS{
 
             SITECOMPARISONGLOBALLOC(mutations_n_mutabilities_globalloc,
                                     SUBSETPANEL.out.subset.first())
+            // site_comparison_results = site_comparison_results.join(SITECOMPARISONGLOBALLOC.out.comparisons, remainder: true)
+
 
             SUBSETOMEGAMULTI.out.mutations
             .join(ABSOLUTEMUTABILITIESGLOBALLOC.out.mutabilities)
@@ -165,20 +181,30 @@ workflow OMEGA_ANALYSIS{
 
             SITECOMPARISONGLOBALLOCMULTI(mutations_n_mutabilities_globalloc,
                                             SUBSETPANEL.out.subset.first())
+            // site_comparison_results = site_comparison_results.join(SITECOMPARISONGLOBALLOCMULTI.out.comparisons, remainder: true)
         }
 
-    } else {
-        global_loc_results = Channel.empty()
     }
 
+    site_comparison_results.map {
+        def meta = it[0]
+        def all_files = it[1..-1].flatten()
+        [meta, all_files]
+    }.set{ site_comparison_results_flattened }
 
+
+    ESTIMATOR.out.results.map{ it -> it[1]}.flatten().set{ all_indv_results }
+    all_indv_results.collectFile(name: "all_omegas${suffix}.tsv", storeDir:"${params.outdir}/omega", skip: 1, keepHeader: true).set{ all_results }
 
 
     emit:
-    results         = ESTIMATOR.out.results
-    results_global  = global_loc_results
+    results                 = ESTIMATOR.out.results
+    results_global          = global_loc_results
+    expanded_panel          = expanded_panel
+    site_comparison         = site_comparison_results_flattened
 
-
+    all_compiled            = all_results
+    all_globalloc_compiled  = all_gloc_results
     // plots = ONCODRIVE3D.out.plots
 
 }

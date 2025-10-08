@@ -3,11 +3,13 @@ process EXPAND_REGIONS {
     tag "$meta.id"
     label 'process_high'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(panel)
-    path (bedfile)
+    path (domains, optional: true)
+    path (exons, optional: true)
+    path (custom, optional: true)
 
     output:
     tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
@@ -16,15 +18,15 @@ process EXPAND_REGIONS {
 
 
     script:
-    def expansion = task.ext.expansion ?: 0
-    def bedfile_to_use = task.ext.using_bedfile ? "custom_regions_bedfiles.bed" : "None"
-    def autoexons = params.omega_autoexons ? "1" : "0"
+    // def expansion = task.ext.expansion ?: 0
+    def autoexons = params.omega_autoexons ? "--autoexons ${exons}" : ""
+    def autodomains = params.omega_autodomains ? "--autodomains ${domains}" : ""
+    def custom_regions = params.omega_subgenic_bedfile ? "--custom ${custom}" : ""
     """
-    cat ${bedfile} >> custom_regions_bedfiles.bed
-    add_hotspots.py ${panel} \\
-                    ${bedfile_to_use} \\
-                    ${expansion} \\
-                    ${autoexons}
+    add_hotspots.py --panel_file ${panel} \\
+                        ${autoexons} \\
+                        ${autodomains} \\
+                        ${custom_regions}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -33,10 +35,9 @@ process EXPAND_REGIONS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: ""
-    prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.vep.summary.tab.gz
+    touch panel.with_hotspots.tsv
+    touch hotspot_names.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
