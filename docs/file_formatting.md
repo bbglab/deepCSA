@@ -96,7 +96,7 @@ params {
     features_table              = "features_example.csv"
     features_table_separator    = 'comma'
     features_unique_identifier  = 'SAMPLE_ID'
-    features_groups_list        = [ ["BLADDER_LOCATION"], ["BLADDER_LOCATION", "SEX"], ["BLADDER_LOCATION", "SEX", "SMOKING_STATUS"] ]
+    features_groups_list        = "[ ["BLADDER_LOCATION"], ["BLADDER_LOCATION", "SEX"], ["BLADDER_LOCATION", "SEX", "SMOKING_STATUS"] ]"
 }
 ```
 
