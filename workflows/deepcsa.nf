@@ -571,7 +571,8 @@ workflow DEEPCSA{
                         // ANNOTATEDEPTHS.out.all_samples_depths,
                         // TABLE2GROUP.out.json_allgroups,
                         CREATEPANELS.out.exons_consensus_panel,
-                        TABLE2GROUP.out.json_samples,
+                        TABLE2GROUP.out.json_allgroups.first(),
+                        group_keys_ch
                         // CREATEPANELS.out.panel_annotated_rich,
                         // seqinfo_df,
                         // CREATEPANELS.out.domains_in_panel,

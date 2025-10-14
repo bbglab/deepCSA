@@ -8,8 +8,8 @@ process PLOT_MUTDENSITY_QC {
     input:
     path(all_mutdensities)
     tuple val(meta2), path(panel_file)
-
-    path (samples_json)
+    path (groups_json)
+    val (group_name)
 
     output:
     path("**.pdf")  , emit: plots
@@ -19,15 +19,15 @@ process PLOT_MUTDENSITY_QC {
 
 
     script:
-    def prefix = task.ext.prefix ?: "all_samples"
 
     """
-    mkdir ${prefix}.plots
+    mkdir ${group_name}.plots
     mutation_densities_qc.py \\
                     --input-file ${all_mutdensities} \\
-                    --output-dir ${prefix}.plots \\
+                    --output-dir ${group_name}.plots \\
                     --panel ${panel_file} \\
-                    --samples ${samples_json}
+                    --group-definition ${groups_json} \\
+                    --group-name ${group_name}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

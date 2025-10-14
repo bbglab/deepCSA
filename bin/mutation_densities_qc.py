@@ -15,21 +15,19 @@ import json
 
 # Function to load sample names
 
-def load_samples_names(samples_file):
+def load_samples_names(samples_file, group_name):
 
     with open(samples_file, 'r') as f:
         samples_definition = json.load(f)
-    all_samples_names = list(samples_definition.keys())
-
-    return all_samples_names
+    return samples_definition[group_name]
 
 # Function to filter mutdensity dataframes
 
-def filter_mutdensities(mutdensity_df, region, mode = 'per_gene', samples = None) :
+def filter_mutdensities(mutdensity_df, region, sample_name, mode = 'per_gene', samples = None) :
     # Filter mutdensity_df
     if mode == 'per_gene' :
         filt_mutden_df = mutdensity_df[
-                         (mutdensity_df['SAMPLE_ID'] == 'all_samples')
+                         (mutdensity_df['SAMPLE_ID'] == sample_name)
                        & (mutdensity_df['MUTTYPES'] == 'SNV') 
                        & (mutdensity_df['REGIONS'] == region)
                        & (mutdensity_df['GENE'] != 'ALL_GENES')
@@ -144,10 +142,12 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
               help="Directory where output files will be written")
 @click.option("--panel", required=True, type=click.Path(exists=True),
               help="File with a list of panel genes (one gene per line)")
-@click.option("--samples", required=True, type=click.Path(exists=True),
+@click.option("--group-definition", required=True, type=click.Path(exists=True),
               help="json file with the list of samples to be included in the analysis")
+@click.option("--group-name", required=True, type=str,
+              help="Name of the group to be analyzed")
 
-def main(input_file, output_dir, panel, samples) :
+def main(input_file, output_dir, panel, groups_definition, group_name): 
 
     mutden_df = pd.read_table(input_file, sep='\t')
     panel = pd.read_table(panel)
@@ -155,7 +155,7 @@ def main(input_file, output_dir, panel, samples) :
     panel_genes_init = panel['GENE'].unique().tolist()
     del panel
 
-    sample_names = load_samples_names(samples)
+    sample_names = load_samples_names(groups_definition, group_name)
 
     ## 1. Initial general filtering by panel genes
     panel_genes = panel_genes_init + ['ALL_GENES'] # is this an issue for the per_gene omega?
@@ -167,7 +167,7 @@ def main(input_file, output_dir, panel, samples) :
 
     for reg in regions : 
         for mod in mode_list: 
-            filt_mutden = filter_mutdensities(mutden_df_panel, reg, mod, sample_names)
+            filt_mutden = filter_mutdensities(mutden_df_panel, reg, group_name, mod, sample_names)
             zero_cases_flag, mutden_zscore = z_score_log10(filt_mutden, mod)
 
             ## Generate csv with zscore result and store as csv
