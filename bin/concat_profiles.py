@@ -12,7 +12,7 @@ import json
 
 def plot_similarity_heatmaps(mut_profile_matrix, mode, keys, label):
     # Only keep columns matching keys
-    selected_cols = [col for col in mut_profile_matrix.columns if col in keys]
+    selected_cols = [col for col in keys if col in mut_profile_matrix.columns]
     if not selected_cols:
         print(f"No columns found for {label}")
         return
@@ -84,9 +84,14 @@ def compile_profiles(mutation_profile_files, groups_json):
         groups = json.load(f)
 
     # Partition keys
-    keys_size1 = [k for k, v in groups.items() if isinstance(v, list) and len(v) == 1]
+    keys_size1 = sorted([k for k, v in groups.items() if isinstance(v, list) and len(v) == 1 and v[0] == k])
     keys_sizegt1 = [k for k, v in groups.items() if isinstance(v, list) and len(v) > 1]
-    all_keys = list(groups.keys())
+
+    # Sort each list by: (1) increasing number of '_' in the key, then (2) alphabetical order
+    sort_key = lambda s: (s.count('_'), s)
+    keys_sizegt1 = sorted(keys_sizegt1, key=sort_key)
+
+    all_keys = list(keys_size1) + keys_sizegt1
 
     plot_similarity_heatmaps(mut_profile_matrix, mode, keys_size1, "size1")
     plot_similarity_heatmaps(mut_profile_matrix, mode, keys_sizegt1, "sizegt1")
