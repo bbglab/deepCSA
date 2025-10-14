@@ -1,0 +1,100 @@
+nextflow_pipeline {
+    name "Test DEEPCSA Pipeline"
+    script "main.nf"
+
+
+    test("Minimal features test run") {
+        when {
+            params {
+                outdir = "output"
+                input = "/data/bbg/datasets/transfer/ferriol_deepcsa/test/deepCSA_input.bladder_med.small_cohort.med.csv"
+                plot_depths = true
+                signatures  = true
+                profileall  = true
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert path("${params.outdir}/computeprofile").exists()
+            assert !path("${params.outdir}/mutdensity").exists()
+            assert !path("${params.outdir}/omega").exists()
+            assert !path("${params.outdir}/oncodrivefml").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()
+        }
+    }
+
+
+    // // ALL THE CODE BELOW IS HERE FOR REFERENCE, TO BE ADAPTED LATER
+    // // AS THE TEST DATASET IMPROVES AND WE WANT TO IMPROVE TEST COVERAGE
+
+    // test("Should run DEEPCSA workflow with minimal parameters") {
+
+    //     when {
+    //         params {
+    //             outdir = "output"
+    //             input = "test_data/samplesheet.csv"
+    //         }
+    //     }
+
+    //     then {
+    //         assert workflow.success
+    //         assert workflow.trace.succeeded().size() > 0
+            
+    //         // Check workflow completed expected number of tasks
+    //         assert workflow.trace.tasks().size() >= 20
+
+    //         // Verify no error messages in output
+    //         assert !workflow.stdout.contains("ERROR")
+            
+    //         // Check key processes completed
+    //         with(workflow.trace) {
+    //             assert succeeded("INPUT_CHECK").size() == 1
+    //             assert succeeded("DEPTHANALYSIS").size() == 1
+    //             assert succeeded("CREATEPANELS").size() == 1
+    //             assert succeeded("MUT_PREPROCESSING").size() == 1
+    //         }
+    //     }
+    // }
+
+    // test("Should fail gracefully with invalid input") {
+    //     when {
+    //         params {
+    //             outdir = "output"
+    //             input = "nonexistent.csv"
+    //             features_table = "nonexistent.tsv"
+    //         }
+    //     }
+
+    //     then {
+    //         assert workflow.failed
+    //         assert workflow.exitStatus == 1
+    //         assert workflow.errorReport.contains("Input file does not exist")
+    //     }
+    // }
+
+    // test("More complete test") {
+    //     when {
+    //         params {
+    //             outdir = "output"
+    //             input = "test_data/samplesheet.csv"
+    //             plot_depths = true
+    //             signatures  = true
+    //             profileall  = true
+    //         }
+    //     }
+
+    //     then {
+    //         assert workflow.success
+    //         assert path("${params.outdir}/mutdensity").exists()
+    //         assert !path("${params.outdir}/omega").exists()
+    //         assert !path("${params.outdir}/oncodrivefml").exists()
+    //         assert !path("${params.outdir}/oncodrive3d").exists()
+
+    //         // Verify specific output files
+    //         assert path("${params.outdir}/mutdensity/all_mutdensities.tsv").exists()
+    //         assert path("${params.outdir}/multiqc/multiqc_report.html").exists()
+    //     }
+    // }
+}            
+

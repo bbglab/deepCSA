@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import click
 import pandas as pd
 
 from bgreference import hg38, hg19, mm10, mm39
@@ -141,7 +142,8 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation):
 
 def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
                                 hotspots_file = None,
-                                all_ = False, assembly = 'hg38'):
+                                all_ = False, assembly = 'hg38',
+                                gnomad_af_threshold = 0.001):
     """
     # TODO
     explain what this function does
@@ -156,9 +158,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
     else:
         all_possible_sites[["CHROM:POS", "MUT" ]] = all_possible_sites.iloc[:,0].str.split("_", expand = True)
         all_possible_sites[["CHROM", "POS"]] = all_possible_sites["CHROM:POS"].str.split(":", expand = True)
-#        mut_split  = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
         all_possible_sites[["REF", "ALT"]] = all_possible_sites["MUT"].str.split(">", n = 1, expand = True)
-#        print(all_possible_sites.head())
         all_possible_sites["POS"] = all_possible_sites["POS"].astype(int)
 
     # TODO: Is it robust enough to use columns names here?
@@ -211,7 +211,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
         annotated_variants_reduced[gnomad_columns] = annotated_variants_reduced[gnomad_columns].replace("-", 0).astype(float)
 
         # add a column to flag the variants considered to be SNPs based on gnomad information
-        annotated_variants_reduced["gnomAD_SNP"] = (annotated_variants_reduced['gnomADe_AF'] > 0.001) | (annotated_variants_reduced['gnomADg_AF'] > 0.001)
+        annotated_variants_reduced["gnomAD_SNP"] = (annotated_variants_reduced['gnomADe_AF'] > gnomad_af_threshold) | (annotated_variants_reduced['gnomADg_AF'] > gnomad_af_threshold)
         annotated_variants_columns += ["gnomAD_SNP"]
 
 
@@ -240,50 +240,26 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
                                         sep = "\t")
 
 
+
+
+@click.command()
+@click.argument('vep_output_file', type=click.Path(exists=True))
+@click.argument('all_possible_sites_annotated_file', type=click.Path())
+@click.option('--assembly-name', default='hg38', show_default=True, type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), help='Reference genome assembly name')
+@click.option('--all-underscore', is_flag=True, default=False, show_default=True, help='Whether to use _ to separate all parts of MUT_ID (default: False)')
+@click.option('--hotspots-annotation-file', default=None, type=click.Path(exists=False), help='Path to hotspots annotation file')
+@click.option('--gnomad-af-threshold', default=0.001, show_default=True, type=float, help='gnomAD allele frequency threshold')
+def main(vep_output_file, all_possible_sites_annotated_file, assembly_name, all_underscore, hotspots_annotation_file, gnomad_af_threshold):
+    """Summarize VEP annotation with optional hotspots and gnomAD AF threshold."""
+    vep2summarizedannotation(
+        vep_output_file,
+        all_possible_sites_annotated_file,
+        hotspots_annotation_file,
+        all_underscore,
+        assembly_name,
+        gnomad_af_threshold
+    )
+
 if __name__ == '__main__':
-    # Input
-    #VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
-    VEP_output_file = sys.argv[1]
-
-    # Output
-    #all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
-    all_possible_sites_annotated_file = sys.argv[2]
-
-    try:
-        assembly_name = sys.argv[3]
-        if assembly_name not in ["hg38", "hg19", "mm10", "mm39"]:
-            print("invalid assembly name")
-            exit(1)
-    except:
-        print("No assembly name provided, using hg38 as default.")
-        assembly_name = 'hg38'
-
-
-    if len(sys.argv) > 4:
-        print("Using the provided value:", end = "\t")
-        try:
-            all_sep = eval(f"{sys.argv[4]}")
-            print(all_sep)
-        except:
-            print("You should provide either True or False as the fourth argument.")
-            exit(1)
-    else:
-        all_sep = False
-
-
-    if len(sys.argv) > 5:
-        print("Using the provided value:", end = "\t")
-        try:
-            hotspots_annotation_file = f"{sys.argv[5]}"
-            print(hotspots_annotation_file)
-            hotspots_annotation_df = pd.read_table(hotspots_annotation_file)
-            print(hotspots_annotation_df.head())
-        except:
-            print("You should provide the path to the hotspots file as the fifth argument.")
-            exit(1)
-    else:
-        hotspots_annotation_file = None
-
-
-    vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file, hotspots_annotation_file, all_sep, assembly_name)
+    main()
 

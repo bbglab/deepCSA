@@ -3,10 +3,11 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     tag "samples"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     path(samples_json)
+    path(all_groups_json)
     tuple val(meta), path(panel_file)
     path(mutdensities_file)
 
@@ -24,7 +25,8 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
                     --mutdensities ${mutdensities_file} \\
                     --panel-regions ${panel_file} \\
                     --outdir ${prefix}.variability_plots \\
-                    --samples_json ${samples_json}
+                    --samples-json ${samples_json} \\
+                    --all-groups-json ${all_groups_json} \\
 
 
     cat <<-END_VERSIONS > versions.yml
@@ -37,7 +39,7 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.png
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

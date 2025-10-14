@@ -1,0 +1,82 @@
+nextflow_process {
+    name "Test EXPAND_REGIONS process"
+    script "modules/local/expand_regions/main.nf"
+    process "EXPAND_REGIONS"
+
+    test("Testing a run without autoexons and autodomains, it should fail") {
+        when {
+            params {
+                omega_autoexons = false
+                omega_autodomains = false
+                omega_subgenic_bedfile = false
+            }
+            process {
+                """
+                input[0] = tuple(
+                    [ id:'test', single_end:false ], 
+                    file("${projectDir}/test_data/modules/consensus.exons_splice_sites.PPM1D.tsv")
+                )
+                input[1] = file("${projectDir}/test_data/modules/PPM1D_domains.bed4.bed")
+                input[2] = file("${projectDir}/test_data/modules/PPM1D_exons.bed4.bed")
+                input[3] = file("${projectDir}/test_data/dummy_file.tsv")
+                """
+            }
+        }
+
+        then {
+            assert !process.success
+        }
+    }
+
+    test("Should run with autoexons and autodomains") {
+        when {
+            params {
+                omega_autoexons = true
+                omega_autodomains = true
+                omega_subgenic_bedfile = false
+            }
+            process {
+                """
+                input[0] = tuple(
+                    [ id:'test2', single_end:false ], 
+                    file("${projectDir}/test_data/modules/consensus.exons_splice_sites.PPM1D.tsv")
+                )
+                input[1] = file("${projectDir}/test_data/modules/PPM1D_domains.bed4.bed")
+                input[2] = file("${projectDir}/test_data/modules/PPM1D_exons.bed4.bed")
+                input[3] = file("${projectDir}/test_data/dummy_file.tsv")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+
+
+    // test("Should run in stub mode") {
+    //     when {
+    //         process {
+    //             """
+    //             input[0] = tuple(
+    //                 [ id:'test_stub', single_end:false ], 
+    //                 file("${projectDir}/test_data/modules/consensus.exons_splice_sites.PPM1D.tsv")
+    //             )
+    //             input[1] = file("${projectDir}/test_data/modules/PPM1D_domains.bed4.bed")
+    //             input[2] = file("${projectDir}/test_data/modules/PPM1D_exons.bed4.bed")
+    //             input[3] = file("${projectDir}/test_data/dummy_file.tsv")
+    //             """
+    //         }
+    //     }
+
+    //     then {
+    //         config {
+    //             stub = true
+    //         }
+    //         assert process.success
+    //         assert snapshot(process.out).match()
+    //     }
+    // }
+}
+ 

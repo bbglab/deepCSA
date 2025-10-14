@@ -38,6 +38,7 @@ process MUTATION_DENSITY {
     def prefix = task.ext.prefix ?: "all_samples"
     """
     touch ${prefix}.mutdensities.tsv
+    touch ${prefix}.mutdensities_flat.tsv
     touch ${prefix}.logfoldchangeplot.pdf
 
     cat <<-END_VERSIONS > versions.yml

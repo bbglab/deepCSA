@@ -8,15 +8,41 @@
 
 > Di Tommaso P, Chatzou M, Floden EW, Barja PP, Palumbo E, Notredame C. Nextflow enables reproducible computational workflows. Nat Biotechnol. 2017 Apr 11;35(4):316-319. doi: 10.1038/nbt.3820. PubMed PMID: 28398311.
 
-## Pipeline tools
+## Sources of data and tools
 
-- [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+- Nanoseq masks
 
-  > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
+  > Abascal, F., Harvey, L.M.R., Mitchell, E. et al. Somatic mutation landscapes at single-molecule resolution. Nature 593, 405–410 (2021). https://doi.org/10.1038/s41586-021-03477-4
+
+- **CADD scores**
+
+  > Schubach M, Maass T, Nazaretyan L, Röner S, Kircher M. CADD v1.7: Using protein language models, regulatory CNNs and other nucleotide-level scores to improve genome-wide variant predictions. Nucleic Acids Res. 2024 Jan 5. doi: 10.1093/nar/gkad989. PubMed PMID: 38183205.
+
+- COSMIC signatures
+
+  > https://cancer.sanger.ac.uk/signatures/sbs
+
+- **dNdScv covariates**
+
+  > Martincorena I, et al. (2017) Universal Patterns of Selection in Cancer and Somatic Tissues. Cell. http://www.cell.com/cell/fulltext/S0092-8674(17)31136-4
+
+- Pfam 
+
+  > Jaina Mistry, Sara Chuguransky, Lowri Williams, Matloob Qureshi, Gustavo A Salazar, Erik L L Sonnhammer, Silvio C E Tosatto, Lisanna Paladin, Shriya Raj, Lorna J Richardson, Robert D Finn, Alex Bateman, Pfam: The protein families database in 2021, Nucleic Acids Research, Volume 49, Issue D1, 8 January 2021, Pages D412–D419, https://doi.org/10.1093/nar/gkaa913
+
+- **Oncodrive3D & Oncodrive3D datasets.**
+
+  > Stefano Pellegrini, Olivia Dove-Estrella, Ferran Muiños, Nuria Lopez-Bigas, Abel Gonzalez-Perez, Oncodrive3D: fast and accurate detection of structural clusters of somatic mutations under positive selection, Nucleic Acids Research, Volume 53, Issue 15, 28 August 2025, gkaf776, https://doi.org/10.1093/nar/gkaf776
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
+
+- Python
+- SigProfilerAssignment, MatrixGenerator
+- HDP
+- OncodriveFML
+- OncodriveCLUSTL
 
 ## Software packaging/containerisation tools
 
