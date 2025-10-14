@@ -566,11 +566,11 @@ workflow DEEPCSA{
         // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGQC(
                         // positive_selection_results_ready,
-                        all_mutdensities_file,
+                        all_mutdensities_file.first(),
                         // site_comparison_results,
                         // ANNOTATEDEPTHS.out.all_samples_depths,
                         // TABLE2GROUP.out.json_allgroups,
-                        CREATEPANELS.out.exons_consensus_panel,
+                        CREATEPANELS.out.exons_consensus_panel.first(),
                         TABLE2GROUP.out.json_allgroups.first(),
                         group_keys_ch
                         // CREATEPANELS.out.panel_annotated_rich,

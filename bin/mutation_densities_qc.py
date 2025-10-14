@@ -69,7 +69,15 @@ def z_score_log10(mutden_df, mode = 'per_sample') :
 
 # Function to plot results from z-score distribution
 
-def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag = None):
+def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag = None, min_points = 3):
+    
+    # If the dataset is too small to produce meaningful plots (e.g. a single
+    # sample/group), skip plotting and return None. The caller in `main` already
+    # handles a None return (it will continue to the next loop iteration).
+    if mutdensity_zscore_df is None or len(mutdensity_zscore_df) < min_points:
+        n = 0 if mutdensity_zscore_df is None else len(mutdensity_zscore_df)
+        print(f"Skipping plotting: dataset too small (n={n})")
+        return None
     
     # Setup subplots
     fig, axes = plt.subplots(1, 2, figsize=(12, 7), sharey=False)
@@ -128,7 +136,7 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
                  va='center', ha='left', wrap=True)
 
     # Main title
-    plt.suptitle(f'{mode} - {mutdensity_zscore_df['REGIONS'].iloc[0]}', fontsize=14)
+    plt.suptitle(f'{mode} - {mutdensity_zscore_df["REGIONS"].iloc[0]}', fontsize=14)
     plt.tight_layout(rect=[0, 0.03, 0.92, 0.95])  # leave space for side text
     
     return(fig)
@@ -147,7 +155,7 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
 @click.option("--group-name", required=True, type=str,
               help="Name of the group to be analyzed")
 
-def main(input_file, output_dir, panel, groups_definition, group_name): 
+def main(input_file, output_dir, panel, group_definition, group_name): 
 
     mutden_df = pd.read_table(input_file, sep='\t')
     panel = pd.read_table(panel)
@@ -155,7 +163,7 @@ def main(input_file, output_dir, panel, groups_definition, group_name):
     panel_genes_init = panel['GENE'].unique().tolist()
     del panel
 
-    sample_names = load_samples_names(groups_definition, group_name)
+    sample_names = load_samples_names(group_definition, group_name)
 
     ## 1. Initial general filtering by panel genes
     panel_genes = panel_genes_init + ['ALL_GENES'] # is this an issue for the per_gene omega?

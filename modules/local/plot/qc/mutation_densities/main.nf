@@ -1,21 +1,20 @@
 process PLOT_MUTDENSITY_QC {
 
-    tag "all"
+    tag "${group_name}"
     label 'process_low'
 
     container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
-    path(all_mutdensities)
+    path (all_mutdensities)
     tuple val(meta2), path(panel_file)
     path (groups_json)
     val (group_name)
 
     output:
-    path("**.pdf")  , emit: plots
-    path("**.csv")  , emit: tables
-
-    path "versions.yml"              , topic: versions
+    path("**.pdf")      , emit: plots
+    path("**.csv")      , emit: tables
+    path "versions.yml" , topic: versions
 
 
     script:
