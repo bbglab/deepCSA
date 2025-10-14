@@ -94,15 +94,15 @@
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 },
-                "features_groups_list": {
-                    "type": "string",
-                    "description": "String in list format defining the variables that have to be used for grouping samples.",
-                    "help_text": "This is required when the features_table dataset wants to be used.",
-                    "fa_icon": "far fa-file-code"
-                },
                 "features_unique_identifier": {
                     "type": "string",
                     "description": "String defining the column with the unique identifier in the features_table that should include all the names of the samples that want to be used for the analysis.",
+                    "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_groups_list": {
+                    "type": "string",
+                    "description": "String in list format defining the variables that have to be used for grouping samples.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
                     "fa_icon": "far fa-file-code"
                 }
@@ -364,6 +364,13 @@
                     "description": "Do you want to run plot_depths?",
                     "fa_icon": "fas fa-book"
                 },
+                "plot_only_allsamples": {
+                    "type": "boolean",
+                    "description": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?",
+                    "fa_icon": "fas fa-book",
+                    "default": true,
+                    "help_text": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?"
+                },
                 "regressions": {
                     "type": "boolean",
                     "description": "Do you want to run regression analysis?",
@@ -581,7 +588,7 @@
                 },
                 "selected_genes": {
                     "type": "string",
-                    "description": "Comma-separeted list of genes to focus the analysis",
+                    "description": "Comma-separated list of genes to focus the analysis",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -736,7 +743,21 @@
                     "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "fa_icon": "far fa-file-code",
                     "default": "covariates_hg19_hg38_epigenome_pcawg.rda"
-                }
+                },
+                "nanoseq_snp": {
+                    "type": "string",
+                    "description": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+                },
+                "nanoseq_noise": {
+                    "type": "string",
+                    "description": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+            }
             }
         },
         "ensembl_vep_options": {

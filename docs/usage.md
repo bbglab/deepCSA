@@ -7,6 +7,7 @@
 - [Introduction](#introduction)
 - [How to run the pipeline](#how-to-run-the-pipeline)
 - [Samplesheet input](#samplesheet-input)
+- [Available genomes](#available-genomes)
 - [Proposed run modes](#proposed-run-modes)
   - [Initial run. Data exploration](#initial-run-data-exploration)
   - [Clonal structure definition](#clonal-structure-definition-complete-run-with-a-focus-on-positive-selection-at-the-cohort-level)
@@ -54,6 +55,10 @@ sample2,sample2.high.filtered.vcf,sample2.sorted.bam
 
 An [example samplesheet](../assets/example_inputs/input_example.csv) has been provided with the pipeline.
 
+## Available genomes
+
+deepCSA pipeline heavily relies on bgreference and bgdata tools so the use of this pipeline is limited to those genomes available in these packages. In particular, the default containers that are being used already have the hg38 and mm39 genomes cached, if you want to use any other genome, open an issue and we will address it as soon as we can.
+
 ## Proposed run modes
 
 These are 4 different ways of running the pipeline, each of them serving for a specific purpose, a list of expected outputs is provided in each run mode section.
@@ -91,7 +96,7 @@ It will provide:
 
 ```console
 params {
-    mutationrate                = true
+    mutationdensity             = true
 
     profileall                  = true
 
@@ -136,7 +141,7 @@ It will provide:
 
 ```console
 params {
-    mutationrate                = true
+    mutationdensity             = true
 
     profileall                  = true
     profilenonprot              = true
@@ -156,7 +161,7 @@ It will provide:
 
 ```console
 params {
-    mutationrate                = true
+    mutationdensity             = true
 
     profileall                  = true
 
@@ -198,7 +203,7 @@ See [File formatting docs](file_formatting.md) for more details on the structure
 ```console
 params {
 
-    fasta                       = null
+    fasta                      = null
 
     cosmic_ref_signatures      = "COSMIC_v3.4_SBS_GRCh38.txt"
     wgs_trinuc_counts          = "assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
@@ -261,6 +266,15 @@ params {
     blacklist_mutations        = null
 }
 ```
+
+#### Nanoseq genomic masks
+
+These files identify sites overlapping common SNPs and noisy or variable genomic regions, as described in [Abascal et al, 2021](https://www.nature.com/articles/s41586-021-03477-4) and used in the [Nanoseq pipeline](https://github.com/cancerit/NanoSeq). Two BED files are available to be used:
+
+- Nanoseq SNP: Common SNP positions that should be excluded from analysis
+- Nanoseq Noise: Regions with high noise or variability
+
+Both files are available for GRCh37 and GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
 
 ## Additional customizable parameters
 

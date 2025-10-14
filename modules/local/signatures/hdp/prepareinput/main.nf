@@ -4,7 +4,7 @@ process PREPARE_INPUT {
     tag "$meta.id"
     label 'process_medium'
 
-    container 'docker.io/ferriolcalvet/hdp_stefano:0.1.0'
+    container 'docker.io/ferriolcalvet/hdp_wrapper'
 
     input:
     tuple val(meta) , val(type), path(matrix)

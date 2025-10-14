@@ -3,7 +3,7 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     tag "samples"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     path(samples_json)
@@ -39,7 +39,7 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.png
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

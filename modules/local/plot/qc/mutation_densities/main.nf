@@ -38,7 +38,7 @@ process PLOT_MUTDENSITY_QC {
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
     """
-    touch ${prefix}.png
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

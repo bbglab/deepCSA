@@ -1241,10 +1241,10 @@ def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection,
         # and the formatting of domain selection can be done only once
         df, gene_color_dict = format_domain_selection(domain_selection, xshift=0.22)
         df = df.copy()[:60]
-        plot_all_domain_selection(df, gene_color_dict, figsize=(16,6), save=True, filename=f"{output_directory}/domain_selection.missense_truncating.pdf")
+        plot_all_domain_selection(df, gene_color_dict, figsize=(16,6), save=True, filename=f"{output_directory}/domain_selection.missense_truncating.png")
         for impact in ["missense", "truncating"]:
             df, gene_color_dict = format_domain_selection(domain_selection[domain_selection["impact"] == impact], sort_by=impact, xshift=0)[:60]
-            plot_all_domain_selection(df, gene_color_dict, figsize=(14,6), save=True, filename=f"{output_directory}/domain_selection.{impact}.pdf")
+            plot_all_domain_selection(df, gene_color_dict, figsize=(14,6), save=True, filename=f"{output_directory}/domain_selection.{impact}.png")
 
     except Exception as e:
         print(f"Plots for domain selection at cohort level did not work.")

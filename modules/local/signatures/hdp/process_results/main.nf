@@ -2,7 +2,7 @@ process  PROCESS_HDP_RESULTS {
     tag "$meta.id"
     label 'process_medium'
 
-    container 'docker.io/ferriolcalvet/hdp_stefano:0.1.0'
+    container 'docker.io/ferriolcalvet/hdp_wrapper'
 
     input:
     tuple val(meta), path(count_matrix), path(tree_layers)
