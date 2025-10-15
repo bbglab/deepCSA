@@ -135,7 +135,9 @@ workflow MUTATION_PREPROCESSING {
     .join(SOMATICMUTATIONS.out.mutations).first()
     .set{muts_all_samples}
 
-    CONTAMINATION(raw_muts_all_samples, muts_all_samples)
+    if ( params.contamination ) {
+        CONTAMINATION(raw_muts_all_samples, muts_all_samples)
+    }
 
     PLOTSOMATICMAF(muts_all_samples)
 
