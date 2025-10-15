@@ -11,7 +11,8 @@ workflow PLOTTING_QC {
     // all_samples_depth
     // all_groups
     panel
-    samples
+    groups_definition
+    group_name
     // full_panel_rich
     // seqinfo_df
     // domain_df
@@ -30,7 +31,7 @@ workflow PLOTTING_QC {
     // .join( positive_selection_results_ready )
     // .set{ all_samples_results }
 
-    PLOTMUTDENSITYQC(all_mutdensities, panel, samples)
+    PLOTMUTDENSITYQC(all_mutdensities, panel, groups_definition, group_name)
     // mutation density per gene cohort-level
     // mutation density per gene & sample
     //      synonymous
