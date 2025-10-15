@@ -93,8 +93,8 @@ def compile_profiles(mutation_profile_files, groups_json):
 
     all_keys = list(keys_size1) + keys_sizegt1
 
-    plot_similarity_heatmaps(mut_profile_matrix, mode, keys_size1, "size1")
-    plot_similarity_heatmaps(mut_profile_matrix, mode, keys_sizegt1, "sizegt1")
+    plot_similarity_heatmaps(mut_profile_matrix, mode, keys_size1, "samples")
+    plot_similarity_heatmaps(mut_profile_matrix, mode, keys_sizegt1, "groups")
     plot_similarity_heatmaps(mut_profile_matrix, mode, all_keys, "all")
 
 
