@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+
+import click
 import pandas as pd
 import os
-import sys
 
 # TODO: check pandas version 2.0.3
 # -- Auxiliary functions -- #
@@ -87,9 +88,15 @@ def create_panel_versions(compact_annot_panel_path, output_path):
     compact_annot_panel_df.to_csv(f"{output_path}.{version}.tsv",
                                     sep = "\t", index = False)
 
-## TODO reimplement with click
-if __name__ == '__main__':
-    compact_annot_panel_path = sys.argv[1]
-    output_path = sys.argv[2]
 
-    create_panel_versions(compact_annot_panel_path, output_path)
+@click.command()
+@click.option('--compact-annot-panel-path', required=True, type=click.Path(exists=True), help='Input compact annotation panel file (TSV)')
+@click.option('--output', required=True, type=click.Path(), help='Output path prefix for panel versions')
+def main(compact_annot_panel_path, output):
+    """
+    Create panel versions from a compact annotation panel file.
+    """
+    create_panel_versions(compact_annot_panel_path, output)
+
+if __name__ == '__main__':
+    main()

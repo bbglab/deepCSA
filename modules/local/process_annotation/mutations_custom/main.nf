@@ -17,12 +17,11 @@ process CUSTOM_MUTATION_PROCESSING {
 
 
     script:
-    // TODO reimplement python script with click
     """
     mutations_custom_processing.py \\
-                    ${mutations_annotated} \\
-                    ${custom_regions} \\
-                    ${mutations_annotated.getBaseName()}.custom.tsv ;
+        --mutations-annotated ${mutations_annotated} \\
+        --custom-regions ${custom_regions} \\
+        --output ${mutations_annotated.getBaseName()}.custom.tsv ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

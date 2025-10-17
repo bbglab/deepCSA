@@ -14,7 +14,7 @@ def add_filter(old_filt, add_filt, filt_name):
             return filt_name
         old_filt += ";" + filt_name
 
-    return ";".join( sorted(old_filt.split(";")) )
+    return ";".join( sorted(set(old_filt.split(";")) ))
 
 def to_int_if_possible(string):
     try:

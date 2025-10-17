@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 
-import sys
-import pandas as pd
 
+import click
+import pandas as pd
 from utils_impacts import *
 from read_utils import custom_na_values
 
@@ -108,17 +108,16 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
                                         sep = "\t")
 
 
+
+@click.command()
+@click.option('--mutations-file', required=True, type=click.Path(exists=True), help='Input mutations summary file (TSV)')
+@click.option('--custom-regions-file', required=True, type=click.Path(exists=True), help='Custom regions file (TSV)')
+@click.option('--output', required=True, type=click.Path(), help='Output file for customized mutations (TSV)')
+def main(mutations_file, custom_regions_file, output):
+    """
+    Customize mutation annotations using a custom regions file.
+    """
+    customize_annotations(mutations_file, custom_regions_file, output)
+
 if __name__ == '__main__':
-    ## TODO reimplement with click
-
-    # Input
-    # VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
-    mutations_file = sys.argv[1]
-
-    custom_regions_file = sys.argv[2]
-
-    # Output
-    # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
-    customized_output_file = sys.argv[3]
-
-    customize_annotations(mutations_file, custom_regions_file, customized_output_file)
+    main()
