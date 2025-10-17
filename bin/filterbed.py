@@ -46,11 +46,6 @@ def remove_non_canonical_chromosomes(positions_df):
 def main(sample_maf_file, bedfile, filtername, positive):
     sample_maf = pd.read_csv(sample_maf_file, sep = '\t', header = 0, na_values = custom_na_values)
 
-    current_filters = pd.unique(sample_maf["FILTER"].astype(str).str.split(";").explode())
-    if filtername in current_filters:
-        print("Not filtering with this BED file since the provided filter name is already present.")
-        exit(1)
-
     # read BED file
     panel_reg = pd.read_csv(bedfile, sep = "\t", header = None)
     # check if there is a header or not

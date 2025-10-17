@@ -3,10 +3,7 @@ process CREATECAPTUREDPANELS {
     label 'process_single'
     label 'process_medium_high_memory'
 
-    conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-            'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
-            'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
+    container "community.wave.seqera.io/library/bedtools_pybedtools_pandas_pip_pruned:78080da05d53636d"
 
 
     input:
