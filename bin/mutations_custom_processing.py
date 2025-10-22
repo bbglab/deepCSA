@@ -2,6 +2,7 @@
 
 
 
+import sys
 import click
 import pandas as pd
 from utils_impacts import *
@@ -42,7 +43,7 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
                                         header = True,
                                         index = False,
                                         sep = "\t")
-        exit(0)
+        sys.exit(0)
         # terminate the script here since there is nothing to change
     else:
         print(f"We are going to change: {mutations_summary_final.shape[0] - mutation_summary.shape[0]} mutations")

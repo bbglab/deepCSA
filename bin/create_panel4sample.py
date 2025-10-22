@@ -15,7 +15,6 @@ def create_panel4sample(compact_annot_panel_path, depths_path, panel_name, min_d
     depths_df.iloc[:, 1:] = depths_df.iloc[:, 1:].astype(int)
 
     # Generate panel subset per sample based on min_depth threshold
-    min_depth = int(min_depth)
     for sample in depths_df.columns[2:]:
 
         sample_depth = depths_df[["CHROM", "POS", sample]]

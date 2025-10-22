@@ -6,7 +6,7 @@ import pandas as pd
 from read_utils import custom_na_values
 
 # -- Main function -- #
-def prepare_depths(depths_path, annot_panel_path, filee):
+def prepare_depths(depths_path, annot_panel_path, output_file):
 
     # File loading
     depths_df = pd.read_csv(depths_path, sep = "\t")
@@ -23,7 +23,7 @@ def prepare_depths(depths_path, annot_panel_path, filee):
 
     depths_gene_df = depths_subset_df.groupby("GENE").agg({depth_column_name: 'mean'})
     depths_gene_df.columns = ["DEPTH"]
-    depths_gene_df.to_csv(f"{filee}", sep = '\t', header = False, index = True)
+    depths_gene_df.to_csv(output_file, sep = '\t', header = False, index = True)
     # ARID1A  10859.146
     # BAP1    15240.987
     # MTOR    12738.001

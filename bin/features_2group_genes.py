@@ -30,7 +30,8 @@ def load_table_to_json(table, separator):
 
                 gene_dict_name[fields[0]] = fields[2:]
 
-    return link_dict, gene_dict, gene_dict_name
+    # return link_dict, gene_dict, gene_dict_name
+    return gene_dict_name
 
 
 
@@ -98,7 +99,7 @@ def main(panel_genes_file, add_hotspots, hotspot_genes_file, output_json_groups2
 
     # handle custom gene groups table
     if table_file and separator and output_json_groups:
-        links, gene_groups, gene_groups_name = load_table_to_json(table_file, separator)
+        gene_groups_name = load_table_to_json(table_file, separator)
         updated_gene_groups = filter_genes(gene_groups_name, genes_to_keep, minimum_group_size= 2)
         grouped_genes_pathways, pathways = filtered_groups_to_compressed(updated_gene_groups)
         genes_to_keep_dict.update(grouped_genes_pathways)

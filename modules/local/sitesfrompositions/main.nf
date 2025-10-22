@@ -31,7 +31,7 @@ process SITESFROMPOSITIONS {
         --input-positions captured_positions.tsv \\
         --genome-assembly ${assembly} \\
         --output-file-with-sites captured_positions.sites4VEP.tmp.tsv;
-    
+
     rm captured_positions.tsv
 
     awk '{print "chr"\$0}' captured_positions.sites4VEP.tmp.tsv > captured_positions.sites4VEP.tsv
