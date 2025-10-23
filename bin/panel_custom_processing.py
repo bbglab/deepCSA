@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 
+
+import click
 import pandas as pd
 import numpy as np
-import sys
 
 from read_utils import custom_na_values
 muttype_conversion_map = {
@@ -116,18 +117,15 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
                                 sep = "\t")
 
 
+
+@click.command()
+@click.option('--vep-output-file', required=True, type=click.Path(exists=True), help='Input VEP output file (TSV)')
+@click.option('--custom-regions-file', required=True, type=click.Path(exists=True), help='Input custom regions file (TSV)')
+@click.option('--customized-output-annotation-file', required=True, type=click.Path(), help='Output annotation file (TSV)')
+@click.option('--simple', is_flag=True, help='Use simple annotation')
+def main(vep_output_file, custom_regions_file, customized_output_annotation_file, simple):
+    customize_panel_regions(vep_output_file, custom_regions_file, customized_output_annotation_file, simple)
+
 if __name__ == '__main__':
-    # Input
-    VEP_output_file = sys.argv[1]
-
-    custom_regions_file = sys.argv[2]
-
-    # Output
-    customized_output_annotation_file = sys.argv[3]
-
-    simple = eval(sys.argv[4])
-
-    customize_panel_regions(VEP_output_file, custom_regions_file, customized_output_annotation_file,
-                                    simple
-                                    )
+    main()
 

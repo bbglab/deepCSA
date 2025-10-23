@@ -17,12 +17,18 @@ process GROUP_GENES {
 
     script:
     def separator = task.ext.separator ?: "tab"
-    def hotspots = task.ext.hotspots ? 1 : 0
-    def cmd_custom = task.ext.custom ? "${features_table} ${separator} pathway_groups_out.json" : ""
+    def hotspots = task.ext.hotspots ? "--add-hotspots" : ""
+    def grouping_info = "--table-file ${features_table} --separator ${separator} --output-json-groups pathway_groups_out.json"
+    def custom_groups = task.ext.custom ? "${grouping_info}" : ""
     """
     awk 'NR>1 {print \$1}' ${mutations_table} | sort -u  > gene_list.txt
 
-    features_2group_genes.py gene_list.txt ${hotspots} ${hotspots_file} genes2group_out.json ${cmd_custom}
+    features_2group_genes.py \\
+        --panel-genes-file gene_list.txt \\
+        ${hotspots} \\
+        --hotspot-genes-file ${hotspots_file} \\
+        --output-json-groups2names genes2group_out.json \\
+        ${custom_groups}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

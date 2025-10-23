@@ -17,7 +17,10 @@ process ONCODRIVE3D_PREPROCESSING {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    oncodrive3d_preprocessing.py ${maf} ${all_vep_output} ${prefix}
+    oncodrive3d_preprocessing.py \\
+            --maf-df-file ${maf} \\
+            --vep-output-all ${all_vep_output} \\
+            --sample ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

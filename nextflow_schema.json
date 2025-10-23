@@ -633,6 +633,12 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "contamination": {
+                    "type": "boolean",
+                    "description": "Do you want to run the contamination analysis?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "downsample": {
                     "type": "boolean",
                     "description": "Decide if you want to do downsampling of the mutations and depth to a given proportion of the maximum. Uniform across samples.",
