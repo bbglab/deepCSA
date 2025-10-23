@@ -173,6 +173,8 @@ def main(input_file, output_dir, panel, group_definition, group_name):
     regions = ['synonymous', 'non_protein_affecting']
     mode_list = ['per_sample', 'per_gene']
 
+    compile_all_flagged = pd.DataFrame()
+
     for reg in regions : 
         for mod in mode_list: 
             filt_mutden = filter_mutdensities(mutden_df_panel, reg, group_name, mod, sample_names)
@@ -183,18 +185,11 @@ def main(input_file, output_dir, panel, group_definition, group_name):
             mutden_zscore[cols_of_interest].to_csv(f'{output_dir}/{reg}_{mod}_mutdensities_zscore.csv', index=False)
 
             if mod == 'per_sample':
-                flagged_cases = mutden_zscore[
-                                        (mutden_zscore['zscore'] > 2) 
-                                        | (mutden_zscore['zscore'] < -2)
-                ][['SAMPLE_ID', 'zscore']]
+                flagged_cases = mutden_zscore[(mutden_zscore['zscore'].abs() > 2)][['SAMPLE_ID', 'zscore']]
             elif mod == 'per_gene':
-                flagged_cases = mutden_zscore[
-                                        (mutden_zscore['zscore'] > 2) 
-                                        | (mutden_zscore['zscore'] < -2)
-                ][['GENE', 'zscore']]
+                flagged_cases = mutden_zscore[(mutden_zscore['zscore'].abs() > 2)][['GENE', 'zscore']]
 
             # Store flagged cases in a csv
-            
             flagged_cases['reason_exclusion'] = np.where(flagged_cases['zscore'] > 2, 'high_mutdensity - zscore > 2', 'low_mutdensity - zscore < -2')
             flagged_cases = flagged_cases.drop(columns=['zscore'])
             flagged_cases.columns = ['ID', 'reason_exclusion']
@@ -203,6 +198,11 @@ def main(input_file, output_dir, panel, group_definition, group_name):
             zero_cases['reason_exclusion'] = 'mutdensity = 0'  
 
             flagged_cases_all = pd.concat([flagged_cases, zero_cases], ignore_index=True)
+            flagged_cases_all['cohort']   = group_name
+            flagged_cases_all['regions']  = reg
+            flagged_cases_all['criteria'] = mod
+            
+            compile_all_flagged = pd.concat([compile_all_flagged, flagged_cases_all], ignore_index=True)
             
             flagged_cases_all.to_csv(
                 f"{output_dir}/flagged_cases_{reg}_{mod}.csv", index=False, header = False
@@ -222,6 +222,9 @@ def main(input_file, output_dir, panel, group_definition, group_name):
 
                 # Close to free memory before next loop
                 plt.close(fig)
+    
+    # Compile all flagged cases into a single csv
+    compile_all_flagged.to_csv(f"{output_dir}/compiled_all_flagged_cases.{group_name}.tsv", index = False, sep='\t')
 
 if __name__ == '__main__':
     main()

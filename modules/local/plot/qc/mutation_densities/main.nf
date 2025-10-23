@@ -12,13 +12,12 @@ process PLOT_MUTDENSITY_QC {
     val (group_name)
 
     output:
-    path("**.pdf")      , emit: plots
-    path("**.csv")      , emit: tables
+    path("**.pdf")                              , emit: plots
+    path("**.csv")                              , emit: tables
+    path("**compiled_all_flagged_cases*.tsv")   , emit: compiled_flagged
     path "versions.yml" , topic: versions
 
-
     script:
-
     """
     mkdir ${group_name}.plots
     mutation_densities_qc.py \\
