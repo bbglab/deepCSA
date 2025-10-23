@@ -3,10 +3,7 @@ process CREATECAPTUREDPANELS {
     label 'process_single'
     label 'process_medium_high_memory'
 
-    conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-            'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
-            'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
+    container "community.wave.seqera.io/library/bedtools_pybedtools_pandas_pip_pruned:78080da05d53636d"
 
 
     input:
@@ -33,8 +30,8 @@ process CREATECAPTUREDPANELS {
     prefix = "${meta.id}${prefix}"
     """
     create_panel_versions.py \\
-                    ${compact_captured_panel_annotation} \\
-                    ${prefix};
+        --compact-annot-panel-path ${compact_captured_panel_annotation} \\
+        --output ${prefix};
     for captured_panel in \$(ls -l *.tsv | grep -v '^l' | awk '{print \$NF}'); do
         bedtools merge \\
             -i <(

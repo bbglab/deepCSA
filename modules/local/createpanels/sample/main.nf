@@ -23,13 +23,13 @@ process CREATESAMPLEPANELS {
     script:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    // TODO reimplment with click
+    // TODO min_depth should be provided from modules.config
     """
     create_panel4sample.py \\
-                    ${compact_captured_panel_annotation} \\
-                    all_samples.depths.tsv.gz \\
-                    ${prefix} \\
-                    ${min_depth};
+        --compact-annot-panel-path ${compact_captured_panel_annotation} \\
+        --depths-path all_samples.depths.tsv.gz \\
+        --panel-name ${prefix} \\
+        --min-depth ${min_depth}
 
     for sample_panel in \$(ls *${prefix}.tsv ); do
         bedtools merge \\

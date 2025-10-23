@@ -6,8 +6,8 @@ nextflow_pipeline {
     test("Minimal features test run") {
         when {
             params {
-                outdir = "output"
-                input = "/data/bbg/datasets/transfer/ferriol_deepcsa/test/deepCSA_input.bladder_med.small_cohort.med.csv"
+                outdir = "/data/bbg/nobackup2/scratch/deepCSA_tests/automated_tests/output_minimal"
+                input = "/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/deepCSA_input.test_dataset.csv"
                 plot_depths = true
                 signatures  = true
                 profileall  = true
@@ -20,7 +20,8 @@ nextflow_pipeline {
             assert !path("${params.outdir}/mutdensity").exists()
             assert !path("${params.outdir}/omega").exists()
             assert !path("${params.outdir}/oncodrivefml").exists()
-            assert !path("${params.outdir}/oncodrive3d").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()            
+            assert snapshot(path("${params.outdir}/computeprofile/all_samples.all.profile.tsv")).match()
         }
     }
 
