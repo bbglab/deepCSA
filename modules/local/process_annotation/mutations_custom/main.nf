@@ -19,7 +19,7 @@ process CUSTOM_MUTATION_PROCESSING {
     script:
     """
     mutations_custom_processing.py \\
-        --mutations-annotated ${mutations_annotated} \\
+        --mutations-file ${mutations_annotated} \\
         --custom-regions ${custom_regions} \\
         --output ${mutations_annotated.getBaseName()}.custom.tsv ;
 
