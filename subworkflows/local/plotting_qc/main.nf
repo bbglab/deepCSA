@@ -1,6 +1,6 @@
 
-    include { PLOT_MUTDENSITY_QC    as PLOTMUTDENSITYQC     } from '../../../modules/local/plot/qc/mutation_densities/main'
-    include { ANNOTATE_OMEGA_QC     as APPLYOMEGAQC         } from '../../../modules/local/plot/qc/annotate_omega/main'
+include { PLOT_MUTDENSITY_QC    as PLOTMUTDENSITYQC     } from '../../../modules/local/plot/qc/mutation_densities/main'
+include { ANNOTATE_OMEGA_QC     as APPLYOMEGAQC         } from '../../../modules/local/plot/qc/annotate_omega/main'
 
 
 workflow PLOTTING_QC {
