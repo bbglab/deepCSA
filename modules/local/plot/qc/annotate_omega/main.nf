@@ -1,0 +1,43 @@
+process ANNOTATE_OMEGA_QC {
+
+    tag "all_samples"
+    label 'process_low'
+
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+
+    input:
+    path (all_omegas)
+    path (compiled_flagged_cases)
+
+    output:
+    path("*flagged_annotated.tsv")  , emit: all_omegas_annotated
+    path("*flagged.tsv")            , emit: flagged_cases
+    path("*.png")                   , emit: plots
+    path "versions.yml"             , topic: versions
+
+    script:
+    """
+    ls ${compiled_flagged_cases} > compiled_flagging_cases.txt;
+
+    annotate_omega_failing.py \\
+                    --omegas-file ${all_omegas} \\
+                    --compiled-flagged-files compiled_flagging_cases.txt \\
+                    --output omega.flagged_annotated.tsv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
+    """
+
+    stub:
+    def prefix = task.ext.prefix ?: "all_samples"
+    """
+    touch ${prefix}.pdf
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
+    """
+}
