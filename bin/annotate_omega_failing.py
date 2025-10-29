@@ -46,19 +46,6 @@ def load_flagged_tables(paths: List[Path]) -> Tuple[pd.DataFrame, pd.DataFrame]:
     return syn_df, npa_df
 
 
-def parse_flag_pairs_from_id(id_str: str) -> Tuple[Optional[str], Optional[str]]:
-    """Try to extract (sample, gene) or (gene, sample) from id string with separators.
-    Returns (sample, gene) where either may be None.
-    """
-    for sep in [":", "|", ",", "-"]:
-        if sep in id_str:
-            parts = [p.strip() for p in id_str.split(sep) if p.strip()]
-            if len(parts) == 2:
-                # Try both orders: (sample,gene) and (gene,sample). We'll return both
-                return parts[0], parts[1]
-    return None, None
-
-
 def plot_flagged_summary(syn_flagged: pd.DataFrame, npa_flagged: pd.DataFrame, output_prefix: str = 'flagged_gene', top_n: int = 50) -> None:
     """Plot stacked bar summaries of flagged genes for synonymous and non-protein-affecting.
 
