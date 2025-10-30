@@ -1,6 +1,6 @@
 
-include { PLOT_MUTDENSITY_QC                   as PLOTMUTDENSITYQC                    } from '../../../modules/local/plot/qc/mutation_densities/main'
-
+include { PLOT_MUTDENSITY_QC    as PLOTMUTDENSITYQC     } from '../../../modules/local/plot/qc/mutation_densities/main'
+include { ANNOTATE_OMEGA_QC     as APPLYOMEGAQC         } from '../../../modules/local/plot/qc/annotate_omega/main'
 
 
 workflow PLOTTING_QC {
@@ -10,6 +10,7 @@ workflow PLOTTING_QC {
     all_mutdensities
     // all_samples_depth
     // all_groups
+    all_omegas
     panel
     groups_definition
     group_name
@@ -41,6 +42,7 @@ workflow PLOTTING_QC {
     //          truncating
     //          missense
 
+    APPLYOMEGAQC(all_omegas, PLOTMUTDENSITYQC.out.compiled_flagged.collect())
 
     emit:
     mutdensity_plots    = PLOTMUTDENSITYQC.out.plots
