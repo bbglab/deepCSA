@@ -562,7 +562,7 @@ workflow DEEPCSA{
                         )
     }
 
-    if ( run_mutdensity && params.omega ){
+    if ( params.omega ){
         // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGQC(
                         // positive_selection_results_ready,
