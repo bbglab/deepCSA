@@ -113,12 +113,12 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
 @click.command()
 @click.option('--mutations-file', required=True, type=click.Path(exists=True), help='Input mutations summary file (TSV)')
 @click.option('--custom-regions-file', required=True, type=click.Path(exists=True), help='Custom regions file (TSV)')
-@click.option('--output', required=True, type=click.Path(), help='Output file for customized mutations (TSV)')
-def main(mutations_file, custom_regions_file, output):
+@click.option('--output-file', required=True, type=click.Path(), help='Output file for customized mutations (TSV)')
+def main(mutations_file, custom_regions_file, output_file):
     """
     Customize mutation annotations using a custom regions file.
     """
-    customize_annotations(mutations_file, custom_regions_file, output)
+    customize_annotations(mutations_file, custom_regions_file, output_file)
 
 if __name__ == '__main__':
     main()

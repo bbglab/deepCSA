@@ -19,9 +19,9 @@ process CUSTOM_MUTATION_PROCESSING {
     script:
     """
     mutations_custom_processing.py \\
-        --mutations-annotated ${mutations_annotated} \\
-        --custom-regions ${custom_regions} \\
-        --output ${mutations_annotated.getBaseName()}.custom.tsv ;
+        --mutations-file ${mutations_annotated} \\
+        --custom-regions-file ${custom_regions} \\
+        --output-file ${mutations_annotated.getBaseName()}.custom.tsv ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

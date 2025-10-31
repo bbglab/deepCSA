@@ -560,13 +560,14 @@ workflow DEEPCSA{
                         DNA2PROTEINMAPPING.out.depths_exons_positions.first(),
                         group_keys_ch
                         )
-    }    
-    
-    if ( run_mutdensity ){
+    }
+
+    if ( params.omega ){
         // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGQC(
                         // positive_selection_results_ready,
                         all_mutdensities_file.first(),
+                        OMEGA.out.all_compiled.first(),
                         // site_comparison_results,
                         // ANNOTATEDEPTHS.out.all_samples_depths,
                         // TABLE2GROUP.out.json_allgroups,
