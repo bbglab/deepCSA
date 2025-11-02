@@ -9,20 +9,17 @@ workflow DEPTH_ANALYSIS{
 
     main:
 
+    if (params.use_custom_depths) {
+        output_depths = Channel.fromPath( params.custom_depths_table, checkIfExists: true).map{ path -> [ [id: "all_samples"], path ] }.first()
+    } else {
+        // Join all samples and put them in a channel to be summarized together
+        bam_list.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ combined_bams }
 
-    // Join all samples and put them in a channel to be summarized together
-    bam_list.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ combined_bams }
-
-    // Create a table with the depth per positions across samples
-    COMPUTEDEPTHS(combined_bams, custom_bed)
-
-    // MAYBE: create different versions of the depth table according to the different panels
-    // PROCESSDEPTHSTABLE()
-
-    // Create depth stats
-    // PLOTDEPTHS()
+        // Create a table with the depth per positions across samples
+        COMPUTEDEPTHS(combined_bams, custom_bed)
+        output_depths = COMPUTEDEPTHS.out.depths
+    }
 
     emit:
-    depths   = COMPUTEDEPTHS.out.depths   // channel: [ val(meta), file(depths) ]
-    // plots    = PLOTDEPTHS.out.plots       // idk how this is output but put it here to remember
+    depths   = output_depths
 }
