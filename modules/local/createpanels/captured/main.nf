@@ -36,7 +36,8 @@ process CREATECAPTUREDPANELS {
         bedtools merge \\
             -i <(
                 tail -n +2 \$captured_panel | \\
-                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | uniq
+                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | \\
+                sort -k1,1 -k2,2n | uniq
             ) > \${captured_panel%.tsv}.bed;
     done
 

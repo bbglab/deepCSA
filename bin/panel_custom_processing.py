@@ -39,7 +39,8 @@ def load_chr_data_chunked(filepath, chrom, chunksize=1_000_000):
 
 
 def customize_panel_regions(VEP_output_file, custom_regions_file, customized_output_annotation_file,
-                            simple = True
+                            simple = True,
+                            chr_chunk_size = 1_000_000
                             ):
     """
     Modifies annotations in a VEP output file based on custom genomic regions.
@@ -68,7 +69,7 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
         try:
             if row["CHROM"] != current_chr:
                 current_chr = row["CHROM"]
-                chr_data = load_chr_data_chunked(VEP_output_file, current_chr)
+                chr_data = load_chr_data_chunked(VEP_output_file, current_chr, chunksize=chr_chunk_size)
 
                 print("Updating chromosome to:", current_chr)
 
@@ -153,8 +154,9 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
 @click.option('--custom-regions-file', required=True, type=click.Path(exists=True), help='Input custom regions file (TSV)')
 @click.option('--customized-output-annotation-file', required=True, type=click.Path(), help='Output annotation file (TSV)')
 @click.option('--simple', is_flag=True, help='Use simple annotation')
-def main(vep_output_file, custom_regions_file, customized_output_annotation_file, simple):
-    customize_panel_regions(vep_output_file, custom_regions_file, customized_output_annotation_file, simple)
+@click.option('--chr-chunk-size', type=int, default=1000000, show_default=True, help='Chunk size for per-chromosome loading')
+def main(vep_output_file, custom_regions_file, customized_output_annotation_file, simple, chr_chunk_size):
+    customize_panel_regions(vep_output_file, custom_regions_file, customized_output_annotation_file, simple, chr_chunk_size)
 
 if __name__ == '__main__':
     main()

@@ -186,13 +186,13 @@ def process_chunk(chunk, chosen_assembly, using_canonical):
 
 def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file,
                                     assembly = 'hg38',
-                                    using_canonical = True
+                                    using_canonical = True,
+                                    chunk_size = 100000
                                     ):
     """
     Process VEP output and summarize annotations for a panel using chunked reading.
     """
     chosen_assembly = assembly_name2function[assembly]
-    chunk_size = 100000
 
     reader = pd.read_csv(VEP_output_file, sep="\t", header=None, na_values=custom_na_values, chunksize=chunk_size)
     
@@ -213,9 +213,10 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
 @click.command()
 @click.option('--vep_output_file', type=click.Path(exists=True), required=True, help='Path to the VEP output file.')
 @click.option('--assembly', type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), default='hg38', help='Genome assembly.')
-@click.option('--output_file', type=click.Path(), required=True, help='Path to the output annotated file.')
+@click.option('--output_file', type=click.Path(), required=True, help='Path to the output annotated file (prefix without .tsv).')
 @click.option('--only_canonical', is_flag=True, default=False, help='Use only canonical transcripts.')
-def main(vep_output_file, assembly, output_file, only_canonical):
+@click.option('--chunk-size', type=int, default=100000, show_default=True, help='Chunk size for streamed reading of VEP output.')
+def main(vep_output_file, assembly, output_file, only_canonical, chunk_size):
     """
     CLI entry point for processing VEP annotations and summarizing them for a panel.
     """
@@ -223,7 +224,8 @@ def main(vep_output_file, assembly, output_file, only_canonical):
     click.echo(f"Using assembly: {assembly}")
     click.echo(f"Output file: {output_file}")
     click.echo(f"Using only canonical transcripts: {only_canonical}")
-    vep2summarizedannotation_panel(vep_output_file, output_file, assembly, only_canonical)
+    click.echo(f"Chunk size: {chunk_size}")
+    vep2summarizedannotation_panel(vep_output_file, output_file, assembly, only_canonical, chunk_size)
     click.echo("Annotation processing completed.")
 
 
