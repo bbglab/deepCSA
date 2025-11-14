@@ -1,0 +1,16 @@
+sample,vcf,bam
+B10,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B10.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B10.sorted.bam
+B11,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B11.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B11.sorted.bam
+B12,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B12.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B12.sorted.bam
+B13,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B13.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B13.sorted.bam
+B1,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B1.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B1.sorted.bam
+B2a,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B2a.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B2a.sorted.bam
+B2b,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B2b.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B2b.sorted.bam
+B3,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B3.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B3.sorted.bam
+B4a,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B4a.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B4a.sorted.bam
+B4b,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B4b.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B4b.sorted.bam
+B5,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B5.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B5.sorted.bam
+B6,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B6.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B6.sorted.bam
+B7,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B7.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B7.sorted.bam
+B8,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B8.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B8.sorted.bam
+B9,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/mutations_vcf/B9.duplex.filtered.vcf,/data/bbg/datasets/pipelines/deepCSA/test_datasets/deepUMIcaller_outputs/sortbamduplexcons/B9.sorted.bam
