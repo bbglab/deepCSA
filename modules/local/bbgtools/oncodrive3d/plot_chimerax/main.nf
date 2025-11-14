@@ -2,12 +2,6 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     tag "$meta.id"
     label 'process_medium'
 
-    
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
-
     // TODO pending to push the container somewhere and be able to retrieve it
     container 'docker.io/spellegrini87/oncodrive3d_chimerax:latest'
 
@@ -22,14 +16,13 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     tuple val(meta), path("**.log")                               , emit: log
     path "versions.yml"                                           , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
 
-    // Increase/decreaase pixel_size to decrease/increase resolution and speed/slow png generation
+    // Increase/decrease pixel_size to decrease/increase resolution and speed/slow png generation
+    // TODO revise argument definition
     """
     oncodrive3D chimerax-plot -o $prefix \\
                               -g $genes_csv \\
@@ -44,19 +37,19 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        oncodrive3D: 2.0
+        oncodrive3D: \$(oncodrive3d --version | rev | cut -d ' ' -f 1 | rev )
     END_VERSIONS
     """
 }

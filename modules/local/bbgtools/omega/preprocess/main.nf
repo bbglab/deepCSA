@@ -1,7 +1,7 @@
 process OMEGA_PREPROCESS {
     tag "$meta.id"
 
-    container 'docker.io/ferriolcalvet/omega:20250113'
+    container 'docker.io/ferriolcalvet/omega:20250716'
 
     input:
     tuple val(meta) , path(mutations), path(depths), path(mutation_profile)
@@ -11,16 +11,15 @@ process OMEGA_PREPROCESS {
 
 
     output:
-    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv") , emit: mutabs_n_mutations_tsv
-    tuple val(meta), path("syn_muts.*.tsv")     , emit: syn_muts_tsv
-    path "versions.yml"                         , topic: versions
+    tuple val(meta), path("mutability_per_sample_gene_context.*.tsv"), path("mutations_per_sample_gene_impact_context.*.tsv")   , emit: mutabs_n_mutations_tsv
+    tuple val(meta), path("syn_muts.*.tsv")                                                                                     , emit: syn_muts_tsv
+    path "versions.yml"                                                                                                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+
     // TODO revise this fix
     def sample_name = prefix.tokenize('.')[0]
     def global_loc = task.ext.global_loc ? "--absent-synonymous infer_global_custom  --mutational-profile-global-file global_mutprofile.tsv --synonymous-mutrates-file ${syn_muts_global}" : "--absent-synonymous ignore"
@@ -36,7 +35,6 @@ process OMEGA_PREPROCESS {
                         --mutational-profile-file ${mutation_profile} \\
                         --single-sample ${sample_name} \\
                         ${global_loc}
-    # $args -c $task.cpus
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         omega: 1.0
@@ -44,8 +42,9 @@ process OMEGA_PREPROCESS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 
@@ -67,4 +66,4 @@ process OMEGA_PREPROCESS {
 //                      --mutational-profile-global-file P19_0033_BTR_01.all.profile.tsv
 //                      --single-sample all_samples
 //                      --absent-synonymous infer_global_custom
-//                      --synonymous-mutrates-file mutrates_per_gene.tsv
+//                      --synonymous-mutrates-file mutdensities_per_gene.tsv

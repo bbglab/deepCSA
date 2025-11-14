@@ -5,7 +5,7 @@ process OMEGA_MUTABILITIES {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:20250121'
+    container 'docker.io/ferriolcalvet/omega:20250716'
 
     input:
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
@@ -16,11 +16,10 @@ process OMEGA_MUTABILITIES {
     tuple val(meta), path("mutabilities_per_site.*.tsv.gz") , emit: mutabilities
     path "versions.yml"                                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
 
     mkdir groups;
@@ -46,7 +45,8 @@ process OMEGA_MUTABILITIES {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch mutabilities_per_site.${prefix}.tsv.gz
 

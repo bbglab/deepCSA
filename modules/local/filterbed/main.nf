@@ -1,13 +1,8 @@
 process FILTERBED {
-    // TODO
-    // reimplement it in a way that uses a BED file to know which mutations are inside
-    // the regions and which ones are outside this way we avoid having to load too many
-    // things in python that might slow things down
-    // Look at the low mappability or low complexity filtering of the deepUMIcaller pipeline
 
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta)     , path(maf)
@@ -17,13 +12,17 @@ process FILTERBED {
     tuple val(meta), path("*.tsv.gz")  , emit: maf
     path "versions.yml"                , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def filtername = task.ext.filtername ?: "covered"
+    def filtername = task.ext.filtername ?: ""
+    def positive_flag = task.ext.positive ? "--positive" : ""
+
     """
-    filterbed.py ${maf} ${bedfile} ${filtername};
+    filterbed.py \\
+        --sample-maf-file ${maf} \\
+        --bedfile ${bedfile} \\
+        --filtername ${filtername} \\
+        ${positive_flag};
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -32,8 +31,8 @@ process FILTERBED {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.vep.summary.tab.gz
 

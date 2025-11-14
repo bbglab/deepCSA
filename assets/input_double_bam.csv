@@ -1,3 +1,0 @@
-sample,vcf,bam,pileup_bam,pileup_ind
-K_5_1_A_1,/data/bbg/datasets/transfer/ferriol_deepcsa/K_5_1_A_1.high.filtered.vcf,/data/bbg/datasets/transfer/ferriol_deepcsa/K_5_1_A_1.sorted.bam,/data/bbg/datasets/transfer/ferriol_deepcsa/allmolecules/K_5_1_A_1.sorted.bam,/data/bbg/datasets/transfer/ferriol_deepcsa/allmolecules/K_5_1_A_1.sorted.bam.csi
-K_6_1_A_1,/data/bbg/datasets/transfer/ferriol_deepcsa/K_6_1_A_1.high.filtered.vcf,/data/bbg/datasets/transfer/ferriol_deepcsa/K_6_1_A_1.sorted.bam,/data/bbg/datasets/transfer/ferriol_deepcsa/allmolecules/K_6_1_A_1.sorted.bam,/data/bbg/datasets/transfer/ferriol_deepcsa/allmolecules/K_6_1_A_1.sorted.bam.csi

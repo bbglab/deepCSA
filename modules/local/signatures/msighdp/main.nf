@@ -1,3 +1,8 @@
+////
+// THIS SCRIPT IS CURRENTLY NOT IN USE
+////
+
+
 process MSIGHDP {
     tag "$meta.id"
     label 'process_medium'
@@ -10,7 +15,7 @@ process MSIGHDP {
     output:
     tuple val(meta), path("**.pdf")     , emit: plots
     tuple val(meta), path("**.csv")     , emit: stats
-    path "versions.yml"                 , topic: versions
+    path "versions.yml"                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -20,7 +25,7 @@ process MSIGHDP {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def k_guess = task.ext.k_guess ?: "12"
     """
-    msighdp_run.R \\
+    signatures_msighdp_run.R \\
                 123 \\
                 ${matrix} \\
                 output.${prefix} \\

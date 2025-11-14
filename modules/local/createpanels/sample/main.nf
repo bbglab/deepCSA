@@ -7,9 +7,7 @@ process CREATESAMPLEPANELS {
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
             'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
             'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-    //     'biocontainers/pandas:1.5.2' }"
+
 
     input:
     tuple val(meta) , path(compact_captured_panel_annotation)
@@ -21,18 +19,17 @@ process CREATESAMPLEPANELS {
     path("*.bed")           , emit: sample_specific_panel_bed
     path "versions.yml"     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+    // TODO min_depth should be provided from modules.config
     """
     create_panel4sample.py \\
-                    ${compact_captured_panel_annotation} \\
-                    all_samples.depths.tsv.gz \\
-                    ${prefix} \\
-                    ${min_depth};
+        --compact-annot-panel-path ${compact_captured_panel_annotation} \\
+        --depths-path all_samples.depths.tsv.gz \\
+        --panel-name ${prefix} \\
+        --min-depth ${min_depth}
 
     for sample_panel in \$(ls *${prefix}.tsv ); do
         bedtools merge \\
@@ -51,8 +48,8 @@ process CREATESAMPLEPANELS {
     stub:
     def prefix = task.ext.prefix ?: "TargetRegions"
     """
-    touch *.tsv
-    touch *.bed
+    touch ${prefix}.tsv
+    touch ${prefix}.bed
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

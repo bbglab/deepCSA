@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/dev/nextflow_schema.json",
+    "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/main/nextflow_schema.json",
     "title": "bbglab/deepCSA pipeline parameters",
     "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
     "type": "object",
@@ -94,9 +94,15 @@
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
                 },
-                "features_table_dict": {
+                "features_unique_identifier": {
                     "type": "string",
-                    "description": "String in JSON-like format defining the groups of samples.",
+                    "description": "String defining the column with the unique identifier in the features_table that should include all the names of the samples that want to be used for the analysis.",
+                    "help_text": "This is required when the features_table dataset wants to be used.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "features_groups_list": {
+                    "type": "string",
+                    "description": "String in list format defining the variables that have to be used for grouping samples.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
                     "fa_icon": "far fa-file-code"
                 }
@@ -164,6 +170,31 @@
                 }
             }
         },
+        "custom_depths_table_usage": {
+            "title": "Custom depths table options",
+            "type": "object",
+            "fa_icon": "fas fa-table",
+            "description": "Options to use a precomputed depths table instead of computing depths from BAMs.",
+            "properties": {
+                "use_custom_depths": {
+                    "type": "boolean",
+                    "description": "If true, the pipeline will use a precomputed depths table provided by `custom_depths_table` instead of computing depths from BAM files.",
+                    "default": false,
+                    "fa_icon": "fas fa-toggle-on",
+                    "help_text": "Enable this when you already have a table with per-position depths for the cohort."
+                },
+                "custom_depths_table": {
+                    "type": ["string", "null"],
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "description": "Path to a precomputed depths table file (TSV/CSV), the column names have to be the same as the BAM files names in the input.csv",
+                    "default": null,
+                    "help_text": "Provide the path to the depths table. When `use_custom_depths` is true this parameter must point to the file to be used.",
+                    "fa_icon": "far fa-file-alt"
+                }
+            }
+        },
         "custom_annotation_configs": {
             "title": "Custom annotation configurations",
             "type": "object",
@@ -200,7 +231,16 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to analyze omega hotspots independently?"
                 },
-                "omega_hotspots_bedfile": {
+                "domains_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "description": "Path to domain definition file to use.",
+                    "help_text": "Path to domain definition file to use.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "omega_subgenic_bedfile": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
@@ -274,6 +314,11 @@
                     "description": "Do you want to run omega?",
                     "fa_icon": "fas fa-book"
                 },
+                "omega_multi": {
+                    "type": "boolean",
+                    "description": "Do you want to run omega_multi?",
+                    "fa_icon": "fas fa-book"
+                },
                 "omega_globalloc": {
                     "type": "boolean",
                     "description": "Do you want to run omega with the globalloc mode?",
@@ -297,6 +342,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Define which is the unit of comparison of the per site mutabilities exp. vs obs. The options are: 'site', 'aminoacid', 'aminoacid_change'. You can provide a comma separated list of the preferred options or also all."
                 },
+                "positive_selection_non_protein_affecting": {
+                    "type": "boolean",
+                    "description": "Do you want to run positive selection metrics with non-protein affecting mutational profile?",
+                    "fa_icon": "fas fa-book",
+                    "hidden" : true,
+                    "help_text": "Do you want to run positive selection metrics with non-protein affecting mutational profile?"
+                },
                 "dnds": {
                     "type": "boolean",
                     "description": "Do you want to run dNdScv?",
@@ -307,9 +359,9 @@
                     "description": "Do you want to run signatures?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutationrate": {
+                "mutationdensity": {
                     "type": "boolean",
-                    "description": "Do you want to run mutationrate?",
+                    "description": "Do you want to run mutationdensity?",
                     "fa_icon": "fas fa-book"
                 },
                 "indels": {
@@ -336,6 +388,146 @@
                     "type": "boolean",
                     "description": "Do you want to run plot_depths?",
                     "fa_icon": "fas fa-book"
+                },
+                "plot_only_allsamples": {
+                    "type": "boolean",
+                    "description": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?",
+                    "fa_icon": "fas fa-book",
+                    "default": true,
+                    "help_text": "Do you want to generate summary plots only for the entire cohort (true) or also include the specific subgroups created (false)?"
+                },
+                "regressions": {
+                    "type": "boolean",
+                    "description": "Do you want to run regression analysis?",
+                    "fa_icon": "fas fa-book"
+                }
+            }
+        },
+        "regressions_config": {
+            "title": "Parameters needed to run the regressions",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Provides all the parameters needed to run the regression module",
+            "properties": {
+                "mutdensity_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Modality attributes for regression analysis with the mutation density",
+                    "help_text": "If you want to run regressions with the mutation density, include the modality attributes separated by a comma. Allowed values: mutdensity,all,nonproteinaffecting,proteinaffecting,alltypes,snv,complex-deletion-insertion-mnv",
+                    "fa_icon": "far fa-file-code"
+                },
+                "omega_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Modality attributes for regression analysis with omega",
+                    "help_text": "If you want to run regressions with omega values, include the modality attributes separated by a comma. Allowed values: omega,meandnds,dnds,allprof,nonprotaffprof,uniquemuts,multimuts,significant,nosignificant,bayes,mle",
+                    "fa_icon": "far fa-file-code"
+                },
+                "oncodrivefml_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Modality attributes for regression analysis with oncodrivefml",
+                    "help_text": "If you want to run regressions with oncodrivefml, include the modality attributes separated by a comma. Allowed values: oncodrivefml,zscore,diffobsvsexp,allprof,nonprotaffprof,significant,nosignificant",
+                    "fa_icon": "far fa-file-code"
+                },
+                "responses_subset_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Set of responses for which to run the analysis",
+                    "help_text": "If you want to run the analysis only for a set of responses, include them separated by a comma",
+                    "fa_icon": "far fa-file-code"
+                },
+                "responses_excluded_regressions": {
+                    "type": "object",
+                    "mimetype": "text/plain",
+                    "description": "Set of responses for which not to run the analysis in a specific method-metric combination",
+                    "help_text": "If you want to exclude from the analysis a subset of responses, add in a dictionary format the method-metric and the responses separated by comma",
+                    "fa_icon": "far fa-file-code"
+                },
+                "samples_subset_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Set of samples for which to run the analysis",
+                    "help_text": "If you want to run the analysis only for a set of samples, include them separated by a comma",
+                    "fa_icon": "far fa-file-code"
+                },
+                "predictors_file_regressions": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "exists": true,
+                    "description": "File with the predictors and a value per sample. Predictors for categorical variables should be binary codified as (0: baseline condition; 1: alternative condition).",
+                    "help_text": "Provide here the path to the file containing the samples' values for each predictor. Categorical predictors should be binary codified (0: baseline condition; 1: alternative condition).",
+                    "fa_icon": "far fa-file-code"
+                },
+                "predictors_plot_config_regressions": {
+                    "type": "object",
+                    "mimetype": "text/plain",
+                    "description": "Dictionary containing the plot configuration for each predictor variable. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
+                    "help_text": "Provide here the configuration to display the results in the plot. Format: {predictor_name_in_file: [color, predictor_title4plot]}",
+                    "fa_icon": "far fa-file-code"
+                },
+                "random_effects_vars_regressions": {
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Variable to be used as random effect in all the models",
+                    "help_text": "If you want to run a mixed-effects linear model, provide here the variable to use as random effect",
+                    "fa_icon": "far fa-file-code"
+                },
+                "multipletesting_join_regressions": {
+                    "type": "object",
+                    "mimetype": "text/plain",
+                    "description": "Rules to join metrics tables for its p-values to be corrected together after multiple testing",
+                    "help_text": "If you need to correct for multiple testing metrics coming in independent tables, include the multiple testing rules here. Format: {multipletest_rule#: []}",
+                    "fa_icon": "far fa-file-code"
+                },
+                "multivariate_rules_regressions": {
+                    "type": "object",
+                    "mimetype": "text/plain",
+                    "description": "User rules to choose which variables to run together in the multivariate regressions",
+                    "help_text": "Provide here any rules you would like to additionally apply to test variables together in the multivariate model. Otherwise, only significant variables in the univariate analysis will be included. Format: {multirule#: 'variable1, variable2'}",
+                    "fa_icon": "far fa-file-code"
+                },
+                "response_subplots": {
+                    "type": "boolean",
+                    "description": "Whether to create a grid in which each subplot contains the results per response and, if make2=True, another one with the results per predictor",
+                    "help_text": "Do you want to create one subplot per response/predictor variable?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "total_plot": {
+                    "type": "boolean",
+                    "description": "Whether to create a grid in which the only subplot contains the results of the total response variable",
+                    "help_text": "Do you want to create a single subplot with the total response variable?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "response_and_total_subplots": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to create a grid in which each subplot contains the results per response (including the total response variable) and, if make2=True, another one with the results per predictor",
+                    "help_text": "Do you want to create one subplot per response/predictor variable, including one for the total response?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "make2": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to generate a second grid in which each subplot contains the results of each predictor variable",
+                    "help_text": "Do you want to create an additional grid to plot the results by predictor variable?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "correct_pvals": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to apply multiple testing correction of the p-values. Does the correction with the false discovery rate (FDR)",
+                    "help_text": "Do you want to correct the p-values for multiple testing?",
+                    "fa_icon": "far fa-file-code"
+                },
+                "sign_threshold": {
+                    "type": "number",
+                    "default": 0.05,
+                    "description": "FDR threshold to consider a value statistically significant.",
+                    "help_text": "Which should be the FDR threshold to consider a value significant?",
+                    "fa_icon": "far fa-file-code"
+
                 }
             }
         },
@@ -376,14 +568,8 @@
                 "confidence_level": {
                     "type": "string",
                     "description": "Duplex reads confidence level",
-                    "default": "high",
-                    "fa_icon": "fas fa-book",
-                    "help_text": ""
-                },
-                "all_duplex_counts": {
-                    "type": "boolean",
-                    "description": "Whether the VCFs provided have been complmented with the counts of all duplex+non-duplex molecules.",
-                    "fa_icon": "fas fa-question-circle"
+                    "default": "med",
+                    "fa_icon": "fas fa-book"
                 },
                 "pileup_all_duplex": {
                     "type": "boolean",
@@ -409,6 +595,25 @@
                     "type": "integer",
                     "description": "Depth threshold for the consensus panel",
                     "default": 500,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "consensus_compliance": {
+                    "type": "number",
+                    "description": "Threshold on proportion of samples that must meet the consensus depth requirement",
+                    "default": 0.8,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "min_muts_per_sample": {
+                    "type": "number",
+                    "description": "Threshold on minimum number of mutations that a sample needs to have for doing a per-sample analysis of that specific case",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "selected_genes": {
+                    "type": "string",
+                    "description": "Comma-separated list of genes to focus the analysis",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -446,6 +651,31 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "gnomad_af_threshold": {
+                    "type": "number",
+                    "description": "Allele frequency threshold for filtering variants based on gnomAD data.",
+                    "default": 0.001,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "contamination": {
+                    "type": "boolean",
+                    "description": "Do you want to run the contamination analysis?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "downsample": {
+                    "type": "boolean",
+                    "description": "Decide if you want to do downsampling of the mutations and depth to a given proportion of the maximum. Uniform across samples.",
+                    "fa_icon": "fas fa-book"
+                },
+                "downsample_proportion": {
+                    "type": "number",
+                    "description": "Proportion of the depth to be kept when downsampling.",
+                    "default": 1,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "blacklist_mutations": {
                     "type": "string",
                     "format": "file-path",
@@ -456,8 +686,18 @@
                 },
                 "filter_criteria": {
                     "type": "array",
-                    "description": "List of filters to apply for the somatic mutations.",
+                    "description": "List of filters to apply for removing the artifactual mutations.",
                     "fa_icon": "far fa-file-code"
+                },
+                "filter_criteria_somatic": {
+                    "type": "array",
+                    "description": "List of filters to apply for getting only somatic mutations.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "no_filter": {
+                    "type": "boolean",
+                    "description": "Activate it when you only want to use the FILTER field for filtering somatic mutations.",
+                    "fa_icon": "fas fa-book"
                 }
             }
         },
@@ -489,8 +729,8 @@
                 "exclude_subgroups": {
                     "type": "string",
                     "default": "[\\'UV_signatures\\', \\'MMR_deficiency_signatures\\', \\'POL_deficiency_signatures\\', \\'HR_deficiency_signatures\\',\\'BER_deficiency_signatures\\', \\'Artifact_signatures\\', \\'Lymphoid_signatures\\']",
-                    "description": "Path to file containing the trinucleotide counts of the whole genome that is being used.",
-                    "help_text": "This is being used for renormalizing the mutation counts seen in the panel to the counts of the whole genome.",
+                    "description": "List-like (python) string with the different groups of signatures to be removed from SigProfilerAssignment.",
+                    "help_text": "List-like (python) string with the different groups of signatures to be removed from SigProfilerAssignment.",
                     "fa_icon": "far fa-file-code"
                 },
                 "datasets3d": {
@@ -534,7 +774,21 @@
                     "help_text": "Path to the dNdScv covariates file for all genes in the corresponding genome. See https://github.com/im3sanger/dndscv",
                     "fa_icon": "far fa-file-code",
                     "default": "covariates_hg19_hg38_epigenome_pcawg.rda"
-                }
+                },
+                "nanoseq_snp": {
+                    "type": "string",
+                    "description": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with common SNPs developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+                },
+                "nanoseq_noise": {
+                    "type": "string",
+                    "description": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "help_text": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
+                    "fa_icon": "far fa-file-code",
+                    "default": null
+            }
             }
         },
         "ensembl_vep_options": {
@@ -618,6 +872,78 @@
                     "description": "Institutional config description.",
                     "hidden": true,
                     "fa_icon": "fas fa-users-cog"
+                }
+            }
+        },
+        "signature_extraction_parameters": {
+            "title": "HDP signature extraction config options",
+            "type": "object",
+            "description": "Parameters for controlling the analysis behavior",
+            "properties": {
+                "n_mut_cutoff": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Mutation cutoff threshold"
+                },
+                "sig_activity_threshold": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Signature activity threshold"
+                },
+                "cohort_threshold": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Cohort threshold"
+                },
+                "burnin": {
+                    "type": "integer",
+                    "default": 10000,
+                    "description": "Number of burn-in iterations"
+                },
+                "n_posterior": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Number of posterior samples"
+                },
+                "space": {
+                    "type": "integer",
+                    "default": 200,
+                    "description": "Space parameter"
+                },
+                "cpiter": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "Number of CP iterations"
+                },
+                "iterations": {
+                    "type": "integer",
+                    "default": 15,
+                    "description": "Number of iterations"
+                },
+                "cosine_sim_threshold": {
+                    "type": "number",
+                    "default": 0.9,
+                    "description": "Cosine similarity threshold"
+                },
+                "max_iter_em": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Maximum number of EM iterations"
+                },
+                "em_frac_threshold": {
+                    "type": "number",
+                    "default": 0.1,
+                    "description": "EM fraction threshold"
+                },
+                "norm_file": {
+                    "type": "string",
+                    "default": "NA",
+                    "description": "Normalization file"
+                },
+                "prior_file": {
+                    "type": "string",
+                    "default": "NA",
+                    "description": "Prior file"
                 }
             }
         },
@@ -776,6 +1102,9 @@
             "$ref": "#/$defs/tool_execution_configs"
         },
         {
+            "$ref": "#/$defs/regressions_config"
+        },
+        {
             "$ref": "#/$defs/generic_options"
         },
         {
@@ -792,6 +1121,9 @@
         },
         {
             "$ref": "#/$defs/institutional_config_options"
+        },
+        {
+            "$ref": "#/$defs/signature_extraction_parameters"
         },
         {
             "$ref": "#/$defs/max_job_request_options"

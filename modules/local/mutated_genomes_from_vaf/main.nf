@@ -9,14 +9,13 @@ process MUTATED_GENOMES_FROM_VAF {
     tuple val(meta) , path(mutations), path(omegas)
 
     output:
-    tuple val(meta), path("*.covered_genomes_summary.tsv") , emit: mutated_gen_sample
-    path  "versions.yml"                                   , topic: versions
+    tuple val(meta), path("*.covered_genomes_summary.tsv"), optional: true, emit: mutated_gen_sample
+    path  "versions.yml"                                                  , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def recode = task.ext.recode_list ? "--recoded-genes ${task.ext.recode_list}" : ""
     """
     mutgenomes_driver_priority.py \\

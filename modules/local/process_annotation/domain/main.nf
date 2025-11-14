@@ -2,7 +2,7 @@ process DOMAIN_ANNOTATION {
 
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(panel_annotated)
@@ -10,10 +10,9 @@ process DOMAIN_ANNOTATION {
 
     output:
     path("*.domains.bed4.bed")  , emit: domains_bed
+    path("domains_info.tsv")    , emit: domains_tsv
     path  "versions.yml"        , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     """

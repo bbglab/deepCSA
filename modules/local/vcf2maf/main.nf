@@ -1,7 +1,7 @@
 process VCF2MAF {
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(vcf)
@@ -11,17 +11,17 @@ process VCF2MAF {
     tuple val(meta), path("*.tsv.gz")  , emit: maf
     path "versions.yml"                , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def batch = task.ext.batch ?: "${meta.batch}"
-    def level = task.ext.level ?: "high"
-    def all_molecules_dp = task.ext.all_molecules_dp ?: "false"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
-    vcf2maf.py ${vcf} ${prefix} ${batch} ${level} ${annotation} ${all_molecules_dp};
+    vcf2maf.py  \\
+        --vcf ${vcf} \\
+        --sampleid ${prefix} \\
+        --annotation_file ${annotation} \\
+        ${args}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -30,8 +30,8 @@ process VCF2MAF {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.vep.summary.tab.gz
 

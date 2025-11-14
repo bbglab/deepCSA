@@ -24,16 +24,14 @@ process CREATECAPTUREDPANELS {
     path("*.synonymous.bed")                , emit: captured_panel_synonymous_bed
     path "versions.yml"                    , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     create_panel_versions.py \\
-                    ${compact_captured_panel_annotation} \\
-                    ${prefix};
+        --compact-annot-panel-path ${compact_captured_panel_annotation} \\
+        --output ${prefix};
     for captured_panel in \$(ls -l *.tsv | grep -v '^l' | awk '{print \$NF}'); do
         bedtools merge \\
             -i <(
@@ -49,7 +47,8 @@ process CREATECAPTUREDPANELS {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.all.tsv
     touch ${prefix}.protein_affecting.tsv

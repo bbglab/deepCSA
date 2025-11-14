@@ -3,7 +3,7 @@ process COMPUTE_MATRIX {
     tag "$meta.id"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(mut_files)
@@ -15,12 +15,11 @@ process COMPUTE_MATRIX {
     tuple val(meta), path("*.per_sample.sigprofiler")  , optional:true, emit: per_sample_sigprof
     path "versions.yml"                                               , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     mut_profile.py matrix \\
                     --sample_name ${prefix} \\
@@ -34,8 +33,8 @@ process COMPUTE_MATRIX {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.matrix.tsv
 

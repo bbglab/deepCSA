@@ -14,12 +14,11 @@ process COMPUTEDEPTHS {
     tuple val(meta), path("*.tsv.gz")   , emit: depths
     path "versions.yml"                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def restrict_to_region = task.ext.restrict_panel ? "-b ${custombed}" : ""
 
 
@@ -46,8 +45,8 @@ process COMPUTEDEPTHS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.depths.tsv.gz
 

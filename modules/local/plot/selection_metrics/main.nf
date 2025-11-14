@@ -3,32 +3,25 @@ process PLOT_SELECTION_METRICS {
     tag "$meta.id"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(results_files)
     path (gene_data_df)
 
     output:
-    tuple val(meta), path("**.pdf")  , emit: plots
-    path "versions.yml"              , topic: versions
+    tuple val(meta), path("**.pdf"), optional : true    , emit: plots
+    path "versions.yml"                                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def output_prefix = task.ext.output_prefix ?: ""
-    def filters = task.ext.filters ?: ""
-    def requested_plots = task.ext.plots ?: ""
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
+    mkdir ${prefix}.plots
     plot_selectionsideplots.py \\
-                    ${prefix} \\
-                    ${requested_plots} \\
-                    ${gene_data_df} \\
-                    ${prefix}${output_prefix} \\
-                    ${args}
+                    --sample_name ${prefix} \\
+                    --outdir ${prefix}.plots
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -37,11 +30,10 @@ process PLOT_SELECTION_METRICS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def output_prefix = task.ext.output_prefix ?: ""
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}${output_prefix}.pdf
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

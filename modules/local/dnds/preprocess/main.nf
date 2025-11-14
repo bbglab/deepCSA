@@ -4,7 +4,7 @@ process PREPROCESS_DNDS {
     label 'time_low'
     label 'process_high_memory'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(depths)
@@ -15,14 +15,15 @@ process PREPROCESS_DNDS {
     tuple val(meta), path("*.depths_input.tsv") , emit: depths
     path "versions.yml"                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
-    dNdS_preprocess.py ${depths} ${annotated_panel} ${prefix}.depths_input.tsv
+    dNdS_preprocess.py \\
+        --depths-path ${depths} \\
+        --annot-panel-path ${annotated_panel} \\
+        --output ${prefix}.depths_input.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         omega: 1.0
@@ -30,8 +31,8 @@ process PREPROCESS_DNDS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

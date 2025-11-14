@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-
+import click
 import pandas as pd
 import numpy as np
 import sys
@@ -8,17 +8,16 @@ import gc
 
 from itertools import product
 from bgreference import hg38, hg19, mm10, mm39
-
-from utils import vartype
-from utils_context import canonical_channels, transform_context
+from utils_context import transform_context
 from utils_impacts import *
 from read_utils import custom_na_values
 
-assembly_name2function = {"hg38": hg38,
-                            "hg19": hg19,
-                            "mm10": mm10,
-                            "mm39": mm39
-                            }
+assembly_name2function = {
+    "hg38": hg38,
+    "hg19": hg19,
+    "mm10": mm10,
+    "mm39": mm39
+}
 
 
 def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
@@ -139,7 +138,10 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
 
 
 def process_chunk(chunk, chosen_assembly, using_canonical):
-    print("all possible sites loaded")
+    """
+    Process a single chunk of VEP annotation data.
+    """
+    print("Processing chunk...")
     chunk.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Feature', 'Consequence', 'Protein_position', 'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
 
     if using_canonical:
@@ -187,8 +189,7 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
                                     using_canonical = True
                                     ):
     """
-    # TODO
-    explain what this function does
+    Process VEP output and summarize annotations for a panel using chunked reading.
     """
     chosen_assembly = assembly_name2function[assembly]
     chunk_size = 100000
@@ -209,19 +210,24 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
             gc.collect()
 
 
+@click.command()
+@click.option('--vep_output_file', type=click.Path(exists=True), required=True, help='Path to the VEP output file.')
+@click.option('--assembly', type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), default='hg38', help='Genome assembly.')
+@click.option('--output_file', type=click.Path(), required=True, help='Path to the output annotated file.')
+@click.option('--only_canonical', is_flag=True, default=False, help='Use only canonical transcripts.')
+def main(vep_output_file, assembly, output_file, only_canonical):
+    """
+    CLI entry point for processing VEP annotations and summarizing them for a panel.
+    """
+    click.echo(f"Processing VEP output file: {vep_output_file}")
+    click.echo(f"Using assembly: {assembly}")
+    click.echo(f"Output file: {output_file}")
+    click.echo(f"Using only canonical transcripts: {only_canonical}")
+    vep2summarizedannotation_panel(vep_output_file, output_file, assembly, only_canonical)
+    click.echo("Annotation processing completed.")
+
+
 if __name__ == '__main__':
-    # Input
-    # VEP_output_file = f"./test/preprocessing/KidneyPanel.sites.VEP_annotated.tsv"
-    VEP_output_file = sys.argv[1]
-
-    assembly = sys.argv[2]
-
-    # Output
-    # all_possible_sites_annotated_file = "./test/preprocessing/KidneyPanel.sites.bed_panel.annotation_summary.tsv"
-    all_possible_sites_annotated_file = sys.argv[3]
-
-    only_canonical = bool(sys.argv[4])
-
-    vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file, assembly, only_canonical)
+    main()
 
 

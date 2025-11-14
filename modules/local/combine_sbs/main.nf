@@ -2,7 +2,7 @@ process SIGNATURES_PROBABILITIES {
 
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
 
     input:
@@ -12,12 +12,8 @@ process SIGNATURES_PROBABILITIES {
     path ("*.decomposed_probabilities.tsv") , emit: signature_probs
     path "versions.yml"                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     ls ${signature_probabilities} > signature_probs_files.txt
     concat_sbs_probs.py --signature-probabilities signature_probs_files.txt
@@ -29,8 +25,8 @@ process SIGNATURES_PROBABILITIES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.decomposed_probabilities.tsv
 

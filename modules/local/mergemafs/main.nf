@@ -1,13 +1,7 @@
 process MERGE_BATCH {
-    // TODO
-    // reimplement it in a way that uses a BED file to know which mutations are inside
-    // the regions and which ones are outside this way we avoid having to load too many
-    // things in python that might slow things down
-    // Look at the low mappability or low complexity filtering of the deepUMIcaller pipeline
-
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(mafs)
@@ -16,14 +10,12 @@ process MERGE_BATCH {
     tuple val(meta), path("*.cohort.tsv.gz") , emit: cohort_maf
     path "versions.yml"                      , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
-    merge_cohort.py ${prefix}
+    merge_cohort.py --output_file ${prefix}.cohort.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -32,8 +24,6 @@ process MERGE_BATCH {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch all_samples.cohort.tsv.gz
 

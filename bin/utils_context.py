@@ -15,6 +15,20 @@ def canonical_channels():
     return sorted_contexts
 
 
+def triplet_context_iterator():
+    subs = ['C>A', 'C>G', 'C>T', 'T>A', 'T>C', 'T>G']
+    flanks = ['AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT',
+              'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT']
+    contexts = []
+    for sub in subs:
+        for flank in flanks:
+            contexts.append( flank[0] + sub[0] + flank[1] + '>' + sub[-1])
+
+    return contexts
+    
+
+
+
 def transform_context(chr_, pos, mut, assembly = hg38):
     # TODO remove this try-except
     try:

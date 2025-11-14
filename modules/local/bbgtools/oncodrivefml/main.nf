@@ -12,19 +12,20 @@ process ONCODRIVEFML {
     tuple val(meta) , path(mutations), path(mutabilities), path(mutabilities_ind)
     tuple val(meta2), path (bed_file)
     tuple path(cadd_scores_file), path(cadd_scores_index)
+    val(mode)
 
     output:
     tuple val(meta), path("**.tsv.gz")  , emit: tsv
     tuple val(meta), path("**.png")     , emit: png
     tuple val(meta), path("**.html")    , emit: html
+    tuple val(meta), path("${meta.id}.${mode}/")         , emit: folder
     path "versions.yml"                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: "" // "-s ${params.seed}"
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     // TODO: See if we can provide the entire json as an input parameter
     """
     cat > oncodrivefml_v2.mutability.conf << EOF
@@ -102,8 +103,8 @@ process ONCODRIVEFML {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.tsv
 

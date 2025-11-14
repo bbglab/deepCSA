@@ -1,7 +1,7 @@
 process ANNOTATE_DEPTHS {
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(depths)
@@ -15,13 +15,8 @@ process ANNOTATE_DEPTHS {
     tuple val(meta), path("all_samples_indv.depths.tsv.gz")     , emit: all_samples_depths
     path "versions.yml"                                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    // TODO check if the file is compressed and uncompress if needed before subsetting
     """
     cut -f 1,2,9 ${panel_all} | uniq > ${panel_all}.contexts
     merge_annotation_depths.py \\
@@ -37,8 +32,6 @@ process ANNOTATE_DEPTHS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch all_samples.cohort.tsv.gz
 

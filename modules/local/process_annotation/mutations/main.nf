@@ -1,7 +1,7 @@
 process SUMMARIZE_ANNOTATION {
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta)  , path(tab_files)
@@ -12,15 +12,14 @@ process SUMMARIZE_ANNOTATION {
     tuple val(meta), path("*.vep.tab.gz")       , emit: tab_all
     path "versions.yml"                         , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def assembly = task.ext.assembly ?: "hg38"
-    def hotspots = task.ext.hotspots_annotation ? "${hotspots_annotation_file}" : ""
-    // TODO reimplement python script with click
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+    def assembly = task.ext.assembly ? "--assembly-name ${task.ext.assembly}" : ""
+    def hotspots = task.ext.hotspots_annotation ? "--hotspots-annotation-file ${hotspots_annotation_file}" : ""
+    def gnomad_threshold = task.ext.gnomad_af_threshold ? "--gnomad-af-threshold ${task.ext.gnomad_af_threshold}" : ""
+    def all_underscore = task.ext.underscore ? "--all-underscore" : ""
     """
     zcat <\$(ls *.tab.gz | head -1) | grep '#' | grep -v '##' > header.tsv;
     for file in *.tab.gz; do
@@ -30,11 +29,14 @@ process SUMMARIZE_ANNOTATION {
     cat header.tsv <(sort -u ${prefix}.vep.tab.tmp | grep -v '#' | sed 's/^chr//g' | awk -F ':' 'length(\$1) <= 2' | awk '{ printf "chr"\$0"\\n" }') > ${prefix}.vep.tab ;
     rm ${prefix}.vep.tab.tmp;
 
-    postprocessing_annotation.py ${prefix}.vep.tab \\
-                                    ${prefix}.vep.summary.tab \\
-                                    ${assembly} \\
-                                    False \\
-                                    ${hotspots} ;
+    postprocessing_annotation.py \\
+        ${prefix}.vep.tab \\
+        ${prefix}.vep.summary.tab \\
+        ${assembly} \\
+        ${all_underscore} \\
+        ${hotspots} \\
+        ${gnomad_threshold} \\
+
     gzip ${prefix}.vep.summary.tab;
     gzip ${prefix}.vep.tab;
 
@@ -45,8 +47,8 @@ process SUMMARIZE_ANNOTATION {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.vep.summary.tab.gz
 

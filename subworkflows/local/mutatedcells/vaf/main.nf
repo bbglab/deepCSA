@@ -19,20 +19,15 @@ workflow MUTATED_CELLS_VAF {
 
     SUBSETMUTATIONS(mutations, bedfile)
 
-    if (params.all_duplex_counts){
-        SUBSETMUTEPIVAFAM(SUBSETMUTATIONS.out.subset)
+    SUBSETMUTEPIVAFAM(SUBSETMUTATIONS.out.subset)
 
-        SUBSETMUTEPIVAFAM.out.mutations
-        .join(omegas)
-        .set{mutations_n_omega}
+    SUBSETMUTEPIVAFAM.out.mutations
+    .join(omegas)
+    .set{mutations_n_omega}
 
-        MUTATEDGENOMESFROMVAFAM(mutations_n_omega)
-        MUTATEDGENOMESFROMVAFAM.out.mutated_gen_sample.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ mut_genomes_am_samples }
-        MUTATEDCELLSFROMVAFAM(mut_genomes_am_samples, clinical_features)
-
-    }
-
-
+    MUTATEDGENOMESFROMVAFAM(mutations_n_omega)
+    MUTATEDGENOMESFROMVAFAM.out.mutated_gen_sample.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ mut_genomes_am_samples }
+    MUTATEDCELLSFROMVAFAM(mut_genomes_am_samples, clinical_features)
 
     // emit:
     // TODO add some other output

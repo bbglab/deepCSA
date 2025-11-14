@@ -3,7 +3,7 @@ process PLOT_OMEGA {
     tag "$meta.id"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(mutations), path(omegas)
@@ -12,21 +12,17 @@ process PLOT_OMEGA {
     tuple val(meta), path("**.pdf")  , optional: true   , emit: plots
     path "versions.yml"                                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def output_prefix = task.ext.output_prefix ?: ""
-    def filters = task.ext.filters ?: ""
-    def requested_plots = task.ext.plots ?: "truncating,missense"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
+    mkdir ${prefix}.plots
     plot_selection_omega.py \\
-                    ${prefix} \\
-                    ${mutations} \\
-                    ${omegas} \\
-                    ${requested_plots} \\
+                    --sample_name ${prefix} \\
+                    --mut_file ${mutations} \\
+                    --omega_file ${omegas} \\
+                    --outdir ${prefix}.plots
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -35,9 +31,9 @@ process PLOT_OMEGA {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def output_prefix = task.ext.output_prefix ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}${output_prefix}.pdf
 
@@ -47,16 +43,3 @@ process PLOT_OMEGA {
     END_VERSIONS
     """
 }
-
-
-//     cat > mutations_subset.conf << EOF
-//     {
-//         ${filters}
-//     }
-//     EOF
-
-//     cat > requested_plots.conf << EOF
-//     {
-//         ${requested_plots}
-//     }
-//     EOF

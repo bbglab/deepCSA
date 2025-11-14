@@ -2,7 +2,7 @@ process MUTATIONS_2_SIGNATURES {
 
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
 
     input:
@@ -12,12 +12,10 @@ process MUTATIONS_2_SIGNATURES {
     tuple val(meta), path ("*.sigs.annotated.tsv.gz")   , emit: mafs_sigs_info
     path "versions.yml"                                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     signatures_mutations_n_sbs.py --mutations ${maf} \\
                             --signature-probabilities ${signature_probabilities} \\
@@ -30,8 +28,8 @@ process MUTATIONS_2_SIGNATURES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.sigs.annotated.tsv.gz
 

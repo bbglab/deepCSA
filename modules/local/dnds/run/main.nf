@@ -16,12 +16,10 @@ process RUN_DNDS {
     tuple val(meta), path("*.out.tsv*") , emit: results
     path "versions.yml"                 , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     dNdS_run.R --inputfile ${mutations_table} \\
                 --outputfile ${prefix}.out.tsv \\
@@ -37,8 +35,8 @@ process RUN_DNDS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.out.tsv
 

@@ -25,7 +25,10 @@ def compute_excess(omega_file, chosen_impacts_omega=['missense', 'truncating']):
     function that computes the excess of dN/dS for each gene and each impact
     """
 
-    omega_df = pd.read_csv(omega_file, sep='\t')
+    try:
+        omega_df = pd.read_csv(omega_file, sep='\t')
+    except:
+        return {}
     omega_df = omega_df[omega_df['impact'].isin(chosen_impacts_omega)]
     omega_df['excess_dnds'] = omega_df['dnds'].apply(lambda w: (w - 1) / w if w >= 1 else 0)
     omega_df['excess_lower'] = omega_df['lower'].apply(lambda w: (w - 1) / w if w >= 1 else 0)
@@ -303,7 +306,9 @@ def run_all(sample, somatic_mutations_file, omega_file, recoded_genes):
 
     all_dataframes = [df_snv_am, df_indel_am, df_snv_nd]
     df_merged = reduce(lambda  left, right: pd.merge(left, right, on=['chr', 'gene', 'impact', 'SAMPLE'], how='outer'), all_dataframes)
-    df_merged.to_csv(f'./{sample}.covered_genomes_summary.tsv', sep='\t', index=False)
+
+    if df_merged.shape[0] > 0:
+        df_merged.to_csv(f'./{sample}.covered_genomes_summary.tsv', sep='\t', index=False)
 
 
 if __name__ == '__main__':

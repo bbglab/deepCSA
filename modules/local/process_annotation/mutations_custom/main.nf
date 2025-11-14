@@ -1,7 +1,7 @@
 process CUSTOM_MUTATION_PROCESSING {
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(mutations_annotated)
@@ -11,18 +11,13 @@ process CUSTOM_MUTATION_PROCESSING {
     tuple val(meta), path("*.custom.tsv")   , emit: mutations
     path "versions.yml"                     , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    // TODO reimplement python script with click
     """
     mutations_custom_processing.py \\
-                    ${mutations_annotated} \\
-                    ${custom_regions} \\
-                    ${mutations_annotated.getBaseName()}.custom.tsv ;
+        --mutations-file ${mutations_annotated} \\
+        --custom-regions-file ${custom_regions} \\
+        --output-file ${mutations_annotated.getBaseName()}.custom.tsv ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -31,8 +26,6 @@ process CUSTOM_MUTATION_PROCESSING {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${mutations_annotated.getBaseName()}.custom.tsv
 

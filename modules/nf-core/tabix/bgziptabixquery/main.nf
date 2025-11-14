@@ -16,14 +16,13 @@ process TABIX_BGZIPTABIX_QUERY {
     tuple val(meta), path("*.gz")   , emit: subset
     path  "versions.yml"            , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
     def args3 = task.ext.args3 ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ''
+    prefix = "${meta.id}${prefix}"
     def extension = task.ext.extension ?: "${input.getExtension()}"
     def header = task.ext.header ?: "1"
     // TODO fix the issue with post generation indexing, only possible in the non-header files
@@ -65,7 +64,8 @@ process TABIX_BGZIPTABIX_QUERY {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.${input.getExtension()}.gz
     touch ${prefix}.${input.getExtension()}.gz.tbi

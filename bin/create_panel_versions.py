@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
 """
-create_panel_versions_polars.py
+create_panel_versions.py
 
 Generates multiple VEP annotation panel subsets based on the 'IMPACT' column
 using the high-performance Polars library.
 
 Usage:
-    python create_panel_versions_polars.py <input_tsv> <output_prefix>
+    python create_panel_versions.py --compact-annot-panel-path <input_tsv> --output <output_prefix>
 """
 
 import polars as pl
 import click
-import os
 import sys
 
 PANEL_IMPACT_DICT = {
@@ -76,9 +75,6 @@ PANEL_IMPACT_DICT = {
 }
 
 
-@click.command()
-@click.argument("input_path", type=click.Path(exists=True))
-@click.argument("output_prefix", type=str)
 def create_panel_versions(input_path: str, output_prefix: str) -> None:
     """
     Generates panel subsets from a VEP-annotated file using Polars.
@@ -106,5 +102,15 @@ def create_panel_versions(input_path: str, output_prefix: str) -> None:
 
     click.echo("Panel versions generated successfully.")
 
-if __name__ == "__main__":
-    create_panel_versions()
+
+@click.command()
+@click.option('--compact-annot-panel-path', required=True, type=click.Path(exists=True), help='Input compact annotation panel file (TSV)')
+@click.option('--output', required=True, type=click.Path(), help='Output path prefix for panel versions')
+def main(compact_annot_panel_path, output):
+    """
+    Create panel versions from a compact annotation panel file.
+    """
+    create_panel_versions(compact_annot_panel_path, output)
+
+if __name__ == '__main__':
+    main()

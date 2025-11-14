@@ -2,7 +2,7 @@ process CUSTOM_ANNOTATION_PROCESSING {
 
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(panel_annotated)
@@ -14,13 +14,9 @@ process CUSTOM_ANNOTATION_PROCESSING {
     tuple val(meta), path("added_regions.tsv") , emit: added_regions
     path  "versions.yml"                       , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def simple = task.ext.simple ? "True" : "False"
+    def simple = task.ext.simple ? "--simple" : ""
     // TODO
     // Document this custom_regions has to be a TSV file with the following columns:
     // chromosome  start   end gene_name    impactful_mutations [neutral_impact] [new_impact]
@@ -31,10 +27,10 @@ process CUSTOM_ANNOTATION_PROCESSING {
     // new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.
     """
     panel_custom_processing.py \\
-                    ${panel_annotated} \\
-                    ${custom_regions} \\
-                    ${panel_annotated.getBaseName()}.custom.tsv \\
-                    ${simple} ;
+        --vep-output-file ${panel_annotated} \\
+        --custom-regions-file ${custom_regions} \\
+        --customized-output-annotation-file ${panel_annotated.getBaseName()}.custom.tsv \\
+        ${simple} ;
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

@@ -4,7 +4,7 @@ process SITE_COMPARISON {
     label 'time_low'
     label 'process_high_memory'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta) , path(mutations), path(mutabilities_per_site)
@@ -14,11 +14,10 @@ process SITE_COMPARISON {
     tuple val(meta), path("*.comparison.tsv.gz") , emit: comparisons
     path "versions.yml"                          , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def size = task.ext.size ?: "all" // other options are 'site', 'aa_change', 'aa', '3aa', '3aa_rolling' // think if is worth having 'Naa', 'Naa_rolling'
     """
     omega_comparison_per_site.py --mutations-file ${mutations} \\
@@ -34,7 +33,8 @@ process SITE_COMPARISON {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch mutabilities_per_site.${prefix}.tsv.gz
 

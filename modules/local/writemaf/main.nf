@@ -2,7 +2,7 @@ process WRITE_MAFS {
 
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(maf)
@@ -12,14 +12,11 @@ process WRITE_MAFS {
     path("*.filtered.tsv.gz") , emit: mafs
     path "versions.yml"       , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
-
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    write_mafs.py ${maf} ${json_groups}
+    write_mafs.py \\
+        --maf-file ${maf} \\
+        --groups-json ${json_groups}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -28,8 +25,6 @@ process WRITE_MAFS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch all_samples.cohort.tsv.gz
 

@@ -2,7 +2,7 @@ process POSTPROCESS_VEP_ANNOTATION {
 
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
 
     input:
@@ -13,14 +13,12 @@ process POSTPROCESS_VEP_ANNOTATION {
     tuple val(meta), path("*.compact_rich.tsv") , emit: rich_panel_annotation
     path  "versions.yml"                        , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     def assembly = task.ext.assembly ?: "hg38"
-    def canonical_only = task.ext.canonical_only ? "True" : "False"
+    def canonical_only = task.ext.canonical_only ? "--only_canonical" : ""
     // TODO
     // change panel postprocessing annotation into the same post processing annotation as before
     // keep it as the one for omega that is the one minimizing the computational processing
@@ -36,10 +34,11 @@ process POSTPROCESS_VEP_ANNOTATION {
             gzip > ${prefix}.tmp.gz
 
     panel_postprocessing_annotation.py \\
-                    ${prefix}.tmp.gz \\
-                    ${assembly} \\
-                    ${vep_annotated_file.getBaseName()}.compact \\
-                    ${canonical_only} ;
+                --vep_output_file ${prefix}.tmp.gz \\
+                --assembly ${assembly} \\
+                --output_file ${vep_annotated_file.getBaseName()}.compact \\
+                ${canonical_only} ;
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
@@ -47,7 +46,6 @@ process POSTPROCESS_VEP_ANNOTATION {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${vep_annotated_file.getBaseName()}.compact.tsv;
 

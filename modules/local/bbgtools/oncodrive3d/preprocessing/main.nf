@@ -2,7 +2,7 @@ process ONCODRIVE3D_PREPROCESSING {
     tag "$meta.id"
     label 'process_medium'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.1-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta),  path(maf)
@@ -12,14 +12,15 @@ process ONCODRIVE3D_PREPROCESSING {
     tuple val(meta), path("*.mutations.raw_vep.tsv") , emit: vep_output4o3d
     path "versions.yml"                              , topic: versions
 
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
-    oncodrive3d_preprocessing.py ${maf} ${all_vep_output} ${prefix}
+    oncodrive3d_preprocessing.py \\
+            --maf-df-file ${maf} \\
+            --vep-output-all ${all_vep_output} \\
+            --sample ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -28,8 +29,8 @@ process ONCODRIVE3D_PREPROCESSING {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.mutations.raw_vep.tsv
 

@@ -203,6 +203,31 @@ def most_deleterious_within_variant(impact_vep_string):
         return '-'
 
 
+
+def get_broad_consequence(list_of_annotations):
+    """
+    Group variants into broader consequence types.
+    """
+
+    consequence_rank_dict = { consequence : rank for rank, consequence in enumerate(CONSEQUENCES_LIST) }
+    rank_consequence_dict = { rank : consequence for rank, consequence in enumerate(CONSEQUENCES_LIST) }
+
+    list_of_single_annotations = []
+    list_of_broad_annotations = []
+    for x in list_of_annotations:
+        all_consequences = x.split(",")
+        all_consequences_ranks = map(lambda x: consequence_rank_dict[x], all_consequences)
+        single_consequence = rank_consequence_dict[min(all_consequences_ranks)]
+        list_of_single_annotations.append(single_consequence)
+        if single_consequence in GROUPING_DICT:
+            list_of_broad_annotations.append(GROUPING_DICT[single_consequence])
+        else:
+            list_of_broad_annotations.append(single_consequence)
+
+    return list_of_broad_annotations
+
+
+
 broadimpact_grouping_dict = {
         "missense": ["missense"],
         "nonsense": ["nonsense"],
@@ -212,4 +237,17 @@ broadimpact_grouping_dict = {
         "essential_splice_plus": ["essential_splice", "splice_region_variant"],
         "truncating_plus": ["nonsense", "essential_splice", "splice_region_variant"],
         "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"]
+    }
+
+
+broadimpact_grouping_dict_with_synonymous = {
+        "missense": ["missense"],
+        "nonsense": ["nonsense"],
+        "essential_splice": ["essential_splice"],
+        "splice_region_variant": ["splice_region_variant"],
+        "truncating": ["nonsense", "essential_splice"],
+        "essential_splice_plus": ["essential_splice", "splice_region_variant"],
+        "truncating_plus": ["nonsense", "essential_splice", "splice_region_variant"],
+        "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"],
+        "synonymous": ["synonymous"]
     }
