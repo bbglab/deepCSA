@@ -148,7 +148,14 @@ workflow OMEGA_ANALYSIS{
         global_loc_results = ESTIMATORGLOBALLOC.out.results
         
         global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
-        all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
+        // Aggregate global/local omega results: prepend explicit header, then keep first header from files
+        Channel.fromList(['gene\tsample\timpact\tmutations\tdnds\tpvalue\tlower\tupper'])
+            .mix(all_gloc_indv_results)
+            .collectFile(
+                name: "all_omegas${suffix}_global_loc.tsv",
+                storeDir: "${params.outdir}/omegagloballoc",
+                keepHeader: true
+            ).set{ all_gloc_results }
 
         PREPROCESSING.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts }
         PREPROCESSINGGLOBALLOC.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts_gloc }
@@ -194,7 +201,14 @@ workflow OMEGA_ANALYSIS{
 
 
     ESTIMATOR.out.results.map{ it -> it[1]}.flatten().set{ all_indv_results }
-    all_indv_results.collectFile(name: "all_omegas${suffix}.tsv", storeDir:"${params.outdir}/omega", skip: 1, keepHeader: true).set{ all_results }
+    // Aggregate per-sample omega results: prepend explicit header, then keep first header from files
+    Channel.fromList(['gene\tsample\timpact\tmutations\tdnds\tpvalue\tlower\tupper'])
+        .mix(all_indv_results)
+        .collectFile(
+            name: "all_omegas${suffix}.tsv",
+            storeDir: "${params.outdir}/omega",
+            keepHeader: true
+        ).set{ all_results }
 
 
     emit:
