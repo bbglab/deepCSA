@@ -545,7 +545,7 @@ workflow DEEPCSA{
         }
     }
 
-    if ( params.omega && params.oncodrive3d && params.oncodrivefml && params.indels  && (params.vep_species == 'homo_sapiens') ){
+    if ( (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) && (params.vep_species == 'homo_sapiens') ){
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         all_mutdensities_file.first(),
