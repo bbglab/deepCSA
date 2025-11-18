@@ -229,13 +229,11 @@ workflow DEEPCSA{
     positive_selection_results = somatic_mutations
 
 
-    if (params.vep_species == 'homo_sapiens'){
-        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples,
-                            CREATEPANELS.out.exons_consensus_panel,
-                            ANNOTATEDEPTHS.out.all_samples_depths)
-        // depths_exons_positions
-        // panel_exons_bed
-    }
+    DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples,
+                        CREATEPANELS.out.exons_consensus_panel,
+                        ANNOTATEDEPTHS.out.all_samples_depths)
+    // depths_exons_positions
+    // panel_exons_bed
 
 
     // Intersect BED of desired sites with samples' depths
@@ -545,7 +543,7 @@ workflow DEEPCSA{
         }
     }
 
-    if ( (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) && (params.vep_species == 'homo_sapiens') ){
+    if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) {
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         all_mutdensities_file.first(),
