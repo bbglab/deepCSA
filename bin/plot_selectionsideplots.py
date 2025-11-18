@@ -341,6 +341,12 @@ def plot_all_positive_selection(omega_truncating,
     all_tracks = ["omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml", "indels"]
     plot_tracks = [t for t in all_tracks if t in tracks]
     n_tracks = len(plot_tracks)
+    
+    # Check if we have any tracks to plot
+    if n_tracks == 0:
+        print("Warning: No tracks to plot. Skipping plot generation.")
+        return None
+    
     fig, axes = plt.subplots(n_tracks, 1, figsize=(2.5, 0.6 + 0.6 * n_tracks), gridspec_kw={'height_ratios': [5]*n_tracks})
     if n_tracks == 1:
         axes = [axes]
@@ -689,8 +695,10 @@ def get_all_data(sample, outdir,
                                             pvalue_thres = pvaluee,
                                             tracks = tuple(available_tracks))
 
-
-    figuree.savefig(f"{outdir}/{sample}.positive_selection_summary.pdf", bbox_inches='tight')
+    if figuree is not None:
+        figuree.savefig(f"{outdir}/{sample}.positive_selection_summary.pdf", bbox_inches='tight')
+    else:
+        print("Warning: No figure was generated due to missing data or tracks.")
 
 
 
