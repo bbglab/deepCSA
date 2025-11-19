@@ -34,6 +34,11 @@ process POSTPROCESS_VEP_ANNOTATION {
             awk -F'\\t' 'BEGIN {OFS = "\\t"} {split(\$1, a, "[_/]"); print a[1], a[2], a[3], a[4], \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9}' | \\
             gzip > ${prefix}.tmp.gz
 
+    # Calculate expected number of chunks
+    n_lines=\$(zcat ${prefix}.tmp.gz | wc -l)
+    n_chunks=\$(( (n_lines + ${chunk_size} - 1) / ${chunk_size} ))
+    echo "[POSTPROCESS_VEP_ANNOTATION] Processing ${meta.id} with internal chunk_size=${chunk_size} (\${n_lines} lines, ~\${n_chunks} chunks)"
+
     panel_postprocessing_annotation.py \\
                 --vep_output_file ${prefix}.tmp.gz \\
                 --assembly ${assembly} \\

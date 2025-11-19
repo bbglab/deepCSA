@@ -27,6 +27,11 @@ process CUSTOM_ANNOTATION_PROCESSING {
     // neutral_impact      : (optional, default; synonymous)
     // new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.
     """
+    # Calculate expected number of chunks
+    n_lines=\$(wc -l < ${panel_annotated})
+    n_chunks=\$(( (n_lines + ${chr_chunk_size} - 1) / ${chr_chunk_size} ))
+    echo "[CUSTOM_ANNOTATION_PROCESSING] Processing ${meta.id} with internal chr_chunk_size=${chr_chunk_size} (\${n_lines} lines, ~\${n_chunks} chunks)"
+    
     panel_custom_processing.py \\
         --vep-output-file ${panel_annotated} \\
         --custom-regions-file ${custom_regions} \\
