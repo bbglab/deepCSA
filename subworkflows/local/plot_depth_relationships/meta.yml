@@ -1,0 +1,44 @@
+name: PLOT_DEPTH_RELATIONSHIPS
+description: Subworkflow for plotting relationships between depth and various metrics
+keywords:
+  - plot
+  - depth
+  - vaf
+  - mutation density
+  - omega
+  - oncodrivefml
+modules:
+  - plot/vaf_mutdensity_depth
+  - plot/selection_depth
+input:
+  - somatic_mutations:
+      type: file
+      description: Channel of MAF files with mutation data
+      pattern: "*.{maf,tsv}"
+  - all_mutdensities:
+      type: file
+      description: Channel of mutation density files
+      pattern: "*.{tsv}"
+  - depth_per_gene:
+      type: file
+      description: Channel of depth per gene files
+      pattern: "*.{tsv}"
+  - omega_results:
+      type: file
+      description: Channel of omega results (optional)
+      pattern: "*.{tsv}"
+  - oncodrivefml_results:
+      type: file
+      description: Channel of OncodriveFML results (optional)
+      pattern: "*.{tsv}"
+output:
+  - vaf_mutdensity_plots:
+      type: file
+      description: PDF files with VAF and mutation density plots
+      pattern: "*.vaf_mutdensity_depth.pdf"
+  - selection_plots:
+      type: file
+      description: PDF files with selection metric plots
+      pattern: "*.selection_depth.pdf"
+authors:
+  - "@copilot"

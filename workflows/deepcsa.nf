@@ -61,6 +61,7 @@ include { SIGNATURES                as SIGNATURESINTRONS    } from '../subworkfl
 
 include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkflows/local/plottingsummary/main'
 include { PLOTTING_QC               as PLOTTINGQC           } from '../subworkflows/local/plotting_qc/main'
+include { PLOT_DEPTH_RELATIONSHIPS  as PLOTDEPTHRELS        } from '../subworkflows/local/plot_depth_relationships/main'
 
 include { REGRESSIONS               as REGRESSIONSMUTDENSITY       } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
@@ -579,6 +580,28 @@ workflow DEEPCSA{
                         // CREATEPANELS.out.domains_in_panel,
                         // DNA2PROTEINMAPPING.out.depths_exons_positions
                         )
+    }
+
+    // Depth relationship plots
+    // Plot VAF and mutation density vs depth (with hyperbolic curves)
+    // Plot omega and OncodriveFML vs depth (without hyperbolic curves)
+    if ( params.plot_depth_relationships ) {
+        // Prepare omega channel (optional)
+        omega_channel = params.omega && params.profileall ? OMEGA.out.results : Channel.empty()
+        
+        // Prepare OncodriveFML channel (optional)
+        oncodrivefml_channel = params.oncodrivefml && params.profileall ? ONCODRIVEFMLALL.out.results_snvs : Channel.empty()
+        
+        // Get depth per gene from PLOTDEPTHS output
+        depth_per_gene_ch = PLOTDEPTHSALLCONS.out.depths
+        
+        PLOTDEPTHRELS(
+            somatic_mutations,
+            all_mutdensities_file,
+            depth_per_gene_ch,
+            omega_channel,
+            oncodrivefml_channel
+        )
     }
 
     // Regressions

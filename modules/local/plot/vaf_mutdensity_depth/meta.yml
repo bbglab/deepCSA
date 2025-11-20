@@ -1,0 +1,48 @@
+name: PLOT_VAF_MUTDENSITY_DEPTH
+description: Generate VAF and mutation density vs depth plots with hyperbolic curves
+keywords:
+  - plot
+  - vaf
+  - depth
+  - mutation
+  - density
+tools:
+  - custom:
+      description: Custom Python script for plotting VAF and mutation density vs depth
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - maf:
+      type: file
+      description: MAF file containing mutations with VAF and depth information
+      pattern: "*.{maf,tsv}"
+  - mutdensity:
+      type: file
+      description: Mutation density file with per-gene metrics
+      pattern: "*.{tsv}"
+  - depth:
+      type: file
+      description: Depth per gene file with average depth information
+      pattern: "*.{tsv}"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - plots:
+      type: file
+      description: PDF file containing VAF and mutation density vs depth plots
+      pattern: "*.vaf_mutdensity_depth.pdf"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+
+authors:
+  - "@copilot"
