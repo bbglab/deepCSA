@@ -586,6 +586,9 @@ workflow DEEPCSA{
     // Plot VAF and mutation density vs depth (with hyperbolic curves)
     // Plot omega and OncodriveFML vs depth (without hyperbolic curves)
     if ( params.plot_depth_relationships ) {
+        // Use per-sample mutation densities
+        mutdens_channel = params.mutationdensity && params.profileall ? MUTDENSITYALL.out.mutdensities : Channel.empty()
+        
         // Prepare omega channel (optional)
         omega_channel = params.omega && params.profileall ? OMEGA.out.results : Channel.empty()
         
@@ -597,7 +600,7 @@ workflow DEEPCSA{
         
         PLOTDEPTHRELS(
             somatic_mutations,
-            all_mutdensities_file,
+            mutdens_channel,
             depth_per_gene_ch,
             omega_channel,
             oncodrivefml_channel

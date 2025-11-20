@@ -6,35 +6,32 @@ include { PLOT_SELECTION_DEPTH          as PLOTSELECTIONDEPTH    } from '../../.
 workflow PLOT_DEPTH_RELATIONSHIPS {
 
     take:
-    somatic_mutations       // MAF files with mutations
-    all_mutdensities        // Mutation density files
-    depth_per_gene          // Depth per gene files  
-    omega_results           // Omega results (optional)
-    oncodrivefml_results    // OncodriveFML results (optional)
+    somatic_mutations       // Channel: tuple(meta, maf)
+    all_mutdensities        // Channel: tuple(meta, mutdensity) - per sample
+    depth_per_gene          // Channel: tuple(meta, depth) - multiple depth files per sample
+    omega_results           // Channel: tuple(meta, omega) - optional
+    oncodrivefml_results    // Channel: tuple(meta, oncodrivefml) - optional
 
 
     main:
 
-    // Prepare channels for VAF and mutation density plotting
-    // Combine MAF, mutation density, and depth files
-    somatic_mutations
-    .map { meta, maf -> tuple(meta.id, meta, maf) }
-    .set { maf_ch }
-    
-    all_mutdensities
-    .map { meta, mutdens -> tuple(meta.id, mutdens) }
-    .set { mutdens_ch }
-    
+    // For VAF and mutation density plotting
+    // We need to join MAF with mutation density and depth files
+    // First, get one depth file per sample (pick first from depths output)
     depth_per_gene
-    .map { meta, depth -> tuple(meta.id, depth) }
-    .set { depth_ch }
+    .map { meta, depths -> 
+        // PLOT_DEPTHS outputs multiple files, we need depth_per_gene file
+        def depth_file = depths instanceof List ? depths.find { it.name.contains('depth_per_gene') } : depths
+        tuple(meta, depth_file)
+    }
+    .set { depth_single_ch }
     
-    // Join all inputs for VAF/mutation density plotting
-    maf_ch
-    .join( mutdens_ch, remainder: true )
-    .join( depth_ch, remainder: true )
-    .map { id, meta, maf, mutdens, depth ->
-        // Handle missing files by providing NO_FILE placeholder
+    // Join MAF with mutation density and depth
+    somatic_mutations
+    .join( all_mutdensities, remainder: true )
+    .join( depth_single_ch, remainder: true )
+    .map { meta, maf, mutdens, depth ->
+        // Handle missing files
         def maf_file = maf ?: file('NO_FILE')
         def mutdens_file = mutdens ?: file('NO_FILE')
         def depth_file = depth ?: file('NO_FILE')
@@ -44,38 +41,26 @@ workflow PLOT_DEPTH_RELATIONSHIPS {
     
     PLOTVAFMUTDENSITY(vaf_mutdens_input)
     
-    // Prepare channels for selection metric plotting if available
-    if ( omega_results && oncodrivefml_results ) {
-        omega_results
-        .map { meta, omega -> tuple(meta.id, omega) }
-        .set { omega_ch }
-        
-        oncodrivefml_results
-        .map { meta, ofml -> tuple(meta.id, ofml) }
-        .set { ofml_ch }
-        
-        // Join omega, oncodrivefml, and depth
-        omega_ch
-        .join( ofml_ch, remainder: true )
-        .join( depth_ch, remainder: true )
-        .map { id, omega, ofml, depth ->
-            // Get meta from one of the channels
-            def meta = [id: id]
-            def omega_file = omega ?: file('NO_FILE')
-            def ofml_file = ofml ?: file('NO_FILE')
-            def depth_file = depth ?: file('NO_FILE')
-            tuple(meta, omega_file, ofml_file, depth_file)
-        }
-        .filter { meta, omega, ofml, depth -> 
-            !depth.name.equals('NO_FILE') && (!omega.name.equals('NO_FILE') || !ofml.name.equals('NO_FILE'))
-        }
-        .set { selection_input }
-        
-        PLOTSELECTIONDEPTH(selection_input)
+    // For selection metrics (omega and OncodriveFML)
+    // Join with depth and process
+    omega_results
+    .join( oncodrivefml_results, remainder: true )
+    .join( depth_single_ch, remainder: true )
+    .map { meta, omega, ofml, depth ->
+        def omega_file = omega ?: file('NO_FILE')
+        def ofml_file = ofml ?: file('NO_FILE')
+        def depth_file = depth ?: file('NO_FILE')
+        tuple(meta, omega_file, ofml_file, depth_file)
     }
+    .filter { meta, omega, ofml, depth -> 
+        !depth.name.equals('NO_FILE') && (!omega.name.equals('NO_FILE') || !ofml.name.equals('NO_FILE'))
+    }
+    .set { selection_input }
+    
+    PLOTSELECTIONDEPTH(selection_input)
 
     emit:
     vaf_mutdensity_plots    = PLOTVAFMUTDENSITY.out.plots
-    selection_plots         = omega_results && oncodrivefml_results ? PLOTSELECTIONDEPTH.out.plots : Channel.empty()
+    selection_plots         = PLOTSELECTIONDEPTH.out.plots
 
 }
