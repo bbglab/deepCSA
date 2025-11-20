@@ -60,7 +60,9 @@ def add_hyperbolic_curves(ax, max_depth, max_n=10, alpha=0.3, linewidth=1):
         if valid_mask.sum() > 0:
             ax.plot(depth_range[valid_mask], vaf_curve[valid_mask], 
                    '--', alpha=alpha, linewidth=linewidth, 
-                   color='gray', label=f'{n}/depth' if n <= 3 else '')
+                   color='gray',
+                #    label=f'{n}/depth' if n <= 3 else ''
+                   )
             curves[n] = (depth_range[valid_mask], vaf_curve[valid_mask])
     
     return curves
@@ -101,7 +103,11 @@ def count_mutations_on_curves(depth, vaf, max_n=10, tolerance=0.05):
     return counts
 
 
-def plot_vaf_vs_depth_per_site(maf_df, output_pdf, sample_name, max_n=10):
+def plot_vaf_vs_depth_per_site(maf_df, output_pdf, sample_name, max_n=10,
+                               depth_col = 'DEPTH',
+                               vaf_col='VAF',
+                               alt_depth_col='ALT_DEPTH'
+                               ):
     """
     Plot VAF vs depth for each mutation site.
     
@@ -117,57 +123,62 @@ def plot_vaf_vs_depth_per_site(maf_df, output_pdf, sample_name, max_n=10):
         Maximum N for hyperbolic curves
     """
     # Filter valid data
-    plot_data = maf_df[['DEPTH', 'VAF', 'ALT_DEPTH']].dropna()
-    plot_data = plot_data[(plot_data['DEPTH'] > 0) & (plot_data['VAF'] >= 0) & (plot_data['VAF'] <= 1.0)]
+    plot_data = maf_df[[depth_col, vaf_col, alt_depth_col]].dropna()
+    plot_data = plot_data[(plot_data[depth_col] > 0) & (plot_data[vaf_col] >= 0) & (plot_data[vaf_col] <= 1.0)]
     
     if plot_data.empty:
         print(f"No valid data for VAF vs depth plot")
         return
     
-    # Create figure
-    fig, ax = plt.subplots(figsize=(10, 8))
-    
-    # Scatter plot
-    ax.scatter(plot_data['DEPTH'], plot_data['VAF'], 
-              alpha=0.5, s=20, edgecolors='none', c='steelblue')
-    
-    # Add hyperbolic curves
-    max_depth = plot_data['DEPTH'].quantile(0.99)
-    add_hyperbolic_curves(ax, max_depth, max_n=max_n)
-    
+
     # Count mutations on curves
     counts = count_mutations_on_curves(
-        plot_data['DEPTH'].values, 
-        plot_data['VAF'].values, 
+        plot_data[depth_col].values, 
+        plot_data[vaf_col].values, 
         max_n=max_n
     )
-    
-    # Add text with counts
-    text_str = "Mutations on curves:\n"
-    for n in range(1, min(max_n + 1, 6)):
-        text_str += f"  {n}/depth: {counts[n]}\n"
-    if max_n > 5:
-        remaining = sum(counts[n] for n in range(6, max_n + 1))
-        text_str += f"  6-{max_n}/depth: {remaining}\n"
-    text_str += f"  Other: {counts['other']}"
-    
-    ax.text(0.98, 0.98, text_str, transform=ax.transAxes,
-           verticalalignment='top', horizontalalignment='right',
-           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
-           fontsize=plots_general_config["annots_fontsize"])
-    
-    ax.set_xlabel('Depth (reads)', fontsize=plots_general_config["xlabel_fontsize"])
-    ax.set_ylabel('VAF', fontsize=plots_general_config["ylabel_fontsize"])
-    ax.set_title(f'{sample_name} - VAF vs Depth per Site (N={len(plot_data)})', 
-                fontsize=plots_general_config["title_fontsize"])
-    ax.set_xlim(0, max_depth)
-    ax.set_ylim(0, 1.0)
-    ax.legend(loc='upper right', fontsize=plots_general_config["legend_fontsize"])
-    ax.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    output_pdf.savefig()
-    plt.close()
+
+    # Add hyperbolic curves
+    max_depth = plot_data[depth_col].quantile(0.99)
+
+    for x_max in [max_depth, max_depth/2, max_depth/4, max_depth/8]:
+        for y_max in [0.001, 0.005, 0.5, 1.0]:
+
+            # Create figure
+            fig, ax = plt.subplots(figsize=(6, 6))
+            
+            # Scatter plot
+            ax.scatter(plot_data[depth_col], plot_data[vaf_col], 
+                    alpha=0.5, s=10, edgecolors='none', c='steelblue')
+
+            add_hyperbolic_curves(ax, max_depth, max_n=max_n)
+            
+            # Add text with counts
+            text_str = "Mutations on curves:\n"
+            for n in range(1, min(max_n + 1, 6)):
+                text_str += f"  {n}/depth: {counts[n]}\n"
+            if max_n > 5:
+                remaining = sum(counts[n] for n in range(6, max_n + 1))
+                text_str += f"  6-{max_n}/depth: {remaining}\n"
+            text_str += f"  Other: {counts['other']}"
+            
+            ax.text(0.98, 0.98, text_str, transform=ax.transAxes,
+                verticalalignment='top', horizontalalignment='right',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
+                fontsize=plots_general_config["annots_fontsize"])
+            
+            ax.set_xlabel('Depth (reads)', fontsize=plots_general_config["xlabel_fontsize"])
+            ax.set_ylabel('VAF', fontsize=plots_general_config["ylabel_fontsize"])
+            ax.set_title(f'{sample_name} - VAF vs Depth per Site (N={len(plot_data)})', 
+                        fontsize=plots_general_config["title_fontsize"])
+            ax.set_xlim(0, x_max)
+            ax.set_ylim(0, y_max)
+            ax.legend(loc='upper right', fontsize=plots_general_config["legend_fontsize"])
+            ax.grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            output_pdf.savefig()
+            plt.close()
 
 
 def plot_mutdensity_vs_depth(mutdensity_df, depth_df, output_pdf, sample_name, max_n=10):
@@ -188,60 +199,64 @@ def plot_mutdensity_vs_depth(mutdensity_df, depth_df, output_pdf, sample_name, m
         Maximum N for hyperbolic curves
     """
     # Merge mutation density with depth information
-    plot_data = mutdensity_df.merge(depth_df, on='GENE', how='inner')
+    plot_data = mutdensity_df#.merge(depth_df, on='GENE', how='inner')
     
     # Filter to exclude ALL_GENES summary
     plot_data = plot_data[plot_data['GENE'] != 'ALL_GENES']
     
     # Get different mutation type flavors
     mut_types = plot_data['MUTTYPES'].unique() if 'MUTTYPES' in plot_data.columns else ['all_types']
+    regions = plot_data['REGIONS'].unique() if 'REGIONS' in plot_data.columns else ['all']
     
-    for mut_type in mut_types:
-        type_data = plot_data[plot_data['MUTTYPES'] == mut_type] if 'MUTTYPES' in plot_data.columns else plot_data
-        type_data = type_data[(type_data['MEAN_GENE_DEPTH'] > 0) & (type_data['MUTDENSITY_MB'] >= 0)]
-        
-        if type_data.empty:
-            continue
-        
-        # Create figure
-        fig, ax = plt.subplots(figsize=(10, 8))
-        
-        # Scatter plot
-        ax.scatter(type_data['MEAN_GENE_DEPTH'], type_data['MUTDENSITY_MB'], 
-                  alpha=0.6, s=40, edgecolors='black', linewidths=0.5, c='coral')
-        
-        # For mutation density, we need to adapt the hyperbolic curves
-        # mutation_density ≈ N_mutations / depth
-        # If we normalize: density_normalized = mutations / (depth / 1e6) = mutations * 1e6 / depth
-        max_depth = type_data['MEAN_GENE_DEPTH'].quantile(0.99)
-        
-        # Add reference curves for mutation density
-        # These represent densities that would result from N mutations at various depths
-        depth_range = np.linspace(1, max_depth, 1000)
-        
-        # Calculate reasonable N values based on data
-        max_density = type_data['MUTDENSITY_MB'].quantile(0.99)
-        for n_muts in [1, 2, 5, 10, 20, 50]:
-            density_curve = (n_muts / depth_range) * 1e6
-            if density_curve[0] <= max_density * 1.5:
+    for region in regions:
+        for mut_type in mut_types:
+            type_data = plot_data[(plot_data['REGIONS'] == region)
+                                  & (type_data['MUTTYPES'] == mut_type)
+                                  ]
+            type_data = type_data[type_data["GENE"] != "ALL_GENES"]
+            # type_data = type_data[(type_data['MEAN_GENE_DEPTH'] > 0) & (type_data['MUTDENSITY_MB'] >= 0)]
+            
+            if type_data.empty:
+                continue
+            
+            # Create figure
+            fig, ax = plt.subplots(figsize=(6, 6))
+            
+            # Scatter plot
+            ax.scatter(type_data['DEPTH'], type_data['MUTDENSITY_MB'], 
+                       alpha=0.6, s=10, edgecolors='black', linewidths=0.5, c='coral')
+            
+            # For mutation density, we need to adapt the hyperbolic curves
+            # mutation_density ≈ N_mutations / depth
+            # If we normalize: density_normalized = mutations / (depth / 1e6) = mutations * 1e6 / depth
+            max_depth = type_data['DEPTH'].max()
+            
+            # Add reference curves for mutation density
+            # These represent densities that would result from N mutations at various depths
+            depth_range = np.linspace(1, max_depth, 1000)
+            
+            # Calculate reasonable N values based on data
+            max_density = type_data['MUTDENSITY_MB'].quantile(0.99)
+            for n_muts in [1, 2, 5, 10, 20, 50]:
+                density_curve = (n_muts / depth_range) * 1e6
                 ax.plot(depth_range, density_curve, '--', alpha=0.3, 
-                       linewidth=1, color='gray', 
-                       label=f'{n_muts} muts' if n_muts in [1, 2, 5, 10] else '')
-        
-        ax.set_xlabel('Average Gene Depth (reads)', fontsize=plots_general_config["xlabel_fontsize"])
-        ax.set_ylabel('Mutation Density (per Mb)', fontsize=plots_general_config["ylabel_fontsize"])
-        
-        type_label = mut_type.replace('-', ', ')
-        ax.set_title(f'{sample_name} - Mutation Density vs Depth\n({type_label}, N={len(type_data)} genes)', 
-                    fontsize=plots_general_config["title_fontsize"])
-        ax.set_xlim(0, max_depth)
-        ax.set_ylim(0, max_density * 1.1)
-        ax.legend(loc='upper right', fontsize=plots_general_config["legend_fontsize"])
-        ax.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        output_pdf.savefig()
-        plt.close()
+                        linewidth=1, color='gray', 
+                        label=f'{n_muts} muts' if n_muts in [1, 2, 5, 10] else '')
+            
+            ax.set_xlabel('Cummulative Gene Depth (sequenced bps)', fontsize=plots_general_config["xlabel_fontsize"])
+            ax.set_ylabel('Mutation Density (per Mb)', fontsize=plots_general_config["ylabel_fontsize"])
+            
+            type_label = mut_type.replace('-', ', ')
+            ax.set_title(f'{sample_name} - {region}\nMutation Density vs Depth\n({type_label}, N={len(type_data)} gene-sample combinations)', 
+                        fontsize=plots_general_config["title_fontsize"])
+            ax.set_xlim(0, max_depth)
+            ax.set_ylim(0, max_density * 1.1)
+            ax.legend(loc='upper right', fontsize=plots_general_config["legend_fontsize"])
+            ax.grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            output_pdf.savefig()
+            plt.close()
 
 
 @click.command()

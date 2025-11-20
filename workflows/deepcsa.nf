@@ -587,16 +587,16 @@ workflow DEEPCSA{
     // Plot omega and OncodriveFML vs depth (without hyperbolic curves)
     if ( params.plot_depth_relationships ) {
         // Use per-sample mutation densities
-        mutdens_channel = params.mutationdensity && params.profileall ? MUTDENSITYALL.out.mutdensities : Channel.empty()
+        mutdens_channel = params.mutationdensity ? all_mutdensities_file : Channel.empty()
         
         // Prepare omega channel (optional)
-        omega_channel = params.omega && params.profileall ? OMEGA.out.results : Channel.empty()
+        omega_channel = params.omega ? OMEGA.out.all_globalloc_compiled : Channel.empty()
         
         // Prepare OncodriveFML channel (optional)
-        oncodrivefml_channel = params.oncodrivefml && params.profileall ? ONCODRIVEFMLALL.out.results_snvs : Channel.empty()
+        oncodrivefml_channel = params.oncodrivefml ? ONCODRIVEFMLALL.out.results_snvs : Channel.empty()
         
         // Get depth per gene from PLOTDEPTHS output
-        depth_per_gene_ch = PLOTDEPTHSALLCONS.out.depths
+        depth_per_gene_ch = PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample
         
         PLOTDEPTHRELS(
             somatic_mutations,
