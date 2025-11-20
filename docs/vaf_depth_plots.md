@@ -1,12 +1,14 @@
-# VAF vs Depth Plots
+# VAF and Selection Metrics vs Depth Plots
 
 ## Overview
 
-The VAF vs Depth plotting module generates scatter plots showing the relationship between sequencing depth and various quantitative metrics. These plots help identify patterns in mutation data and assess whether mutations follow expected depth-dependent patterns.
+The depth relationship plotting modules generate scatter plots showing the relationship between sequencing depth and various quantitative metrics. These plots help identify patterns in mutation data and assess whether mutations follow expected depth-dependent patterns.
 
 ## Features
 
-The module creates plots for:
+The implementation consists of two independent modules:
+
+### Module 1: VAF and Mutation Density (with hyperbolic curves)
 
 1. **VAF (Variant Allele Frequency) vs Depth per Site**
    - Scatter plot of individual mutations
@@ -21,14 +23,18 @@ The module creates plots for:
      - Protein-affecting vs non-protein-affecting
    - Reference curves showing expected densities
 
+### Module 2: Selection Metrics (without hyperbolic curves)
+
 3. **Omega (dN/dS) vs Average Depth per Gene**
    - Color-coded by statistical significance (p < 0.05)
    - Separate plots for missense and truncating mutations
    - Reference line at neutral selection (ω=1)
+   - **No hyperbolic curves**
 
 4. **OncodriveFML Score vs Average Depth per Gene**
    - Color-coded by q-value significance
    - Identifies genes with functional bias
+   - **No hyperbolic curves**
 
 ## Hyperbolic Curves
 
@@ -51,34 +57,40 @@ These curves help identify:
 
 ### Command Line
 
+**For VAF and Mutation Density (with hyperbolic curves):**
 ```bash
-plot_vaf_depth.py \
+plot_vaf_mutdensity_depth.py \
   --sample_name SAMPLE_ID \
   --maf_file mutations.maf \
   --mutdensity_file mutdensity.tsv \
   --depth_file depth_per_gene.tsv \
-  --omega_file omega_results.tsv \
-  --oncodrivefml_file oncodrivefml_results.tsv \
   --output_prefix output_name \
   --max_n 10
 ```
 
+**For Selection Metrics (without hyperbolic curves):**
+```bash
+plot_selection_depth.py \
+  --sample_name SAMPLE_ID \
+  --omega_file omega_results.tsv \
+  --oncodrivefml_file oncodrivefml_results.tsv \
+  --depth_file depth_per_gene.tsv \
+  --output_prefix output_name
+```
+
 ### In Nextflow Pipeline
 
-```groovy
-include { PLOT_VAF_DEPTH } from './modules/local/plot/vaf_depth/main'
+The modules are integrated via the `PLOT_DEPTH_RELATIONSHIPS` subworkflow. Enable with:
 
-workflow {
-    // Prepare input channels
-    maf_ch = Channel.fromPath(params.maf)
-        .map { file -> [[id: 'sample1'], file, null, null, null] }
-    depth_ch = Channel.fromPath(params.depth)
-        .map { file -> [[id: 'sample1'], file] }
-    
-    // Run plotting
-    PLOT_VAF_DEPTH(maf_ch, depth_ch)
-}
+```yaml
+# In nextflow.config or params file
+plot_depth_relationships = true
 ```
+
+The workflow automatically runs the appropriate modules based on available data:
+- Runs VAF/mutation density module if MAF or mutation density files exist
+- Runs selection metrics module if omega or OncodriveFML results exist
+- Each module operates independently
 
 ## Input Files
 
@@ -182,25 +194,34 @@ Each plot includes:
 
 ## Example
 
+**For VAF and mutation density analysis:**
 ```bash
-# Generate all available plots
-plot_vaf_depth.py \
+plot_vaf_mutdensity_depth.py \
   --sample_name bladder_sample_01 \
   --maf_file results/bladder_sample_01.maf \
   --mutdensity_file results/bladder_sample_01.mutdensities.tsv \
   --depth_file results/bladder_sample_01.depth_per_gene.tsv \
-  --omega_file results/bladder_sample_01.omega.tsv \
-  --oncodrivefml_file results/bladder_sample_01.oncodrivefml.tsv \
   --output_prefix bladder_sample_01 \
   --max_n 15
 ```
+Creates: `bladder_sample_01.vaf_mutdensity_depth.pdf`
 
-This will create `bladder_sample_01.vaf_depth_plots.pdf` containing all plots.
+**For selection metrics analysis:**
+```bash
+plot_selection_depth.py \
+  --sample_name bladder_sample_01 \
+  --omega_file results/bladder_sample_01.omega.tsv \
+  --oncodrivefml_file results/bladder_sample_01.oncodrivefml.tsv \
+  --depth_file results/bladder_sample_01.depth_per_gene.tsv \
+  --output_prefix bladder_sample_01
+```
+Creates: `bladder_sample_01.selection_depth.pdf`
 
 ## Notes
 
-- At least one input file (MAF, mutation density, omega, or OncodriveFML) must be provided
-- The script will generate only the plots for which input files are provided
+- The modules are independent and can run separately
+- **VAF/mutation density module**: At least MAF or mutation density file required; generates plots with hyperbolic curves
+- **Selection metrics module**: At least omega or OncodriveFML file required; generates plots WITHOUT hyperbolic curves
 - Depth per gene file is required for mutation density, omega, and OncodriveFML plots
 - All plots use consistent styling from `utils_plot.py`
-- Hyperbolic curves are semi-transparent to avoid obscuring data points
+- Hyperbolic curves appear only on VAF and mutation density plots, not on selection metrics plots
