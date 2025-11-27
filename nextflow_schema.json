@@ -267,6 +267,12 @@
                     "description": "Do you want to automatically generate the theoretical exons from the panel for omega?",
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to automatically generate the theoretical exons from the panel for omega?"
+                },
+                "omega_negative_regions": {
+                    "type": "boolean",
+                    "description": "Do you want to generate negative regions for subgenic regions in omega?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to generate negative regions for subgenic regions in omega?"
                 }
             }
         },

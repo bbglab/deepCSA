@@ -22,11 +22,13 @@ process EXPAND_REGIONS {
     def autoexons = params.omega_autoexons ? "--autoexons ${exons}" : ""
     def autodomains = params.omega_autodomains ? "--autodomains ${domains}" : ""
     def custom_regions = params.omega_subgenic_bedfile ? "--custom ${custom}" : ""
+    def negative_regions = params.omega_negative_regions ? "--negative-regions" : ""
     """
     add_hotspots.py --panel_file ${panel} \\
                         ${autoexons} \\
                         ${autodomains} \\
-                        ${custom_regions}
+                        ${custom_regions} \\
+                        ${negative_regions}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
