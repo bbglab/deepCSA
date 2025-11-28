@@ -170,6 +170,31 @@
                 }
             }
         },
+        "custom_depths_table_usage": {
+            "title": "Custom depths table options",
+            "type": "object",
+            "fa_icon": "fas fa-table",
+            "description": "Options to use a precomputed depths table instead of computing depths from BAMs.",
+            "properties": {
+                "use_custom_depths": {
+                    "type": "boolean",
+                    "description": "If true, the pipeline will use a precomputed depths table provided by `custom_depths_table` instead of computing depths from BAM files.",
+                    "default": false,
+                    "fa_icon": "fas fa-toggle-on",
+                    "help_text": "Enable this when you already have a table with per-position depths for the cohort."
+                },
+                "custom_depths_table": {
+                    "type": ["string", "null"],
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "description": "Path to a precomputed depths table file (TSV/CSV), the column names have to be the same as the BAM files names in the input.csv",
+                    "default": null,
+                    "help_text": "Provide the path to the depths table. When `use_custom_depths` is true this parameter must point to the file to be used.",
+                    "fa_icon": "far fa-file-alt"
+                }
+            }
+        },
         "custom_annotation_configs": {
             "title": "Custom annotation configurations",
             "type": "object",
@@ -242,6 +267,12 @@
                     "description": "Do you want to automatically generate the theoretical exons from the panel for omega?",
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to automatically generate the theoretical exons from the panel for omega?"
+                },
+                "omega_subgenic_regions_complement": {
+                    "type": "boolean",
+                    "description": "Do you want to generate complements for the subgenic regions?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Do you want to generate complements for the subgenic regions?"
                 }
             }
         },

@@ -300,6 +300,25 @@ This value is used for filtering the mutations by depth. Meaning that if a mutat
 
 This value is the less stringent depth threshold and is used in the first step of computing the positions that may be part of the so called "panels". This value indicates the minimum average depth at a given position for this position to be kept for the posterior depth analysis and definition on panels. The main use of this value should be to reduce the size of the files that are being processed afterwards. This can be set to 20 or more very safely.
 
+### Using a precomputed depths table
+
+If you already have a precomputed table with per-position depths for your cohort (for example produced by a previous run or an external tool), you can instruct the pipeline to use that table instead of re-computing depths from the BAM files. This can save time and compute resources when depth computation has been performed once and re-used.
+
+Set the following parameters in your `nextflow.config` or pass them on the command line:
+
+```console
+params {
+  use_custom_depths     = true
+  custom_depths_table   = '/path/to/precomputed_depths_table.tsv'
+}
+```
+
+Notes and requirements:
+
+- `use_custom_depths` (boolean): when `true`, the pipeline will use the file pointed by `custom_depths_table` instead of computing depths from BAMs.
+- `custom_depths_table` (string / file path): path to the precomputed depths table. It should be an absolute or relative path accessible from the running environment. The file may be TSV or CSV but should follow the same layout expected by deepCSA (per-position depth across samples). If `use_custom_depths=true` and the file is missing or unreadable the pipeline will fail. For each of the samples in your cohort, the column names should correspond to the full names of the BAM files that are still provided via the input.csv file.
+- Make sure that you remove the column CONTEXT from the table in case you are starting with the all_samples individual depths table that is outputted by deepCSA. CHeck out the assets/useful_scripts/downsample_depths.ipynb file for an example on how to prepare the input for this parameter.
+
 ## Custom mutation calls
 
 If you want to run deepCSA with your own mutation calls, this is also possible. Reasons behind this would be:

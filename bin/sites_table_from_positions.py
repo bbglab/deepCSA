@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys
+
+import click
 import pandas as pd
 
 from bgreference import hg38, hg19, mm10, mm39
@@ -45,16 +46,14 @@ def generate_all_sites_4VEP(input_positions, genome, output_file_with_sites):
                                                                         sep = "\t")
 
 
-if __name__ == '__main__':
-    # Input
-    # input_positions = "/workspace/datasets/prominent/metadata/regions/data/oncodrivefml/kidneypanel4oncodrivefml.bed5.bed"
-    input_positions = sys.argv[1]
 
-    # assembly
-    genome_assembly = sys.argv[2]
-
-    # Output
-    # output_file_with_sites = ./test/preprocessing/KidneyPanel.sites4VEP.tsv"
-    output_file_with_sites = sys.argv[3]
-
+@click.command()
+@click.option('--input-positions', required=True, type=click.Path(exists=True), help='Input positions file (TSV)')
+#@click.option('--genome-assembly', required=True, type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), help='Genome assembly (hg38, hg19, mm10, mm39)')
+@click.option('--genome-assembly', required=True, type=click.Choice(['hg38', 'mm39']), help='Genome assembly (hg38, mm39)')
+@click.option('--output-file-with-sites', required=True, type=click.Path(), help='Output file for sites (TSV)')
+def main(input_positions, genome_assembly, output_file_with_sites):
     generate_all_sites_4VEP(input_positions, genome_assembly, output_file_with_sites)
+
+if __name__ == '__main__':
+    main()
