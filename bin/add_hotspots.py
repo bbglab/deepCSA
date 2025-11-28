@@ -10,7 +10,8 @@ import numpy as np
 @click.option('--autoexons', type=click.Path(exists=True), default=None, help='BED file for automated exon definitions.')
 @click.option('--autodomains', type=click.Path(exists=True), default=None, help='BED file for automated domain definitions.')
 @click.option('--custom', type=click.Path(exists=True), default=None, help='BED file for custom region definitions.')
-def main(panel_file, autoexons, autodomains, custom):
+@click.option('--subgenic-regions-complement', is_flag=True, default=False, help='Flag to generate negative regions for each newly defined subgenic region.')
+def main(panel_file, autoexons, autodomains, custom, subgenic_regions_complement):
 
     # Read input data
     panel_data = pd.read_table(panel_file)
@@ -122,6 +123,25 @@ def main(panel_file, autoexons, autodomains, custom):
             new_data = pd.concat((new_data, hotspot_data))
             hotspots_names.append(region_name)
             print("Small region added:", region_name)
+
+            # If requested, also create the complementary-region: all positions of the
+            # same gene that are NOT part of this specific hotspot region.
+            if subgenic_regions_complement:
+                # all positions for this gene within the chromosome block
+                gene_all = chr_data[chr_data["GENE"] == gene]
+                # positions within the hotspot that belong to the gene
+                region_positions = chr_data.iloc[upd_start: upd_end + 1]
+                region_gene_positions = region_positions[region_positions["GENE"] == gene]
+
+                complement_rows = gene_all.loc[~gene_all.index.isin(region_gene_positions.index)].copy()
+                if not complement_rows.empty:
+                    complement_name = f"{region_name}--complement"
+                    complement_rows["GENE"] = complement_name
+                    new_data = pd.concat((new_data, complement_rows))
+                    hotspots_names.append(complement_name)
+                    print("Complement region added:", complement_name)
+                else:
+                    print(f"No complement-region positions for gene {gene} excluding {region_name}")
 
             # Increment region counter for the gene (if name is generated)
             if row.get("NAME") is None:
