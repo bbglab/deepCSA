@@ -1,5 +1,11 @@
 include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING               }   from '../../../modules/local/dna2protein/main'
-include { EXPAND_REGIONS            as EXPANDREGIONS                    }   from '../../../modules/local/expand_regions/main'
+
+include { EXPAND_REGIONS            as EXPANDREGIONSALL                    }   from '../../../modules/local/expand_regions/main'
+include { EXPAND_REGIONS            as EXPANDREGIONSNONPROT                    }   from '../../../modules/local/expand_regions/main'
+include { EXPAND_REGIONS            as EXPANDREGIONSPROT                    }   from '../../../modules/local/expand_regions/main'
+include { EXPAND_REGIONS            as EXPANDREGIONSSYNONYMOUS                    }   from '../../../modules/local/expand_regions/main'
+include { EXPAND_REGIONS            as EXPANDREGIONSEXONS                    }   from '../../../modules/local/expand_regions/main'
+
 
 
 workflow ENRICHPANELS {
@@ -33,25 +39,25 @@ workflow ENRICHPANELS {
     subgenic_ch = params.omega_subgenic_bedfile ? file(params.omega_subgenic_bedfile) : []
 
     if (params.omega_withingene){
-        EXPANDREGIONS(all_consensus_panel, domains_ch, exons_ch, subgenic_ch)
-        all_expanded_panel = EXPANDREGIONS.out.panel_increased.first()
-        all_json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
+        EXPANDREGIONSALL(all_consensus_panel, domains_ch, exons_ch, subgenic_ch)
+        all_expanded_panel = EXPANDREGIONSALL.out.panel_increased.first()
+        all_json_hotspots = EXPANDREGIONSALL.out.new_regions_json.first()
 
-        EXPANDREGIONS(nonprot_consensus_panel, domains_ch, exons_ch, subgenic_ch)
-        nonprot_expanded_panel = EXPANDREGIONS.out.panel_increased.first()
-        nonprot_json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
+        EXPANDREGIONSNONPROT(nonprot_consensus_panel, domains_ch, exons_ch, subgenic_ch)
+        nonprot_expanded_panel = EXPANDREGIONSNONPROT.out.panel_increased.first()
+        nonprot_json_hotspots = EXPANDREGIONSNONPROT.out.new_regions_json.first()
 
-        EXPANDREGIONS(prot_consensus_panel, domains_ch, exons_ch, subgenic_ch)
-        prot_expanded_panel = EXPANDREGIONS.out.panel_increased.first()
-        prot_json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
+        EXPANDREGIONSPROT(prot_consensus_panel, domains_ch, exons_ch, subgenic_ch)
+        prot_expanded_panel = EXPANDREGIONSPROT.out.panel_increased.first()
+        prot_json_hotspots = EXPANDREGIONSPROT.out.new_regions_json.first()
 
-        EXPANDREGIONS(synonymous_consensus_panel, domains_ch, exons_ch, subgenic_ch)
-        synonymous_expanded_panel = EXPANDREGIONS.out.panel_increased.first()
-        synonymous_json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
+        EXPANDREGIONSSYNONYMOUS(synonymous_consensus_panel, domains_ch, exons_ch, subgenic_ch)
+        synonymous_expanded_panel = EXPANDREGIONSSYNONYMOUS.out.panel_increased.first()
+        synonymous_json_hotspots = EXPANDREGIONSSYNONYMOUS.out.new_regions_json.first()
 
-        EXPANDREGIONS(exons_consensus_panel, domains_ch, exons_ch, subgenic_ch)
-        exons_expanded_panel = EXPANDREGIONS.out.panel_increased.first()
-        exons_json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
+        EXPANDREGIONSEXONS(exons_consensus_panel, domains_ch, exons_ch, subgenic_ch)
+        exons_expanded_panel = EXPANDREGIONSEXONS.out.panel_increased.first()
+        exons_json_hotspots = EXPANDREGIONSEXONS.out.new_regions_json.first()
 
     } else {
         all_expanded_panel = all_consensus_panel.first()
