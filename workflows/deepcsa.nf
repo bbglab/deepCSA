@@ -252,6 +252,7 @@ workflow DEEPCSA{
                  CREATEPANELS.out.all_consensus_bed,
                  CREATEPANELS.out.nonprot_consensus_bed,
                  CREATEPANELS.out.prot_consensus_bed,
+                 CREATEPANELS.out.synonymous_consensus_bed,
                  CREATEPANELS.out.exons_consensus_bed)
 
 
