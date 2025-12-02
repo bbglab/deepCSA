@@ -5,7 +5,6 @@ include { SUBSET_MAF                as SUBSETOMEGAMULTI         } from '../../..
 
 
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
@@ -30,25 +29,16 @@ workflow OMEGA_ANALYSIS{
     depth
     profile
     bedfile
-    panel
+    expanded_panel
     custom_gene_groups
-    domains_file
     mutationdensities
     complete_panel
-    exons_file
     suffix
     grouping_defs
+    json_hotspots
 
 
     main:
-
-    // Create a channel for the domains file if omega_autodomains is true
-    domains_ch = params.omega_autodomains ? domains_file : []  // .map{ it -> it[1]} : []
-    exons_ch = params.omega_autoexons ? exons_file.map{ it -> it[1]} : []
-
-    // Create a channel for the hotspots bedfile if provided
-    subgenic_ch = params.omega_subgenic_bedfile ? file(params.omega_subgenic_bedfile) : []
-
 
     site_comparison_results = Channel.empty()
     global_loc_results      = Channel.empty()
@@ -71,15 +61,6 @@ workflow OMEGA_ANALYSIS{
     .join( profile ).first()
     .set{ all_samples_mut_profile }
 
-
-    if (params.omega_withingene){
-        EXPANDREGIONS(panel, domains_ch, exons_ch, subgenic_ch)
-        expanded_panel = EXPANDREGIONS.out.panel_increased.first()
-        json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
-    } else {
-        expanded_panel = panel.first()
-        json_hotspots = bedfile.first()
-    }
 
     // FIXME here I am using bedfile as a dummy value channel
     PREPROCESSING( muts_n_depths_n_profile,

@@ -144,9 +144,6 @@ def load_n_process_inputs(maf_path, depths_path, annot_panel_path, sample_name):
     ## mode 3 (adjusted): each position counts as many times it contributes to the panel, but ONLY ONCE PER SAMPLE
     depths_subset_adj_sample_df = depths_df.merge(annot_panel_df.drop_duplicates(subset = ["CHROM", "POS", "REF", "ALT"])[["CHROM", "POS"]],
                                                     on = ["CHROM", "POS"], how = "inner")
-    
-    print(depths_subset_df[depths_subset_df['GENE'].str.contains('ASXL1',na = False)])
-    print(maf_df_raw[maf_df_raw['GENE'].str.contains('ASXL1', na=False)])
 
     # Add domains and exons to maf_df
     annot_panel_df['CHROM_POS'] = [f'{chrom}:{pos}' for chrom, pos in zip(annot_panel_df['CHROM'], annot_panel_df['POS'])]
@@ -157,8 +154,6 @@ def load_n_process_inputs(maf_path, depths_path, annot_panel_path, sample_name):
     maf_df = maf_df.rename(columns={ 'GENE_subgenic' : 'GENE'})
 
     maf_df = maf_df.drop_duplicates()
-
-    print(maf_df[maf_df['GENE'].str.contains('ASXL1', na=False)])
 
     return maf_df, depths_subset_df, depths_subset_adj_df, depths_subset_adj_sample_df
 
