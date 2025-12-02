@@ -88,6 +88,8 @@ def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name):
             unique_maf = maf_df[maf_df['TYPE'].isin(type_list)][["SAMPLE_ID", "GENE", "MUT_ID", "ALT_DEPTH"]].copy().drop_duplicates()
             types_included = '-'.join(sorted(type_list))
 
+        # create new gene column including exons/domains panel info
+        
         # count number of mutations and mutated reads per gene
         # make sure to count each mutation only once (avoid annotation issues)
         n_muts_gene = unique_maf.groupby(by = ["GENE"] ).agg({"ALT_DEPTH" : "count" })
@@ -126,7 +128,7 @@ def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name):
 
 def load_n_process_inputs(maf_path, depths_path, annot_panel_path, sample_name):
     # File loading
-    maf_df = pd.read_csv(maf_path, sep = "\t", na_values = custom_na_values)
+    maf_df_raw = pd.read_csv(maf_path, sep = "\t", na_values = custom_na_values)
     depths_df = pd.read_csv(depths_path, sep = "\t")
     depths_df = depths_df.drop("CONTEXT", axis = 1)
     annot_panel_df = pd.read_csv(annot_panel_path, sep = "\t", na_values = custom_na_values)
@@ -142,9 +144,23 @@ def load_n_process_inputs(maf_path, depths_path, annot_panel_path, sample_name):
     ## mode 3 (adjusted): each position counts as many times it contributes to the panel, but ONLY ONCE PER SAMPLE
     depths_subset_adj_sample_df = depths_df.merge(annot_panel_df.drop_duplicates(subset = ["CHROM", "POS", "REF", "ALT"])[["CHROM", "POS"]],
                                                     on = ["CHROM", "POS"], how = "inner")
+    
+    print(depths_subset_df[depths_subset_df['GENE'].str.contains('ASXL1',na = False)])
+    print(maf_df_raw[maf_df_raw['GENE'].str.contains('ASXL1', na=False)])
+
+    # Add domains and exons to maf_df
+    annot_panel_df['CHROM_POS'] = [f'{chrom}:{pos}' for chrom, pos in zip(annot_panel_df['CHROM'], annot_panel_df['POS'])]
+    maf_df_raw['CHROM_POS'] = [mutid.split('_')[0] for mutid in maf_df_raw['MUT_ID']]
+
+    maf_df = maf_df_raw.merge(annot_panel_df[['CHROM_POS', 'GENE']], on = ['CHROM_POS'], how = 'left', suffixes=['','_subgenic']).reset_index(drop=True)
+    maf_df = maf_df.drop(columns = ['GENE', 'CHROM_POS'])
+    maf_df = maf_df.rename(columns={ 'GENE_subgenic' : 'GENE'})
+
+    maf_df = maf_df.drop_duplicates()
+
+    print(maf_df[maf_df['GENE'].str.contains('ASXL1', na=False)])
 
     return maf_df, depths_subset_df, depths_subset_adj_df, depths_subset_adj_sample_df
-
 
 
 # -- Main function -- #
