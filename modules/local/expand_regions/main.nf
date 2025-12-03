@@ -12,9 +12,9 @@ process EXPAND_REGIONS {
     path (custom)
 
     output:
-    tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
-    tuple val(meta), path("hotspot_names.json") , emit: new_regions_json
-    path "versions.yml"                         , topic: versions
+    tuple val(meta), path("*with_subgenic.tsv")  , emit: panel_increased
+    tuple val(meta), path("subgenic_names.json") , emit: new_regions_json
+    path "versions.yml"                          , topic: versions
 
 
     script:
@@ -38,8 +38,8 @@ process EXPAND_REGIONS {
 
     stub:
     """
-    touch panel.with_hotspots.tsv
-    touch hotspot_names.json
+    touch panel.with_subgenic.tsv
+    touch subgenic_names.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -152,11 +152,12 @@ def main(panel_file, autoexons, autodomains, custom, subgenic_regions_complement
 
     # Combine panel data with new data and save
     final_data = pd.concat((panel_data, new_data))
-
-    final_data.to_csv("exons_consensus_panel_with_hotspots.tsv",
+    
+    panel_name = ".".join(panel_file.split(".")[:-1])
+    final_data.to_csv(f"{panel_name}_with_subgenic.tsv",
                         sep="\t", header=True, index=False)
 
-    with open("hotspot_names.json", "w") as f:
+    with open("subgenic_names.json", "w") as f:
         json.dump({x: [x] for x in hotspots_names}, f, indent=4)
 
 
