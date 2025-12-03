@@ -28,8 +28,7 @@ workflow ENRICHPANELS {
     main:
 
     DNA2PROTEINMAPPING(mutations, exons_consensus_panel, all_samples_depths)
-        // depths_exons_positions
-        // panel_exons_bed
+
 
     // Create a channel for the domains file if omega_autodomains is true
     domains_ch = params.omega_autodomains ? domains_file : []  // .map{ it -> it[1]} : []
@@ -75,16 +74,18 @@ workflow ENRICHPANELS {
 
     emit:
 
-    all_consensus_expanded_panel = all_expanded_panel
-    nonprot_consensus_expanded_panel = nonprot_expanded_panel
-    prot_consensus_expanded_panel = prot_expanded_panel
+    all_consensus_expanded_panel        = all_expanded_panel
+    nonprot_consensus_expanded_panel    = nonprot_expanded_panel
+    prot_consensus_expanded_panel       = prot_expanded_panel
     synonymous_consensus_expanded_panel = synonymous_expanded_panel
-    exons_consensus_expanded_panel = exons_expanded_panel
+    exons_consensus_expanded_panel      = exons_expanded_panel
 
-    all_json_hotspots  = all_json_hotspots
-    nonprot_json_hotspots = nonprot_json_hotspots
-    prot_json_hotspots = prot_json_hotspots
-    synonymous_json_hotspots = synonymous_json_hotspots
-    exons_json_hotspots = exons_json_hotspots
+    all_json_hotspots                   = all_json_hotspots
+    nonprot_json_hotspots               = nonprot_json_hotspots
+    prot_json_hotspots                  = prot_json_hotspots
+    synonymous_json_hotspots            = synonymous_json_hotspots
+    exons_json_hotspots                 = exons_json_hotspots
 
+    dna2protein_mapping_depth_exons     = DNA2PROTEINMAPPING.out.depths_exons_positions.first()
+    dna2protein_mapping_panel_exons     = DNA2PROTEINMAPPING.out.panel_exons_bed.first()
 }

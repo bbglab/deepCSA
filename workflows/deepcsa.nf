@@ -228,17 +228,8 @@ workflow DEEPCSA{
                         CREATEPANELS.out.added_custom_regions
                         )
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-    
+
     positive_selection_results = somatic_mutations
-
-
-    if (params.vep_species == 'homo_sapiens'){
-        DNA2PROTEINMAPPING(MUT_PREPROCESSING.out.mutations_all_samples,
-                            CREATEPANELS.out.exons_consensus_panel,
-                            ANNOTATEDEPTHS.out.all_samples_depths)
-        // depths_exons_positions
-        // panel_exons_bed
-    }
 
     // Enrich regions in consensus panels
     ENRICHPANELS(MUT_PREPROCESSING.out.mutations_all_samples,
@@ -569,7 +560,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.panel_annotated_rich,
                         seqinfo_df,
                         CREATEPANELS.out.domains_in_panel.first(),
-                        DNA2PROTEINMAPPING.out.depths_exons_positions.first(),
+                        ENRICHPANELS.out.dna2protein_mapping_depth_exons,
                         group_keys_ch
                         )
     }
