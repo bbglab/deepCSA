@@ -559,7 +559,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.exons_consensus_panel,
                         CREATEPANELS.out.panel_annotated_rich,
                         seqinfo_df,
-                        CREATEPANELS.out.domains_in_panel.first(),
+                        CREATEPANELS.out.domains_in_panel,
                         ENRICHPANELS.out.dna2protein_mapping_depth_exons,
                         group_keys_ch
                         )
@@ -574,7 +574,7 @@ workflow DEEPCSA{
                         // site_comparison_results,
                         // ANNOTATEDEPTHS.out.all_samples_depths,
                         // TABLE2GROUP.out.json_allgroups,
-                        CREATEPANELS.out.exons_consensus_panel.first(),
+                        CREATEPANELS.out.exons_consensus_panel,
                         TABLE2GROUP.out.json_allgroups.first(),
                         group_keys_ch
                         // CREATEPANELS.out.panel_annotated_rich,

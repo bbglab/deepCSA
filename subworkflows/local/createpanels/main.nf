@@ -155,11 +155,11 @@ workflow CREATE_PANELS {
 
     panel_annotated_rich        = rich_annotated
     added_custom_regions        = added_regions
-    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed
-    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv
+    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
+    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
 
-    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation
-    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation
+    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
+    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
