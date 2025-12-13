@@ -34,7 +34,7 @@ workflow ENRICHPANELS {
 
     // Create a channel for the domains file if omega_autodomains is true
     domains_ch = params.omega_autodomains ? domains_file : []  // .map{ it -> it[1]} : []
-    exons_ch = params.omega_autoexons ? DNA2PROTEINMAPPING.out.panel_exons_bed.map{ it -> it[1]} : []
+    exons_ch = params.omega_autoexons ? DNA2PROTEINMAPPING.out.panel_exons_bed.map{ it -> it[1]}.ifEmpty([])  : []
 
     // Create a channel for the hotspots bedfile if provided
     subgenic_ch = params.omega_subgenic_bedfile ? file(params.omega_subgenic_bedfile) : []

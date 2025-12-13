@@ -18,13 +18,12 @@ process EXPAND_REGIONS {
 
 
     script:
-    // def expansion = task.ext.expansion ?: 0
-    def autoexons = params.omega_autoexons ? "--autoexons ${exons}" : ""
+    def autoexons = (params.omega_autoexons & exons.size() > 0 ) ? "--autoexons ${exons}" : ""
     def autodomains = params.omega_autodomains ? "--autodomains ${domains}" : ""
     def custom_regions = params.omega_subgenic_bedfile ? "--custom ${custom}" : ""
     def subgenic_regions_complement = params.omega_subgenic_regions_complement ? "--subgenic-regions-complement" : ""
     """
-    add_hotspots.py --panel_file ${panel} \\
+    add_subgenicregions.py --panel_file ${panel} \\
                         ${autoexons} \\
                         ${autodomains} \\
                         ${custom_regions} \\
