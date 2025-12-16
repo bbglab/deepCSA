@@ -1,10 +1,52 @@
 #!/usr/bin/env python
 
+"""
+Filter Cohort - MAF Processing and Flagging Script
+
+This script processes a Mutation Annotation Format (MAF) file to filter variants by specific criteria and 
+generates a final filtered MAF along with an output of flagged regions in BED format.
+
+Command-line Arguments
+----------------------
+maf_df-file : str
+    Path to the gzipped input MAF file.
+sample_name : str
+    Output sample name.
+repetitive-variant-threshold : int
+    Minimum occurrences threshold to flag a repetitive variant.
+somatic-vaf-boundary : float
+    VAF threshold to classify somatic mutations.
+n-rich-cohort-proportion : float
+    Proportion threshold for n-rich cohort filtering.
+
+Authors
+-------
+Author  : Ferriol Calvet (@FerriolCalvet)
+Email   : ferriol.calvet@irbbarcelona.org
+
+Contributors
+------------
+- Raquel Blanco - @rblancomi (raquel.blanco@irbbarcelona.org)
+- Federica Brando - @FedericaBrando (federica.brando@irbbarcelona.org)
+- Marta Huertas - @m-huertasp (marta.huertas@irbbarcelona.org)
+
+Usage
+-----
+# MISSING!
+
+"""
+import logging
 
 import click
 import pandas as pd
 from utils import add_filter
 from read_utils import custom_na_values
+
+# Logging
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
+)
+LOG = logging.getLogger("filter_cohort")
 
 @click.command()
 @click.option('--maf-df-file', required=True, type=click.Path(exists=True), help='Input gzipped MAF file (TSV)')
@@ -12,67 +54,93 @@ from read_utils import custom_na_values
 @click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
 @click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
 @click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
+
+def flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_boundary) -> pd.DataFrame:
+    """
+    Filters out repetitive variants from the MAF dataframe. A variant is considered repetitive if it appears in at least
+    ``repetitive_variant_threshold`` samples. Additionally, variants that consistently appear at the same position in reads
+    are also flagged as ``repetitive_mapping_variant``.
+
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        MAF dataframe
+    repetitive_variant_threshold : int
+        Minimum number of samples a variant must appear in to be considered repetitive
+    somatic_vaf_boundary : float
+        VAF threshold to classify somatic mutations
+
+    Returns
+    -------
+    pandas.DataFrame
+        MAF dataframe with a new column 'repetitive_variant' that flags repetitive variants
+    """
+    max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
+
+    n_samples = list(range(repetitive_variant_threshold, max_samples + 1))
+    if n_samples == 0:
+        LOG.warning("Not enough samples to identify potential repetitive variants!")
+
+        return maf_df
+
+    # work with already filtered df + somatic only to explore potential artifacts
+    # take only variant and sample info from the df
+    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "PMEAN", "PSTD"]].reset_index(drop = True)
+
+    # Group by 'MUT_ID' and count occurrences
+    maf_df_f_somatic_pivot = maf_df_f_somatic.groupby("MUT_ID").size().reset_index(name="count")
+
+    # Store repetitive variants
+    repetitive_variants = maf_df_f_somatic_pivot[maf_df_f_somatic_pivot["count"] >= repetitive_variant_threshold]["MUT_ID"]
+    LOG.info("%s repetitive_variants", len(repetitive_variants))
+
+    # Flag repetitive variants in the original dataframe
+    maf_df["repetitive_variant"] = maf_df["MUT_ID"].isin(repetitive_variants)
+    maf_df["FILTER"] = maf_df[["FILTER", "repetitive_variant"]].apply(
+        lambda x: add_filter(x["FILTER"], x["repetitive_variant"], "repetitive_variant"), axis=1
+    )
+    maf_df = maf_df.drop("repetitive_variant", axis=1)
+
+    # Use the position in read information to filter repetitive variants with a fixed position (likely artifacts)
+    maf_df_f_somatic_pos_info = maf_df_f_somatic[~(maf_df_f_somatic["PMEAN"].isna()) & 
+                                                    (maf_df_f_somatic["PMEAN"] != -1) &
+                                                    (maf_df_f_somatic["PSTD"] == 0)]
+    
+    # Check if there are any repetitive variants with a fixed position
+    if maf_df_f_somatic_pos_info.shape[0] == 0:
+        LOG.info("No repetitive variants with fixed position found.")
+        return maf_df
+
+    # Count unique PMEAN values for each MUT_ID
+    maf_df_f_somatic_compiled_pos = maf_df_f_somatic_pos_info.groupby("MUT_ID")["PMEAN"].nunique().reset_index()
+
+    # Identify variants always found in the same position -> only one PMEAN value
+    variants_with_rep_position = maf_df_f_somatic_compiled_pos[(maf_df_f_somatic_compiled_pos["PMEAN"] == 1)]["MUT_ID"]
+    LOG.info("Variants always found in the same position: %d", len(variants_with_rep_position))
+
+    # Intersect with previously identified repetitive variants
+    variants_with_rep_position = set(variants_with_rep_position).intersection(set(repetitive_variants))
+    LOG.info("Repetitive variants always found in the same position: %d", len(variants_with_rep_position))
+
+    # Flag these variants in the maf dataframe
+    maf_df["repetitive_mapping_variant"] = maf_df["MUT_ID"].isin(variants_with_rep_position)
+    maf_df["FILTER"] = maf_df[["FILTER","repetitive_mapping_variant"]].apply(lambda x: add_filter(x["FILTER"], x["repetitive_mapping_variant"], "repetitive_mapping_variant"),
+                                                                        axis = 1
+                                                                    )
+    maf_df = maf_df.drop("repetitive_mapping_variant", axis = 1)
+
+    return maf_df
+
+
 def main(maf_df_file, sample_name, repetitive_variant_threshold, somatic_vaf_boundary, n_rich_cohort_proportion):
     maf_df = pd.read_csv(maf_df_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)
     sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
-
-
+    
     #######
     ###  Filter repetitive variants,
     ###     both based on frequency and including information on position in read
     #######
-
-    max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
-
-    n_samples = list(range(repetitive_variant_threshold, max_samples + 1))
-    if len(n_samples) == 0:
-        print("Not enough samples to identify potential repetitive variants!")
-
-    else:
-
-        # work with already filtered df + somatic only to explore potential artifacts
-        # take only variant and sample info from the df
-        maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "PMEAN", "PSTD"]].reset_index(drop = True)
-
-        # add counter column
-        maf_df_f_somatic["count"] = 1
-        maf_df_f_somatic_pivot = maf_df_f_somatic.groupby("MUT_ID")["count"].sum().reset_index()
-
-        repetitive_variants = maf_df_f_somatic_pivot[maf_df_f_somatic_pivot["count"] >= repetitive_variant_threshold]["MUT_ID"]
-        print("Repetitive variants: ", len(repetitive_variants))
-
-        maf_df["repetitive_variant"] = maf_df["MUT_ID"].isin(repetitive_variants)
-
-        maf_df["FILTER"] = maf_df[["FILTER","repetitive_variant"]].apply(lambda x: add_filter(x["FILTER"], x["repetitive_variant"], "repetitive_variant"),
-                                                                            axis = 1
-                                                                        )
-        maf_df = maf_df.drop("repetitive_variant", axis = 1)
-
-
-
-        # use the position in read information to filter repetitive variants with a fixed position (likely artifacts)
-        maf_df_f_somatic_pos_info = maf_df_f_somatic[~(maf_df_f_somatic["PMEAN"].isna()) & 
-                                                        (maf_df_f_somatic["PMEAN"] != -1) &
-                                                        (maf_df_f_somatic["PSTD"] == 0)]
-        
-        if maf_df_f_somatic_pos_info.shape[0] > 0:
-            maf_df_f_somatic_compiled_pos = maf_df_f_somatic_pos_info.groupby("MUT_ID")["PMEAN"].nunique().reset_index()
-
-            variants_with_rep_position = maf_df_f_somatic_compiled_pos[(maf_df_f_somatic_compiled_pos["PMEAN"] == 1)]["MUT_ID"]
-            print("Variants always found in the same position: ", len(variants_with_rep_position))
-
-            variants_with_rep_position = set(variants_with_rep_position).intersection(set(repetitive_variants))
-            print("Repetitive variants always found in the same position: ", len(variants_with_rep_position))
-
-            maf_df["repetitive_mapping_variant"] = maf_df["MUT_ID"].isin(variants_with_rep_position)
-
-            maf_df["FILTER"] = maf_df[["FILTER","repetitive_mapping_variant"]].apply(lambda x: add_filter(x["FILTER"], x["repetitive_mapping_variant"], "repetitive_mapping_variant"),
-                                                                                axis = 1
-                                                                            )
-            maf_df = maf_df.drop("repetitive_mapping_variant", axis = 1)
-
-
-
+    maf_df = flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_boundary)
 
     #######
     ###  Filter cohort_n_rich
