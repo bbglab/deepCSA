@@ -1,0 +1,31 @@
+metrics:
+  metric_1:
+    metric_name: omega
+    file: all_omegas_global_loc.tsv
+    global_loc: yes
+    multi: no
+    impact:
+    - missense
+    - truncating
+    - nonsynonymous_splice
+    significance_threshold: 1
+    elements_total_by: included
+    samples_total_by: included
+general:
+  output_dir: ./output
+  handle_na: ignore
+  elements: # handled in the original file
+  samples: # handled based on creategroups / metadata
+  model: linear
+  multi: yes
+  predictors_file: # param
+  sample_column: # param
+  predictors: # param
+  predictors_intercept_0:
+  predictor_random_effect:
+  predictors_multi_force:
+  correct_pvals: yes
+  significance_threshold: 0.2
+plot:
+  predictors_names:
+  predictors_colors:

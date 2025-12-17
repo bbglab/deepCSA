@@ -1,0 +1,31 @@
+metrics:
+  metric_1:
+    metric_name: mutdensity
+    file: all_mutdensities.tsv
+    regions:
+      - protein_affecting
+      - non_protein_affecting
+    muttype:
+      - snv
+      - snv_indel
+    adjust: no
+    elements_total_by: included
+    samples_total_by: included
+general:
+  output_dir: ./output
+  handle_na: ignore
+  elements: # handled in the original file
+  samples: # handled based on creategroups / metadata
+  model: linear
+  multi: yes
+  predictors_file: # param
+  sample_column: # param
+  predictors: # param
+  predictors_intercept_0:
+  predictor_random_effect:
+  predictors_multi_force:
+  correct_pvals: yes
+  significance_threshold: 0.2
+plot:
+  predictors_names:
+  predictors_colors:

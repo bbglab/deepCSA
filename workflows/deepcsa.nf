@@ -63,7 +63,6 @@ include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkfl
 include { PLOTTING_QC               as PLOTTINGQC           } from '../subworkflows/local/plotting_qc/main'
 
 include { REGRESSIONS               as REGRESSIONSMUTDENSITY       } from '../subworkflows/local/regressions/main'
-include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGA            } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGAGLOB        } from '../subworkflows/local/regressions/main'
 
@@ -225,7 +224,7 @@ workflow DEEPCSA{
                         CREATEPANELS.out.added_custom_regions
                         )
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-    
+
     positive_selection_results = somatic_mutations
 
 
@@ -356,10 +355,6 @@ workflow DEEPCSA{
                                 cadd_scores, mode
                             )
             positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
-
-            if (params.regressions){
-                oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLALL.out.results_snvs_folder.map{ it -> it[1] })
-            }
         }
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
             mode = "non_prot_aff"
@@ -367,9 +362,6 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.exons_consensus_panel,
                                     cadd_scores, mode
                                 )
-            if (params.regressions){
-                oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLNONPROT.out.results_snvs_folder.map{ it -> it[1] })
-            }
         }
     }
 
@@ -416,11 +408,6 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             site_comparison_results = OMEGA.out.site_comparison
 
-            if (params.regressions){
-                omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
-                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGA.out.results_global.map{ it -> it[1] })
-            }
-
             if (params.omega_multi){
                 // Omega multi
                 OMEGAMULTI(somatic_mutations,
@@ -438,10 +425,6 @@ workflow DEEPCSA{
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
-                if (params.regressions){
-                    omega_regressions_files = omega_regressions_files.mix(OMEGAMULTI.out.results.map{ it -> it[1] })
-                    omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGAMULTI.out.results_global.map{ it -> it[1] })
-                }
             }
         }
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
@@ -458,10 +441,6 @@ workflow DEEPCSA{
                             ".non_protein_affecting",
                             grouping_definitions
                             )
-            if (params.regressions){
-                omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
-                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGANONPROT.out.results_global.map{ it -> it[1] })
-            }
 
             if (params.omega_multi){
                 OMEGANONPROTMULTI(somatic_mutations,
@@ -477,11 +456,6 @@ workflow DEEPCSA{
                                     ".multi.non_protein_affecting",
                                     grouping_definitions
                                     )
-
-                if (params.regressions){
-                    omega_regressions_files = omega_regressions_files.mix(OMEGANONPROTMULTI.out.results.map{ it -> it[1] })
-                    omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGANONPROTMULTI.out.results_global.map{ it -> it[1] })
-                }
             }
 
         }
@@ -584,21 +558,19 @@ workflow DEEPCSA{
     // Regressions
     if (params.regressions){
 
-        if (params.mutationdensity && params.mutdensity_regressions){
-            REGRESSIONSMUTDENSITY("mutdensity", all_mutdensities_file, params.mutdensity_regressions)
+        if (params.mutationdensity && params.bbgr_mutdensity){
+            REGRESSIONSMUTDENSITY(params.bbgr_mutdensity_config,
+                                all_mutdensities_file)
+        }
+        if (params.omega && params.bbgr_omega){
+            REGRESSIONSOMEGA(params.bbgr_omega_config,
+                            OMEGA.out.all_compiled)
+        }
+        if (params.omega_globalloc && params.bbgr_omegagloballoc){
+            REGRESSIONSOMEGAGLOB(params.bbgr_omegagloballoc_config,
+                                OMEGA.out.all_globalloc_compiled)
         }
 
-        if (params.oncodrivefml && params.oncodrivefml_regressions){
-            REGRESSIONSONCODRIVEFML("oncodrivefml", oncodrivefml_regressions_files.toList(), params.oncodrivefml_regressions)
-        }
-
-        if (params.omega && params.omega_regressions){
-            REGRESSIONSOMEGA("omega", omega_regressions_files.toList(), params.omega_regressions)
-        }
-
-        if (params.omega_globalloc && params.omega_regressions){
-            REGRESSIONSOMEGAGLOB("omegagloballoc", omega_regressions_files_gloc.toList(), params.omega_regressions)
-        }
 
     }
 
