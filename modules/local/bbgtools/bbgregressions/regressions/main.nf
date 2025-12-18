@@ -13,8 +13,25 @@ process REGRESSIONS {
     path "versions.yml"          , topic: versions
 
     script:
+    def predictors = params.bbgr_predictors.split(',').collect { it.trim() }
     """
-    bbgregressions regressions -config ${config};
+    # update the YAML
+    python3 <<EOF
+    import yaml
+
+    with open('${config}', 'r') as f:
+        config_data = yaml.safe_load(f)
+
+    config_data['predictors_file'] = '${params.bbgr_metadata}'
+    config_data['sample_column'] = '${params.bbgr_metadata_sampleIDcol}'
+    config_data['predictors'] = [${predictors.collect { "'$it'" }.join(', ')}]
+
+    # Write modified config
+    with open('${config}', 'w') as f:
+        yaml.dump(config_data, f, default_flow_style=False)
+    EOF
+
+    bbgregressions regressions -config modified_config.yml
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -24,11 +41,11 @@ process REGRESSIONS {
 
     stub:
     """
-
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
-
 }
+
+
