@@ -146,8 +146,8 @@ def load_n_process_inputs(maf_path, depths_path, annot_panel_path, sample_name):
                                                     on = ["CHROM", "POS"], how = "inner")
 
     # Add domains and exons to maf_df
-    annot_panel_df['CHROM_POS'] = [f'{chrom}:{pos}' for chrom, pos in zip(annot_panel_df['CHROM'], annot_panel_df['POS'])]
-    maf_df_raw['CHROM_POS'] = [mutid.split('_')[0] for mutid in maf_df_raw['MUT_ID']]
+    annot_panel_df['CHROM_POS'] = annot_panel_df['CHROM'].astype(str) + ':' + annot_panel_df['POS'].astype(str)
+    maf_df_raw['CHROM_POS'] = maf_df_raw['MUT_ID'].str.split('_')[0]
 
     maf_df = maf_df_raw.merge(annot_panel_df[['CHROM_POS', 'GENE']], on = ['CHROM_POS'], how = 'left', suffixes=['','_subgenic']).reset_index(drop=True)
     maf_df = maf_df.drop(columns = ['GENE', 'CHROM_POS'])

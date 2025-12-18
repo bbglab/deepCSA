@@ -418,7 +418,7 @@ workflow DEEPCSA{
                     CREATEPANELS.out.panel_annotated_rich,
                     "",
                     grouping_definitions,
-                    ENRICHPANELS.out.exons_json_hotspots
+                    ENRICHPANELS.out.exons_json_subgenic
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
@@ -441,7 +441,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.panel_annotated_rich,
                             ".multi",
                             grouping_definitions,
-                            ENRICHPANELS.out.exons_json_hotspots
+                            ENRICHPANELS.out.exons_json_subgenic
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
@@ -462,7 +462,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.panel_annotated_rich,
                             ".non_protein_affecting",
                             grouping_definitions,
-                            ENRICHPANELS.out.exons_json_hotspots
+                            ENRICHPANELS.out.exons_json_subgenic
                             )
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
@@ -480,7 +480,7 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.panel_annotated_rich,
                                     ".multi.non_protein_affecting",
                                     grouping_definitions,
-                                    ENRICHPANELS.out.exons_json_hotspots
+                                    ENRICHPANELS.out.exons_json_subgenic
                                     )
 
                 if (params.regressions){

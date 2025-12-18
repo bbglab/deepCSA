@@ -35,7 +35,7 @@ workflow OMEGA_ANALYSIS{
     complete_panel
     suffix
     grouping_defs
-    json_hotspots
+    json_subgenic
 
 
     main:
@@ -76,7 +76,7 @@ workflow OMEGA_ANALYSIS{
     .join( PREPROCESSING.out.syn_muts_tsv )
     .set{ all_samples_muts }
 
-    GROUPGENES(all_samples_muts, custom_gene_groups, json_hotspots)
+    GROUPGENES(all_samples_muts, custom_gene_groups, json_subgenic)
 
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
 
