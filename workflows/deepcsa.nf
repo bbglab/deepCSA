@@ -564,11 +564,11 @@ workflow DEEPCSA{
         }
         if (params.omega && params.bbgr_omega){
             REGRESSIONSOMEGA(params.bbgr_omega_config,
-                            OMEGA.out.all_compiled)
+                            OMEGA.out.all_compiled.first())
         }
         if (params.omega_globalloc && params.bbgr_omegagloballoc){
             REGRESSIONSOMEGAGLOB(params.bbgr_omegagloballoc_config,
-                                OMEGA.out.all_globalloc_compiled)
+                                OMEGA.out.all_globalloc_compiled.first())
         }
 
 
