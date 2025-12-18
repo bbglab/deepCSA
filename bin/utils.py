@@ -5,9 +5,16 @@ import pandas as pd
 
 def add_filter(old_filt, add_filt, filt_name):
     """
-    old filt is the current FILTER field value
-    add_filt is a boolean, either True or False
-    filt_name is the name that should be added in the FILTER field in case the add_filt value is True
+    Adds a filter to the FILTER field in the MAF dataframe
+
+    Parameters
+    ----------
+    old_filt : str
+        The current FILTER field value
+    add_filt : bool
+        Either True or False
+    filt_name : str
+        The name that should be added in the FILTER field in case the add_filt value is True
     """
     if add_filt:
         if old_filt == "PASS":
