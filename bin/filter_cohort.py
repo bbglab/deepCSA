@@ -36,6 +36,7 @@ Usage
 
 """
 import logging
+from pathlib import Path
 
 import click
 import pandas as pd
@@ -48,16 +49,14 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("filter_cohort")
 
-@click.command()
-@click.option('--maf-df-file', required=True, type=click.Path(exists=True), help='Input gzipped MAF file (TSV)')
-@click.option('--sample-name', required=True, type=str, help='Sample name for output file')
-@click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
-@click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
-@click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
+# Globals
+FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP", "repetitive_variant", "cohort_n_rich_threshold", "gnomAD_SNP"]
 
-def flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_boundary) -> pd.DataFrame:
+def flag_repetitive_variants(maf_df: pd.DataFrame,
+                             repetitive_variant_threshold: int,
+                             somatic_vaf_boundary: float) -> pd.DataFrame:
     """
-    Filters out repetitive variants from the MAF dataframe. A variant is considered repetitive if it appears in at least
+    Flags filter column for repetitive variants from the MAF dataframe. A variant is considered repetitive if it appears in at least
     ``repetitive_variant_threshold`` samples. Additionally, variants that consistently appear at the same position in reads
     are also flagged as ``repetitive_mapping_variant``.
 
@@ -83,7 +82,7 @@ def flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_b
 
         return maf_df
 
-    # work with already filtered df + somatic only to explore potential artifacts
+    # Work with already filtered df + somatic only to explore potential artifacts
     # take only variant and sample info from the df
     maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "PMEAN", "PSTD"]].reset_index(drop = True)
 
@@ -124,6 +123,8 @@ def flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_b
 
     # Flag these variants in the maf dataframe
     maf_df["repetitive_mapping_variant"] = maf_df["MUT_ID"].isin(variants_with_rep_position)
+    LOG.info("%s muts flagged as repetitive_mapping_variant", maf_df["repetitive_mapping_variant"].sum())
+    
     maf_df["FILTER"] = maf_df[["FILTER","repetitive_mapping_variant"]].apply(lambda x: add_filter(x["FILTER"], x["repetitive_mapping_variant"], "repetitive_mapping_variant"),
                                                                         axis = 1
                                                                     )
@@ -131,127 +132,318 @@ def flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_b
 
     return maf_df
 
+def flag_cohort_n_rich(maf_df: pd.DataFrame,
+                       n_rich_cohort_proportion: float,
+                       somatic_vaf_boundary: float) -> pd.DataFrame:
+    """
+    Flags FILTER column for cohort_n_rich variants from the MAF dataframe. 
 
-def main(maf_df_file, sample_name, repetitive_variant_threshold, somatic_vaf_boundary, n_rich_cohort_proportion):
-    maf_df = pd.read_csv(maf_df_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)
-    sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
-    
-    #######
-    ###  Filter repetitive variants,
-    ###     both based on frequency and including information on position in read
-    #######
-    maf_df = flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_boundary)
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
+    n_rich_cohort_proportion : float
+        Proportion of samples to consider a variant as cohort_n_rich
+    somatic_vaf_boundary : float
+        VAF threshold to classify somatic mutations
 
-    #######
-    ###  Filter cohort_n_rich
-    #######
+    Returns
+    -------
+    maf_df : pandas.DataFrame
+        MAF dataframe with cohort_n_rich variants flagged
+    """
+    LOG.info("Flagging cohort_n_rich...")
 
     max_samples = len(pd.unique(maf_df["SAMPLE_ID"]))
-
     if max_samples < 2:
-        print("Not enough samples to identify cohort_n_rich mutations!")
+        LOG.warning("Not enough samples to identify cohort_n_rich mutations!")
+        return maf_df
+    
+    number_of_samples = max(2, (max_samples * n_rich_cohort_proportion) // 1)
+    LOG.info(f"Flagging mutations that are n_rich in at least: {number_of_samples} samples as cohort_n_rich")
 
-    else:
-        number_of_samples = max(2, (max_samples * n_rich_cohort_proportion) // 1)
-        print(f"flagging mutations that are n_rich in at least: {number_of_samples} samples as cohort_n_rich")
+    # Work with already filtered df + somatic only to explore potential artifacts
+    # take only variant and sample info from the df.
+    maf_df_f_somatic = maf_df[["MUT_ID", "SAMPLE_ID", "VAF_Ns", "FILTER"]].reset_index(drop = True)
+    
+    # Note: Pending discussion on whether to filter by somatic VAF boundary here or not
+    # maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID", "SAMPLE_ID", "VAF_Ns", "FILTER"]].reset_index(drop = True)
 
-        # work with already filtered df + somatic only to explore potential artifacts
-        # take only variant and sample info from the df
-        maf_df_f_somatic = maf_df[["MUT_ID", "SAMPLE_ID", "VAF_Ns", "FILTER"]].reset_index(drop = True)
+    # Aggregate n_rich variants
+    n_rich_vars_df = (
+        maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")]
+        .groupby("MUT_ID")
+        .agg(
+            N_rich_frequency=('SAMPLE_ID', 'count'),
+            VAF_Ns_threshold=('VAF_Ns', 'min')
+        )
+        )
+    
+    # Flag variants that are n_rich in at least number_of_samples samples -> cohort_n_rich
+    n_rich_vars = set(n_rich_vars_df[n_rich_vars_df['N_rich_frequency'] >= number_of_samples].index)
 
-        n_rich_vars_df = maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")].groupby("MUT_ID")[
-                                                ['SAMPLE_ID', 'VAF_Ns']
-                                            ].agg({'SAMPLE_ID' : len, 'VAF_Ns' : min})
-        n_rich_vars_df = n_rich_vars_df.rename({'SAMPLE_ID' : 'N_rich_frequency', 'VAF_Ns' : 'VAF_Ns_threshold'}, axis = 'columns')
+    maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
+    LOG.info("%s muts flagged as cohort_n_rich", maf_df["cohort_n_rich"].sum())
 
-        n_rich_vars = list(n_rich_vars_df[n_rich_vars_df['N_rich_frequency'] >= number_of_samples].index)
-
-        maf_df["cohort_n_rich"] = maf_df["MUT_ID"].isin(n_rich_vars)
-
-        maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich"], "cohort_n_rich"),
+    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich"], "cohort_n_rich"),
                                                                             axis = 1
                                                                         )
-        maf_df = maf_df.drop("cohort_n_rich", axis = 1)
+    
+    # Flag variants that are n_rich in at least 1 sample -> cohort_n_rich_uni
+    n_rich_vars_uni = set(n_rich_vars_df[n_rich_vars_df['N_rich_frequency'] > 0].index)
 
+    maf_df["cohort_n_rich_uni"] = maf_df["MUT_ID"].isin(n_rich_vars_uni)
+    LOG.info("%s muts flagged as cohort_n_rich_uni", maf_df["cohort_n_rich_uni"].sum())
 
+    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich_uni"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich_uni"], "cohort_n_rich_uni"),
+                                                                        axis = 1
+                                                                    )
+    
+    # Flag variants that exceed the VAF_Ns threshold -> cohort_n_rich_threshold
+    maf_df = maf_df.merge(n_rich_vars_df, on = 'MUT_ID', how = 'left')
+    maf_df['N_rich_frequency'] = maf_df['N_rich_frequency'].fillna(0)
+    maf_df['VAF_Ns_threshold'] = maf_df['VAF_Ns_threshold'].fillna(1.1)
 
-        # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
-        n_rich_vars_uni = list(n_rich_vars_df[n_rich_vars_df['N_rich_frequency'] > 0].index)
+    maf_df["cohort_n_rich_threshold"] = maf_df["VAF_Ns"] >= maf_df['VAF_Ns_threshold']
+    LOG.info("%s muts flagged as cohort_n_rich_threshold", maf_df["cohort_n_rich_threshold"].sum())
 
-        maf_df["cohort_n_rich_uni"] = maf_df["MUT_ID"].isin(n_rich_vars_uni)
+    maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich_threshold"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich_threshold"], "cohort_n_rich_threshold"),
+                                                                        axis = 1
+                                                                    )
+    # Drop temporary columns
+    maf_df = maf_df.drop(["cohort_n_rich", "cohort_n_rich_uni", "cohort_n_rich_threshold"], axis = 1)
+ 
+    return maf_df
 
-        maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich_uni"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich_uni"], "cohort_n_rich_uni"),
-                                                                            axis = 1
-                                                                        )
-        maf_df = maf_df.drop("cohort_n_rich_uni", axis = 1)
+def flag_other_samples_snp(maf_df,
+                           somatic_vaf_boundary: float) -> pd.DataFrame:
+    """
+    Filters out SNPs from other samples from the MAF dataframe
 
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
+    somatic_vaf_boundary : float
+        VAF boundary to consider a variant as somatic
 
-        # if the variant appeared flagged as n_rich in a single sample it is also filtered out from all other samples
-        maf_df = maf_df.merge(n_rich_vars_df, on = 'MUT_ID', how = 'left')
-        maf_df['N_rich_frequency'] = maf_df['N_rich_frequency'].fillna(0)
-        maf_df['VAF_Ns_threshold'] = maf_df['VAF_Ns_threshold'].fillna(1.1)
-
-        maf_df["cohort_n_rich_threshold"] = maf_df["VAF_Ns"] >= maf_df['VAF_Ns_threshold']
-
-        maf_df["FILTER"] = maf_df[["FILTER","cohort_n_rich_threshold"]].apply(lambda x: add_filter(x["FILTER"], x["cohort_n_rich_threshold"], "cohort_n_rich_threshold"),
-                                                                            axis = 1
-                                                                        )
-        maf_df = maf_df.drop("cohort_n_rich_threshold", axis = 1)
-
-
-
-
-
-
-    #######
-    ###  Filter other sample's SNP
-    #######
-
-    # this is if we were to consider both unique and no-unique variants
+    Returns
+    -------
+    maf_df : pandas.DataFrame
+        MAF dataframe with other sample SNPs flagged
+    """
+    LOG.info("Flagging SNPs from other samples...")
+    # Get all germline variants from all samples, consider both unique and non-unique variants
     germline_vars_all_samples = maf_df.loc[(maf_df["VAF"] > somatic_vaf_boundary) &
-                                        (maf_df["VAF_AM"] > somatic_vaf_boundary) &
-                                        (maf_df["vd_VAF"] > somatic_vaf_boundary),
-                                        "MUT_ID"].unique()
-    print(len(germline_vars_all_samples), "using all germline variants of all samples")
+                                    (maf_df["VAF_AM"] > somatic_vaf_boundary) &
+                                    (maf_df["vd_VAF"] > somatic_vaf_boundary),
+                                    "MUT_ID"].unique()
+    
+    LOG.info(f"Using all germline variants of all samples, total: {len(germline_vars_all_samples)} variants.")
 
-
+    # Identify variants that are germline in other samples but somatic in the current sample
     maf_df["other_sample_SNP"] = False
     maf_df.loc[(maf_df["MUT_ID"].isin(germline_vars_all_samples)) &
-                (maf_df["VAF"] <= somatic_vaf_boundary), "other_sample_SNP"] = True
+            (maf_df["VAF"] <= somatic_vaf_boundary), "other_sample_SNP"] = True
+    LOG.info("%s muts flagged as other_sample_SNP", maf_df['other_sample_SNP'].sum())
 
+    # Flag variants that are germline in other samples but somatic in the current sample
     maf_df["FILTER"] = maf_df[["FILTER","other_sample_SNP"]].apply(
                                                     lambda x: add_filter(x["FILTER"], x["other_sample_SNP"], "other_sample_SNP"),
                                                     axis = 1
                                                 )
     maf_df = maf_df.drop("other_sample_SNP", axis = 1)
 
+    return maf_df
 
+def flag_gnomad_snp(maf_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Flags gnomAD SNPs in the MAF dataframe
 
-    #######
-    ###  Filter gnomad SNP
-    #######
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
 
+    Returns
+    -------
+    maf_df : pandas.DataFrame
+        MAF dataframe with gnomAD SNPs flagged
+    """
+    LOG.info("Flagging gnomAD SNPs...")
+
+    # Flag gnomAD SNPs
     if "gnomAD_SNP" in maf_df.columns:
         maf_df["gnomAD_SNP"] = maf_df["gnomAD_SNP"].replace({"True": True, "False": False, '-' : False}).fillna(False).astype(bool)
-        print("Out of ", maf_df["gnomAD_SNP"].shape[0], "positions", maf_df["gnomAD_SNP"].sum(), "are gnomAD SNPs (>0.1)")
+        LOG.info("Out of %d positions, %d are gnomAD SNPs (>0.1)", maf_df["gnomAD_SNP"].shape[0], maf_df["gnomAD_SNP"].sum())
+        
         maf_df["FILTER"] = maf_df[["FILTER","gnomAD_SNP"]].apply(
                                                                     lambda x: add_filter(x["FILTER"], x["gnomAD_SNP"], "gnomAD_SNP"),
                                                                     axis = 1
                                                                 )
+    return maf_df
+
+def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Expands the FILTER column by creating new columns for each unique filter.
+    Each new column indicates if the corresponding filter is present (True/False).
+    """
+    # Split FILTER column once per row and convert to set for O(1) lookup
+    filter_sets = maf_df["FILTER"].str.split(";").apply(lambda x: set(x) if x != [''] else set())
+    
+    # Get all unique filter values (excluding empty strings)
+    all_filters = set(
+        filter_val 
+        for filter_val in maf_df["FILTER"].str.split(";").explode().unique() 
+        if filter_val and filter_val != ''
+    )
+    
+    # Ensure "not_covered" and "not_in_exons" exist
+    required_filters = {"not_covered", "not_in_exons"}
+    all_filters.update(required_filters)
+
+    # Create boolean columns efficiently
+    for filt in sorted(all_filters):
+        maf_df[f"FILTER.{filt}"] = filter_sets.apply(lambda x: filt in x)
+
+    return maf_df
+
+def extract_flagged_regions_bed(maf_df: pd.DataFrame, maf_file_name: str):
+    """
+    Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
+
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Input MAF dataframe with filter columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        A BED dataframe with discarded mutations and filters applied to each region.
+    """
+    LOG.debug(list(maf_df.columns))
+    # List of filter columns you want to check for
+    filter_columns = [f"FILTER.{f}" for f in FILTERS if f in ','.join(list(maf_df.columns))]
+
+    LOG.info("Filters applied: %s", filter_columns)
+
+    maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)]
+
+    if maf_df_filters.empty:
+        LOG.warning("No mutations were flagged based on the applied filters.")
+        return
+
+    # Create BED-like dataframe with filter columns
+    bed_df = maf_df_filters[["CHROM", "POS"] + filter_columns]
+
+    # Transform to long format
+    _bed_melt = (pd.melt(bed_df,
+                    id_vars=["CHROM", "POS"],
+                    value_vars=filter_columns,
+                    var_name="FILTERS")
+            .query("value == True")
+            )
+
+    LOG.info("Mutations flagged: %s", _bed_melt.shape[0])
+
+    # Aggregate filters per position
+    bed_annotated = (
+                _bed_melt
+                .drop_duplicates()
+                .groupby(["CHROM","POS"])["FILTERS"]
+                .agg(','.join)
+                .reset_index()
+                .rename(columns={"POS": "START"})
+    )
+
+    # Create END column for BED format
+    # Assumes variants are SNPs
+    # This is probably 1-based closed interval.
+    bed_annotated["END"] = bed_annotated["START"]
+
+    LOG.info("Unique regions flagged: %s", bed_annotated.shape[0])
+
+    # Write BED file without header or index
+    (bed_annotated[["CHROM", "START", "END", "FILTERS"]]
+        .sort_values(by=["CHROM", "START"])
+        .to_csv(f"{maf_file_name}.flagged-pos.bed", sep="\t", header=False, index=False)
+    )
 
 
-    for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
-        maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))
+def flag_maf(maf_df: pd.DataFrame, sample_name: str,
+               repetitive_variant_threshold: int,
+               somatic_vaf_boundary: float,
+               n_rich_cohort_proportion: float) -> pd.DataFrame:
+    """
+    Script to process a MAF (Mutation Annotation Format) file.
+    It filters out repetitive variants, cohort_n_rich variants, and SNPs from other samples.
 
-    for filtt in [ "not_covered", "not_in_exons"]:
-        if f"FILTER.{filtt}" not in maf_df.columns:
-            maf_df[f"FILTER.{filtt}"] = False
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Input MAF dataframe
+    sample_name : str
+        Name for the output sample
+    repetitive_variant_threshold : int
+        Minimum number of occurrences to flag a variant as repetitive
+    somatic_vaf_boundary : float
+        VAF threshold to distinguish somatic mutations
+    n_rich_cohort_proportion : float
+        Proportion threshold for n-rich cohort filtering
+    """
+    ## Filter repetitive variants,
+    # both based on frequency and including information on position in read
+    maf_df = flag_repetitive_variants(maf_df, repetitive_variant_threshold, somatic_vaf_boundary)
 
+    ## Filter cohort_n_rich variants
+    maf_df = flag_cohort_n_rich(maf_df, n_rich_cohort_proportion, somatic_vaf_boundary)
 
+    ### Filter other sample's SNP
+    maf_df = flag_other_samples_snp(maf_df, somatic_vaf_boundary)
+
+    ## Filter gnomad SNP
+    maf_df = flag_gnomad_snp(maf_df)
+
+    ## Expand FILTER column
+    maf_df = expand_filter_column(maf_df)
+
+    ## Save final filtered MAF
     maf_df.to_csv(f"{sample_name}.cohort.filtered.tsv.gz",
                   sep = "\t",
                   header = True,
                   index = False)
+    
+    LOG.info("Cohort flagging complete!")
+    return maf_df  
+
+@click.command()
+@click.option('--maf-df-file', required=True, type=click.Path(exists=True), help='Input gzipped MAF file (TSV)')
+@click.option('--sample-name', required=True, type=str, help='Sample name for output file')
+@click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
+@click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
+@click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
+def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
+         somatic_vaf_boundary: float, n_rich_cohort_proportion: float):
+    """
+    CLI wrapper for filter_maf function.
+    """
+    # Load MAF dataframe
+    maf_df = pd.read_csv(maf_df_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)
+    LOG.debug(f"{maf_df_file}")
+    # Flag MAF file
+    maf_df = flag_maf(maf_df,
+               sample_name,
+               repetitive_variant_threshold,
+               somatic_vaf_boundary, 
+               n_rich_cohort_proportion)
+    
+    # Extract maf_df_file name without extensions for naming
+    maf_file_name = Path(maf_df_file).name.replace('.tsv.gz', '')
+    
+    # Extract flagged regions to BED file
+    extract_flagged_regions_bed(maf_df, maf_file_name)
+    
 
 if __name__ == '__main__':
     main()
