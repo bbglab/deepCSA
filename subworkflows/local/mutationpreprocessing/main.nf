@@ -170,6 +170,7 @@ workflow MUTATION_PREPROCESSING {
 
     emit:
     mafs                    = named_mafs
+    flagged_bed             = FILTERBATCH.out.flagged_muts
     somatic_mafs            = SOMATICMUTATIONS.out.mutations
     clean_mafs              = CLEANMUTATIONS.out.mutations
     mutations_all_samples   = muts_all_samples
