@@ -12,19 +12,18 @@ process EXPAND_REGIONS {
     path (custom)
 
     output:
-    tuple val(meta), path("*with_hotspots.tsv") , emit: panel_increased
-    tuple val(meta), path("hotspot_names.json") , emit: new_regions_json
-    path "versions.yml"                         , topic: versions
+    tuple val(meta), path("*with_subgenic.tsv")  , emit: panel_increased
+    tuple val(meta), path("subgenic_names.json") , emit: new_regions_json
+    path "versions.yml"                          , topic: versions
 
 
     script:
-    // def expansion = task.ext.expansion ?: 0
-    def autoexons = params.omega_autoexons ? "--autoexons ${exons}" : ""
+    def autoexons = (params.omega_autoexons && exons.size() > 0 ) ? "--autoexons ${exons}" : ""
     def autodomains = params.omega_autodomains ? "--autodomains ${domains}" : ""
     def custom_regions = params.omega_subgenic_bedfile ? "--custom ${custom}" : ""
     def subgenic_regions_complement = params.omega_subgenic_regions_complement ? "--subgenic-regions-complement" : ""
     """
-    add_hotspots.py --panel_file ${panel} \\
+    add_subgenicregions.py --panel_file ${panel} \\
                         ${autoexons} \\
                         ${autodomains} \\
                         ${custom_regions} \\
@@ -38,8 +37,8 @@ process EXPAND_REGIONS {
 
     stub:
     """
-    touch panel.with_hotspots.tsv
-    touch hotspot_names.json
+    touch panel.with_subgenic.tsv
+    touch subgenic_names.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
