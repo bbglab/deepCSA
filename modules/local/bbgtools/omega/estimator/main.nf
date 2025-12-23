@@ -1,11 +1,11 @@
 process OMEGA_ESTIMATOR {
     tag "$meta.id"
-    label 'cpu_single_fixed'
+    label 'cpu_medium'
     label 'time_low'
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:20250716'
+    container 'docker.io/bbglab/omega:0.2.1'
 
     input:
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
@@ -32,10 +32,7 @@ process OMEGA_ESTIMATOR {
         "missense": ["missense"],
         "nonsense": ["nonsense"],
         "essential_splice": ["essential_splice"],
-        "splice_region_variant": ["splice_region_variant"],
         "truncating": ["nonsense", "essential_splice"],
-        "essential_splice_plus": ["essential_splice", "splice_region_variant"],
-        "truncating_plus": ["nonsense", "essential_splice", "splice_region_variant"],
         "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"]
     }
     EOF
@@ -53,16 +50,16 @@ process OMEGA_ESTIMATOR {
                     --grouping-folder ./groups/ \\
                     --output-fn output_${option}.${prefix}.tsv \\
                     --option ${option} \\
-                    --cores 4
-                    # --cores ${task.cpus}
+                    --cores ${task.cpus}
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        omega: \$(omega --version | cut -d ' ' -f 3)
     END_VERSIONS
     """
 
     stub:
-    def option = task.ext.option ?: "bayes"
+    def option = task.ext.option ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
@@ -70,7 +67,7 @@ process OMEGA_ESTIMATOR {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        omega: \$(omega --version | cut -d ' ' -f 3)
     END_VERSIONS
     """
 }
