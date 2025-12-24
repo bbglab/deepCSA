@@ -21,7 +21,7 @@ process PLOT_SATURATION_PROPORTIONS {
     prefix = "${meta.id}${prefix}"
     """
     mkdir ${prefix}.plots
-    saturation_in_genes.py \\
+    plot_saturation_in_genes.py \\
                     --rich-panel ${captured_panel_rich} \\
                     --expanded-panel ${expanded_panel} \\
                     --consensus-panel ${panel_file} \\
