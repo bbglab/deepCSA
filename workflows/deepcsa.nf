@@ -146,8 +146,10 @@ workflow DEEPCSA{
                             : Channel.empty()
 
 
-    site_comparison_results  = Channel.empty()
-    all_compiled_omegas      = Channel.empty()
+    site_comparison_results         = Channel.empty()
+    all_compiled_omegas             = Channel.empty()
+    all_compiled_omegasgloballoc    = Channel.empty()
+    all_mutdensities_file           = Channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -429,6 +431,7 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             site_comparison_results = OMEGA.out.site_comparison
             all_compiled_omegas = OMEGA.out.all_compiled
+            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
@@ -577,9 +580,10 @@ workflow DEEPCSA{
                         )
     }
 
-        // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+    // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
     PLOTTINGQC(
                     // positive_selection_results_ready,
+                    somatic_mutations,
                     all_mutdensities_file.first(),
                     all_compiled_omegas,
                     // site_comparison_results,
@@ -594,30 +598,22 @@ workflow DEEPCSA{
                     // DNA2PROTEINMAPPING.out.depths_exons_positions
                     )
 
-    // Depth relationship plots
-    // Plot VAF and mutation density vs depth (with hyperbolic curves)
-    // Plot omega and OncodriveFML vs depth (without hyperbolic curves)
-    if ( params.plot_depth_relationships ) {
-        // Use per-sample mutation densities
-        mutdens_channel = params.mutationdensity ? all_mutdensities_file : Channel.empty()
+    // // Depth relationship plots
+    // // Plot VAF and mutation density vs depth (with hyperbolic curves)
+    // // Plot omega and OncodriveFML vs depth (without hyperbolic curves)
+    // if ( params.plot_depth_relationships ) {
         
-        // Prepare omega channel (optional)
-        omega_channel = params.omega ? OMEGA.out.all_globalloc_compiled : Channel.empty()
+    //     // Prepare OncodriveFML channel (optional)
+    //     oncodrivefml_channel = params.oncodrivefml ? ONCODRIVEFMLALL.out.results_snvs : Channel.empty()
         
-        // Prepare OncodriveFML channel (optional)
-        oncodrivefml_channel = params.oncodrivefml ? ONCODRIVEFMLALL.out.results_snvs : Channel.empty()
-        
-        // Get depth per gene from PLOTDEPTHS output
-        depth_per_gene_ch = PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample
-        
-        PLOTDEPTHRELS(
-            somatic_mutations,
-            mutdens_channel,
-            depth_per_gene_ch,
-            omega_channel,
-            oncodrivefml_channel
-        )
-    }
+    //     PLOTDEPTHRELS(
+    //         somatic_mutations,
+    //         all_mutdensities_file,
+    //         all_compiled_omegasgloballoc,
+    //         oncodrivefml_channel,
+    //         PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample
+    //     )
+    // }
 
     // Regressions
     if (params.regressions){
