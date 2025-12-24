@@ -145,6 +145,9 @@ workflow DEEPCSA{
                             : Channel.empty()
 
 
+    site_comparison_results  = Channel.empty()
+    all_compiled_omegas      = Channel.empty()
+
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
     custom_groups_table = params.custom_groups_file
@@ -230,6 +233,7 @@ workflow DEEPCSA{
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
 
     positive_selection_results = somatic_mutations
+
 
     // Enrich regions in consensus panels
     ENRICHPANELS(MUT_PREPROCESSING.out.mutations_all_samples,
@@ -423,11 +427,13 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             site_comparison_results = OMEGA.out.site_comparison
+            all_compiled_omegas = OMEGA.out.all_compiled
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
                 omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGA.out.results_global.map{ it -> it[1] })
             }
+            
 
             if (params.omega_multi){
                 // Omega multi
@@ -548,16 +554,21 @@ workflow DEEPCSA{
         }
     }
 
-    if ( params.omega && params.oncodrive3d && params.oncodrivefml && params.indels  && (params.vep_species == 'homo_sapiens') ){
+    if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) {
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
+                        somatic_mutations,
                         all_mutdensities_file.first(),
+                        
                         site_comparison_results,
                         ANNOTATEDEPTHS.out.all_samples_depths.first(),
                         TABLE2GROUP.out.json_samples.first(),
                         TABLE2GROUP.out.json_allgroups.first(),
+
                         CREATEPANELS.out.exons_consensus_panel,
+                        ENRICHPANELS.out.exons_consensus_expanded_panel,
                         CREATEPANELS.out.panel_annotated_rich,
+
                         seqinfo_df,
                         CREATEPANELS.out.domains_in_panel,
                         ENRICHPANELS.out.dna2protein_mapping_depth_exons,
@@ -565,24 +576,22 @@ workflow DEEPCSA{
                         )
     }
 
-    if ( params.omega ){
         // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-        PLOTTINGQC(
-                        // positive_selection_results_ready,
-                        all_mutdensities_file.first(),
-                        OMEGA.out.all_compiled.first(),
-                        // site_comparison_results,
-                        // ANNOTATEDEPTHS.out.all_samples_depths,
-                        // TABLE2GROUP.out.json_allgroups,
-                        CREATEPANELS.out.exons_consensus_panel,
-                        TABLE2GROUP.out.json_allgroups.first(),
-                        group_keys_ch
-                        // CREATEPANELS.out.panel_annotated_rich,
-                        // seqinfo_df,
-                        // CREATEPANELS.out.domains_in_panel,
-                        // DNA2PROTEINMAPPING.out.depths_exons_positions
-                        )
-    }
+    PLOTTINGQC(
+                    // positive_selection_results_ready,
+                    all_mutdensities_file.first(),
+                    all_compiled_omegas,
+                    // site_comparison_results,
+                    // ANNOTATEDEPTHS.out.all_samples_depths,
+                    // TABLE2GROUP.out.json_allgroups,
+                    CREATEPANELS.out.exons_consensus_panel,
+                    TABLE2GROUP.out.json_allgroups.first(),
+                    group_keys_ch
+                    // CREATEPANELS.out.panel_annotated_rich,
+                    // seqinfo_df,
+                    // CREATEPANELS.out.domains_in_panel,
+                    // DNA2PROTEINMAPPING.out.depths_exons_positions
+                    )
 
     // Regressions
     if (params.regressions){

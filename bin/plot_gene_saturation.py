@@ -338,7 +338,7 @@ def get_domain_selection_gene(domain_selection_all_genes, domain_gene, gene, sor
     domain_selection_gene = domain_selection_all_genes.merge(domain_gene.rename(columns={"NAME": "gene"})[["gene", "DOMAIN_ID", "Begin", "End"]], how="inner")
     domain_selection_gene = domain_selection_gene.sort_values(["Begin", "impact"]).reset_index(drop=True)
     if sort_by_impact:
-        average_dnds = domain_selection_gene.groupby("DOMAIN_ID").apply(lambda x: x["dnds"].mean()).to_dict()
+        average_dnds = domain_selection_gene.groupby("DOMAIN_ID")["dnds"].mean().to_dict()
         domain_selection_gene["average_dnds"] = domain_selection_gene["DOMAIN_ID"].map(average_dnds)
         domain_selection_gene = domain_selection_gene.sort_values(["average_dnds", "impact"], ascending=[False, True]).reset_index(drop=True)
     domain_selection_gene["x_pos"] = domain_selection_gene["DOMAIN_ID"].astype("category").cat.set_categories(domain_selection_gene["DOMAIN_ID"].unique()).cat.codes
@@ -481,13 +481,12 @@ def plot_gene_selection(mut_count_df,
                     'height_ratios': h_ratios}
         )
 
-    n_max = np.max(mut_count_df["Count"])
-    n_3d_max = np.max(o3d_df["O3D_score"])
 
 
     # Track mut
     # ---------
     if "Mut_count" in lst_tracks:
+        n_max = np.max(mut_count_df["Count"])
         ax = lst_tracks.index("Mut_count")
 
         plot_count_track(mut_count_df, protein_len=protein_len, axes=axes, ax=ax, colors_dict=plot_pars["colors"])
@@ -541,6 +540,7 @@ def plot_gene_selection(mut_count_df,
     # Track 3D clustering
     # -------------------
     if "3d_clustering" in lst_tracks:
+        n_3d_max = np.max(o3d_df["O3D_score"])
         ax = lst_tracks.index("3d_clustering")
 
         axes[ax].plot(np.array(range(protein_len-1))+1, o3d_df["O3D_score"], zorder=2, color=plot_pars["colors"]["o3d_score"], lw=1, label="Clustering score")
@@ -564,13 +564,18 @@ def plot_gene_selection(mut_count_df,
         #                 title_fontsize=plot_pars["legend_fontsize"])
 
 
+    # Prepare exon tracks
+    # ---------------------
+    if "Exon_selection" in lst_tracks or "Exon_saturation" in lst_tracks or "Exon_depth" in lst_tracks:
+        exon_coverage = get_exon_depth_saturation(coverage_df, mut_df)
+        exon_coverage = get_exon_mid_prot_pos(exon_coverage, protein_len)
+
+
     # Track exon selection
     # ---------------------
     if "Exon_selection" in lst_tracks:
         ax = lst_tracks.index("Exon_selection")
 
-        exon_coverage = get_exon_depth_saturation(coverage_df, mut_df)
-        exon_coverage = get_exon_mid_prot_pos(exon_coverage, protein_len)
         exon_info = exon_coverage[["EXON_RANK", "START_PROT_POS", "END_PROT_POS", "MID_PROT_POS"]]
         exon_selection_df = exon_selection_df.merge(exon_info)
         custom_legend = []
@@ -1042,7 +1047,10 @@ def mut_count_horizontal_barplot(
     save=False,
     filename="mut_count_horizontal_barplot.png"
     ):
-    order = ["truncating", "missense", "synonymous"]
+    
+    order_init = ["truncating", "missense", "synonymous"]
+    # check if all the consequnces are in index
+    order = [c for c in order_init if c in df["Consequence"].values]
     df = df.set_index("Consequence").loc[order]#.reset_index()
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -1226,11 +1234,13 @@ def format_domain_selection(df, xshift=0.15, sort_by="average_dnds", palette=sns
 # TODO:
 # - Check that max res depth equal max exon depth, if not use the one that's actually included in the plot
 
-def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, list_genes, output_directory = '.', o3d_seq_df=None, o3d_pdb_tool_df=None, domain=None):
-    # for gene in ["TP53"]:
+def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection,
+                     domain_selection, site_selection, list_genes,
+                     output_directory = '.', o3d_seq_df=None, o3d_pdb_tool_df=None,
+                     domain=None, track_list = []):
     for gene in list_genes:
         try:
-            plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, output_directory, o3d_seq_df, o3d_pdb_tool_df, domain)
+            plotting_single_gene(gene, maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, output_directory, o3d_seq_df, o3d_pdb_tool_df, domain, track_list)
         except Exception as e:
             print(f"Saturation plots for gene: {gene} did not work.")
             print("Error", e)
@@ -1257,7 +1267,9 @@ indels = False
 
 def plotting_single_gene(gene, maf, exons_depth, o3d_df,
                             exon_selection, domain_selection, site_selection,
-                            output_dir, o3d_seq_df, o3d_pdb_tool_df, domain):
+                            output_dir, o3d_seq_df, o3d_pdb_tool_df, domain,
+                            lst_tracks
+                            ):
 
     # Data
     # ====
@@ -1268,7 +1280,12 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
     gene_mut_cnsq_count = gene_mut.groupby(['Consequence']).size().reset_index(name='Count')
 
     # Oncodrive3D
-    o3d_gene_df = get_o3d_gene_data(gene, o3d_seq_df, o3d_df)
+    if o3d_df.empty:
+        print("Oncodrive3D data not provided, skipping related tracks")
+        o3d_gene_df = None
+    else:
+        o3d_gene_df = get_o3d_gene_data(gene, o3d_seq_df, o3d_df)
+
     uni_id = o3d_seq_df[o3d_seq_df["Gene"] == gene]["Uniprot_ID"].values[0]
     pdb_tool_gene = o3d_pdb_tool_df[o3d_pdb_tool_df["Uniprot_ID"] == uni_id].reset_index(drop=True)
 
@@ -1308,20 +1325,9 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
     # ====
 
     plot_pars["fsize"] = (12.3, 16)
-    lst_tracks=[
-        "Mut_count",
-        "3d_clustering",
-        "Site_selection",
-        "Exon_selection",
-        "Exon_saturation",
-        "Exon_depth",
-        "Res_depth",
-        "Solvent_accessibility",
-        "Stability_change",
-        "Secondary_structure",
-        "Domain",
-        "Domain_selection"
-        ]
+
+    if (o3d_gene_df is None or o3d_gene_df.shape[0] == 0) and "3d_clustering" in lst_tracks:
+        lst_tracks.remove("3d_clustering") 
 
     # FIXME
     # this should point to a list of all the genes for which these tracks are not available,
@@ -1403,54 +1409,93 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
 #####
 # Load cohort data
 #####
-def data_loading(sample_name, domain, exons_depth):
+def data_loading(sample_name, domain, exons_depth, track_list):
 
     mutations_file = f"{sample_name}.somatic.mutations.tsv"
-
-    # Count each mutation only ones if it appears in multiple reads
     maf, list_of_genes = get_normal_maf(mutations_file, truncating=True)
 
+    # helper: check for files and call readers only when present
 
-    ## Positive selection
-    site_selection = f"{sample_name}.aminoacid.comparison.tsv.gz"
-
+    ## Positive selection files
     omega_file = f"output_mle.{sample_name}.global_loc.tsv"
+    site_selection_file = f"{sample_name}.aminoacid.comparison.tsv.gz"    
     o3d_df_file = f"{sample_name}.3d_clustering_pos.csv"
 
+    # Omega data (may be missing)
+    if os.path.isfile(omega_file):
+        try:
+            omega_table = pd.read_table(omega_file)
+        except Exception as e:
+            print(f"Could not read omega file {omega_file}: {e}")
+            omega_table = pd.DataFrame()
 
-    # Omega data
-    omega_table = pd.read_table(omega_file)
+    else:
+        print(f"Omega file not found: {omega_file} — skipping omega/exon/domain selection")
+        omega_table = pd.DataFrame()
 
-    omega_subgenic_table = omega_table[(omega_table["gene"].str.contains("--")) &
-                                        (omega_table["impact"].isin(["missense", "truncating"]))
-                                    ].reset_index(drop=True)
+    omega_subgenic_table = pd.DataFrame()
+    exon_selection = pd.DataFrame()
+    domain_selection = pd.DataFrame()
 
-    # Exon selection
-    omega_exon = omega_subgenic_table[omega_subgenic_table["gene"].str.contains('--exon_')]
-    exon_selection = omega_exon.merge(
-        exons_depth.rename(columns={"EXON_ID" : "gene", "EXON_RANK" : "exon_rank"}).dropna()[["gene", "exon_rank"]].drop_duplicates().reset_index(drop=True),
-        how="left").sort_values(["gene", "exon_rank", "impact"]).reset_index(drop=True)
-    print("> exon_selection:", exon_selection.shape )
+    if not omega_table.empty:
+        omega_subgenic_table = omega_table[(omega_table["gene"].str.contains("--")) &
+                                           (omega_table["impact"].isin(["missense", "truncating"]))
+                                           ].reset_index(drop=True)
 
-    # Domain selection
-    domain_selection = omega_subgenic_table.copy()
-    domain_selection = domain_selection[domain_selection["gene"].isin(domain["NAME"].values)].reset_index(drop=True)
-    print("> domain_selection:", domain_selection.shape )
+        # Exon selection
+        omega_exon = omega_subgenic_table[omega_subgenic_table["gene"].str.contains('--exon_')]
+        exon_selection = omega_exon.merge(
+            exons_depth.rename(columns={"EXON_ID" : "gene", "EXON_RANK" : "exon_rank"}).dropna()[["gene", "exon_rank"]].drop_duplicates().reset_index(drop=True),
+            how="left").sort_values(["gene", "exon_rank", "impact"]).reset_index(drop=True)
+        print("> exon_selection:", exon_selection.shape )
+
+        # Domain selection
+        if not domain.empty:
+            domain_selection = omega_subgenic_table.copy()
+            domain_selection = domain_selection[domain_selection["gene"].isin(domain["NAME"].values)].reset_index(drop=True)
+            print("> domain_selection:", domain_selection.shape)
 
 
     # Per-site selection
-    site_selection = pd.read_table(site_selection).rename(
-        columns={"OBS/EXP" : "Selection"}).drop(
-        columns=["OBSERVED_MUTS", "EXPECTED_MUTS"])
-    site_selection.loc[site_selection["Selection"] < 0, "Selection"] = 0
-    site_selection = site_selection[site_selection["Protein_position"] != "-"].reset_index(drop=True)
-    site_selection["Protein_position"] = site_selection["Protein_position"].astype(int)
+    if os.path.isfile(site_selection_file):
+        try:
+            site_selection = pd.read_table(site_selection_file).rename(
+                columns={"OBS/EXP" : "Selection"}).drop(
+                columns=["OBSERVED_MUTS", "EXPECTED_MUTS"])
+            site_selection.loc[site_selection["Selection"] < 0, "Selection"] = 0
+            site_selection = site_selection[site_selection["Protein_position"] != "-"].reset_index(drop=True)
+            site_selection["Protein_position"] = site_selection["Protein_position"].astype(int)
+
+        except Exception as e:
+            print(f"Could not read site selection {site_selection_file}: {e}")
+            site_selection = pd.DataFrame()
+    else:
+        print(f"Site selection file not found: {site_selection_file} — continuing without per-site selection")
+        site_selection = pd.DataFrame()
 
 
     # Oncodrive3D data
-    o3d_df = pd.read_csv(o3d_df_file)[["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]]
+    if os.path.isfile(o3d_df_file):
+        try:
+            o3d_df = pd.read_csv(o3d_df_file)[["Gene", "Pos", "Score", "Score_obs_sim", "pval", "C", "C_ext"]]
+        except Exception as e:
+            print(f"Could not read O3D file {o3d_df_file}: {e}")
+            o3d_df = pd.DataFrame()
+    else:
+        print(f"Oncodrive3D file not found: {o3d_df_file} — continuing without O3D data")
+        o3d_df = pd.DataFrame()
 
-    return maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, list_of_genes
+    ## remove tracks without information
+    if exon_selection.empty:
+        track_list.remove("Exon_selection")
+    if domain_selection.empty:
+        track_list.remove("Domain_selection")
+    if site_selection.empty:
+        track_list.remove("Site_selection")
+    if o3d_df.empty:
+        track_list.remove("3d_clustering")
+
+    return maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, list_of_genes, track_list
 
 
 
@@ -1480,12 +1525,16 @@ def get_reference_data(domain_file, exons_depths):
 def main(sample_name, outdir, domain_file, exons_depths):
     click.echo("Starting to run plot saturation results...")
 
+    max_track_list = ["Mut_count", "3d_clustering", "Site_selection", "Exon_selection",
+                        "Exon_saturation", "Exon_depth", "Res_depth", "Solvent_accessibility",
+                        "Stability_change", "Secondary_structure", "Domain", "Domain_selection" ]
+
     try :
         o3d_seq_df, o3d_pdb_tool_df, domain, exons_depths_df = get_reference_data(domain_file, exons_depths)
         click.echo("Reference data loaded...")
-        maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list = data_loading(sample_name, domain, exons_depths_df)
+        maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list, track_list = data_loading(sample_name, domain, exons_depths_df, max_track_list)
         click.echo("Sample data loaded...")
-        plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list, outdir, o3d_seq_df, o3d_pdb_tool_df, domain)
+        plotting_wrapper(maf, exons_depth, o3d_df, exon_selection, domain_selection, site_selection, gene_list, outdir, o3d_seq_df, o3d_pdb_tool_df, domain, track_list)
 
     except Exception as e:
         print("Error in the process", e)
