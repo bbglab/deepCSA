@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Plotting gene saturation metrics
 
 
@@ -15,7 +17,6 @@ import os
 pd.set_option('display.max_columns', None)
 
 
-plots_dir = "plot"
 
 metrics_colors_dictionary = {"ofml"        : "viridis_r",
                                 "ofml_score"  : "#6A33E0",
@@ -394,13 +395,31 @@ def plot_all_saturation_tables_by_freq(df, mode=None):
     plot_exons_by_freq(df, mode)
 
 
+def generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean,
+                                    grouping_modes=["aminoacid", "protein_position", "nucleotide_change", "nucleotide_position"]):
+    """
+    Generate plots for each grouping mode. Accepts pre-loaded consensus regions table and cleaned somatic maf.
+    """
+    for mode in grouping_modes:
+        # merge mutations with panel for this mode
+        consensus_with_mutations = consensus_enriched_expanded.merge(somatic_maf_clean[['CHROM', 'POS', 'REF', 'ALT', 'SAMPLE_ID']], how='inner')
 
-rich_panel_file = f"captured_panel.tab.compact_rich.tsv"
-expanded_panel_file = f"exons_consensus_panel_with_hotspots.tsv"
-consensus_panel_file = f"consensus.exons_splice_sites.tsv"
-gene_subset = ["KMT2D","EP300","ARID1A","CREBBP","NOTCH2","KMT2C","STAG2","RB1",
-                   "RBM10","KDM6A","TP53","FGFR3","CDKN1A","FOXQ1",
-                   "PIK3CA","TERTpromoter"]
+        # Group mutations
+        consensus_with_mutation_counts = group_mutations(consensus_with_mutations, mode=mode, count_mutations=True)
+        consensus_enriched_grouped = group_mutations(consensus_enriched_expanded, mode=mode, count_mutations=False)
+        consensus_with_mutations_info = consensus_enriched_grouped.merge(consensus_with_mutation_counts, how='left')
+        consensus_with_mutations_info["Count"] = consensus_with_mutations_info["Count"].fillna(0).astype(int)
+
+        # Compute proportions
+        proportion_results = compute_proportion_per_consequence_type(consensus_with_mutations_info)
+        proportion_results_by_freq = compute_proportion_per_consequence_type_by_frequency(consensus_with_mutations_info)
+
+        # Plot original (non-frequency) plots
+        plot_all_saturation_tables(proportion_results, mode)
+
+        # Plot frequency-stratified plots (for exons and domains only)
+        plot_all_saturation_tables_by_freq(proportion_results_by_freq, mode)
+
 
 @click.command()
 @click.option('--rich-panel', default='captured_panel.tab.compact_rich.tsv', help='Rich panel TSV')
@@ -426,31 +445,6 @@ def cli(rich_panel, expanded_panel, consensus_panel, maf, plots_dir, genes, grou
                                     & (somatic_maf['canonical_Protein_position'] != '-')].reset_index(drop=True)
 
     grouping_modes_list = [m.strip() for m in grouping_modes.split(',')]
-
-    def generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean,
-                                      grouping_modes=["aminoacid", "protein_position", "nucleotide_change", "nucleotide_position"]):
-        """
-        Generate plots for each grouping mode. Accepts pre-loaded consensus regions table and cleaned somatic maf.
-        """
-        for mode in grouping_modes:
-            # merge mutations with panel for this mode
-            consensus_with_mutations = consensus_enriched_expanded.merge(somatic_maf_clean[['CHROM', 'POS', 'REF', 'ALT', 'SAMPLE_ID']], how='inner')
-
-            # Group mutations
-            consensus_with_mutation_counts = group_mutations(consensus_with_mutations, mode=mode, count_mutations=True)
-            consensus_enriched_grouped = group_mutations(consensus_enriched_expanded, mode=mode, count_mutations=False)
-            consensus_with_mutations_info = consensus_enriched_grouped.merge(consensus_with_mutation_counts, how='left')
-            consensus_with_mutations_info["Count"] = consensus_with_mutations_info["Count"].fillna(0).astype(int)
-
-            # Compute proportions
-            proportion_results = compute_proportion_per_consequence_type(consensus_with_mutations_info)
-            proportion_results_by_freq = compute_proportion_per_consequence_type_by_frequency(consensus_with_mutations_info)
-
-            # Plot original (non-frequency) plots
-            plot_all_saturation_tables(proportion_results, mode)
-
-            # Plot frequency-stratified plots (for exons and domains only)
-            plot_all_saturation_tables_by_freq(proportion_results_by_freq, mode)
 
     # Run generation
     generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean, grouping_modes=grouping_modes_list)
