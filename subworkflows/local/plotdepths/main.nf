@@ -2,7 +2,7 @@ include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS     } from '../../../modules
 
 include { PLOT_DEPTHS               as DEPTHSSUMMARY    } from '../../../modules/local/plot/depths_summary/main'
 
-include { CREATECUSTOMBEDFILE       as ONCODRIVEFMLBED  } from '../../../modules/local/createpanels/custombedfile/main'
+include { CREATECUSTOMBEDFILE       as CUSTOMBEDFILE    } from '../../../modules/local/createpanels/custombedfile/main'
 
 
 workflow PLOT_DEPTHS {
@@ -17,9 +17,9 @@ workflow PLOT_DEPTHS {
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETDEPTHS(depth, bedfile)
 
-    ONCODRIVEFMLBED(panel)
+    CUSTOMBEDFILE(panel)
 
-    DEPTHSSUMMARY(SUBSETDEPTHS.out.subset, ONCODRIVEFMLBED.out.bed)    
+    DEPTHSSUMMARY(SUBSETDEPTHS.out.subset, CUSTOMBEDFILE.out.bed)    
 
 
     emit:
