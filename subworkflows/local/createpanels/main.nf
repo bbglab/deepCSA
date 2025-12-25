@@ -83,7 +83,7 @@ workflow CREATE_PANELS {
     } else {
         complete_annotated_panel = POSTPROCESSVEPPANEL.out.compact_panel_annotation
         rich_annotated = POSTPROCESSVEPPANEL.out.rich_panel_annotation
-        added_regions = Channel.empty()
+        added_regions = channel.empty()
     }
 
     domains = file(params.domains_file, checkIfExists: true)

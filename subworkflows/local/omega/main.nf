@@ -40,9 +40,9 @@ workflow OMEGA_ANALYSIS{
 
     main:
 
-    site_comparison_results = Channel.empty()
-    global_loc_results      = Channel.empty()
-    all_gloc_results        = Channel.empty()
+    site_comparison_results = channel.empty()
+    global_loc_results      = channel.empty()
+    all_gloc_results        = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETMUTATIONS(mutations, bedfile)
@@ -57,7 +57,7 @@ workflow OMEGA_ANALYSIS{
     .join( profile )
     .set{ muts_n_depths_n_profile }
 
-    Channel.of([ [ id: "all_samples" ] ])
+    channel.of([ [ id: "all_samples" ] ])
     .join( profile ).first()
     .set{ all_samples_mut_profile }
 
@@ -72,7 +72,7 @@ workflow OMEGA_ANALYSIS{
     .join( depth )
     .set{ preprocess_n_depths }
 
-    Channel.of([ [ id: "all_samples" ] ])
+    channel.of([ [ id: "all_samples" ] ])
     .join( PREPROCESSING.out.syn_muts_tsv )
     .set{ all_samples_muts }
 
@@ -167,7 +167,7 @@ workflow OMEGA_ANALYSIS{
 
     }
 
-    site_comparison_results.map {
+    site_comparison_results.map { it -> 
         def meta = it[0]
         def all_files = it[1..-1].flatten()
         [meta, all_files]

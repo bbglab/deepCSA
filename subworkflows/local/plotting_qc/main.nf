@@ -23,12 +23,12 @@ workflow PLOTTING_QC {
     main:
 
     // pdb_tool_df   = params.annotations3d
-    //                         ? Channel.fromPath( "${params.annotations3d}/pdb_tool_df.tsv", checkIfExists: true).first()
-                            // : Channel.empty()
+    //                         ? channel.fromPath( "${params.annotations3d}/pdb_tool_df.tsv", checkIfExists: true).first()
+                            // : channel.empty()
 
 
     // plotting only for the entire cohort group
-    // Channel.of([ [ id: "all_samples" ] ])
+    // channel.of([ [ id: "all_samples" ] ])
     // .join( positive_selection_results_ready )
     // .set{ all_samples_results }
 

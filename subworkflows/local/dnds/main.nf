@@ -15,8 +15,8 @@ workflow DNDS {
 
     main:
 
-    covariates = params.dnds_covariates ? Channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : Channel.empty()
-    ref_trans = params.dnds_ref_transcripts ? Channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : Channel.empty()
+    covariates = params.dnds_covariates ? channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : channel.empty()
+    ref_trans = params.dnds_ref_transcripts ? channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : channel.empty()
 
 
     SUBSETMUTATIONS(mutations, bedfile)

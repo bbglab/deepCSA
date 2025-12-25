@@ -30,7 +30,7 @@ workflow MUTATIONAL_PROFILE {
     COMPUTEMATRIX(SUBSETMUTPROFILE.out.mutations)
 
     COMPUTEMATRIX.out.per_sample_sigprof
-    .join( Channel.of([ [ id: "all_samples" ], [] ]) )
+    .join( channel.of([ [ id: "all_samples" ], [] ]) )
     .map{ it -> [ it[0], it[1]]  }
     .set{ sigprofiler_matrix }
 
@@ -42,7 +42,7 @@ workflow MUTATIONAL_PROFILE {
 
     COMPUTEPROFILE(matrix_n_trinucleotide, wgs_trinuc)
 
-    sigprofiler_empty = Channel.of([])
+    sigprofiler_empty = channel.of([])
     sigprofiler_empty
     .concat(COMPUTEPROFILE.out.wgs_sigprofiler)
     .set{ sigprofiler_wgs }

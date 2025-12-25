@@ -12,7 +12,7 @@ workflow INPUT_CHECK {
     SAMPLESHEET_CHECK ( samplesheet )
         .csv
         .splitCsv ( header:true, sep:',' )
-        .map { create_input_channel(it) }
+        .map { it -> create_input_channel(it) }
         .set { mutations }
 
     emit:

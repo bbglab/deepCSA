@@ -23,7 +23,7 @@ workflow EXPECTED_MUTATED_CELLS {
     // SUBSET_MUTEPIVAF(SUBSETMUTATIONS.out.subset)
     INTERVALSBED(panel)
 
-    features_table = params.features_table ? Channel.fromPath( params.features_table, checkIfExists: true) : Channel.fromPath(params.input)
+    features_table = params.features_table ? channel.fromPath( params.features_table, checkIfExists: true) : channel.fromPath(params.input)
     EXPECTEDMUTATEDCELLS(panel,
                             SUBSETMUTATIONS.out.subset,
                             SUBSETDEPTHS.out.subset,

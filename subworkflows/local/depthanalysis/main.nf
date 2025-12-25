@@ -10,7 +10,7 @@ workflow DEPTH_ANALYSIS{
     main:
 
     if (params.use_custom_depths) {
-        output_depths = Channel.fromPath( params.custom_depths_table, checkIfExists: true).map{ path -> [ [id: "all_samples"], path ] }.first()
+        output_depths = channel.fromPath( params.custom_depths_table, checkIfExists: true).map{ path -> [ [id: "all_samples"], path ] }.first()
     } else {
         // Join all samples and put them in a channel to be summarized together
         bam_list.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ combined_bams }

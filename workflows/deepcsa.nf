@@ -120,45 +120,45 @@ include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/l
 workflow DEEPCSA{
 
     // // Input channel definitions
-    features_table  = Channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
+    features_table  = channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
 
     wgs_trinucs     = params.wgs_trinuc_counts
-                            ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first()
+                            : channel.empty()
     cosmic_ref      = params.cosmic_ref_signatures
-                            ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first()
+                            : channel.empty()
     datasets3d      = params.datasets3d
-                            ? Channel.fromPath( params.datasets3d, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.datasets3d, checkIfExists: true).first()
+                            : channel.empty()
     annotations3d   = params.annotations3d
-                            ? Channel.fromPath( params.annotations3d, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.annotations3d, checkIfExists: true).first()
+                            : channel.empty()
     seqinfo_df      = params.datasets3d
-                            ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first()
+                            : channel.empty()
     cadd_scores     = params.cadd_scores
-                            ? Channel.of([
+                            ? channel.of([
                                 file(params.cadd_scores, checkIfExists : true),
                                 file(params.cadd_scores_ind, checkIfExists : true)
                                 ]).first()
-                            : Channel.empty()
+                            : channel.empty()
 
 
-    site_comparison_results  = Channel.empty()
-    all_compiled_omegas      = Channel.empty()
+    site_comparison_results  = channel.empty()
+    all_compiled_omegas      = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
     custom_groups_table = params.custom_groups_file
-                                ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first()
-                                : Channel.fromPath(params.input)
+                                ? channel.fromPath( params.custom_groups_file, checkIfExists: true).first()
+                                : channel.fromPath(params.input)
 
     // if the user wants to use custom BED file for computing the depths, import the BED file
     // otherwise I am using the input csv as a dummy value channel
     custom_bed_file     = params.custom_bedfile
-                                ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
-                                : Channel.fromPath( params.input )
+                                ? channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
+                                : channel.fromPath( params.input )
 
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
@@ -270,7 +270,7 @@ workflow DEEPCSA{
         MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel)
         MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel)
 
-        Channel.of([ [ id: "all_samples" ] ])
+        channel.of([ [ id: "all_samples" ] ])
         .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
         .set{ all_samples_syn_mutdensity }
 
@@ -280,7 +280,7 @@ workflow DEEPCSA{
 
 
         // Concatenate all outputs into a single file
-        Channel.empty()
+        channel.empty()
         .concat(MUTDENSITYALL.out.mutdensities.map{ it -> it[1]}.flatten())
         .concat(MUTDENSITYPROT.out.mutdensities.map{ it -> it[1]}.flatten())
         .concat(MUTDENSITYNONPROT.out.mutdensities.map{ it -> it[1]}.flatten())
@@ -361,7 +361,7 @@ workflow DEEPCSA{
 
     // OncodriveFML
     if (params.oncodrivefml){
-        oncodrivefml_regressions_files = Channel.empty()
+        oncodrivefml_regressions_files = channel.empty()
         if (params.profileall){
             mode = "all"
             ONCODRIVEFMLALL(somatic_mutations, MUTABILITYALL.out.mutability,
@@ -407,8 +407,8 @@ workflow DEEPCSA{
     }
 
     if (params.omega){
-        omega_regressions_files = Channel.empty()
-        omega_regressions_files_gloc = Channel.empty()
+        omega_regressions_files = channel.empty()
+        omega_regressions_files_gloc = channel.empty()
 
         // Omega
         if (params.profileall){
@@ -522,7 +522,7 @@ workflow DEEPCSA{
 
     if (params.signatures){
 
-        Channel.of([ [ id: "all_samples" ] ])
+        channel.of([ [ id: "all_samples" ] ])
         .join( somatic_mutations )
         .set{ maf2vcf_inputs }
 
@@ -615,16 +615,16 @@ workflow DEEPCSA{
     }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
-        Channel.topic('versions').unique().collectFile(name: 'collated_versions.yml')
+        channel.topic('versions').unique().collectFile(name: 'collated_versions.yml')
     )
 
 
     //
     // MODULE: MultiQC
     //
-    ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-    ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+    ch_multiqc_config          = channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    ch_multiqc_custom_config   = params.multiqc_config ? channel.fromPath( params.multiqc_config, checkIfExists: true ) : channel.empty()
+    ch_multiqc_logo            = params.multiqc_logo   ? channel.fromPath( params.multiqc_logo, checkIfExists: true ) : channel.empty()
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
     // Info required for completion email and summary
@@ -632,12 +632,12 @@ workflow DEEPCSA{
 
     def summary_params = paramsSummaryMap(workflow)
     workflow_summary    = paramsSummaryMultiqc(summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    ch_workflow_summary = channel.value(workflow_summary)
 
     methods_description    = methodsDescriptionText(ch_multiqc_custom_methods_description)
-    ch_methods_description = Channel.value(methods_description)
+    ch_methods_description = channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
