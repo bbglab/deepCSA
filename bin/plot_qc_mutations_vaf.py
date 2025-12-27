@@ -388,9 +388,12 @@ def main(sample_name, maf_file, output_prefix, max_n):
     print(f"Plots saved to {output_pdf_path}")
 
     get_top_mutations(maf_file, output_prefix)
-    if sample_name == "all_samples":
+    if len(maf_df["SAMPLE_ID"].unique()) > 1:
         get_top_mutations_all_samples(maf_file, output_prefix)
 
 
 if __name__ == '__main__':
-    main()
+    try :
+        main()
+    except Exception as e:
+        print(f"An error occurred: {e}")

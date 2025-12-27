@@ -122,10 +122,10 @@ def compute_proportion_per_consequence_type(mutations_info,
         segment_name = region_terms[1] if len(region_terms) > 1 else gene_name
         if '_ENSE0' in segment_name:
             region_type = 'exon'
-            segment_name = int(segment_name.split("_")[0])
+            segment_name = int(segment_name.split("_")[1])
         elif segment_name != gene_name:
             region_type = 'domain'
-            segment_name = segment_name.split("-")[0]
+            segment_name = segment_name
         else:
             region_type = 'gene'
 
@@ -165,10 +165,10 @@ def compute_proportion_per_consequence_type_by_frequency(mutations_info,
         segment_name = region_terms[1] if len(region_terms) > 1 else gene_name
         if '_ENSE0' in segment_name:
             region_type = 'exon'
-            segment_name = int(segment_name.split("_")[0])
+            segment_name = int(segment_name.split("_")[1])
         elif segment_name != gene_name:
             region_type = 'domain'
-            segment_name = segment_name.split("-")[0]
+            segment_name = segment_name
         else:
             region_type = 'gene'
 
@@ -446,8 +446,11 @@ def cli(rich_panel, expanded_panel, consensus_panel, maf, plots_dir, genes, grou
 
     grouping_modes_list = [m.strip() for m in grouping_modes.split(',')]
 
-    # Run generation
-    generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean, grouping_modes=grouping_modes_list)
+    try :
+        # Run generation
+        generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean, grouping_modes=grouping_modes_list)
+    except Exception as e:
+        print(f"Error during plot generation: {e}", file=sys.stderr)
 
 
 if __name__ == '__main__':
