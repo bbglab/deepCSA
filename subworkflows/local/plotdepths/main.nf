@@ -1,4 +1,4 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS     } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYDEPTHS     } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { PLOT_DEPTHS               as DEPTHSSUMMARY    } from '../../../modules/local/plot/depths_summary/main'
 
@@ -15,11 +15,11 @@ workflow PLOT_DEPTHS {
     main:
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETDEPTHS(depth, bedfile)
+    QUERYDEPTHS(depth, bedfile)
 
     CUSTOMBEDFILE(panel)
 
-    DEPTHSSUMMARY(SUBSETDEPTHS.out.subset, CUSTOMBEDFILE.out.bed)    
+    DEPTHSSUMMARY(QUERYDEPTHS.out.subset, CUSTOMBEDFILE.out.bed)    
 
 
     emit:
