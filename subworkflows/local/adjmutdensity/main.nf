@@ -1,4 +1,4 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSETMUTDENSITYADJUSTED } from '../../../modules/local/subsetmaf/main'
 
@@ -17,9 +17,9 @@ workflow MUTATION_DENSITY{
     main:
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETMUTATIONS(mutations, bedfile)
+    QUERYMUTATIONS(mutations, bedfile)
 
-    SUBSETMUTDENSITYADJUSTED(SUBSETMUTATIONS.out.subset)
+    SUBSETMUTDENSITYADJUSTED(QUERYMUTATIONS.out.subset)
 
     SUBSETMUTDENSITYADJUSTED.out.mutations
     .join(depth)

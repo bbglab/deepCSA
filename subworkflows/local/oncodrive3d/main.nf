@@ -1,4 +1,4 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSETONCODRIVE3D    } from '../../../modules/local/subsetmaf/main'
 
@@ -21,8 +21,8 @@ workflow ONCODRIVE3D_ANALYSIS{
 
     main:
 
-    SUBSETMUTATIONS(mutations, bedfile)
-    SUBSETONCODRIVE3D(SUBSETMUTATIONS.out.subset)
+    QUERYMUTATIONS(mutations, bedfile)
+    SUBSETONCODRIVE3D(QUERYMUTATIONS.out.subset)
 
     // mutations preprocessing
     if (params.o3d_raw_vep){

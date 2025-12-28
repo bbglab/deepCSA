@@ -1,6 +1,6 @@
 
 include { TABIX_BGZIPTABIX_QUERY        as SUBSETDEPTHS         } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
-include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS      } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY        as QUERYMUTATIONS      } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { EXPECTED_MUTATED_CELLS        as EXPECTEDMUTATEDCELLS } from '../../../../modules/local/mutated_cells_expected/main'
 include { CREATECUSTOMBEDFILE           as INTERVALSBED         } from '../../../../modules/local/createpanels/custombedfile/main'
 
@@ -15,17 +15,17 @@ workflow EXPECTED_MUTATED_CELLS {
 
     main:
 
-    SUBSETMUTATIONS(mutations, bedfile)
+    QUERYMUTATIONS(mutations, bedfile)
 
     // Intersect BED of all sites with BED of sample filtered sites
     SUBSETDEPTHS(depth, bedfile)
 
-    // SUBSET_MUTEPIVAF(SUBSETMUTATIONS.out.subset)
+    // SUBSET_MUTEPIVAF(QUERYMUTATIONS.out.subset)
     INTERVALSBED(panel)
 
     features_table = params.features_table ? channel.fromPath( params.features_table, checkIfExists: true) : channel.fromPath(params.input)
     EXPECTEDMUTATEDCELLS(panel,
-                            SUBSETMUTATIONS.out.subset,
+                            QUERYMUTATIONS.out.subset,
                             SUBSETDEPTHS.out.subset,
                             raw_annotation,
                             INTERVALSBED.out.bed,

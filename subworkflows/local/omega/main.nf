@@ -1,10 +1,10 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
 include { SUBSET_MAF                as SUBSETOMEGAMULTI         } from '../../../modules/local/subsetmaf/main'
 
 
 
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
@@ -32,7 +32,7 @@ workflow OMEGA_ANALYSIS{
     expanded_panel
     custom_gene_groups
     mutationdensities
-    complete_panel
+    panel_captured_rich
     suffix
     grouping_defs
     json_subgenic
@@ -45,12 +45,12 @@ workflow OMEGA_ANALYSIS{
     all_gloc_results        = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETMUTATIONS(mutations, bedfile)
+    QUERYMUTATIONS(mutations, bedfile)
 
-    SUBSETPANEL(complete_panel, bedfile)
+    QUERYPANEL(panel_captured_rich, bedfile)
 
-    SUBSETOMEGA(SUBSETMUTATIONS.out.subset)
-    SUBSETOMEGAMULTI(SUBSETMUTATIONS.out.subset)
+    SUBSETOMEGA(QUERYMUTATIONS.out.subset)
+    SUBSETOMEGAMULTI(QUERYMUTATIONS.out.subset)
 
     SUBSETOMEGA.out.mutations
     .join( depth )
@@ -81,7 +81,7 @@ workflow OMEGA_ANALYSIS{
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
 
     if (params.omega_plot){
-        SUBSETMUTATIONS.out.subset
+        QUERYMUTATIONS.out.subset
         .join(ESTIMATOR.out.results)
         .set{mutations_n_omega}
 
@@ -97,7 +97,7 @@ workflow OMEGA_ANALYSIS{
         .set{mutations_n_mutabilities}
 
         SITECOMPARISON(mutations_n_mutabilities,
-                        SUBSETPANEL.out.subset.first())
+                        QUERYPANEL.out.subset.first())
         site_comparison_results = SITECOMPARISON.out.comparisons
 
         SUBSETOMEGAMULTI.out.mutations
@@ -105,7 +105,7 @@ workflow OMEGA_ANALYSIS{
         .set{mutations_n_mutabilities_globalloc}
 
         SITECOMPARISONMULTI(mutations_n_mutabilities_globalloc,
-                                SUBSETPANEL.out.subset.first())
+                                QUERYPANEL.out.subset.first())
         // site_comparison_results = site_comparison_results.join(SITECOMPARISONMULTI.out.comparisons, remainder: true)
 
     }
@@ -136,7 +136,7 @@ workflow OMEGA_ANALYSIS{
         EVALOMEGAGLOCESTIMATION(all_syn_muts, all_syn_muts_gloc, grouping_defs)
 
         if (params.omega_plot){
-            SUBSETMUTATIONS.out.subset
+            QUERYMUTATIONS.out.subset
             .join(ESTIMATORGLOBALLOC.out.results)
             .set{mutations_n_omegagloloc}
 
@@ -152,7 +152,7 @@ workflow OMEGA_ANALYSIS{
             .set{mutations_n_mutabilities_globalloc}
 
             SITECOMPARISONGLOBALLOC(mutations_n_mutabilities_globalloc,
-                                    SUBSETPANEL.out.subset.first())
+                                    QUERYPANEL.out.subset.first())
             // site_comparison_results = site_comparison_results.join(SITECOMPARISONGLOBALLOC.out.comparisons, remainder: true)
 
 
@@ -161,7 +161,7 @@ workflow OMEGA_ANALYSIS{
             .set{mutations_n_mutabilities_globalloc}
 
             SITECOMPARISONGLOBALLOCMULTI(mutations_n_mutabilities_globalloc,
-                                            SUBSETPANEL.out.subset.first())
+                                            QUERYPANEL.out.subset.first())
             // site_comparison_results = site_comparison_results.join(SITECOMPARISONGLOBALLOCMULTI.out.comparisons, remainder: true)
         }
 

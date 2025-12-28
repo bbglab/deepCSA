@@ -1,5 +1,5 @@
 
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSETMUTPROFILE         } from '../../../modules/local/subsetmaf/main'
 
@@ -23,9 +23,9 @@ workflow MUTATIONAL_PROFILE {
     // actual code
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETMUTATIONS(mutations, bedfile)
+    QUERYMUTATIONS(mutations, bedfile)
 
-    SUBSETMUTPROFILE(SUBSETMUTATIONS.out.subset)
+    SUBSETMUTPROFILE(QUERYMUTATIONS.out.subset)
 
     COMPUTEMATRIX(SUBSETMUTPROFILE.out.mutations)
 
