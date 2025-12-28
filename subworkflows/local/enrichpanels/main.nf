@@ -66,6 +66,10 @@ workflow ENRICHPANELS {
         prot_expanded_panel         = prot_consensus_panel
         synonymous_expanded_panel   = synonymous_consensus_panel
         exons_expanded_panel        = exons_consensus_panel
+
+        // FIXME
+        // these are dummy channels that should not be used when
+        // omega_withingene is false check if they can be empty
         all_json_subgenic           = all_bedfile
         nonprot_json_subgenic       = nonprot_bedfile
         prot_json_subgenic          = prot_bedfile

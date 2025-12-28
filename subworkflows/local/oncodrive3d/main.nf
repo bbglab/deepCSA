@@ -1,13 +1,11 @@
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSETONCODRIVE3D   } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETONCODRIVE3D    } from '../../../modules/local/subsetmaf/main'
 
 include { ONCODRIVE3D_PREPROCESSING                         } from '../../../modules/local/bbgtools/oncodrive3d/preprocessing/main'
 include { ONCODRIVE3D_RUN                                   } from '../../../modules/local/bbgtools/oncodrive3d/run/main'
 include { ONCODRIVE3D_PLOT                                  } from '../../../modules/local/bbgtools/oncodrive3d/plot/main'
 include { ONCODRIVE3D_PLOT_CHIMERAX                         } from '../../../modules/local/bbgtools/oncodrive3d/plot_chimerax/main'
-
-// include { ONCODRIVE3D_COMP_PLOT } from '../../../modules/local/bbgtools/oncodrive3d/comparative_plot/main'
 
 
 
@@ -26,7 +24,6 @@ workflow ONCODRIVE3D_ANALYSIS{
     SUBSETMUTATIONS(mutations, bedfile)
     SUBSETONCODRIVE3D(SUBSETMUTATIONS.out.subset)
 
-
     // mutations preprocessing
     if (params.o3d_raw_vep){
         ONCODRIVE3D_PREPROCESSING(SUBSETONCODRIVE3D.out.mutations, raw_vep)
@@ -40,15 +37,6 @@ workflow ONCODRIVE3D_ANALYSIS{
         .set{ muts_n_mutability }
 
     }
-
-
-
-    // if (datasets) {
-    //      do something
-    // } else {
-    //     BUILDDATASETS
-    // }
-
 
     ONCODRIVE3D_RUN(muts_n_mutability, datasets)
 

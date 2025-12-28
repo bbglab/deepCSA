@@ -97,19 +97,19 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
-include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS       } from '../modules/local/annotatedepth/main'
-include { DOWNSAMPLE_DEPTHS         as DOWNSAMPLEDEPTHS     } from '../modules/local/downsample/depths/main'
+include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../modules/local/table2groups/main'
+include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
+include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
 
-include { SELECT_MUTDENSITIES       as SYNMUTDENSITY        } from '../modules/local/select_mutdensity/main'
-include { SELECT_MUTDENSITIES       as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as SYNMUTDENSITY            } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY       } from '../modules/local/select_mutdensity/main'
 
-include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
+include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../modules/local/dna2protein/main'
 
 include { MAF_2_VCF                     as MAF2VCF                  } from '../modules/local/maf2vcf/main'
 include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR    } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
 
-include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/local/mutations2sbs/main'
+include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,7 +162,7 @@ workflow DEEPCSA{
 
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
-    def run_mutdensity         = (params.mutationdensity || params.omega)
+    def run_mutdensity      = (params.mutationdensity || params.omega)
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
@@ -192,7 +192,7 @@ workflow DEEPCSA{
     grouping_definitions = TABLE2GROUP.out.json_samples.concat(TABLE2GROUP.out.json_groups).concat(TABLE2GROUP.out.json_allgroups).collect()
 
     // Load group keys from JSON file in 'groups' channel
-    def group_keys = TABLE2GROUP.out.json_groups.map { json_path ->
+    TABLE2GROUP.out.json_groups.map { json_path ->
         def json = file(json_path).text
         groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
     }.flatten().unique()
@@ -276,7 +276,7 @@ workflow DEEPCSA{
 
         SYNMUTDENSITY(all_samples_syn_mutdensity)
 
-        SYNMUTREADSRATE(all_samples_syn_mutdensity)
+        SYNMUTREADSDENSITY(all_samples_syn_mutdensity)
 
 
         // Concatenate all outputs into a single file
@@ -292,7 +292,7 @@ workflow DEEPCSA{
 
 
     // Mutational profile
-    if (params.profileall){
+    if ( params.profileall || run_mutabilities || params.omega ){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
         if (run_mutdensity){
             MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
@@ -443,7 +443,7 @@ workflow DEEPCSA{
                             CREATEPANELS.out.exons_consensus_bed,
                             ENRICHPANELS.out.exons_consensus_expanded_panel,
                             custom_groups_table,
-                            SYNMUTREADSRATE.out.mutdensity,
+                            SYNMUTREADSDENSITY.out.mutdensity,
                             CREATEPANELS.out.panel_annotated_rich,
                             ".multi",
                             grouping_definitions,
@@ -482,7 +482,7 @@ workflow DEEPCSA{
                                     CREATEPANELS.out.exons_consensus_bed,
                                     ENRICHPANELS.out.exons_consensus_expanded_panel,
                                     custom_groups_table,
-                                    SYNMUTREADSRATE.out.mutdensity,
+                                    SYNMUTREADSDENSITY.out.mutdensity,
                                     CREATEPANELS.out.panel_annotated_rich,
                                     ".multi.non_protein_affecting",
                                     grouping_definitions,
