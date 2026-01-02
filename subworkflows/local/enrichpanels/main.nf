@@ -32,14 +32,14 @@ workflow ENRICHPANELS {
 
     DNA2PROTEINMAPPING(mutations, exons_consensus_panel, all_samples_depths)
 
-    // Create a channel for the domains file if omega_autodomains is true
-    domains_ch = params.omega_autodomains ? domains_file : []  // .map{ it -> it[1]} : []
-    exons_ch = params.omega_autoexons ? DNA2PROTEINMAPPING.out.panel_exons_bed.map{ it -> it[1]}.ifEmpty([])  : []
+    // Create a channel for the domains file if autodomains is true
+    domains_ch = params.autodomains ? domains_file : []  // .map{ it -> it[1]} : []
+    exons_ch = params.autoexons ? DNA2PROTEINMAPPING.out.panel_exons_bed.map{ it -> it[1]}.ifEmpty([])  : []
 
     // Create a channel for the subgenic bedfile if provided
-    subgenic_ch = params.omega_subgenic_bedfile ? file(params.omega_subgenic_bedfile) : []
+    subgenic_ch = params.subgenic_bedfile ? file(params.subgenic_bedfile) : []
 
-    if (params.omega_withingene){
+    if (params.create_subgenic_regions){
         EXPANDREGIONSALL(all_consensus_panel, domains_ch, exons_ch, subgenic_ch)
         all_expanded_panel = EXPANDREGIONSALL.out.panel_increased.first()
         all_json_subgenic = EXPANDREGIONSALL.out.new_regions_json.first()
@@ -69,7 +69,7 @@ workflow ENRICHPANELS {
 
         // FIXME
         // these are dummy channels that should not be used when
-        // omega_withingene is false check if they can be empty
+        // create_subgenic_regions is false check if they can be empty
         all_json_subgenic           = all_bedfile
         nonprot_json_subgenic       = nonprot_bedfile
         prot_json_subgenic          = prot_bedfile

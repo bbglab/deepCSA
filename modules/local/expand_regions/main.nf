@@ -18,10 +18,10 @@ process EXPAND_REGIONS {
 
 
     script:
-    def autoexons = (params.omega_autoexons && exons.size() > 0 ) ? "--autoexons ${exons}" : ""
-    def autodomains = params.omega_autodomains ? "--autodomains ${domains}" : ""
-    def custom_regions = params.omega_subgenic_bedfile ? "--custom ${custom}" : ""
-    def subgenic_regions_complement = params.omega_subgenic_regions_complement ? "--subgenic-regions-complement" : ""
+    def autoexons = (params.autoexons && exons.size() > 0 ) ? "--autoexons ${exons}" : ""
+    def autodomains = params.autodomains ? "--autodomains ${domains}" : ""
+    def custom_regions = params.subgenic_bedfile ? "--custom ${custom}" : ""
+    def subgenic_regions_complement = params.subgenic_regions_complement ? "--subgenic-regions-complement" : ""
     """
     add_subgenicregions.py --panel_file ${panel} \\
                         ${autoexons} \\

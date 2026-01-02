@@ -140,10 +140,10 @@
             }
         },
         "custom_bedfile_configs": {
-            "title": "Custom BED file configurations",
+            "title": "Customize the first definition of regions to analyze.",
             "type": "object",
             "fa_icon": "fas fa-dna",
-            "description": "BED file dependent on the sequencing panel or minimum depth of the regions where to focus tha analysis.",
+            "description": "Use a custom BED file to focus all the analysis only in those regions, or set a minimum mean depth threshold.",
             "properties": {
                 "use_custom_bedfile": {
                     "type": "boolean",
@@ -218,17 +218,17 @@
                 }
             }
         },
-        "omega_bedfile_configs": {
-            "title": "Definition of hotspot regions configuration",
+        "subgenic_regions_definition": {
+            "title": "Configuration of subgenic regions",
             "type": "object",
             "fa_icon": "fas fa-dna",
-            "description": "BED file dependent on the hotspots present in the sequencing panel of interest.",
+            "description": "Definition of subgenic regions in genes.",
             "properties": {
-                "omega_withingene": {
+                "create_subgenic_regions": {
                     "type": "boolean",
-                    "description": "Do you want to analyze omega hotspots independently?",
+                    "description": "Do you want to analyze subgenic regions of the gene independently?",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to analyze omega hotspots independently?"
+                    "help_text": "Do you want to analyze subgenic regions of the gene independently?"
                 },
                 "domains_file": {
                     "type": "string",
@@ -239,7 +239,7 @@
                     "help_text": "Path to domain definition file to use.",
                     "fa_icon": "far fa-file-code"
                 },
-                "omega_subgenic_bedfile": {
+                "subgenic_bedfile": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
@@ -251,23 +251,24 @@
                 "hotspot_expansion": {
                     "type": "integer",
                     "description": "Size (in bp) of how much you want to expand the region around the hotspot (same in both directions)",
-                    "default": 30,
+                    "default": 0,
                     "help_text": "",
+                    "hidden": true,
                     "fa_icon": "far fa-file-code"
                 },
-                "omega_autodomains": {
+                "autodomains": {
                     "type": "boolean",
-                    "description": "Do you want to automatically generate the domains for omega?",
+                    "description": "Do you want to automatically include the domains as part of the subgenic regions?",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to automatically generate the domains for omega?"
+                    "help_text": "Do you want to automatically include the domains as part of the subgenic regions?"
                 },
-                "omega_autoexons": {
+                "autoexons": {
                     "type": "boolean",
-                    "description": "Do you want to automatically generate the theoretical exons from the panel for omega?",
+                    "description": "Do you want to automatically include the exons to the panel with subgenic regions?",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to automatically generate the theoretical exons from the panel for omega?"
+                    "help_text": "Do you want to automatically include the exons to the panel with subgenic regions?"
                 },
-                "omega_subgenic_regions_complement": {
+                "subgenic_regions_complement": {
                     "type": "boolean",
                     "description": "Do you want to generate complements for the subgenic regions?",
                     "fa_icon": "fas fa-book",
@@ -281,6 +282,22 @@
             "fa_icon": "fas fa-dna",
             "description": "Options to indicate which tools are run.",
             "properties": {
+                "contamination": {
+                    "type": "boolean",
+                    "description": "Do you want to run the contamination analysis?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
+                "mutationdensity": {
+                    "type": "boolean",
+                    "description": "Do you want to run mutationdensity?",
+                    "fa_icon": "fas fa-book"
+                },
+                "plot_depths": {
+                    "type": "boolean",
+                    "description": "Do you want to plot the depths within each gene?",
+                    "fa_icon": "fas fa-book"
+                },
                 "oncodrivefml": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrivefml?",
@@ -364,11 +381,6 @@
                     "description": "Do you want to run signatures?",
                     "fa_icon": "fas fa-book"
                 },
-                "mutationdensity": {
-                    "type": "boolean",
-                    "description": "Do you want to run mutationdensity?",
-                    "fa_icon": "fas fa-book"
-                },
                 "indels": {
                     "type": "boolean",
                     "description": "Do you want to run indels?",
@@ -387,11 +399,6 @@
                 "expected_mutated_cells": {
                     "type": "boolean",
                     "description": "Do you want to run expected_mutated_cells?",
-                    "fa_icon": "fas fa-book"
-                },
-                "plot_depths": {
-                    "type": "boolean",
-                    "description": "Do you want to run plot_depths?",
                     "fa_icon": "fas fa-book"
                 },
                 "plot_only_allsamples": {
@@ -593,6 +600,7 @@
                     "type": "integer",
                     "description": "Depth threshold for the sample panels",
                     "default": 40,
+                    "hidden": true,
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -660,12 +668,6 @@
                     "type": "number",
                     "description": "Allele frequency threshold for filtering variants based on gnomAD data.",
                     "default": 0.001,
-                    "fa_icon": "fas fa-book",
-                    "help_text": ""
-                },
-                "contamination": {
-                    "type": "boolean",
-                    "description": "Do you want to run the contamination analysis?",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
@@ -793,7 +795,7 @@
                     "help_text": "Path to BED file with noisy/variable genomic sites, developed in the Nanoseq pipeline. See https://github.com/cancerit/NanoSeq",
                     "fa_icon": "far fa-file-code",
                     "default": null
-            }
+                }
             }
         },
         "ensembl_vep_options": {
@@ -844,12 +846,6 @@
                     "help_text": "",
                     "default": "--no_stats --cache --offline --symbol --protein --canonical"
                 },
-                "download_cache": {
-                    "type": "boolean",
-                    "description": "Do you want to download the cache? Activate it only if necessary.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to download the cache? Activate it only if necessary."
-                },
                 "vep_cache": {
                     "type": "string",
                     "description": "Location of Ensembl VEP cache.",
@@ -865,6 +861,7 @@
             "fa_icon": "fas fa-university",
             "description": "Parameters used to describe centralised config profiles. These should not be edited.",
             "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+            "hidden": true,
             "properties": {
                 "config_profile_name": {
                     "type": "string",
