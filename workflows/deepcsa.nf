@@ -597,23 +597,6 @@ workflow DEEPCSA{
                     // DNA2PROTEINMAPPING.out.depths_exons_positions
                     )
 
-    // // Depth relationship plots
-    // // Plot VAF and mutation density vs depth (with hyperbolic curves)
-    // // Plot omega and OncodriveFML vs depth (without hyperbolic curves)
-    // if ( params.plot_depth_relationships ) {
-        
-    //     // Prepare OncodriveFML channel (optional)
-    //     oncodrivefml_channel = params.oncodrivefml ? ONCODRIVEFMLALL.out.results_snvs : Channel.empty()
-        
-    //     PLOTDEPTHRELS(
-    //         somatic_mutations,
-    //         all_mutdensities_file,
-    //         all_compiled_omegasgloballoc,
-    //         oncodrivefml_channel,
-    //         PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample
-    //     )
-    // }
-
     // Regressions
     if (params.regressions){
 
