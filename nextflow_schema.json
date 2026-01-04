@@ -1098,7 +1098,7 @@
             "$ref": "#/$defs/custom_depths_table_usage"
         },        
         {
-            "$ref": "#/$defs/omega_bedfile_configs"
+            "$ref": "#/$defs/subgenic_regions_definition"
         },
         {
             "$ref": "#/$defs/hotspot_annotation_options"
