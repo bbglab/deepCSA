@@ -145,8 +145,10 @@ workflow DEEPCSA{
                             : Channel.empty()
 
 
-    site_comparison_results  = Channel.empty()
-    all_compiled_omegas      = Channel.empty()
+    site_comparison_results         = Channel.empty()
+    all_compiled_omegas             = Channel.empty()
+    all_compiled_omegasgloballoc    = Channel.empty()
+    all_mutdensities_file           = Channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -428,6 +430,7 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             site_comparison_results = OMEGA.out.site_comparison
             all_compiled_omegas = OMEGA.out.all_compiled
+            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
@@ -576,9 +579,10 @@ workflow DEEPCSA{
                         )
     }
 
-        // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+    // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
     PLOTTINGQC(
                     // positive_selection_results_ready,
+                    somatic_mutations,
                     all_mutdensities_file.first(),
                     all_compiled_omegas,
                     // site_comparison_results,
