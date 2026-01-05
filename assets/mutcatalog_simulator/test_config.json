@@ -1,0 +1,23 @@
+{
+    "samples": [
+        "all_samples"
+    ],
+    "omegas": [
+        1,
+        2,
+        5
+    ],
+    "genes": [
+        "ARID1A",
+        "EGFR",
+        "TP53"
+    ],
+    "csqn_types": [
+        "missense",
+        "nonsense"
+    ],
+    "depth_corrections": [
+        1
+    ],
+    "n_replicates": 25
+}
