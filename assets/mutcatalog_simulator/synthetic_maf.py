@@ -39,7 +39,6 @@ def poisson_simulate(sample, sample_mutability, genes, omega_dict, depth_correct
 
     # define the vector of lambdas, i.e., mean parameter for Poisson distribution
 
-    simulated_maf['SAMPLE_ID'] = sample
     simulated_maf['lambda'] = simulated_maf.apply(lambda x: get_lambda(x['expected_ALT_DEPTH'], x['IMPACT'], omega_dict, depth_correction), axis=1)
 
     rng = np.random.default_rng(seed=12345)
@@ -112,9 +111,10 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
 
         for i, s in tqdm.tqdm(enumerate(counts)):
             simulated_maf['ALT_DEPTH'] = s
-            df = simulated_maf[simulated_maf['ALT_DEPTH'] > 0]
+            df = simulated_maf[simulated_maf['ALT_DEPTH'] > 0].copy()
+            df['SAMPLE_ID'] = f"{sample}_{omega}_{depth_correction}_{i:02d}"
             df.to_csv(
-                f"{output_dir}/{sample}.{omega}.{depth_correction}.fake_mutations.{i}.tsv",
+                f"{output_dir}/{sample}_{omega}_{depth_correction}_{i:02d}.tsv",
                 sep = "\t",
                 header = True,
                 index = False

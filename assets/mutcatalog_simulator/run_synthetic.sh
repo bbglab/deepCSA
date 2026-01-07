@@ -21,6 +21,7 @@ CORES=$(($(nproc) - 1))
 for file in ${OUTPUT_DIR}/maf/*.tsv; do
     python ~/mutcatalog_simulator/deepcsa_maf2samplevcfs.py \
         --mutations-file "$file" \
+        --sample-name-column "SAMPLE_ID" \
         --output-dir "${OUTPUT_DIR}/vcf" &
 
     # This block limits the number of background jobs
