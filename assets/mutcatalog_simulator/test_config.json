@@ -12,10 +12,6 @@
         "EGFR",
         "TP53"
     ],
-    "csqn_types": [
-        "missense",
-        "nonsense"
-    ],
     "depth_corrections": [
         1
     ],

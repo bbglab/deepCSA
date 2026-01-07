@@ -29,9 +29,9 @@ def get_lambda(expected_alt_depth, impact, omega_dict, depth_correction):
 
 
 
-def poisson_simulate(sample, sample_mutability, gene, omega_dict, depth_correction, possible_muts, random_replicates=100):
+def poisson_simulate(sample, sample_mutability, genes, omega_dict, depth_correction, possible_muts, random_replicates=100):
 
-    possible_muts_gene = possible_muts[possible_muts['GENE'] == gene].copy()
+    possible_muts_gene = possible_muts[possible_muts['GENE'].isin(genes)].copy()
 
     simulated_maf = pd.merge(possible_muts_gene,
                              sample_mutability[['CHROM', 'POS', 'CONTEXT_MUT', 'expected_ALT_DEPTH']],
@@ -82,7 +82,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
 
     # --- loop across grid params ---
 
-    for sample, gene, omega, depth_correction in product(samples, genes, omegas, depth_corrections):
+    for sample, omega, depth_correction in product(samples, omegas, depth_corrections):
         
         # --- omega dict ---
 
@@ -105,7 +105,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
         counts, simulated_maf = poisson_simulate(
             sample, 
             sample_mutability, 
-            gene, omega_dict, depth_correction, 
+            genes, omega_dict, depth_correction, 
             cleaned_possible_muts, 
             random_replicates=n_replicates
             )
@@ -114,7 +114,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
             simulated_maf['ALT_DEPTH'] = s
             df = simulated_maf[simulated_maf['ALT_DEPTH'] > 0]
             df.to_csv(
-                f"{output_dir}/{sample}.{gene}.{omega}.{depth_correction}.fake_mutations.{i}.tsv",
+                f"{output_dir}/{sample}.{omega}.{depth_correction}.fake_mutations.{i}.tsv",
                 sep = "\t",
                 header = True,
                 index = False
