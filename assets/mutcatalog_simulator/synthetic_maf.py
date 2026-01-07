@@ -67,7 +67,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
     fn = f"{deepcsa_run_dir}/createpanels/capturedpanels/captured_panel.exons_splice_sites.tsv"
     possible_muts = pd.read_table(fn)
 
-    # protein mapping filtering
+    # --- protein mapping filtering ---
     
     all_protein_positions_file = f"{deepcsa_run_dir}/dna2proteinmapping/depths_per_position_exon_gene.tsv"
     all_protein_positions = pd.read_table(all_protein_positions_file)
@@ -83,7 +83,15 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
         fn = f"{deepcsa_run_dir}/absolutemutabilitiesgloballoc/mutabilities_per_site.{sample}.global_loc.tsv.gz"
         sample_mutability = pd.read_table(fn)
         sample_mutability.rename(columns={sample: 'expected_ALT_DEPTH'}, inplace=True)
-        
+
+        # --- DEPTH column ---
+
+        cleaned_possible_muts = cleaned_possible_muts.drop(columns=['DEPTH'])
+        fn = f"{deepcsa_run_dir}/annotatedepths/{sample}.depths.annotated.tsv.gz"
+        depths_per_position = pd.read_csv(fn, sep = "\t", usecols = ['CHROM', 'POS', sample])
+        depths_per_position = depths_per_position.rename(columns={sample: 'DEPTH'})
+        cleaned_possible_muts = cleaned_possible_muts.merge(depths_per_position, on=['CHROM', 'POS'], how ='left')
+
         counts, simulated_maf = poisson_simulate(
             sample, 
             sample_mutability, 
