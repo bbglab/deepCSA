@@ -20,11 +20,16 @@ import numpy as np
 #    - genes
 #    - depth_corrections
 #    - random_replicates
-#    - csqn_types
 # * output_dir (path)
 
 
-def poisson_simulate(sample, sample_mutability, gene, omega, depth_correction, csqn_type, possible_muts, random_replicates=100):
+def get_lambda(expected_alt_depth, impact, omega_dict, depth_correction):
+    
+    return depth_correction * expected_alt_depth * omega_dict.get(impact, 1)
+
+
+
+def poisson_simulate(sample, sample_mutability, gene, omega_dict, depth_correction, possible_muts, random_replicates=100):
 
     possible_muts_gene = possible_muts[possible_muts['GENE'] == gene].copy()
 
@@ -35,9 +40,9 @@ def poisson_simulate(sample, sample_mutability, gene, omega, depth_correction, c
     # define the vector of lambdas, i.e., mean parameter for Poisson distribution
 
     simulated_maf['SAMPLE_ID'] = sample
-    simulated_maf['lambda'] = simulated_maf.apply(lambda x: depth_correction * x['expected_ALT_DEPTH'] * ((omega - 1) * (x['IMPACT'] == csqn_type) + 1), axis=1)
+    simulated_maf['lambda'] = simulated_maf.apply(lambda x: get_lambda(x['expected_ALT_DEPTH'], x['IMPACT'], omega_dict, depth_correction), axis=1)
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed=12345)
     random_counts = rng.poisson(lam=simulated_maf['lambda'].values, size=(random_replicates, simulated_maf.shape[0]))
 
     return random_counts, simulated_maf
@@ -58,7 +63,6 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
     samples = config['samples']
     omegas = config['omegas']
     genes = config['genes']
-    csqn_types = config['csqn_types']
     depth_corrections = config['depth_corrections']
     n_replicates = config['n_replicates']
     
@@ -78,8 +82,14 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
 
     # --- loop across grid params ---
 
-    for sample, gene, omega, rho, csqn_type in product(samples, genes, omegas, depth_corrections, csqn_types):
+    for sample, gene, omega, depth_correction in product(samples, genes, omegas, depth_corrections):
         
+        # --- omega dict ---
+
+        omega_dict = {'missense': omega, 'nonsense': omega}
+
+        # --- mutabilities per site ---
+
         fn = f"{deepcsa_run_dir}/absolutemutabilitiesgloballoc/mutabilities_per_site.{sample}.global_loc.tsv.gz"
         sample_mutability = pd.read_table(fn)
         sample_mutability.rename(columns={sample: 'expected_ALT_DEPTH'}, inplace=True)
@@ -95,7 +105,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
         counts, simulated_maf = poisson_simulate(
             sample, 
             sample_mutability, 
-            gene, omega, rho, csqn_type, 
+            gene, omega_dict, depth_correction, 
             cleaned_possible_muts, 
             random_replicates=n_replicates
             )
@@ -104,7 +114,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
             simulated_maf['ALT_DEPTH'] = s
             df = simulated_maf[simulated_maf['ALT_DEPTH'] > 0]
             df.to_csv(
-                f"{output_dir}/{sample}.{gene}.{omega}.{rho}.{csqn_type}.fake_mutations.{i}.tsv",
+                f"{output_dir}/{sample}.{gene}.{omega}.{depth_correction}.fake_mutations.{i}.tsv",
                 sep = "\t",
                 header = True,
                 index = False
