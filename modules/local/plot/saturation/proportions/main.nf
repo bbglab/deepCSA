@@ -9,7 +9,7 @@ process PLOT_SATURATION_PROPORTIONS {
     tuple val(meta) , path(mutations)
     tuple val(meta1), path(panel_file)
     tuple val(meta2), path(captured_panel_rich)
-    tuple val(meta3), path(expanded_panel)
+    tuple val(meta3), path(expanded_panel, stageAs: "expanded_panel.tsv")
 
     output:
     tuple val(meta), path("**.pdf"), optional : true    ,  emit: plots
