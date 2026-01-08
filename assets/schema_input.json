@@ -19,7 +19,7 @@
             },
             "bam": {
                 "type": "string",
-                "pattern": "^\\S+\\.bam$",
+                "pattern": "^\\S+\\.bam$|^\\S+\\.vcf$",
                 "errorMessage": "BAM file for sample must be provided, cannot contain spaces and must have extension '.bam'"
             },
             "pileup_bam": {

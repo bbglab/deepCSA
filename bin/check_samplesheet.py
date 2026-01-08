@@ -27,6 +27,7 @@ class RowChecker:
 
     VALID_FORMATS_BAM = (
         ".bam",
+        ".vcf", # FIXME this is a trick that can be used for cases where the deepCSA input is synthetic and no BAM is available
     )
     VALID_FORMATS_VCF = (
         ".vcf",
