@@ -10,7 +10,8 @@ import numpy as np
 @click.option('--autoexons', type=click.Path(exists=True), default=None, help='BED file for automated exon definitions.')
 @click.option('--autodomains', type=click.Path(exists=True), default=None, help='BED file for automated domain definitions.')
 @click.option('--custom', type=click.Path(exists=True), default=None, help='BED file for custom region definitions.')
-def main(panel_file, autoexons, autodomains, custom):
+@click.option('--subgenic-regions-complement', is_flag=True, default=False, help='Flag to generate negative regions for each newly defined subgenic region.')
+def main(panel_file, autoexons, autodomains, custom, subgenic_regions_complement):
 
     # Read input data
     panel_data = pd.read_table(panel_file)
@@ -39,7 +40,7 @@ def main(panel_file, autoexons, autodomains, custom):
 
     ## Process panel data to create new genes per exon
     new_data = pd.DataFrame()
-    hotspots_names = []
+    subgenics_names = []
 
     current_chr = ""
     region_counters = {}  # Dictionary to track exon numbers for each gene
@@ -115,13 +116,32 @@ def main(panel_file, autoexons, autodomains, custom):
             upd_start = ind_start
             upd_end = ind_end
 
-            # Extract hotspot data and modify gene names
-            hotspot_data = chr_data.iloc[upd_start: upd_end + 1, :].copy()
-            hotspot_data["GENE"] = region_name
+            # Extract subgenic data and modify gene names
+            subgenic_data = chr_data.iloc[upd_start: upd_end + 1, :].copy()
+            subgenic_data["GENE"] = region_name
 
-            new_data = pd.concat((new_data, hotspot_data))
-            hotspots_names.append(region_name)
+            new_data = pd.concat((new_data, subgenic_data))
+            subgenics_names.append(region_name)
             print("Small region added:", region_name)
+
+            # If requested, also create the complementary-region: all positions of the
+            # same gene that are NOT part of this specific subgenic region.
+            if subgenic_regions_complement:
+                # all positions for this gene within the chromosome block
+                gene_all = chr_data[chr_data["GENE"] == gene]
+                # positions within the subgenic that belong to the gene
+                region_positions = chr_data.iloc[upd_start: upd_end + 1]
+                region_gene_positions = region_positions[region_positions["GENE"] == gene]
+
+                complement_rows = gene_all.loc[~gene_all.index.isin(region_gene_positions.index)].copy()
+                if not complement_rows.empty:
+                    complement_name = f"{region_name}--complement"
+                    complement_rows["GENE"] = complement_name
+                    new_data = pd.concat((new_data, complement_rows))
+                    subgenics_names.append(complement_name)
+                    print("Complement region added:", complement_name)
+                else:
+                    print(f"No complement-region positions for gene {gene} excluding {region_name}")
 
             # Increment region counter for the gene (if name is generated)
             if row.get("NAME") is None:
@@ -132,12 +152,13 @@ def main(panel_file, autoexons, autodomains, custom):
 
     # Combine panel data with new data and save
     final_data = pd.concat((panel_data, new_data))
-
-    final_data.to_csv("exons_consensus_panel_with_hotspots.tsv",
+    
+    panel_name = ".".join(panel_file.split(".")[:-1])
+    final_data.to_csv(f"{panel_name}_with_subgenic.tsv",
                         sep="\t", header=True, index=False)
 
-    with open("hotspot_names.json", "w") as f:
-        json.dump({x: [x] for x in hotspots_names}, f, indent=4)
+    with open("subgenic_names.json", "w") as f:
+        json.dump({x: [x] for x in subgenics_names}, f, indent=4)
 
 
 if __name__ == '__main__':

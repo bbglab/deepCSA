@@ -7,6 +7,7 @@
 import argparse
 import csv
 import logging
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -85,8 +86,29 @@ class RowChecker:
         """Assert that the sample name exists and convert spaces to underscores."""
         if len(row[self._sample_col]) <= 0:
             raise AssertionError("Sample input is required.")
-        # Sanitize samples slightly.
-        row[self._sample_col] = row[self._sample_col].replace(" ", "_")
+        
+        sample_name = row[self._sample_col]
+        
+        # Sanitize samples: replace spaces with underscores
+        sample_name = sample_name.replace(" ", "_")
+        
+        # Validate that sample name only contains safe characters
+        # Allow alphanumeric, underscores, hyphens, and dots
+        if not re.match(r'^[a-zA-Z0-9._-]+$', sample_name):
+            raise AssertionError(
+                f"Sample name '{sample_name}' contains invalid characters. "
+                "Only alphanumeric characters, underscores (_), hyphens (-), and dots (.) are allowed. "
+                "This prevents potential shell injection vulnerabilities."
+            )
+        
+        # Additional check: ensure sample name doesn't start with a hyphen (could be interpreted as a flag)
+        if sample_name.startswith('-'):
+            raise AssertionError(
+                f"Sample name '{sample_name}' cannot start with a hyphen (-). "
+                "This prevents potential command-line flag injection."
+            )
+        
+        row[self._sample_col] = sample_name
 
     def _validate_vcf(self, row):
         """Assert that the first FASTQ entry is non-empty and has the right format."""

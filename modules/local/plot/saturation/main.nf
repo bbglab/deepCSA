@@ -15,8 +15,8 @@ process PLOT_SATURATION {
     tuple val(meta4), path (exons_depths_df)
 
     output:
-    tuple val(meta), path("**.png")  , emit: plots
-    path "versions.yml"              , topic: versions
+    tuple val(meta), path("**.png"), optional : true    ,  emit: plots
+    path "versions.yml"                                 , topic: versions
 
 
     script:

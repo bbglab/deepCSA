@@ -5,7 +5,7 @@ process OMEGA_MUTABILITIES {
     label 'process_high_memory'
 
 
-    container 'docker.io/ferriolcalvet/omega:20250716'
+    container 'docker.io/bbglab/omega:0.2.1'
 
     input:
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
@@ -37,10 +37,10 @@ process OMEGA_MUTABILITIES {
                         --vep-annotation-file ${annotated_panel} \\
                         --grouping-folder ./groups/ \\
                         --output-fn mutabilities_per_site.${prefix}.tsv.gz \\
-                        --cores 4
+                        # --cores ${task.cpus}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        omega: \$(omega --version | cut -d ' ' -f 3)
     END_VERSIONS
     """
 
@@ -52,7 +52,7 @@ process OMEGA_MUTABILITIES {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        omega: \$(omega --version | cut -d ' ' -f 3)
     END_VERSIONS
     """
 }

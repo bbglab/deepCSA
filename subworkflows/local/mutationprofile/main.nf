@@ -1,13 +1,13 @@
 
 include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { SUBSET_MAF                as SUBSETMUTPROFILE        } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETMUTPROFILE         } from '../../../modules/local/subsetmaf/main'
 
 include { COMPUTE_MATRIX            as COMPUTEMATRIX            } from '../../../modules/local/mutation_matrix/main'
 include { COMPUTE_TRINUCLEOTIDE     as COMPUTETRINUC            } from '../../../modules/local/compute_trinucleotide/main'
 
 include { COMPUTE_PROFILE           as COMPUTEPROFILE           } from '../../../modules/local/compute_profile/main'
-
+include { CONCAT_PROFILES           as CONCATPROFILES           } from '../../../modules/local/concatprofiles/main'
 
 
 workflow MUTATIONAL_PROFILE {
@@ -17,6 +17,7 @@ workflow MUTATIONAL_PROFILE {
     depth
     bedfile
     wgs_trinuc
+    all_groups
 
     main:
     // actual code
@@ -46,10 +47,13 @@ workflow MUTATIONAL_PROFILE {
     .concat(COMPUTEPROFILE.out.wgs_sigprofiler)
     .set{ sigprofiler_wgs }
 
+    compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1] }.collect().map { files -> [ [id:'all_profiles'], files ] }
+    CONCATPROFILES(compile_all_profiles, all_groups)
 
     emit:
     profile         = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
     matrix_sigprof  = sigprofiler_matrix
     trinucleotides  = COMPUTETRINUC.out.trinucleotides
     wgs_sigprofiler = sigprofiler_wgs
+    compiled_profiles = CONCATPROFILES.out.compiled_profiles
 }

@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 from scipy.stats import norm
 
@@ -22,42 +23,67 @@ def generate_all_side_figures(sample,
                                 tools = ["oncodrivefml", "omega_trunc", "omega_mis", "excess_indels"]
                                 ):
 
-    maf = pd.read_table(f"{sample}.somatic.mutations.tsv", na_values = custom_na_values)
+    maf_file = f"{sample}.somatic.mutations.tsv"
+    if not os.path.exists(maf_file):
+        print(f"Warning: MAF file {maf_file} not found. Skipping side figures generation.")
+        return
+    
+    maf = pd.read_table(maf_file, na_values = custom_na_values)
     snvs_maf = maf[maf["TYPE"] == "SNV"].reset_index(drop = True)
 
     possible_genes = []
+    oncodrivefml_genes = []
+    omega_truncating_genes = []
+    omega_missense_genes = []
+    indels_genes = []
+    
+    # Check and load oncodrivefml data
     if "oncodrivefml" in tools:
-        oncodrivefml_data = pd.read_table(f"{sample}-oncodrivefml.tsv.gz")
-        oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
-        oncodrivefml_data.columns = ["GENE", "OncodriveFML", "pvalue", "OBSERVED_MEAN", "BACKGROUND_MEAN", "BACKGROUND_STD"]
-        oncodrivefml_genes = list(pd.unique(oncodrivefml_data["GENE"]))
-        possible_genes += oncodrivefml_genes
+        oncodrivefml_file = f"{sample}-oncodrivefml.tsv.gz"
+        if os.path.exists(oncodrivefml_file):
+            oncodrivefml_data = pd.read_table(oncodrivefml_file)
+            oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
+            oncodrivefml_data.columns = ["GENE", "OncodriveFML", "pvalue", "OBSERVED_MEAN", "BACKGROUND_MEAN", "BACKGROUND_STD"]
+            oncodrivefml_genes = list(pd.unique(oncodrivefml_data["GENE"]))
+            possible_genes += oncodrivefml_genes
+        else:
+            print(f"Warning: OncodriveFML file {oncodrivefml_file} not found. Skipping OncodriveFML plots.")
 
 
+    # Check and load omega data
     if "omega_trunc" in tools or "omega_mis" in tools:
-        omega_data = pd.read_table(f"output_mle.{sample}.tsv")
-        omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
-                                    & ~(omega_data["gene"].str.contains('--'))        # select only genes
-                                ]
-        if "omega_trunc" in tools :
-            omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
-            omega_truncating.columns = ["GENE", "mutations_trunc", "omega_trunc", "pvalue", "lower", "upper"]
-            omega_truncating_genes = list(pd.unique(omega_truncating["GENE"]))
-            possible_genes += omega_truncating_genes
+        omega_file = f"output_mle.{sample}.tsv"
+        if os.path.exists(omega_file):
+            omega_data = pd.read_table(omega_file)
+            omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
+                                        & ~(omega_data["gene"].str.contains('--'))        # select only genes
+                                    ]
+            if "omega_trunc" in tools :
+                omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+                omega_truncating.columns = ["GENE", "mutations_trunc", "omega_trunc", "pvalue", "lower", "upper"]
+                omega_truncating_genes = list(pd.unique(omega_truncating["GENE"]))
+                possible_genes += omega_truncating_genes
 
-        if "omega_mis" in tools :
-            omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
-            omega_missense.columns = ["GENE", "mutations_mis", "omega_mis", "pvalue", "lower", "upper"]
-            omega_missense_genes = list(pd.unique(omega_truncating["GENE"]))
-            possible_genes += omega_missense_genes
+            if "omega_mis" in tools :
+                omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
+                omega_missense.columns = ["GENE", "mutations_mis", "omega_mis", "pvalue", "lower", "upper"]
+                omega_missense_genes = list(pd.unique(omega_missense["GENE"]))
+                possible_genes += omega_missense_genes
+        else:
+            print(f"Warning: Omega file {omega_file} not found. Skipping Omega plots.")
 
 
+    # Check and load indels data
     if "excess_indels" in tools:
-        indels_data = pd.read_table(f"{sample}.sample.indels.tsv",
-                                        sep = '\t',
-                                        header = 0)
-        indels_genes = list(pd.unique(indels_data["SYMBOL"]))
-        possible_genes += indels_genes
+        indels_file = f"{sample}.sample.indels.tsv"
+        if os.path.exists(indels_file):
+            indels_data = pd.read_table(indels_file,
+                                            sep = '\t',
+                                            header = 0)
+            indels_genes = list(pd.unique(indels_data["SYMBOL"]))
+            possible_genes += indels_genes
+        else:
+            print(f"Warning: Indels file {indels_file} not found. Skipping indels plots.")
 
     gene_list = list(set(possible_genes).intersection(set(snvs_maf["canonical_SYMBOL"].unique())))
 
@@ -315,6 +341,12 @@ def plot_all_positive_selection(omega_truncating,
     all_tracks = ["omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml", "indels"]
     plot_tracks = [t for t in all_tracks if t in tracks]
     n_tracks = len(plot_tracks)
+    
+    # Check if we have any tracks to plot
+    if n_tracks == 0:
+        print("Warning: No tracks to plot. Skipping plot generation.")
+        return None
+    
     fig, axes = plt.subplots(n_tracks, 1, figsize=(2.5, 0.6 + 0.6 * n_tracks), gridspec_kw={'height_ratios': [5]*n_tracks})
     if n_tracks == 1:
         axes = [axes]
@@ -322,7 +354,7 @@ def plot_all_positive_selection(omega_truncating,
         fig.suptitle(title)
     ax_idx = 0
 
-    if "omega_trunc" in plot_tracks:
+    if "omega_trunc" in plot_tracks and omega_truncating is not None:
         ax = axes[ax_idx]
         omega_truncating_sig = omega_truncating[omega_truncating["pvalue"] <= pvalue_thres].reset_index(drop = True)
         omega_truncating_notsig = omega_truncating[omega_truncating["pvalue"] > pvalue_thres].reset_index(drop = True)
@@ -358,7 +390,7 @@ def plot_all_positive_selection(omega_truncating,
 
 
 
-    if "omega_mis" in plot_tracks:
+    if "omega_mis" in plot_tracks and omega_missense is not None:
         ax = axes[ax_idx]
         omega_missense_sig = omega_missense[omega_missense["pvalue"] <= pvalue_thres].reset_index(drop = True)
         omega_missense_notsig = omega_missense[omega_missense["pvalue"] > pvalue_thres].reset_index(drop = True)
@@ -392,7 +424,7 @@ def plot_all_positive_selection(omega_truncating,
 
 
 
-    if "oncodrive3d" in plot_tracks:
+    if "oncodrive3d" in plot_tracks and oncodrive3d_data_scores is not None:
         ax = axes[ax_idx]
         df = oncodrive3d_data_scores
         name_metric = "o3d_score"
@@ -431,7 +463,7 @@ def plot_all_positive_selection(omega_truncating,
 
 
 
-    if "oncodrivefml" in plot_tracks:
+    if "oncodrivefml" in plot_tracks and oncodrivefml_data is not None:
         ax = axes[ax_idx]
         df = oncodrivefml_data
         name_metric = "ofml_score"
@@ -472,7 +504,7 @@ def plot_all_positive_selection(omega_truncating,
 
 
 
-    if "indels" in plot_tracks:
+    if "indels" in plot_tracks and indels_panel_df is not None:
         ax = axes[ax_idx]
         indels_panel_df_sig = indels_panel_df[indels_panel_df["pvalue"] <= pvalue_thres].reset_index(drop = True)
         indels_panel_df_notsig = indels_panel_df[indels_panel_df["pvalue"] > pvalue_thres].reset_index(drop = True)
@@ -521,66 +553,138 @@ def get_all_data(sample, outdir,
                  gene_order = None
                  ):
 
-    oncodrivefml_data = pd.read_table(f"{sample}-oncodrivefml.tsv.gz")
-    oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
-    oncodrivefml_data.columns = ["GENE", "OncodriveFML", "pvalue", "OBSERVED_MEAN", "BACKGROUND_MEAN", "BACKGROUND_STD"]
+    # Initialize variables for optional data
+    oncodrivefml_data = None
+    omega_truncating = None
+    omega_missense = None
+    oncodrive3d_data_scores = None
+    indels_panel_df = None
+    global_omega_decreasing = []
+    available_tracks = []
 
+    # Check and load oncodrivefml data
+    oncodrivefml_file = f"{sample}-oncodrivefml.tsv.gz"
+    if os.path.exists(oncodrivefml_file) and "oncodrivefml" in tracks:
+        try:
+            oncodrivefml_data = pd.read_table(oncodrivefml_file)
+            oncodrivefml_data = oncodrivefml_data[["GENE_ID", "Z-SCORE", "Q_VALUE", "AVG_SCORE_OBS", "POPULATION_MEAN", "STD_OF_MEANS"]]
+            oncodrivefml_data.columns = ["GENE", "OncodriveFML", "pvalue", "OBSERVED_MEAN", "BACKGROUND_MEAN", "BACKGROUND_STD"]
+            available_tracks.append("oncodrivefml")
+            print(f"Loaded OncodriveFML data from {oncodrivefml_file}")
+        except Exception as e:
+            print(f"Warning: Failed to load OncodriveFML data: {e}")
+    else:
+        print(f"Warning: OncodriveFML file {oncodrivefml_file} not found. Skipping OncodriveFML track.")
 
-    omega_data = pd.read_table(f"output_mle.{sample}.tsv")
-    omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
-                                    & ~(omega_data["gene"].str.contains('--'))
-                                ]
-    omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-    omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
-    truncating_decreasing = list(omega_truncating.sort_values("omega_trunc", ascending= False)["GENE"].values)
-    print("Truncating\n", truncating_decreasing)
+    # Check and load omega data
+    omega_file = f"output_mle.{sample}.tsv"
+    if os.path.exists(omega_file) and ("omega_trunc" in tracks or "omega_mis" in tracks):
+        try:
+            omega_data = pd.read_table(omega_file)
+            omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
+                                            & ~(omega_data["gene"].str.contains('--'))
+                                        ]
+            
+            if "omega_trunc" in tracks:
+                omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
+                omega_truncating.columns = ["GENE", "omega_trunc", "pvalue", "lower", "upper"]
+                truncating_decreasing = list(omega_truncating.sort_values("omega_trunc", ascending= False)["GENE"].values)
+                print("Truncating\n", truncating_decreasing)
+                available_tracks.append("omega_trunc")
 
-    omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
-    omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
-    missense_decreasing = list(omega_missense.sort_values("omega_mis", ascending= False)["GENE"].values)
-    print("Missense\n", missense_decreasing)
+            if "omega_mis" in tracks:
+                omega_missense = omega_data[omega_data["impact"] == "missense"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]
+                omega_missense.columns = ["GENE", "omega_mis", "pvalue", "lower", "upper"]
+                missense_decreasing = list(omega_missense.sort_values("omega_mis", ascending= False)["GENE"].values)
+                print("Missense\n", missense_decreasing)
+                available_tracks.append("omega_mis")
 
-    # merge omegas to decide sorting
-    omega_df = omega_truncating[["GENE", "omega_trunc", "pvalue"]].merge(omega_missense[["GENE", "omega_mis", "pvalue"]],
-                                                                            on = ["GENE"],
-                                                                            suffixes = ("_trunc", "_mis"))
-    omega_df["mean_omega"] = omega_df[["omega_trunc", "omega_mis"]].mean(axis = 1)
-    omega_df["any_signif"] = omega_df[["pvalue_trunc", "pvalue_mis"]].apply(lambda x: (x < 0.05).any(), axis = 1)
-    global_omega_decreasing = list(omega_df.sort_values(by = ["any_signif", "mean_omega"], ascending = False)["GENE"].values)
-    global_omega_decreasing.remove("ALL_GENES")
+            # merge omegas to decide sorting if both are available
+            if omega_truncating is not None and omega_missense is not None:
+                omega_df = omega_truncating[["GENE", "omega_trunc", "pvalue"]].merge(omega_missense[["GENE", "omega_mis", "pvalue"]],
+                                                                                        on = ["GENE"],
+                                                                                        suffixes = ("_trunc", "_mis"))
+                omega_df["mean_omega"] = omega_df[["omega_trunc", "omega_mis"]].mean(axis = 1)
+                omega_df["any_signif"] = omega_df[["pvalue_trunc", "pvalue_mis"]].apply(lambda x: (x < 0.05).any(), axis = 1)
+                global_omega_decreasing = list(omega_df.sort_values(by = ["any_signif", "mean_omega"], ascending = False)["GENE"].values)
+                if "ALL_GENES" in global_omega_decreasing:
+                    global_omega_decreasing.remove("ALL_GENES")
 
-    print("Global\n", global_omega_decreasing)
-    if len(global_omega_decreasing) > 20:
-        print("Keeping top 20 genes")
-        global_omega_decreasing = global_omega_decreasing[:20]
+                print("Global\n", global_omega_decreasing)
+                if len(global_omega_decreasing) > 20:
+                    print("Keeping top 20 genes")
+                    global_omega_decreasing = global_omega_decreasing[:20]
 
-    positively_selected_trunc = omega_truncating[(omega_truncating["pvalue"] < pvaluee) &
-                                                    (omega_truncating["omega_trunc"] > 1)
-                                                ]["GENE"].values
-    positively_selected_mis = omega_missense[(omega_missense["pvalue"] < pvaluee) &
-                                                (omega_missense["omega_mis"] > 1)
-                                            ]["GENE"].values
+                positively_selected_trunc = omega_truncating[(omega_truncating["pvalue"] < pvaluee) &
+                                                                (omega_truncating["omega_trunc"] > 1)
+                                                            ]["GENE"].values
+                positively_selected_mis = omega_missense[(omega_missense["pvalue"] < pvaluee) &
+                                                            (omega_missense["omega_mis"] > 1)
+                                                        ]["GENE"].values
 
-    all_positively_selected = set(positively_selected_trunc).union(set(positively_selected_mis))
-    print( "all_positively_selected", sorted(all_positively_selected))
-    positively_selected_both = set(positively_selected_trunc).intersection(set(positively_selected_mis))
-    print( "positively_selected_both", sorted(positively_selected_both))
-    positively_selected_trunc_only = set(positively_selected_trunc) - set(positively_selected_mis)
-    print( "positively_selected_trunc_only", sorted(positively_selected_trunc_only))
-    positively_selected_mis_only = set(positively_selected_mis) - set(positively_selected_trunc)
-    print( "positively_selected_mis_only", sorted(positively_selected_mis_only))
+                all_positively_selected = set(positively_selected_trunc).union(set(positively_selected_mis))
+                print( "all_positively_selected", sorted(all_positively_selected))
+                positively_selected_both = set(positively_selected_trunc).intersection(set(positively_selected_mis))
+                print( "positively_selected_both", sorted(positively_selected_both))
+                positively_selected_trunc_only = set(positively_selected_trunc) - set(positively_selected_mis)
+                print( "positively_selected_trunc_only", sorted(positively_selected_trunc_only))
+                positively_selected_mis_only = set(positively_selected_mis) - set(positively_selected_trunc)
+                print( "positively_selected_mis_only", sorted(positively_selected_mis_only))
+            elif omega_truncating is not None:
+                global_omega_decreasing = list(omega_truncating.sort_values("omega_trunc", ascending=False)["GENE"].values)
+                if "ALL_GENES" in global_omega_decreasing:
+                    global_omega_decreasing.remove("ALL_GENES")
+                if len(global_omega_decreasing) > 20:
+                    global_omega_decreasing = global_omega_decreasing[:20]
+            elif omega_missense is not None:
+                global_omega_decreasing = list(omega_missense.sort_values("omega_mis", ascending=False)["GENE"].values)
+                if "ALL_GENES" in global_omega_decreasing:
+                    global_omega_decreasing.remove("ALL_GENES")
+                if len(global_omega_decreasing) > 20:
+                    global_omega_decreasing = global_omega_decreasing[:20]
+                    
+            print(f"Loaded Omega data from {omega_file}")
+        except Exception as e:
+            print(f"Warning: Failed to load Omega data: {e}")
+    else:
+        print(f"Warning: Omega file {omega_file} not found. Skipping Omega tracks.")
 
+    # Check and load oncodrive3d data
+    oncodrive3d_file = f"{sample}.3d_clustering_genes.csv"
+    if os.path.exists(oncodrive3d_file) and "oncodrive3d" in tracks:
+        try:
+            oncodrive3d_data = pd.read_table(oncodrive3d_file, sep = ',')
+            oncodrive3d_data_scores = oncodrive3d_data[["Gene", "Score_obs_sim_top_vol", "qval"]]
+            oncodrive3d_data_scores.columns = ["GENE", "Oncodrive3D", 'pvalue']
+            available_tracks.append("oncodrive3d")
+            print(f"Loaded Oncodrive3D data from {oncodrive3d_file}")
+        except Exception as e:
+            print(f"Warning: Failed to load Oncodrive3D data: {e}")
+    else:
+        print(f"Warning: Oncodrive3D file {oncodrive3d_file} not found. Skipping Oncodrive3D track.")
 
-    oncodrive3d_data = pd.read_table(f"{sample}.3d_clustering_genes.csv", sep = ',')
-    oncodrive3d_data_scores = oncodrive3d_data[["Gene", "Score_obs_sim_top_vol", "qval"]]
-    oncodrive3d_data_scores.columns = ["GENE", "Oncodrive3D", 'pvalue']
+    # Check and load indels data
+    indels_file = f"{sample}.sample.indels.tsv"
+    if os.path.exists(indels_file) and "indels" in tracks:
+        try:
+            indels_data = pd.read_table(indels_file)
+            indels_panel_df = indels_data[["SYMBOL", "pa/Npa", "pvalue"]]
+            indels_panel_df.columns = ["GENE", "Indels_score", "pvalue"]
+            available_tracks.append("indels")
+            print(f"Loaded indels data from {indels_file}")
+        except Exception as e:
+            print(f"Warning: Failed to load indels data: {e}")
+    else:
+        print(f"Warning: Indels file {indels_file} not found. Skipping indels track.")
 
+    # Check if we have any data to plot
+    if not available_tracks:
+        print("Warning: No data files found for any of the requested tracks. Skipping plot generation.")
+        return
 
-    indels_data = pd.read_table(f"{sample}.sample.indels.tsv")
-    indels_panel_df = indels_data[["SYMBOL", "pa/Npa", "pvalue"]]
-    indels_panel_df.columns = ["GENE", "Indels_score", "pvalue"]
-
-
+    print(f"Generating plot with available tracks: {available_tracks}")
+    
+    # Generate plot with available tracks
     figuree = plot_all_positive_selection(omega_truncating,
                                             omega_missense,
                                             indels_panel_df,
@@ -589,10 +693,12 @@ def get_all_data(sample, outdir,
                                             global_omega_decreasing if gene_order is None else gene_order,
                                             title = sample,
                                             pvalue_thres = pvaluee,
-                                            tracks = tracks)
+                                            tracks = tuple(available_tracks))
 
-
-    figuree.savefig(f"{outdir}/{sample}.positive_selection_summary.pdf", bbox_inches='tight')
+    if figuree is not None:
+        figuree.savefig(f"{outdir}/{sample}.positive_selection_summary.pdf", bbox_inches='tight')
+    else:
+        print("Warning: No figure was generated due to missing data or tracks.")
 
 
 
