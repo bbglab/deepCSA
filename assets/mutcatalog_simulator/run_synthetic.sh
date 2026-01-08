@@ -20,7 +20,7 @@ python ${MUTCATALOG_SIMULATOR_HOME}/synthetic_maf.py \
 
 CORES=$(($(nproc) - 1))
 
-# for file in ${OUTPUT_DIR}/maf/*.tsv; do
+for file in ${OUTPUT_DIR}/maf/*.tsv; do
     python ${MUTCATALOG_SIMULATOR_HOME}/deepcsa_maf2samplevcfs.py \
         --mutations-file "$file" \
         --sample-name-column "SAMPLE_ID" \
