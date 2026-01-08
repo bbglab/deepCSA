@@ -22,6 +22,20 @@ import numpy as np
 #    - random_replicates
 # * output_dir (path)
 
+def sci_no_dots(x, sig=2):
+
+    if x % 1 == 0:
+        return f"{int(x)}"
+    
+    mantissa, exp = f"{x:.{sig}e}".split('e')
+    exp = int(exp)
+
+    decimals = len(mantissa) - mantissa.index('.') - 1
+    mantissa = mantissa.replace('.', '')
+    exp -= decimals
+
+    return f"{mantissa}e{exp:+03d}"
+
 
 def get_lambda(expected_alt_depth, impact, omega_dict, depth_correction):
     
@@ -100,6 +114,10 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
         depths_per_position = pd.read_csv(fn, sep = "\t", usecols = ['CHROM', 'POS', sample])
         depths_per_position = depths_per_position.rename(columns={sample: 'DEPTH'})
         cleaned_possible_muts = cleaned_possible_muts.merge(depths_per_position, on=['CHROM', 'POS'], how ='left')
+        cleaned_possible_muts["DEPTH"] = (cleaned_possible_muts["DEPTH"] * depth_correction // 1).astype(int)
+
+        experiment_name = f"{sample}_{sci_no_dots(omega)}_{sci_no_dots(depth_correction)}"
+        print(f"Simulating samples for {experiment_name}...")
 
         counts, simulated_maf = poisson_simulate(
             sample, 
@@ -109,12 +127,20 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
             random_replicates=n_replicates
             )
 
+        # Generate output depths table
+        base = cleaned_possible_muts.loc[cleaned_possible_muts["GENE"].isin(genes),["CHROM", "POS", "DEPTH"]].copy()
+        rep_cols = [ f"{experiment_name}_{i:02d}" for i in range(n_replicates) ]
+        output_depths_table = base.assign( **{c: base["DEPTH"] for c in rep_cols} ).drop(columns="DEPTH")
+        output_depths_table.to_csv( f"{output_dir}/{experiment_name}_depths.tsv", sep="\t", header = True,index=False)
+
+        # Generate output MAFs
         for i, s in tqdm.tqdm(enumerate(counts)):
             simulated_maf['ALT_DEPTH'] = s
             df = simulated_maf[simulated_maf['ALT_DEPTH'] > 0].copy()
-            df['SAMPLE_ID'] = f"{sample}_{omega}_{depth_correction}_{i:02d}"
+            generated_sample_name = f"{experiment_name}_{i:02d}"
+            df['SAMPLE_ID'] = generated_sample_name
             df.to_csv(
-                f"{output_dir}/{sample}_{omega}_{depth_correction}_{i:02d}.tsv",
+                f"{output_dir}/{generated_sample_name}.tsv",
                 sep = "\t",
                 header = True,
                 index = False

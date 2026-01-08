@@ -5,15 +5,21 @@
     "omegas": [
         1,
         2,
-        5
+        5,
+        40,
+        5e-1
     ],
     "genes": [
         "ARID1A",
-        "EGFR",
+        "KDM6A",
+        "FOXQ1",
+        "CDKN1A",
+        "RBM10",
+        "FGFR3",
         "TP53"
     ],
     "depth_corrections": [
-        1
+        13e-3
     ],
     "n_replicates": 25
 }
