@@ -164,30 +164,19 @@ workflow DEEPCSA{
 
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
-    def run_mutdensity         = (params.mutationdensity || params.omega)
+    def run_mutdensity      = (params.mutationdensity || params.omega)
 
-    //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    //
-    INPUT_CHECK (
-        file(params.input)
-    )
+    INPUT_CHECK( file(params.input), !params.use_custom_depths )
 
-
-    //
-    // Separate input BAMs and VCFs
-    //
-    INPUT_CHECK.out.mutations
+    // Separate samples and VCFs
+    INPUT_CHECK.out.sample_inputs
     .map{ it -> [ "id" : it[0].id ]}
     .set{ meta_samples_alone }
 
-    INPUT_CHECK.out.mutations
+    INPUT_CHECK.out.sample_inputs
     .map{ it -> [it[0], it[1]]}
     .set{ meta_vcfs_alone }
-
-    INPUT_CHECK.out.mutations
-    .map{ it -> [it[0], it[2]]}
-    .set{ meta_bams_alone }
 
 
     TABLE2GROUP(features_table)
@@ -203,7 +192,7 @@ workflow DEEPCSA{
 
     // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
+    DEPTHANALYSIS(INPUT_CHECK.out.sample_inputs, custom_bed_file)
 
     // Panels generation: all modalities
     CREATEPANELS(DEPTHANALYSIS.out.depths)

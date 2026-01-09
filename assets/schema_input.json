@@ -19,20 +19,20 @@
             },
             "bam": {
                 "type": "string",
-                "pattern": "^\\S+\\.bam$|^\\S+\\.vcf$",
+                "pattern": "^\\S+\\.bam$",
                 "errorMessage": "BAM file for sample must be provided, cannot contain spaces and must have extension '.bam'"
             },
             "pileup_bam": {
                 "type": "string",
                 "pattern": "^\\S+\\.bam$",
-                "errorMessage": "pileup BAM file for sample must be provided, cannot contain spaces and must have extension '.bam'"
+                "errorMessage": "BAM file for computing a pileup per sample, it must have extension '.bam'"
             },
             "pileup_ind": {
                 "type": "string",
                 "pattern": "^\\S+\\.bam.csi$",
-                "errorMessage": "BAM index pilup file for sample must be provided, cannot contain spaces and must have extension '.bam.csi'"
+                "errorMessage": "BAM index file for computing a pileup per sample, it must have extension '.bam.csi'"
             }
         },
-        "required": ["sample", "vcf", "bam"]
+        "required": ["sample", "vcf"]
     }
 }

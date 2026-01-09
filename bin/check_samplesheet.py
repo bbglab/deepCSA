@@ -27,7 +27,6 @@ class RowChecker:
 
     VALID_FORMATS_BAM = (
         ".bam",
-        ".vcf", # FIXME this is a trick that can be used for cases where the deepCSA input is synthetic and no BAM is available
     )
     VALID_FORMATS_VCF = (
         ".vcf",
@@ -39,32 +38,26 @@ class RowChecker:
         sample_col="sample",
         vcf_col="vcf",
         bam_col="bam",
-        pileupbam_col="pileup_bam",
-        pileupind_col="pileup_ind",
         **kwargs,
     ):
         """
         # TODO: update this docstring
+
         Initialize the row checker with the expected column names.
 
         Args:
             sample_col (str): The name of the column that contains the sample name
                 (default "sample").
-            first_col (str): The name of the column that contains the first (or only)
-                FASTQ file path (default "fastq_1").
-            second_col (str): The name of the column that contains the second (if any)
-                FASTQ file path (default "fastq_2").
-            single_col (str): The name of the new column that will be inserted and
-                records whether the sample contains single- or paired-end sequencing
-                reads (default "single_end").
+            vcf_col (str): The name of the column that contains the VCF filename
+                (default "vcf").
+            bam_col (str): The name of the column that contains the BAM filename
+                (default "bam").
 
         """
         super().__init__(**kwargs)
         self._sample_col = sample_col
         self._vcf_col = vcf_col
         self._bam_col = bam_col
-        self._pileupbam_col = pileupbam_col
-        self._pileupind_col = pileupind_col
         self._seen = set()
         self.modified = []
 
@@ -89,9 +82,6 @@ class RowChecker:
             raise AssertionError("Sample input is required.")
         
         sample_name = row[self._sample_col]
-        
-        # Sanitize samples: replace spaces with underscores
-        sample_name = sample_name.replace(" ", "_")
         
         # Validate that sample name only contains safe characters
         # Allow alphanumeric, underscores, hyphens, and dots
@@ -190,7 +180,7 @@ def sniff_format(handle):
     return dialect
 
 
-def check_samplesheet(file_in, file_out):
+def check_samplesheet(file_in, file_out, bam_required=False):
     """
     Check that the tabular samplesheet has the structure expected by nf-core pipelines.
 
@@ -216,8 +206,9 @@ def check_samplesheet(file_in, file_out):
         https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
 
     """
-    required_columns = {"sample", "vcf", "bam"}
-    # See https://docs.python.org/3.9/library/csv.html#id3 to read up on `newline=""`.
+    required_columns = {"sample", "vcf"}
+    if bam_required:
+        required_columns.add("bam")
     with file_in.open(newline="") as in_handle:
         reader = csv.DictReader(in_handle, dialect=sniff_format(in_handle))
         # Validate the existence of the expected header columns.
@@ -268,6 +259,12 @@ def parse_args(argv=None):
         choices=("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
         default="WARNING",
     )
+    parser.add_argument(
+        "--bam-required",
+        help="Require the 'bam' column in the samplesheet.",
+        default=False,
+        action="store_true",
+    )
     return parser.parse_args(argv)
 
 
@@ -279,7 +276,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     args.file_out.parent.mkdir(parents=True, exist_ok=True)
-    check_samplesheet(args.file_in, args.file_out)
+    check_samplesheet(args.file_in, args.file_out, bam_required=args.bam_required)
 
 
 if __name__ == "__main__":
