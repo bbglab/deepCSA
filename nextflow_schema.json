@@ -179,7 +179,6 @@
                 "use_custom_depths": {
                     "type": "boolean",
                     "description": "If true, the pipeline will use a precomputed depths table provided by `custom_depths_table` instead of computing depths from BAM files.",
-                    "default": false,
                     "fa_icon": "fas fa-toggle-on",
                     "help_text": "Enable this when you already have a table with per-position depths for the cohort."
                 },
@@ -1098,6 +1097,9 @@
         {
             "$ref": "#/$defs/custom_annotation_configs"
         },
+        {
+            "$ref": "#/$defs/custom_depths_table_usage"
+        },        
         {
             "$ref": "#/$defs/omega_bedfile_configs"
         },

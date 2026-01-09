@@ -1,4 +1,4 @@
-process PLOT_SATURATION {
+process PLOT_SATURATION_PROPORTIONS {
 
     tag "$meta.id"
     label 'process_low'
@@ -6,16 +6,13 @@ process PLOT_SATURATION {
     container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
-    tuple val(meta) , path(results_files) , path(site_comparison) // includes all positive selection results and site comparisons
-    tuple val(meta2), path(all_samples_indv_depths)
-    tuple val(meta3), path(panel_file)
-    path (gene_data_df)
-    path (pdb_df)
-    path (domains_df)
-    tuple val(meta4), path (exons_depths_df)
+    tuple val(meta) , path(mutations)
+    tuple val(meta1), path(panel_file)
+    tuple val(meta2), path(captured_panel_rich)
+    tuple val(meta3), path(expanded_panel, stageAs: "expanded_panel.tsv")
 
     output:
-    tuple val(meta), path("**.png"), optional : true    ,  emit: plots
+    tuple val(meta), path("**.pdf"), optional : true    ,  emit: plots
     path "versions.yml"                                 , topic: versions
 
 
@@ -24,11 +21,14 @@ process PLOT_SATURATION {
     prefix = "${meta.id}${prefix}"
     """
     mkdir ${prefix}.plots
-    plot_gene_saturation.py \\
-                    --sample_name ${prefix} \\
-                    --outdir ${prefix}.plots \\
-                    --domain_file ${domains_df} \\
-                    --exons_depths ${exons_depths_df}
+    plot_saturation_in_genes.py \\
+                    --rich-panel ${captured_panel_rich} \\
+                    --expanded-panel ${expanded_panel} \\
+                    --consensus-panel ${panel_file} \\
+                    --maf ${mutations} \\
+                    --plots-dir ${prefix}.plots
+    ##                    --genes
+    ##                    --grouping-modes
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -40,7 +40,7 @@ process PLOT_SATURATION {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.png
+    touch ${prefix}.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
