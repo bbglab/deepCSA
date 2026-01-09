@@ -81,17 +81,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
     
     # --- prepare all possible mutation sites ---
 
-    fn = f"{deepcsa_run_dir}/createpanels/capturedpanels/captured_panel.exons_splice_sites.tsv"
-    possible_muts = pd.read_table(fn)
-
-    # --- protein mapping filtering ---
-    
-    all_protein_positions_file = f"{deepcsa_run_dir}/dna2proteinmapping/depths_per_position_exon_gene.tsv"
-    all_protein_positions = pd.read_table(all_protein_positions_file)
-    all_protein_positions = all_protein_positions[all_protein_positions["COVERED"] == 1].reset_index(drop = True)
-    all_protein_positions = all_protein_positions.rename({"CHR": "CHROM", "DNA_POS": "POS"}, axis = 'columns')
-    cleaned_possible_muts = possible_muts.merge(all_protein_positions, on = ['CHROM', 'POS', 'GENE', 'CONTEXT'], how = 'left')
-    cleaned_possible_muts = cleaned_possible_muts[~(cleaned_possible_muts["PROT_POS"].isna())].reset_index(drop = True)
+    cleaned_possible_muts_init = pd.read_table(f"{deepcsa_run_dir}/createpanels/consensuspanels/consensus.exons_splice_sites.tsv")
 
     # --- loop across grid params ---
     compiled_output_depths_table = []
@@ -108,12 +98,10 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
         sample_mutability.rename(columns={sample: 'expected_ALT_DEPTH'}, inplace=True)
 
         # --- DEPTH column ---
-
-        cleaned_possible_muts = cleaned_possible_muts.drop(columns=['DEPTH'])
         fn = f"{deepcsa_run_dir}/annotatedepths/{sample}.depths.annotated.tsv.gz"
         depths_per_position = pd.read_csv(fn, sep = "\t", usecols = ['CHROM', 'POS', sample])
         depths_per_position = depths_per_position.rename(columns={sample: 'DEPTH'})
-        cleaned_possible_muts = cleaned_possible_muts.merge(depths_per_position, on=['CHROM', 'POS'], how ='left')
+        cleaned_possible_muts = cleaned_possible_muts_init.merge(depths_per_position, on=['CHROM', 'POS'], how ='left')
         cleaned_possible_muts["DEPTH"] = (cleaned_possible_muts["DEPTH"] * depth_correction // 1).astype(int)
 
         experiment_name = f"{sample}_{sci_no_dots(omega)}_{sci_no_dots(depth_correction)}"
@@ -128,8 +116,8 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
             )
 
         # Generate output depths table
-        base = cleaned_possible_muts.loc[cleaned_possible_muts["GENE"].isin(genes),["CHROM", "POS", "DEPTH"]].copy()
-        rep_cols = [ f"{experiment_name}_{i:02d}.vcf" for i in range(n_replicates) ]
+        base = cleaned_possible_muts.loc[cleaned_possible_muts["GENE"].isin(genes),["CHROM", "POS", "DEPTH"]].drop_duplicates().reset_index(drop=True)
+        rep_cols = [ f"{experiment_name}_{i:02d}" for i in range(n_replicates) ]
         output_depths_table = base.assign( **{c: base["DEPTH"] for c in rep_cols} ).drop(columns="DEPTH")
         output_depths_table.to_csv( f"{output_dir}/{experiment_name}_depths.tsv", sep="\t", header = True,index=False)
         compiled_output_depths_table.append(output_depths_table.iloc[:,2:])

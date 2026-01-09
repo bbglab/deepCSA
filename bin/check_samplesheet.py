@@ -61,7 +61,7 @@ class RowChecker:
         self._seen = set()
         self.modified = []
 
-    def validate_and_transform(self, row):
+    def validate_and_transform(self, row, require_bam=False):
         """
         Perform all validations on the given row and insert the read pairing status.
 
@@ -72,7 +72,8 @@ class RowChecker:
         """
         self._validate_sample(row)
         self._validate_vcf(row)
-        self._validate_bam(row)
+        if require_bam:
+            self._validate_bam(row)
         self._seen.add((row[self._sample_col], row[self._vcf_col]))
         self.modified.append(row)
 
@@ -220,7 +221,7 @@ def check_samplesheet(file_in, file_out, bam_required=False):
         checker = RowChecker()
         for i, row in enumerate(reader):
             try:
-                checker.validate_and_transform(row)
+                checker.validate_and_transform(row, require_bam=bam_required)
             except AssertionError as error:
                 logger.critical(f"{str(error)} On line {i + 2}.")
                 sys.exit(1)
