@@ -94,7 +94,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
     cleaned_possible_muts = cleaned_possible_muts[~(cleaned_possible_muts["PROT_POS"].isna())].reset_index(drop = True)
 
     # --- loop across grid params ---
-
+    compiled_output_depths_table = []
     for sample, omega, depth_correction in product(samples, omegas, depth_corrections):
         
         # --- omega dict ---
@@ -129,9 +129,10 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
 
         # Generate output depths table
         base = cleaned_possible_muts.loc[cleaned_possible_muts["GENE"].isin(genes),["CHROM", "POS", "DEPTH"]].copy()
-        rep_cols = [ f"{experiment_name}_{i:02d}" for i in range(n_replicates) ]
+        rep_cols = [ f"{experiment_name}_{i:02d}.vcf" for i in range(n_replicates) ]
         output_depths_table = base.assign( **{c: base["DEPTH"] for c in rep_cols} ).drop(columns="DEPTH")
         output_depths_table.to_csv( f"{output_dir}/{experiment_name}_depths.tsv", sep="\t", header = True,index=False)
+        compiled_output_depths_table.append(output_depths_table.iloc[:,2:])
 
         # Generate output MAFs
         for i, s in tqdm.tqdm(enumerate(counts)):
@@ -147,7 +148,9 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
                 )
 
     # --- convenient printouts ---
-
+    pd.concat([output_depths_table.iloc[:,:2]] + compiled_output_depths_table,
+              axis=1).to_csv( f"{output_dir}/all_experiments_depths.tsv.gz",
+                             sep="\t", header = True, index=False)
     print(f'output_dir: {output_dir}')
 
 if __name__ == '__main__':
