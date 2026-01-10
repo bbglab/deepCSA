@@ -1,0 +1,3 @@
+reports:
+  "plots/mutations_summary*":
+    display: "Mutations summary"
