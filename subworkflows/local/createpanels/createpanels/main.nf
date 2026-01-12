@@ -1,30 +1,19 @@
-include { SITESFROMPOSITIONS                                            } from '../../../modules/local/sitesfrompositions/main'
-include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
+include { CREATECAPTUREDPANELS                                          } from '../../../../modules/local/createpanels/captured/main'
 
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/panel/main'
-
-include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING             } from '../../../modules/local/process_annotation/panelcustom/main'
-include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH         } from '../../../modules/local/process_annotation/panelcustom/main'
-
-include { DOMAIN_ANNOTATION             as DOMAINANNOTATION             } from '../../../modules/local/process_annotation/domain/main'
-
-
-include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
-
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL                  } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT           } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT        } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS                } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS              } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSSYNONYMOUS           } from '../../../modules/local/createpanels/sample/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL                  } from '../../../../modules/local/createpanels/sample/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT           } from '../../../../modules/local/createpanels/sample/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT        } from '../../../../modules/local/createpanels/sample/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS                } from '../../../../modules/local/createpanels/sample/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS              } from '../../../../modules/local/createpanels/sample/main'
+include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSSYNONYMOUS           } from '../../../../modules/local/createpanels/sample/main'
 
 
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL            } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT     } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT  } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS          } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS        } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS     } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL            } from '../../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT     } from '../../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT  } from '../../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS          } from '../../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS        } from '../../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS     } from '../../../../modules/local/createpanels/consensus/main'
 
 
 
@@ -46,48 +35,10 @@ def restructureSamplePanel(panel) {
 workflow CREATE_PANELS {
 
     take:
+    complete_annotated_panel
     depths
 
     main:
-
-    // Create all possible sites and mutations per site of the captured panel
-    SITESFROMPOSITIONS(depths)
-
-    // Create a tuple for VEP annotation (mandatory)
-    SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation }
-
-    // Annotate all possible mutations in the captured panel
-    VCFANNOTATEPANEL(sites_annotation,
-                    params.fasta,
-                    params.vep_genome,
-                    params.vep_species,
-                    params.vep_cache_version,
-                    params.vep_cache,
-                    [])
-
-    // Postprocess annotations to get one annotation per mutation
-    POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
-
-    if (params.customize_annotation) {
-        custom_annotation_tsv = file(params.custom_annotation_tsv)
-
-        // Update specific regions based on user preferences
-        CUSTOMPROCESSING(POSTPROCESSVEPPANEL.out.compact_panel_annotation, custom_annotation_tsv)
-        complete_annotated_panel = CUSTOMPROCESSING.out.custom_panel_annotation
-
-        CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANEL.out.rich_panel_annotation, custom_annotation_tsv)
-        rich_annotated = CUSTOMPROCESSINGRICH.out.custom_panel_annotation
-
-        added_regions = CUSTOMPROCESSINGRICH.out.added_regions
-
-    } else {
-        complete_annotated_panel = POSTPROCESSVEPPANEL.out.compact_panel_annotation
-        rich_annotated = POSTPROCESSVEPPANEL.out.rich_panel_annotation
-        added_regions = Channel.empty()
-    }
-
-    domains = file(params.domains_file, checkIfExists: true)
-    DOMAINANNOTATION(rich_annotated, domains)
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
@@ -125,7 +76,7 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
     emit:
-    full_panel_annotated        = VCFANNOTATEPANEL.out.tab
+    // full_panel_annotated        = VCFANNOTATEPANEL.out.tab
     all_panel                   = all_panel.first()
     all_bed                     = all_bed.first()
     prot_panel                  = prot_panel.first()
@@ -153,13 +104,13 @@ workflow CREATE_PANELS {
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
-    panel_annotated_rich        = rich_annotated
-    added_custom_regions        = added_regions
-    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
-    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
+    // panel_annotated_rich        = rich_annotated
+    // added_custom_regions        = added_regions
+    // domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
+    // domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
 
-    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
-    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
+    // postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
+    // postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
