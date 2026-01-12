@@ -554,7 +554,25 @@ workflow DEEPCSA{
         }
     }
 
+    PLOTTINGQC(
+                all_mutdensities_file.first(),
+                all_compiled_omegas,
+                // site_comparison_results,
+                // ANNOTATEDEPTHS.out.all_samples_depths,
+                // TABLE2GROUP.out.json_allgroups,
+                CREATEPANELS.out.exons_consensus_panel,
+                TABLE2GROUP.out.json_allgroups.first(),
+                group_keys_ch
+                // CREATEPANELS.out.panel_annotated_rich,
+                // seqinfo_df,
+                // CREATEPANELS.out.domains_in_panel,
+                // DNA2PROTEINMAPPING.out.depths_exons_positions
+                )
+
     if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) {
+        if (params.omega){
+            positive_selection_results = positive_selection_results.combine(PLOTTINGQC.out.flagged_omegas.map{ it -> it[1] })
+        }
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         somatic_mutations,
@@ -576,22 +594,6 @@ workflow DEEPCSA{
                         )
     }
 
-        // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-    PLOTTINGQC(
-                    // positive_selection_results_ready,
-                    all_mutdensities_file.first(),
-                    all_compiled_omegas,
-                    // site_comparison_results,
-                    // ANNOTATEDEPTHS.out.all_samples_depths,
-                    // TABLE2GROUP.out.json_allgroups,
-                    CREATEPANELS.out.exons_consensus_panel,
-                    TABLE2GROUP.out.json_allgroups.first(),
-                    group_keys_ch
-                    // CREATEPANELS.out.panel_annotated_rich,
-                    // seqinfo_df,
-                    // CREATEPANELS.out.domains_in_panel,
-                    // DNA2PROTEINMAPPING.out.depths_exons_positions
-                    )
 
     // Regressions
     if (params.regressions){

@@ -46,5 +46,6 @@ workflow PLOTTING_QC {
 
     emit:
     mutdensity_plots    = PLOTMUTDENSITYQC.out.plots
+    flagged_omegas      = APPLYOMEGAQC.out.all_omegas_annotated
 
 }
