@@ -37,8 +37,19 @@ workflow CREATE_PANELS {
     take:
     complete_annotated_panel
     depths
+    // flagged_regions_bed  // BED file with regions to exclude -> from MUTATION_PREPROCESSING
 
     main:
+
+    // // Filter out flagged regions from the annotated panel before creating panels
+    // // This happens via bedtools subtract or similar filtering in the annotation
+    // if (flagged_regions_bed) {
+    //     // TODO: Add a process here to subtract flagged_regions_bed from complete_annotated_panel
+    //     // For now, just use the panel as-is (implement filtering process separately)
+    //     filtered_panel = complete_annotated_panel
+    // } else {
+    //     filtered_panel = complete_annotated_panel
+    // }
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
@@ -103,14 +114,6 @@ workflow CREATE_PANELS {
     introns_consensus_bed       = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed.first()
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
-
-    // panel_annotated_rich        = rich_annotated
-    // added_custom_regions        = added_regions
-    // domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
-    // domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
-
-    // postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
-    // postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
 
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())

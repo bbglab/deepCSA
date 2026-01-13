@@ -209,6 +209,19 @@ workflow DEEPCSA{
     // Panels annotation
     ANNOTATEPANELS(DEPTHANALYSIS.out.depths)
 
+    // Mutation preprocessing
+    MUT_PREPROCESSING(meta_vcfs_alone,
+                        ANNOTATEPANELS.out.all_consensus_bed_initial,
+                        ANNOTATEPANELS.out.exons_bed_initial,
+                        TABLE2GROUP.out.json_allgroups,
+                        group_keys_ch,
+                        seqinfo_df,
+                        ANNOTATEPANELS.out.added_custom_regions
+                        )
+    somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
+
+    positive_selection_results = somatic_mutations
+
     // Panels generation: all modalities
     CREATEPANELS(ANNOTATEPANELS.out.complete_annotated_panel, DEPTHANALYSIS.out.depths)
 
@@ -226,20 +239,6 @@ workflow DEEPCSA{
     PLOTDEPTHSALLCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
     PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
     PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
-
-    // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone,
-                        CREATEPANELS.out.all_consensus_bed,
-                        CREATEPANELS.out.exons_bed,
-                        TABLE2GROUP.out.json_allgroups,
-                        group_keys_ch,
-                        seqinfo_df,
-                        ANNOTATEPANELS.out.added_custom_regions
-                        )
-    somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-
-    positive_selection_results = somatic_mutations
-
 
     // Enrich regions in consensus panels
     ENRICHPANELS(MUT_PREPROCESSING.out.mutations_all_samples,
