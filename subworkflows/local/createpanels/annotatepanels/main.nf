@@ -65,21 +65,19 @@ workflow ANNOTATE_PANELS {
     domains = file(params.domains_file, checkIfExists: true)
     DOMAINANNOTATION(rich_annotated, domains)
 
-    // Create captured-specific panels: all modalities
+    // Create MUTPREPROCESSING-specific panels
     CREATECAPTUREDPANELS(complete_annotated_panel)
 
+    // All consensus bed
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all).set{all_panel}
-    restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites).set{exons_panel}
-    restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites_bed).set{exons_bed_initial}
-
     if (params.create_sample_panels){
-        // Create sample-specific panels: all modalities
         CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
     }
-
-    // Create consensus panel: all modalities
     CREATECONSENSUSPANELSALL(all_panel, depths)
-
+    
+    // Exons bed
+    restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_exons_splice_sites_bed).set{exons_bed_initial}
+    
     emit:
     full_panel_annotated           = VCFANNOTATEPANEL.out.tab
     complete_annotated_panel       = complete_annotated_panel
