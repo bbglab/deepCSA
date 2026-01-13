@@ -311,16 +311,18 @@ def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
 def extract_flagged_regions_bed(maf_df: pd.DataFrame, maf_file_name: str):
     """
     Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
+    Creates a properly formatted BED file with 0-based coordinates and half-open intervals.
 
     Parameters
     ----------
     maf_df : pd.DataFrame
-        Input MAF dataframe with filter columns.
+        Input MAF dataframe with filter columns. POS column should contain 1-based coordinates.
 
     Returns
     -------
     pd.DataFrame
         A BED dataframe with discarded mutations and filters applied to each region.
+        Output coordinates are 0-based with half-open intervals [start, end).
     """
     LOG.debug(list(maf_df.columns))
     # List of filter columns you want to check for
@@ -357,10 +359,11 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, maf_file_name: str):
                 .rename(columns={"POS": "START"})
     )
 
-    # Create END column for BED format
-    # Assumes variants are SNPs
-    # This is probably 1-based closed interval.
-    bed_annotated["END"] = bed_annotated["START"]
+    # Create BED format coordinates (0-based, half-open interval)
+    # Input POS is 1-based (from VCF), convert to 0-based BED format
+    # For SNPs: 1-based POS -> 0-based [START, END) where END = START + 1
+    bed_annotated["END"] = bed_annotated["START"]        # Half-open interval
+    bed_annotated["START"] = bed_annotated["START"] - 1  # Convert 1-based to 0-based    
 
     LOG.info("Unique regions flagged: %s", bed_annotated.shape[0])
 
