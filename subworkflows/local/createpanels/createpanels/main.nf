@@ -37,19 +37,19 @@ workflow CREATE_PANELS {
     take:
     complete_annotated_panel
     depths
-    // flagged_regions_bed  // BED file with regions to exclude -> from MUTATION_PREPROCESSING
+    flagged_regions_bed  // BED file with regions to exclude -> from MUTATION_PREPROCESSING
 
     main:
 
-    // // Filter out flagged regions from the annotated panel before creating panels
-    // // This happens via bedtools subtract or similar filtering in the annotation
-    // if (flagged_regions_bed) {
-    //     // TODO: Add a process here to subtract flagged_regions_bed from complete_annotated_panel
-    //     // For now, just use the panel as-is (implement filtering process separately)
-    //     filtered_panel = complete_annotated_panel
-    // } else {
-    //     filtered_panel = complete_annotated_panel
-    // }
+    // Filter out flagged regions from the annotated panel before creating panels
+    // This happens via bedtools subtract or similar filtering in the annotation
+    if (flagged_regions_bed) {
+        // TODO: Add a process here to subtract flagged_regions_bed from complete_annotated_panel
+        // For now, just use the panel as-is (implement filtering process separately)
+        filtered_panel = complete_annotated_panel
+    } else {
+        filtered_panel = complete_annotated_panel
+    }
 
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(complete_annotated_panel)
