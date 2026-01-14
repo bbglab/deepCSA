@@ -424,7 +424,7 @@ workflow DEEPCSA{
                     ENRICHPANELS.out.exons_consensus_expanded_panel,
                     custom_groups_table,
                     SYNMUTDENSITY.out.mutdensity,
-                    CREATEPANELS.out.panel_annotated_rich,
+                    ANNOTATEPANELS.out.panel_annotated_rich,
                     "",
                     grouping_definitions,
                     ENRICHPANELS.out.exons_json_subgenic
@@ -450,7 +450,7 @@ workflow DEEPCSA{
                             ENRICHPANELS.out.exons_consensus_expanded_panel,
                             custom_groups_table,
                             SYNMUTREADSRATE.out.mutdensity,
-                            CREATEPANELS.out.panel_annotated_rich,
+                            ANNOTATEPANELS.out.panel_annotated_rich,
                             ".multi",
                             grouping_definitions,
                             ENRICHPANELS.out.exons_json_subgenic
@@ -471,7 +471,7 @@ workflow DEEPCSA{
                             ENRICHPANELS.out.exons_consensus_expanded_panel,
                             custom_groups_table,
                             SYNMUTDENSITY.out.mutdensity,
-                            CREATEPANELS.out.panel_annotated_rich,
+                            ANNOTATEPANELS.out.panel_annotated_rich,
                             ".non_protein_affecting",
                             grouping_definitions,
                             ENRICHPANELS.out.exons_json_subgenic
@@ -489,7 +489,7 @@ workflow DEEPCSA{
                                     ENRICHPANELS.out.exons_consensus_expanded_panel,
                                     custom_groups_table,
                                     SYNMUTREADSRATE.out.mutdensity,
-                                    CREATEPANELS.out.panel_annotated_rich,
+                                    ANNOTATEPANELS.out.panel_annotated_rich,
                                     ".multi.non_protein_affecting",
                                     grouping_definitions,
                                     ENRICHPANELS.out.exons_json_subgenic
@@ -573,7 +573,7 @@ workflow DEEPCSA{
 
                         CREATEPANELS.out.exons_consensus_panel,
                         ENRICHPANELS.out.exons_consensus_expanded_panel,
-                        CREATEPANELS.out.panel_annotated_rich,
+                        ANNOTATEPANELS.out.panel_annotated_rich,
 
                         seqinfo_df,
                         ANNOTATEPANELS.out.domains_in_panel,
