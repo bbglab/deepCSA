@@ -1,5 +1,7 @@
 include { CREATECAPTUREDPANELS                                          } from '../../../../modules/local/createpanels/captured/main'
 
+include { FILTER_CAPTURED_PANEL as FILTERCAPTUREDPANEL                  } from '../../../../modules/local/filter_captured_panel/main'
+
 include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL                  } from '../../../../modules/local/createpanels/sample/main'
 include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT           } from '../../../../modules/local/createpanels/sample/main'
 include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT        } from '../../../../modules/local/createpanels/sample/main'
@@ -37,22 +39,17 @@ workflow CREATE_PANELS {
     take:
     complete_annotated_panel
     depths
-    flagged_regions_bed  // BED file with regions to exclude -> from MUTATION_PREPROCESSING
+    flagged_bed  // BED file with regions to exclude -> from MUTATION_PREPROCESSING
 
     main:
 
-    // Filter out flagged regions from the annotated panel before creating panels
-    // This happens via bedtools subtract or similar filtering in the annotation
-    if (flagged_regions_bed) {
-        // TODO: Add a process here to subtract flagged_regions_bed from complete_annotated_panel
-        // For now, just use the panel as-is (implement filtering process separately)
-        filtered_panel = complete_annotated_panel
-    } else {
-        filtered_panel = complete_annotated_panel
-    }
+    // Filter out flagged regions from the annotated panel before creating panels - bedtools intersect
+    FILTERCAPTUREDPANEL(complete_annotated_panel, flagged_bed)
+    filtered_panel = FILTERCAPTUREDPANEL.out.filtered_annotated_panel
 
+    filtered_panel.view()
     // Create captured-specific panels: all modalities
-    CREATECAPTUREDPANELS(complete_annotated_panel)
+    CREATECAPTUREDPANELS(filtered_panel)
 
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all).set{all_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all_bed).set{all_bed}
@@ -87,6 +84,8 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
     emit:
+    removed_variants          = FILTERCAPTUREDPANEL.out.removed_variants
+
     // full_panel_annotated        = VCFANNOTATEPANEL.out.tab
     all_panel                   = all_panel.first()
     all_bed                     = all_bed.first()

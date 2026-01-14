@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/yaml-schema.json
+name: filter_captured_panel
+description: Filters an annotated panel by removing variants that overlap with flagged genomic regions
+keywords:
+  - filter
+  - panel
+  - bedtools
+  - variants
+  - genomic regions
+tools:
+  - bedtools:
+      description: |
+        A powerful toolset for genome arithmetic. The bedtools utilities are a swiss-army knife of tools 
+        for a wide-range of genomics analysis tasks. This process uses bedtools intersect to filter 
+        variants based on their genomic coordinates.
+      homepage: https://bedtools.readthedocs.io/en/latest/
+      documentation: https://bedtools.readthedocs.io/en/latest/content/tools/intersect.html
+      licence: ["MIT"]
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [id: 'sample_id']
+  - complete_annotated_panel:
+      type: file
+      description: Complete annotated panel file in tab-separated format with header
+      pattern: "*.tsv"
+  - flagged_bed:
+      type: file
+      description: BED file containing genomic regions to be flagged/filtered out
+      pattern: "*.bed"
+
+output:
+  - filtered_annotated_panel:
+      type: file
+      description: Filtered annotated panel with variants not overlapping flagged regions
+      pattern: "captured_panel.tab.filtered.tsv"
+  - removed_variants:
+      type: file
+      description: Variants that were removed due to overlap with flagged regions
+      pattern: "captured_panel.tab.removed_variants.tsv"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+
+authors:
+  - Marta Huertas (marta.huertas@irbbarcelona.org)
