@@ -47,7 +47,6 @@ workflow CREATE_PANELS {
     FILTERCAPTUREDPANEL(complete_annotated_panel, flagged_bed)
     filtered_panel = FILTERCAPTUREDPANEL.out.filtered_annotated_panel
 
-    filtered_panel.view()
     // Create captured-specific panels: all modalities
     CREATECAPTUREDPANELS(filtered_panel)
 
@@ -73,7 +72,6 @@ workflow CREATE_PANELS {
         CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
         CREATESAMPLEPANELSSYNONYMOUS(synonymous_panel, depths, params.sample_panel_min_depth)
     }
-
 
     // Create consensus panel: all modalities
     CREATECONSENSUSPANELSALL(all_panel, depths)

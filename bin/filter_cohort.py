@@ -50,7 +50,7 @@ logging.basicConfig(
 LOG = logging.getLogger("filter_cohort")
 
 # Globals
-FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP", "repetitive_variant", "cohort_n_rich_threshold", "gnomAD_SNP"]
+FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP", "repetitive_variant", "cohort_n_rich_threshold", "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
 
 def flag_repetitive_variants(maf_df: pd.DataFrame,
                              repetitive_variant_threshold: int,
