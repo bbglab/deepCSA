@@ -17,6 +17,7 @@ process FILTER_CAPTURED_PANEL {
     """
     # Extract header from panel and save it
     head -n 1 ${complete_annotated_panel} > captured_panel.tab.filtered.tsv
+    cp captured_panel.tab.filtered.tsv captured_panel.tab.removed_variants.tsv
 
     # Create temporary bed file from complete annotated panel and filter out flagged regions
     tail -n +2 ${complete_annotated_panel} | \
@@ -38,6 +39,7 @@ process FILTER_CAPTURED_PANEL {
     stub:
     """
     touch captured_panel.tab.filtered.tsv
+    touch captured_panel.tab.removed_variants.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
