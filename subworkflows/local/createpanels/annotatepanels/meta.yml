@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "ANNOTATE_PANELS"
+description: Comprehensive annotation workflow for annotating capture panels with genomic features, VEP annotations, and domains.
+  ANNOTATE_PANELS outputs two panels (all_consensus_bed_initial, and exons_bed_initial) that will only be used by MUTPREPROCESSING, not further downstream.
+  MUTPREPROCESSING will output a flagged-bed that will be used in CREATE_PANELS, which will output the final version of the panels used in the pipeline.
+keywords:
+  - annotation
+  - panel
+  - vep
+  - ensembl
+  - domains
+  - consensus
+  - captured regions
+components:
+  - SITESFROMPOSITIONS
+  - VCF_ANNOTATE_ENSEMBLVEP
+  - POSTPROCESS_VEP_ANNOTATION
+  - CUSTOM_ANNOTATION_PROCESSING
+  - DOMAIN_ANNOTATION
+  - CREATECAPTUREDPANELS
+  - CREATESAMPLEPANELS
+  - CREATECONSENSUSPANELS
+
+input:
+  - depths:
+      type: file
+      description: |
+        Channel containing depth information files for captured regions.
+        Used to generate all possible sites and mutations within the captured panel.
+      pattern: "*.{txt,tsv,bed}"
+
+output:
+  - full_panel_annotated:
+      type: file
+      description: |
+        Full VEP annotation output in tab-separated format before postprocessing.
+        Contains complete annotation information from Ensembl VEP.
+      pattern: "*.tab"
+  - complete_annotated_panel:
+      type: file
+      description: |
+        Compact version of the annotated panel with one annotation per mutation.
+        This is the main output after postprocessing and optional custom annotation.
+      pattern: "*.tsv"
+  - panel_annotated_rich:
+      type: file
+      description: |
+        Rich annotated panel containing detailed annotation information.
+        Includes extended VEP fields and is used for domain annotation.
+      pattern: "*.tsv"
+  - added_custom_regions:
+      type: file
+      description: |
+        Regions that were added during custom annotation processing (if enabled).
+        Empty channel if params.customize_annotation is false.
+      pattern: "*.tsv"
+  - domains_panel_bed:
+      type: file
+      description: |
+        BED file containing protein domain coordinates mapped to genomic regions.
+      pattern: "*.bed"
+  - domains_in_panel:
+      type: file
+      description: |
+        Tab-separated file listing all protein domains found in the panel.
+      pattern: "*.tsv"
+  - postprocessed_panel:
+      type: file
+      description: |
+        Compact panel annotation before custom processing (first output).
+      pattern: "*.tsv"
+  - postprocessed_panel_rich:
+      type: file
+      description: |
+        Rich panel annotation before custom processing (first output).
+      pattern: "*.tsv"
+  - all_consensus_bed_initial:
+      type: file
+      description: |
+        Initial consensus panel BED file containing all consensus regions. Only used by MUTPREPROCESSING.
+      pattern: "*.bed"
+  - exons_bed_initial:
+      type: file
+      description: |
+        BED file containing exons and splice sites from the captured panel. Only used by MUTPREPROCESSING.
+      pattern: "*.bed"
+
+authors:
+  - Ferriol Calvet (ferriol.calvet@irbbarcelona.org)
+maintainers:
+  - Ferriol Calvet (ferriol.calvet@irbbarcelona.org)
+  - Marta Huertas (marta.huertas@irbbarcelona.org)
