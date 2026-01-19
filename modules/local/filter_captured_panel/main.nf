@@ -34,7 +34,7 @@ process FILTER_CAPTURED_PANEL {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
+        bedtools: \$(bedtools --version | sed 's/bedtools v//')
     END_VERSIONS
     """
 
@@ -45,7 +45,7 @@ process FILTER_CAPTURED_PANEL {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
+        bedtools: \$(bedtools --version | sed 's/bedtools v//')
     END_VERSIONS
     """
 }
