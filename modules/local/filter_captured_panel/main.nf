@@ -17,7 +17,9 @@ process FILTER_CAPTURED_PANEL {
     """
     # Extract header from panel and save it
     head -n 1 ${complete_annotated_panel} > captured_panel.tab.filtered.tsv
-    cp captured_panel.tab.filtered.tsv captured_panel.tab.removed_variants.tsv
+    
+    # Create header for removed variants file with additional columns
+    head -n 1 ${complete_annotated_panel} | awk '{print \$0 "\\tBED_CHROM\\tBED_START\\tBED_END\\tFILTER"}' > captured_panel.tab.removed_variants.tsv
 
     # Create temporary bed file from complete annotated panel and filter out flagged regions
     tail -n +2 ${complete_annotated_panel} | \
