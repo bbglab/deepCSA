@@ -25,10 +25,16 @@ def annotate_depths(annotation_file, depths_file, json_f, input_file):
     annotated_depths = annotated_depths[["CHROM", "POS", "CONTEXT"] + sample_columns]
 
     input_csv = pd.read_table(input_file, sep = ',', header = 0)
-    bam2sample_dict = dict(zip(input_csv["bam"].astype(str).apply(lambda x: x.split("/")[-1]),
-                               input_csv["sample"].astype(str)
-                               )
-                            )
+    if 'bam' in input_csv.columns:
+        bam2sample_dict = dict(zip(input_csv["bam"].astype(str).apply(lambda x: x.split("/")[-1]),
+                                   input_csv["sample"].astype(str)
+                                   )
+                                )
+    else:
+        bam2sample_dict = dict(zip(input_csv["sample"].astype(str),
+                                   input_csv["sample"].astype(str)
+                                   )
+                                )
     
     sample_columns_correct = [ bam2sample_dict[str(x)] for x in sample_columns ]
     annotated_depths.columns = ["CHROM", "POS", "CONTEXT"] + sample_columns_correct

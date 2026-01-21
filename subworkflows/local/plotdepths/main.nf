@@ -23,7 +23,9 @@ workflow PLOT_DEPTHS {
 
 
     emit:
-    plots           = DEPTHSSUMMARY.out.plots
-    average_depth   = DEPTHSSUMMARY.out.average_per_sample
+    plots                       = DEPTHSSUMMARY.out.plots
+    average_depth_sample        = DEPTHSSUMMARY.out.average_per_sample
+    average_depth_gene          = DEPTHSSUMMARY.out.average_per_gene
+    average_depth_gene_sample   = DEPTHSSUMMARY.out.average_per_gene_sample
 
 }

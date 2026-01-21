@@ -144,9 +144,11 @@ workflow DEEPCSA{
                                 ]).first()
                             : channel.empty()
 
+    site_comparison_results         = channel.empty()
+    all_compiled_omegas             = channel.empty()
+    all_compiled_omegasgloballoc    = channel.empty()
+    all_mutdensities_file           = channel.empty()
 
-    site_comparison_results  = channel.empty()
-    all_compiled_omegas      = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -164,28 +166,17 @@ workflow DEEPCSA{
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutdensity      = (params.mutationdensity || params.omega)
 
-    //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    //
-    INPUT_CHECK (
-        file(params.input)
-    )
+    INPUT_CHECK( file(params.input), !params.use_custom_depths )
 
-
-    //
-    // Separate input BAMs and VCFs
-    //
-    INPUT_CHECK.out.mutations
+    // Separate samples and VCFs
+    INPUT_CHECK.out.sample_inputs
     .map{ it -> [ "id" : it[0].id ]}
     .set{ meta_samples_alone }
 
-    INPUT_CHECK.out.mutations
+    INPUT_CHECK.out.sample_inputs
     .map{ it -> [it[0], it[1]]}
     .set{ meta_vcfs_alone }
-
-    INPUT_CHECK.out.mutations
-    .map{ it -> [it[0], it[2]]}
-    .set{ meta_bams_alone }
 
 
     TABLE2GROUP(features_table)
@@ -201,7 +192,7 @@ workflow DEEPCSA{
 
     // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
+    DEPTHANALYSIS(INPUT_CHECK.out.sample_inputs, custom_bed_file)
 
     // Panels generation: all modalities
     CREATEPANELS(DEPTHANALYSIS.out.depths)
@@ -428,6 +419,7 @@ workflow DEEPCSA{
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             site_comparison_results = OMEGA.out.site_comparison
             all_compiled_omegas = OMEGA.out.all_compiled
+            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
@@ -555,6 +547,7 @@ workflow DEEPCSA{
     }
 
     PLOTTINGQC(
+                somatic_mutations,
                 all_mutdensities_file.first(),
                 all_compiled_omegas,
                 // site_comparison_results,

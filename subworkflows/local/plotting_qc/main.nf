@@ -1,11 +1,13 @@
 
 include { PLOT_MUTDENSITY_QC    as PLOTMUTDENSITYQC     } from '../../../modules/local/plot/qc/mutation_densities/main'
 include { ANNOTATE_OMEGA_QC     as APPLYOMEGAQC         } from '../../../modules/local/plot/qc/annotate_omega/main'
+include { PLOT_MUTATION_SPECIFIC       as PLOTMUTATIONSPECIFIC  } from '../../../modules/local/plot/qc/mutation_specific/main'
 
 
 workflow PLOTTING_QC {
 
     take:
+    all_mutations
     // positive_selection_results_ready
     all_mutdensities
     // all_samples_depth
@@ -21,6 +23,12 @@ workflow PLOTTING_QC {
 
 
     main:
+
+    // Channel.of([ [ id: "all_samples" ] ])
+    // .join( all_mutations )
+    // .set{ mutations }
+    PLOTMUTATIONSPECIFIC(all_mutations)
+    
 
     // pdb_tool_df   = params.annotations3d
     //                         ? channel.fromPath( "${params.annotations3d}/pdb_tool_df.tsv", checkIfExists: true).first()
