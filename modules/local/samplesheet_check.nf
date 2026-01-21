@@ -17,7 +17,7 @@ process SAMPLESHEET_CHECK {
 
 
     script: // This script is bundled with the pipeline, in bbglab/deepCSA/bin/
-    def validate_bams = require_bams ? '--require-bams' : ''
+    def validate_bams = require_bams ? '--bam-required' : ''
     """
     check_samplesheet.py \\
         $samplesheet \\

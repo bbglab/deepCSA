@@ -125,42 +125,41 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
     emit:
-    full_panel_annotated        = VCFANNOTATEPANEL.out.tab
-    all_panel                   = all_panel
-    all_bed                     = all_bed
-    prot_panel                  = prot_panel
-    prot_bed                    = prot_bed
-    nonprot_panel               = nonprot_panel
-    nonprot_bed                 = nonprot_bed
-    exons_panel                 = exons_panel
-    exons_bed                   = exons_bed
-    introns_panel               = introns_panel
-    introns_bed                 = introns_bed
-    synonymous_panel            = synonymous_panel
-    synonymous_bed              = synonymous_bed
+    full_panel_annotated        = VCFANNOTATEPANEL.out.tab.first()
+    all_panel                   = all_panel.first()
+    all_bed                     = all_bed.first()
+    prot_panel                  = prot_panel.first()
+    prot_bed                    = prot_bed.first()
+    nonprot_panel               = nonprot_panel.first()
+    nonprot_bed                 = nonprot_bed.first()
+    exons_panel                 = exons_panel.first()
+    exons_bed                   = exons_bed.first()
+    introns_panel               = introns_panel.first()
+    introns_bed                 = introns_bed.first()
+    synonymous_panel            = synonymous_panel.first()
+    synonymous_bed              = synonymous_bed.first()
 
 
-    all_consensus_panel         = CREATECONSENSUSPANELSALL.out.consensus_panel
-    all_consensus_bed           = CREATECONSENSUSPANELSALL.out.consensus_panel_bed
-    prot_consensus_panel        = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel
-    prot_consensus_bed          = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel_bed
-    nonprot_consensus_panel     = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel
-    nonprot_consensus_bed       = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel_bed
-    exons_consensus_panel       = CREATECONSENSUSPANELSEXONS.out.consensus_panel
-    exons_consensus_bed         = CREATECONSENSUSPANELSEXONS.out.consensus_panel_bed
-    introns_consensus_panel     = CREATECONSENSUSPANELSINTRONS.out.consensus_panel
-    introns_consensus_bed       = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed
-    synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel
-    synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed
+    all_consensus_panel         = CREATECONSENSUSPANELSALL.out.consensus_panel.first()
+    all_consensus_bed           = CREATECONSENSUSPANELSALL.out.consensus_panel_bed.first()
+    prot_consensus_panel        = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel.first()
+    prot_consensus_bed          = CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel_bed.first()
+    nonprot_consensus_panel     = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel.first()
+    nonprot_consensus_bed       = CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel_bed.first()
+    exons_consensus_panel       = CREATECONSENSUSPANELSEXONS.out.consensus_panel.first()
+    exons_consensus_bed         = CREATECONSENSUSPANELSEXONS.out.consensus_panel_bed.first()
+    introns_consensus_panel     = CREATECONSENSUSPANELSINTRONS.out.consensus_panel.first()
+    introns_consensus_bed       = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed.first()
+    synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
+    synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
-    panel_annotated_rich        = rich_annotated
-    added_custom_regions        = added_regions
-    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed
-    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv
+    panel_annotated_rich        = rich_annotated.first()
+    added_custom_regions        = added_regions.first()
+    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
+    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
 
-    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation
-    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation
-
+    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
+    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
     // prot_sample_panel       = restructureSamplePanel(CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel.flatten())
