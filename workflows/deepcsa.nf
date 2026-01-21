@@ -416,10 +416,12 @@ workflow DEEPCSA{
                     ENRICHPANELS.out.exons_json_subgenic
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
-            positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
             site_comparison_results = OMEGA.out.site_comparison
             all_compiled_omegas = OMEGA.out.all_compiled
-            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
+            if (params.omega_globalloc){
+                positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
+                all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
+            }
 
             if (params.regressions){
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
