@@ -64,8 +64,8 @@ workflow OMEGA_ANALYSIS{
 
     // FIXME here I am using bedfile as a dummy value channel
     PREPROCESSING( muts_n_depths_n_profile,
-                    expanded_panel,
-                    bedfile,
+                    expanded_panel.first(),
+                    bedfile.first(),
                     all_samples_mut_profile)
 
     PREPROCESSING.out.mutabs_n_mutations_tsv
