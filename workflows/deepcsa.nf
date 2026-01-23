@@ -570,7 +570,7 @@ workflow DEEPCSA{
 
     if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) {
         if (params.omega){
-            positive_selection_results = positive_selection_results.combine(PLOTTINGQC.out.flagged_omegas.map{ it -> it[1] })
+            positive_selection_results = positive_selection_results.combine(PLOTTINGQC.out.flagged_omegas)
         }
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
