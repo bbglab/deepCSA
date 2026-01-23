@@ -18,8 +18,7 @@ def restructurePanel(panel) {
         return panel.map { it -> [[id: it.name.tokenize('.')[1]], it] }
     }
 
-
-workflow ANNOTATE_PANELS {
+workflow ANNOTATE_REGIONS {
 
     take:
     depths
@@ -70,9 +69,7 @@ workflow ANNOTATE_PANELS {
 
     // All consensus bed
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_all).set{all_panel}
-    if (params.create_sample_panels){
-        CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
-    }
+
     CREATECONSENSUSPANELSALL(all_panel, depths)
     
     // Exons bed
@@ -90,6 +87,6 @@ workflow ANNOTATE_PANELS {
     postprocessed_panel            = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
     postprocessed_panel_rich       = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
 
-    all_consensus_bed_initial    = CREATECONSENSUSPANELSALL.out.consensus_panel_bed.first()    
+    all_consensus_bed_initial      = CREATECONSENSUSPANELSALL.out.consensus_panel_bed.first()    
     exons_bed_initial              = exons_bed_initial.first()
 }
