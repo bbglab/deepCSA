@@ -550,7 +550,7 @@ workflow DEEPCSA{
 
     PLOTTINGQC(
                 somatic_mutations,
-                all_mutdensities_file.first(),all_expanded_panel
+                all_mutdensities_file.first(),
                 all_compiled_omegas,
                 // site_comparison_results,
                 // ANNOTATEDEPTHS.out.all_samples_depths,
