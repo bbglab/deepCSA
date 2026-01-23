@@ -1,14 +1,6 @@
 include { CREATECAPTUREDPANELS                                          } from '../../../../modules/local/createpanels/captured/main'
 
-include { FILTER_CAPTURED_PANEL as FILTERCAPTUREDPANEL                  } from '../../../../modules/local/filter_captured_panel/main'
-
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL                  } from '../../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT           } from '../../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT        } from '../../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS                } from '../../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS              } from '../../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSSYNONYMOUS           } from '../../../../modules/local/createpanels/sample/main'
-
+include { FILTER_CAPTURED_PANEL as  FILTERCAPTUREDPANEL                 } from '../../../../modules/local/filter_captured_panel/main'
 
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL            } from '../../../../modules/local/createpanels/consensus/main'
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT     } from '../../../../modules/local/createpanels/consensus/main'
@@ -17,29 +9,18 @@ include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS          } from '
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS        } from '../../../../modules/local/createpanels/consensus/main'
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS     } from '../../../../modules/local/createpanels/consensus/main'
 
-
-
 def restructurePanel(panel) {
         // return panel.map{ it -> [[id: it[0].name.tokenize('.')[0..1].join('.')], it[1]] }
         // return panel.map { it -> [[id: it.name.tokenize('.')[0..1].join('.')], it] }
         return panel.map { it -> [[id: it.name.tokenize('.')[1]], it] }
     }
 
-
-def restructureSamplePanel(panel) {
-        // return panel.map{ it -> [[id: it[0].name.tokenize('.')[0..1].join('.')], it[1]] }
-        // return panel.map { it -> [[id: it.name.tokenize('.')[0..1].join('.')], it] }
-        return panel.map { it -> [[id: it.name.tokenize('.')[0]], it] }
-    }
-
-
-
 workflow CREATE_PANELS {
 
     take:
     complete_annotated_panel
     depths
-    flagged_bed  // BED file with regions to exclude -> from MUTATION_PREPROCESSING
+    flagged_bed  // BED file with regions to exclude -> from MUT_PREPROCESSING
 
     main:
 
@@ -63,16 +44,6 @@ workflow CREATE_PANELS {
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous).set{synonymous_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous_bed).set{synonymous_bed}
 
-    if (params.create_sample_panels){
-        // Create sample-specific panels: all modalities
-        CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSEXONS(exons_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSSYNONYMOUS(synonymous_panel, depths, params.sample_panel_min_depth)
-    }
-
     // Create consensus panel: all modalities
     CREATECONSENSUSPANELSALL(all_panel, depths)
     CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths)
@@ -84,7 +55,6 @@ workflow CREATE_PANELS {
     emit:
     removed_variants          = FILTERCAPTUREDPANEL.out.removed_variants
 
-    // full_panel_annotated        = VCFANNOTATEPANEL.out.tab
     all_panel                   = all_panel.first()
     all_bed                     = all_bed.first()
     prot_panel                  = prot_panel.first()
@@ -111,16 +81,4 @@ workflow CREATE_PANELS {
     introns_consensus_bed       = CREATECONSENSUSPANELSINTRONS.out.consensus_panel_bed.first()
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
-
-    // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
-    // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
-    // prot_sample_panel       = restructureSamplePanel(CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel.flatten())
-    // prot_sample_bed         = restructureSamplePanel(CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel_bed.flatten())
-    // nonprot_sample_panel    = restructureSamplePanel(CREATESAMPLEPANELSNONPROTAFFECT.out.sample_specific_panel.flatten())
-    // nonprot_sample_bed      = restructureSamplePanel(CREATESAMPLEPANELSNONPROTAFFECT.out.sample_specific_panel_bed.flatten())
-    // exons_sample_panel      = restructureSamplePanel(CREATESAMPLEPANELSEXONS.out.sample_specific_panel.flatten())
-    // exons_sample_bed        = restructureSamplePanel(CREATESAMPLEPANELSEXONS.out.sample_specific_panel_bed.flatten())
-    // introns_sample_panel    = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel.flatten())
-    // introns_sample_bed      = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel_bed.flatten())
-
 }
