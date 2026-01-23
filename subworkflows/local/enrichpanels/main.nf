@@ -79,18 +79,18 @@ workflow ENRICHPANELS {
 
     emit:
 
-    all_consensus_expanded_panel        = all_expanded_panel
-    nonprot_consensus_expanded_panel    = nonprot_expanded_panel
-    prot_consensus_expanded_panel       = prot_expanded_panel
-    synonymous_consensus_expanded_panel = synonymous_expanded_panel
-    exons_consensus_expanded_panel      = exons_expanded_panel
+    all_consensus_expanded_panel        = all_expanded_panel.first()
+    nonprot_consensus_expanded_panel    = nonprot_expanded_panel.first()
+    prot_consensus_expanded_panel       = prot_expanded_panel.first()
+    synonymous_consensus_expanded_panel = synonymous_expanded_panel.first()
+    exons_consensus_expanded_panel      = exons_expanded_panel.first()
 
-    all_json_subgenic                   = all_json_subgenic
-    nonprot_json_subgenic               = nonprot_json_subgenic
-    prot_json_subgenic                  = prot_json_subgenic
-    synonymous_json_subgenic            = synonymous_json_subgenic
-    exons_json_subgenic                 = exons_json_subgenic
+    all_json_subgenic                   = all_json_subgenic.first()
+    nonprot_json_subgenic               = nonprot_json_subgenic.first()
+    prot_json_subgenic                  = prot_json_subgenic.first()
+    synonymous_json_subgenic            = synonymous_json_subgenic.first()
+    exons_json_subgenic                 = exons_json_subgenic.first()
 
-    dna2protein_mapping_depth_exons     = DNA2PROTEINMAPPING.out.depths_exons_positions
-    dna2protein_mapping_panel_exons     = DNA2PROTEINMAPPING.out.panel_exons_bed
+    dna2protein_mapping_depth_exons     = DNA2PROTEINMAPPING.out.depths_exons_positions.first()
+    dna2protein_mapping_panel_exons     = DNA2PROTEINMAPPING.out.panel_exons_bed.first()
 }

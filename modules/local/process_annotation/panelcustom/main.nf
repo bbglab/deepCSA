@@ -14,9 +14,9 @@ process CUSTOM_ANNOTATION_PROCESSING {
 
 
     output:
-    tuple val(meta), path("*.custom.tsv")      , emit: custom_panel_annotation
-    tuple val(meta), path("added_regions.tsv") , emit: added_regions
-    path  "versions.yml"                       , topic: versions
+    tuple val(meta), path("*.custom.tsv")       , emit: custom_panel_annotation
+    tuple val(meta), path("added_regions*.tsv") , emit: added_regions
+    path  "versions.yml"                        , topic: versions
 
 
     script:

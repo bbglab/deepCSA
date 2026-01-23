@@ -256,10 +256,10 @@ workflow DEEPCSA{
 
     if (run_mutdensity){
         // Mutation Density
-        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel)
-        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel)
-        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel)
-        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel)
+        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel.first())
+        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel.first())
+        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel.first())
+        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel.first())
 
         channel.of([ [ id: "all_samples" ] ])
         .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
@@ -416,8 +416,10 @@ workflow DEEPCSA{
                     ENRICHPANELS.out.exons_json_subgenic
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
-            site_comparison_results = OMEGA.out.site_comparison
             all_compiled_omegas = OMEGA.out.all_compiled
+            if (params.omega_mutabilities){
+                site_comparison_results = OMEGA.out.site_comparison
+            }
             if (params.omega_globalloc){
                 positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
                 all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
@@ -444,7 +446,9 @@ workflow DEEPCSA{
                             ENRICHPANELS.out.exons_json_subgenic
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
-                positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
+                if (params.omega_globalloc){
+                    positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
+                }
                 if (params.regressions){
                     omega_regressions_files = omega_regressions_files.mix(OMEGAMULTI.out.results.map{ it -> it[1] })
                     omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGAMULTI.out.results_global.map{ it -> it[1] })
