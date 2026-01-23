@@ -5,7 +5,7 @@ include { SUBSET_MAF                as SUBSETMUTDENSITYADJUSTED } from '../../..
 include { MUTATION_DENSITY          as MUTDENSITYADJ            } from '../../../modules/local/mut_density/main'
 
 
-workflow MUTATION_DENSITY{
+workflow MUTATION_DENSITY {
     take:
     mutations
     depth
