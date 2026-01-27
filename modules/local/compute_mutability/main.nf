@@ -11,14 +11,9 @@ process COMPUTE_RELATIVE_MUTABILITY {
     tuple val(meta2), path(bedfile)
 
     output:
-    // TODO revise this to see which one is outputed and why
-    tuple val(meta), path("*.relative_mutability_per_site.tsv")                           , emit: mutability_not_adjusted
-    tuple val(meta), path("*.relative_mutability_per_site.tsv.adjusted")                  , emit: mutability
+    tuple val(meta), path("*.relative_mutability_per_site.tsv")                  , emit: mutability_not_adjusted
+    tuple val(meta), path("*.relative_mutability_per_site.adjusted.tsv")         , emit: mutability
     path "versions.yml"                                                          , topic: versions
-
-    // tuple val(meta), path("*.relative_mutability_per_site.tsv")                           , emit: mutability
-    // tuple val(meta), path("*.relative_mutability_per_site.tsv.adjusted") , optional:true  , emit: mutability_adjusted
-    // path "versions.yml"                                                          , topic: versions
 
 
     script:
@@ -33,7 +28,7 @@ process COMPUTE_RELATIVE_MUTABILITY {
                     --depths ${depths} \\
                     --profile ${mut_profile} \\
                     --bedfile ${bedfile} \\
-                    --out_mutability ${prefix}.relative_mutability_per_site.tsv \\
+                    --out_mutability ${prefix} \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
