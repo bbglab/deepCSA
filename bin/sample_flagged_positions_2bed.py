@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+"""
+Extract Sample-Specific Masked BED - Per-Sample Filter Extraction Script
+
+This script processes a per-sample MAF file and extracts sample-specific filters into a BED format.
+Unlike filter_cohort.py which handles cohort-level filters, this focuses on sample-level artifacts.
+
+Command-line Arguments
+----------------------
+maf-file : str
+    Path to the per-sample MAF file (can be gzipped).
+json-filters : str
+    Path to json file with list of filter criteria to consider for masking.
+sample-id : str
+    Sample identifier for output naming.
+
+Usage
+-----
+sample_flagged_positions_2bed.py \\
+    --maf-file sample.filtered.tsv.gz \\
+    --json-filters filters.txt \\
+    --sample-id sample_name
+
+"""
+import json
+import logging
+from pathlib import Path
+
+import click
+import pandas as pd
+from read_utils import custom_na_values
+from utils_filter import expand_filter_column, extract_flagged_regions_bed
+
+# Logging
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", 
+    level=logging.INFO, 
+    datefmt="%m/%d/%Y %I:%M:%S %p"
+)
+LOG = logging.getLogger("extract_sample_masked_bed")
+
+# Cohort-level filters to remove
+COHORT_LEVEL_FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP",  "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
+
+def extract_flagged_positions(maf_file: str, json_filters: str, sample_name: str) -> None:
+    """
+    Extract sample-specific masked positions from a per-sample MAF file.
+
+    Parameters
+    ----------
+    maf_file : str
+        Path to input MAF file
+    json_filters : str
+        Path to json file with list of filter criteria to consider for masking.
+    sample_name : str
+        Sample identifier for output naming.
+    """
+    LOG.info(f"Processing sample: {sample_name}")
+    
+    # Load MAF dataframe
+    maf_df = pd.read_csv(maf_file, sep='\t', header=0, na_values=custom_na_values)
+    LOG.info(f"Loaded {maf_df.shape[0]} mutations for sample {sample_name}")
+    
+    # Expand FILTER column to individual boolean columns
+    maf_df = expand_filter_column(maf_df)
+    
+    # Load the filter criteria from the JSON file
+    with open(json_filters, 'r') as file:
+        filter_data = json.load(file)
+    
+    # Extract the FILTER list from the JSON structure
+    filter_criteria = filter_data.get("FILTER", [])
+    LOG.info(f"Loaded filter criteria: {filter_criteria}")
+    
+    # Remove cohort-level filters from consideration
+    SAMPLE_FILTERS = [f.replace("notcontains ", "") for f in filter_criteria if "notcontains" in f and f.replace("notcontains ", "") not in COHORT_LEVEL_FILTERS]
+
+    # Extract sample-specific masked positions to BED file
+    LOG.info(f"Extracting sample-specific filters: {SAMPLE_FILTERS}")
+    
+    # Extract flagged regions (will create {sample_name}.flagged-pos.bed)
+    extract_flagged_regions_bed(maf_df, sample_name, SAMPLE_FILTERS, bed_format = False)
+    
+    # Rename to the requested output name if different
+    generated_bed = f"{sample_name}.flagged-pos.bed"
+    if Path(generated_bed).exists():
+        LOG.info(f"Sample-specific masked BED file created: {generated_bed}")
+    else:
+        LOG.warning(f"No masked positions found for sample {sample_name}")
+
+
+@click.command()
+@click.option('--maf-file', required=True, type=click.Path(exists=True), 
+              help='Input per-sample MAF file (TSV, can be gzipped)')
+@click.option('--json-filters', required=True, type=click.Path(), 
+              help='Path to json file with list of filter criteria to consider for masking.')
+@click.option('--sample-name', required=True, type=str, 
+              help='Sample identifier')
+def main(maf_file: str, json_filters: str, sample_name: str):
+    """
+    CLI wrapper for extracting sample-specific masked positions.
+    """
+    try:
+        extract_flagged_positions(maf_file, json_filters, sample_name)
+    except Exception as e:
+        LOG.error(f"Error processing sample {sample_name}: {e}")
+        raise
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/yaml-schema.json
+name: extract_sample_masked_bed
+description: Extracts sample-specific masked positions from a per-sample MAF file into BED format
+keywords:
+  - filter
+  - mask
+  - bed
+  - maf
+  - quality control
+tools:
+  - custom:
+      description: |
+        Custom Python script to extract sample-specific filters from MAF files.
+        Focuses on sample-level artifacts like low mappability, N-rich regions,
+        and panel coverage issues.
+      homepage: https://github.com/bbglab/deepcsa
+      licence: ["MIT"]
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [id: 'sample_id']
+  - maf:
+      type: file
+      description: Per-sample MAF file (TSV format, can be gzipped)
+      pattern: "*.{tsv,tsv.gz}"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [id: 'sample_id']
+  - masked_bed:
+      type: file
+      description: BED file with sample-specific masked positions and associated filters
+      pattern: "*.masked.bed"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+
+authors:
+  - "@m-huertasp"
