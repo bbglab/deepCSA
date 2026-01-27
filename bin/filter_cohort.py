@@ -39,6 +39,7 @@ import logging
 from pathlib import Path
 
 import click
+import json
 import pandas as pd
 from utils import add_filter
 from read_utils import custom_na_values
@@ -51,7 +52,7 @@ logging.basicConfig(
 LOG = logging.getLogger("filter_cohort")
 
 # Globals
-FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP",  "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
+COHORT_SPECIFIC_FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP",  "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
 
 def flag_repetitive_variants(maf_df: pd.DataFrame,
                              repetitive_variant_threshold: int,
@@ -337,8 +338,12 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
 @click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
 @click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
 @click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
+@click.option('--json-filters', required=True, type=click.Path(), 
+              help='Path to json file with list of filter criteria to consider for masking.')
+@click.option('--json-filters-somatic', required=True, type=click.Path(), 
+              help='Path to json file with list of filter criteria to consider for masking somatic variants.')
 def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
-         somatic_vaf_boundary: float, n_rich_cohort_proportion: float):
+         somatic_vaf_boundary: float, n_rich_cohort_proportion: float, json_filters: str, json_filters_somatic: str):
     """
     CLI wrapper for filter_maf function.
     """
@@ -355,6 +360,15 @@ def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
     # Extract maf_df_file name without extensions for naming
     maf_file_name = Path(maf_df_file).name.replace('.tsv.gz', '')
     
+    # Combine filters from both json files 
+    with open(json_filters, 'r') as file:
+        filter_criteria = json.load(file)
+    with open(json_filters_somatic, 'r') as file:
+        filter_criteria_somatic = json.load(file)
+    # Ensure only cohort-specific filters are considered
+    all_filters = filter_criteria.get("FILTER", []) + filter_criteria_somatic.get("FILTER", [])
+    FILTERS = [f.replace("notcontains ", "") for f in all_filters if "notcontains" in f and f.replace("notcontains ", "") in COHORT_SPECIFIC_FILTERS]
+
     # Extract flagged regions to BED file
     extract_flagged_regions_bed(maf_df, maf_file_name, FILTERS)
     
