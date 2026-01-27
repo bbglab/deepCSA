@@ -53,7 +53,7 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
     emit:
-    removed_variants          = FILTERCAPTUREDPANEL.out.removed_variants
+    removed_sites               = FILTERCAPTUREDPANEL.out.removed_sites
 
     all_panel                   = all_panel.first()
     all_bed                     = all_bed.first()
