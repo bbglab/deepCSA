@@ -42,6 +42,7 @@ import click
 import pandas as pd
 from utils import add_filter
 from read_utils import custom_na_values
+from utils_filter import expand_filter_column, extract_flagged_regions_bed
 
 # Logging
 logging.basicConfig(
@@ -50,7 +51,7 @@ logging.basicConfig(
 LOG = logging.getLogger("filter_cohort")
 
 # Globals
-FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP", "repetitive_variant", "cohort_n_rich_threshold", "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
+FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP",  "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
 
 def flag_repetitive_variants(maf_df: pd.DataFrame,
                              repetitive_variant_threshold: int,
@@ -275,103 +276,13 @@ def flag_gnomad_snp(maf_df: pd.DataFrame) -> pd.DataFrame:
     # Flag gnomAD SNPs
     if "gnomAD_SNP" in maf_df.columns:
         maf_df["gnomAD_SNP"] = maf_df["gnomAD_SNP"].replace({"True": True, "False": False, '-' : False}).fillna(False).astype(bool)
-        LOG.info("Out of %d positions, %d are gnomAD SNPs (>0.1)", maf_df["gnomAD_SNP"].shape[0], maf_df["gnomAD_SNP"].sum())
+        LOG.info("Out of %d positions, %d are gnomAD SNPs", maf_df["gnomAD_SNP"].shape[0], maf_df["gnomAD_SNP"].sum())
         
         maf_df["FILTER"] = maf_df[["FILTER","gnomAD_SNP"]].apply(
                                                                     lambda x: add_filter(x["FILTER"], x["gnomAD_SNP"], "gnomAD_SNP"),
                                                                     axis = 1
                                                                 )
     return maf_df
-
-def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Expands the FILTER column by creating new columns for each unique filter.
-    Each new column indicates if the corresponding filter is present (True/False).
-    """
-    # Split FILTER column once per row and convert to set for O(1) lookup
-    filter_sets = maf_df["FILTER"].str.split(";").apply(lambda x: set(x) if x != [''] else set())
-    
-    # Get all unique filter values (excluding empty strings)
-    all_filters = set(
-        filter_val 
-        for filter_val in maf_df["FILTER"].str.split(";").explode().unique() 
-        if filter_val and filter_val != ''
-    )
-    
-    # Ensure "not_covered" and "not_in_exons" exist
-    required_filters = {"not_covered", "not_in_exons"}
-    all_filters.update(required_filters)
-
-    # Create boolean columns efficiently
-    for filt in sorted(all_filters):
-        maf_df[f"FILTER.{filt}"] = filter_sets.apply(lambda x: filt in x)
-
-    return maf_df
-
-def extract_flagged_regions_bed(maf_df: pd.DataFrame, maf_file_name: str):
-    """
-    Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
-    Creates a properly formatted BED file with 0-based coordinates and half-open intervals.
-
-    Parameters
-    ----------
-    maf_df : pd.DataFrame
-        Input MAF dataframe with filter columns. POS column should contain 1-based coordinates.
-
-    Returns
-    -------
-    pd.DataFrame
-        A BED dataframe with discarded mutations and filters applied to each region.
-        Output coordinates are 0-based with half-open intervals [start, end).
-    """
-    LOG.debug(list(maf_df.columns))
-    # List of filter columns you want to check for
-    filter_columns = [f"FILTER.{f}" for f in FILTERS if f in ','.join(list(maf_df.columns))]
-
-    LOG.info("Filters applied: %s", filter_columns)
-
-    maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)]
-
-    if maf_df_filters.empty:
-        LOG.warning("No mutations were flagged based on the applied filters.")
-        return
-
-    # Create BED-like dataframe with filter columns
-    bed_df = maf_df_filters[["CHROM", "POS"] + filter_columns]
-
-    # Transform to long format
-    _bed_melt = (pd.melt(bed_df,
-                    id_vars=["CHROM", "POS"],
-                    value_vars=filter_columns,
-                    var_name="FILTERS")
-            .query("value == True")
-            )
-
-    LOG.info("Mutations flagged: %s", _bed_melt.shape[0])
-
-    # Aggregate filters per position
-    bed_annotated = (
-                _bed_melt
-                .drop_duplicates()
-                .groupby(["CHROM","POS"])["FILTERS"]
-                .agg(','.join)
-                .reset_index()
-                .rename(columns={"POS": "START"})
-    )
-
-    # Create BED format coordinates (0-based, half-open interval)
-    # Input POS is 1-based (from VCF), convert to 0-based BED format
-    # For SNPs: 1-based POS -> 0-based [START, END) where END = START + 1
-    bed_annotated["END"] = bed_annotated["START"]        # Half-open interval
-    bed_annotated["START"] = bed_annotated["START"] - 1  # Convert 1-based to 0-based    
-
-    LOG.info("Unique regions flagged: %s", bed_annotated.shape[0])
-
-    # Write BED file without header or index
-    (bed_annotated[["CHROM", "START", "END", "FILTERS"]]
-        .sort_values(by=["CHROM", "START"])
-        .to_csv(f"{maf_file_name}.flagged-pos.bed", sep="\t", header=False, index=False)
-    )
 
 
 def flag_maf(maf_df: pd.DataFrame, sample_name: str,
@@ -445,7 +356,7 @@ def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
     maf_file_name = Path(maf_df_file).name.replace('.tsv.gz', '')
     
     # Extract flagged regions to BED file
-    extract_flagged_regions_bed(maf_df, maf_file_name)
+    extract_flagged_regions_bed(maf_df, maf_file_name, FILTERS)
     
 
 if __name__ == '__main__':

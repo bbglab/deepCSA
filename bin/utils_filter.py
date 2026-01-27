@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+import logging
+import pandas as pd
+"""
+Utility functions for extracting filters from a MAF DataFrame.
+"""
+
+LOG = logging.getLogger(__name__)
+
+def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Expands the FILTER column by creating new columns for each unique filter.
+    Each new column indicates if the corresponding filter is present (True/False).
+    """
+    # Split FILTER column once per row and convert to set for O(1) lookup
+    filter_sets = maf_df["FILTER"].str.split(";").apply(lambda x: set(x) if x != [''] else set())
+    
+    # Get all unique filter values (excluding empty strings)
+    all_filters = set(
+        filter_val 
+        for filter_val in maf_df["FILTER"].str.split(";").explode().unique() 
+        if filter_val and filter_val != ''
+    )
+    
+    # Ensure "not_covered" and "not_in_exons" exist
+    required_filters = {"not_covered", "not_in_exons"}
+    all_filters.update(required_filters)
+
+    # Create boolean columns efficiently
+    for filt in sorted(all_filters):
+        maf_df[f"FILTER.{filt}"] = filter_sets.apply(lambda x: filt in x)
+
+    return maf_df
+
+def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[str], bed_format: bool = True) -> pd.DataFrame | None:
+    """
+    Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
+    Creates a properly formatted BED file with 0-based coordinates and half-open intervals.
+
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Input MAF dataframe with filter columns. POS column should contain 1-based coordinates.
+    bed_format : bool
+        If True, output coordinates are converted to 0-based with half-open intervals [start, end).
+
+    Returns
+    -------
+    pd.DataFrame
+        A BED dataframe with discarded mutations and filters applied to each region.
+        Output coordinates are 0-based with half-open intervals [start, end).
+    """
+    # List of filter columns you want to check for
+    filter_columns = [f"FILTER.{f}" for f in FILTERS if f in ','.join(list(maf_df.columns))]
+
+    maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)]
+
+    if maf_df_filters.empty:
+        LOG.warning("No mutations were flagged based on the applied filters.")
+        return 
+
+    # Create BED-like dataframe with filter columns
+    bed_df = maf_df_filters[["CHROM", "POS"] + filter_columns]
+
+    # Transform to long format
+    _bed_melt = (pd.melt(bed_df,
+                    id_vars=["CHROM", "POS"],
+                    value_vars=filter_columns,
+                    var_name="FILTERS")
+            .query("value == True")
+            )
+
+    LOG.info("Mutations flagged: %s", _bed_melt.shape[0])
+
+    # Aggregate filters per position
+    bed_annotated = (
+                _bed_melt
+                .drop_duplicates()
+                .groupby(["CHROM","POS"])["FILTERS"]
+                .agg(','.join)
+                .reset_index()
+                .rename(columns={"POS": "START"})
+    )
+
+    if bed_format:
+        # Create BED format coordinates (0-based, half-open interval)
+        # Input POS is 1-based (from VCF), convert to 0-based BED format
+        # For SNPs: 1-based POS -> 0-based [START, END) where END = START + 1
+        bed_annotated["END"] = bed_annotated["START"]        # Half-open interval
+        bed_annotated["START"] = bed_annotated["START"] - 1  # Convert 1-based to 0-based
+
+    else:
+        # If not bed_format, keep END as START (1-based)
+        bed_annotated["END"] = bed_annotated["START"]
+
+    LOG.info("Unique regions flagged: %s", bed_annotated.shape[0])
+
+    # Write BED file without header or index
+    (bed_annotated[["CHROM", "START", "END", "FILTERS"]]
+        .sort_values(by=["CHROM", "START"])
+        .to_csv(f"{name}.flagged-pos.bed", sep="\t", header=False, index=False)
+    )
