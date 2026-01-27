@@ -15,7 +15,7 @@ include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_d
 include { INPUT_CHECK                                       } from '../subworkflows/local/input_check'
 
 include { DEPTH_ANALYSIS            as DEPTHANALYSIS        } from '../subworkflows/local/depthanalysis/main'
-include { ANNOTATE_REGIONS           as ANNOTATEREGIONS     } from '../subworkflows/local/createpanels/annotateregions/main'
+include { ANNOTATE_REGIONS          as ANNOTATEREGIONS      } from '../subworkflows/local/createpanels/annotateregions/main'
 include { CREATE_PANELS             as CREATEPANELS         } from '../subworkflows/local/createpanels/createpanels/main'
 
 include { PLOT_DEPTHS               as PLOTDEPTHSALLCONS    } from '../subworkflows/local/plotdepths/main'

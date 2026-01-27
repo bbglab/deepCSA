@@ -84,7 +84,10 @@ def mask_panel_regions(annotated_depths: pd.DataFrame, regions_to_mask_bed: str)
         DataFrame with masked regions set to depth 0.
     """
     LOG.info("Masking regions --> Assign depth 0 to regions flagged in the BED file")
-    regions_to_mask = pd.read_csv(regions_to_mask_bed, usecols=[0,1,3], sep = "\t", names=["CHROM", "POS", "FILTERS"])
+    regions_to_mask = pd.read_csv(regions_to_mask_bed, usecols=[0,1,3], sep = "\t", header = None, names=["CHROM", "POS", "END", "FILTERS"])
+
+    # Remove END column
+    regions_to_mask = regions_to_mask[["CHROM", "POS","FILTERS"]]
 
     LOG.debug("Regions to mask: %s", regions_to_mask.drop_duplicates().shape[0])
     # Create a mask for rows to be set to 0
@@ -146,7 +149,6 @@ def output_annotate_dephts(annotated_depths, json_f, samples):
 @click.option('--annotation', type=click.Path(exists=True), help='Input annotation file')
 @click.option('--depths', type=click.Path(exists=True), help='Input depths file')
 @click.option('--json_file', type=click.Path(exists=True), help='JSON groups file')
-@click.option('--input_csv', type=click.Path(exists=True), help='Input CSV file')
 #@click.option('--regions-to-filter', type=click.Path(), help='BED file with regions to filter')
 # @click.option('--output', type=click.Path(), help='Output annotated depths file')
 def main(annotation, depths, json_file, regions_to_filter):
