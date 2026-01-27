@@ -11,7 +11,7 @@ process FILTER_BATCH {
 
     output:
     tuple val(meta), path("*.cohort.filtered.tsv.gz") , emit: cohort_maf
-    tuple val(meta), path("*.flagged-pos.bed")        , emit: flagged_muts
+    tuple val(meta), path("*.flagged-pos.bed")        , emit: flagged_positions
     path "versions.yml"                               , topic: versions
 
 
