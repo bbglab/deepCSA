@@ -315,7 +315,7 @@ def contamination_detection(maf_file, somatic_maf_file):
         print()
 
 
-        subseeeet = maf_df[["SAMPLE_ID", "MUT_ID", 'canonical_SYMBOL', 'canonical_Consequence_broader', 'FILTER', "ALT_DEPTH", "VAF"]]
+        subseeeet = maf_df[["SAMPLE_ID", "MUT_ID", 'canonical_SYMBOL', 'canonical_Consequence_broader', 'FILTER', "ALT_DEPTH", "DEPTH", "VAF"]]
         p_dest = subseeeet[subseeeet["SAMPLE_ID"] == sample].drop("SAMPLE_ID", axis = 1)
 
         p_source_germ = germline_vars_all_samples[germline_vars_all_samples["SAMPLE_ID"] == source_sampleid]
@@ -357,7 +357,10 @@ def contamination_detection(maf_file, somatic_maf_file):
                                                index = False)
 
     contamination_detailed_df_long = contamination_detailed_df.explode("SOURCE_SAMPLEID_COUNTS")
-    contamination_detailed_df_long[["SHARED_VARIANT_COUNT", "SOURCE_SAMPLEID"]] = pd.DataFrame(contamination_detailed_df_long["SOURCE_SAMPLEID_COUNTS"].tolist())
+    expanded_df = pd.DataFrame(contamination_detailed_df_long["SOURCE_SAMPLEID_COUNTS"].tolist())
+    expanded_df.columns = ["SHARED_VARIANT_COUNT", "SOURCE_SAMPLEID"]
+    contamination_detailed_df_long["SHARED_VARIANT_COUNT"] = expanded_df["SHARED_VARIANT_COUNT"].values
+    contamination_detailed_df_long["SOURCE_SAMPLEID"] = expanded_df["SOURCE_SAMPLEID"].values
     contamination_detailed_df_long = contamination_detailed_df_long.drop("SOURCE_SAMPLEID_COUNTS", axis = 1)
     contamination_detailed_df_long.to_csv(f"contaminated_samples.detailed.long.tsv",
                                                header = True,
