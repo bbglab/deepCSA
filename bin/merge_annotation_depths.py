@@ -67,36 +67,58 @@ def preprocess(annotation_file: str, depths_file: str) -> tuple[pd.DataFrame, li
     # Place COLS=[CHROM, POS, CONTEXT] columns at the beginning then the rest of the columns
     return annot_depth[COLS + sample_columns].rename(columns=rename_map), list(rename_map.values())
 
-def mask_panel_regions(annotated_depths: pd.DataFrame, regions_to_mask_bed: str) -> pd.DataFrame:
+def apply_mask_matrix(annotated_depths: pd.DataFrame, mask_matrix_file: str) -> pd.DataFrame:
     """
-    Mask regions flagged in the BED file by assigning depth 0 to them.
-
+    Apply position per sample mask matrix to depths.
+    
+    Sets depth = 0 where mask value is 0 (position should be masked).
+    Keeps depth as-is where mask value is 1 (position should be kept).
+    
     Parameters
     ----------
     annotated_depths : pd.DataFrame
-        DataFrame containing annotated depths.
-    regions_to_mask_bed : str
-        Path to the BED file with regions to mask.
-
+        Depths dataframe with CHROM, POS, CONTEXT, and sample columns
+    mask_matrix_file : str
+        Path to mask matrix file (TSV, gzipped)
+    
     Returns
     -------
     pd.DataFrame
-        DataFrame with masked regions set to depth 0.
+        Depths with masked positions (where mask=0) set to 0
     """
-    LOG.info("Masking regions --> Assign depth 0 to regions flagged in the BED file")
-    regions_to_mask = pd.read_csv(regions_to_mask_bed, usecols=[0,1,3], sep = "\t", header = None, names=["CHROM", "POS", "END", "FILTERS"])
-
-    # Remove END column
-    regions_to_mask = regions_to_mask[["CHROM", "POS","FILTERS"]]
-
-    LOG.debug("Regions to mask: %s", regions_to_mask.drop_duplicates().shape[0])
-    # Create a mask for rows to be set to 0
-    mask = (annotated_depths.set_index(["CHROM", "POS"]).index.isin(regions_to_mask.set_index(["CHROM", "POS"]).index))
-    annotated_depths.loc[mask, annotated_depths.columns.difference(COLS)] = 0
+    LOG.info("Loading mask matrix...")
+    mask_df = pd.read_csv(mask_matrix_file, sep="\t", compression='gzip')
     
-    LOG.info("Regions masked in depths file: %s", mask.sum())
+    if mask_df.empty:
+        LOG.info("Mask matrix is empty, no masking applied")
+        return annotated_depths
     
-    return annotated_depths
+    LOG.info(f"Mask matrix loaded: {len(mask_df)} positions")
+    
+    # Create a copy to avoid modifying the original
+    result = annotated_depths.copy()
+    
+    # Set CHROM and POS as index for alignment
+    result.set_index(['CHROM', 'POS'], inplace=True)
+    mask_df.set_index(['CHROM', 'POS'], inplace=True)
+    
+    # Find common samples between depths and mask
+    sample_cols = [col for col in mask_df.columns if col in result.columns]
+    
+    LOG.info(f"Applying mask to {len(sample_cols)} samples")
+    
+    # Multiply depths by mask (0 or 1) -> only positions with mask=1 will retain their depth
+    common_idx = result.index.intersection(mask_df.index)
+    result.loc[common_idx, sample_cols] = result.loc[common_idx, sample_cols] * mask_df.loc[common_idx, sample_cols]
+    
+    # Indicate number of positions masked
+    n_positions_masked = len(common_idx)
+    LOG.info(f"Masked {n_positions_masked} positions across {len(sample_cols)} samples")
+    
+    # Reset index to restore original structure
+    annotated_depths_filtered = result.reset_index()
+    
+    return annotated_depths_filtered
 
 def output_annotate_dephts(annotated_depths, json_f, samples):
     """
@@ -149,16 +171,15 @@ def output_annotate_dephts(annotated_depths, json_f, samples):
 @click.option('--annotation', type=click.Path(exists=True), help='Input annotation file')
 @click.option('--depths', type=click.Path(exists=True), help='Input depths file')
 @click.option('--json_file', type=click.Path(exists=True), help='JSON groups file')
-#@click.option('--regions-to-filter', type=click.Path(), help='BED file with regions to filter')
-# @click.option('--output', type=click.Path(), help='Output annotated depths file')
-def main(annotation, depths, json_file, regions_to_filter):
+@click.option('--mask-matrix', type=click.Path(exists=True), help='Position per sample mask matrix file (1=keep, 0=mask)')
+def main(annotation, depths, json_file, mask_matrix):
     LOG.info("Annotating depths file...")
 
     # Preprocess annotation and depths files
     annotated_depths, samples  = preprocess(annotation, depths)
 
-    # Mask regions flagged in the BED file
-    # annotated_depths = mask_panel_regions(annotated_depths, regions_to_filter)
+    # Apply position masking
+    annotated_depths = apply_mask_matrix(annotated_depths, mask_matrix)
 
     output_annotate_dephts(annotated_depths, json_file, samples)
 

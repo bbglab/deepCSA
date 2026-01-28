@@ -9,6 +9,7 @@ process ANNOTATE_DEPTHS {
     tuple val(meta) , path(depths)
     tuple val(meta2), path(panel_all)
     path (json_groups)
+    path (mask_matrix)
 
     output:
     // tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
@@ -24,6 +25,7 @@ process ANNOTATE_DEPTHS {
         --annotation ${panel_all}.contexts \\
         --depths ${depths} \\
         --json_file ${json_groups} \\
+        --mask-matrix ${mask_matrix}
         
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
