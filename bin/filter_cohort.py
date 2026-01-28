@@ -4,7 +4,7 @@
 Filter Cohort - MAF Processing and Flagging Script
 
 This script processes a Mutation Annotation Format (MAF) file to filter variants by specific criteria and 
-generates a final filtered MAF along with an output of flagged regions in BED format.
+generates a final filtered MAF.
 
 Command-line Arguments
 ----------------------
@@ -32,7 +32,12 @@ Contributors
 
 Usage
 -----
-# MISSING!
+python filter_cohort.py \\
+    --maf-df-file input.maf.tsv.gz \\
+    --sample-name sample1 \\
+    --repetitive-variant-threshold 5 \\
+    --somatic-vaf-boundary 0.4 \\
+    --n-rich-cohort-proportion 0.1
 
 """
 import logging
@@ -43,16 +48,13 @@ import json
 import pandas as pd
 from utils import add_filter
 from read_utils import custom_na_values
-from utils_filter import expand_filter_column, extract_flagged_regions_bed
+from utils_filter import expand_filter_column
 
 # Logging
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
 )
 LOG = logging.getLogger("filter_cohort")
-
-# Globals
-COHORT_SPECIFIC_FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP",  "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
 
 def flag_repetitive_variants(maf_df: pd.DataFrame,
                              repetitive_variant_threshold: int,
@@ -330,7 +332,6 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
                   index = False)
     
     LOG.info("Cohort flagging complete!")
-    return maf_df  
 
 @click.command()
 @click.option('--maf-df-file', required=True, type=click.Path(exists=True), help='Input gzipped MAF file (TSV)')
@@ -338,12 +339,8 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
 @click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
 @click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
 @click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
-@click.option('--json-filters', required=True, type=click.Path(), 
-              help='Path to json file with list of filter criteria to consider for masking.')
-@click.option('--json-filters-somatic', required=True, type=click.Path(), 
-              help='Path to json file with list of filter criteria to consider for masking somatic variants.')
 def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
-         somatic_vaf_boundary: float, n_rich_cohort_proportion: float, json_filters: str, json_filters_somatic: str):
+         somatic_vaf_boundary: float, n_rich_cohort_proportion: float):
     """
     CLI wrapper for filter_maf function.
     """
@@ -351,26 +348,11 @@ def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
     maf_df = pd.read_csv(maf_df_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)
     LOG.debug(f"{maf_df_file}")
     # Flag MAF file
-    maf_df = flag_maf(maf_df,
-               sample_name,
-               repetitive_variant_threshold,
-               somatic_vaf_boundary, 
-               n_rich_cohort_proportion)
-    
-    # Extract maf_df_file name without extensions for naming
-    maf_file_name = Path(maf_df_file).name.replace('.tsv.gz', '')
-    
-    # Combine filters from both json files 
-    with open(json_filters, 'r') as file:
-        filter_criteria = json.load(file)
-    with open(json_filters_somatic, 'r') as file:
-        filter_criteria_somatic = json.load(file)
-    # Ensure only cohort-specific filters are considered
-    all_filters = filter_criteria.get("FILTER", []) + filter_criteria_somatic.get("FILTER", [])
-    FILTERS = [f.replace("notcontains ", "") for f in all_filters if "notcontains" in f and f.replace("notcontains ", "") in COHORT_SPECIFIC_FILTERS]
-
-    # Extract flagged regions to BED file
-    extract_flagged_regions_bed(maf_df, maf_file_name, FILTERS)
+    flag_maf(maf_df,
+        sample_name,
+        repetitive_variant_threshold,
+        somatic_vaf_boundary, 
+        n_rich_cohort_proportion)
     
 
 if __name__ == '__main__':

@@ -15,8 +15,7 @@ include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_d
 include { INPUT_CHECK                                       } from '../subworkflows/local/input_check'
 
 include { DEPTH_ANALYSIS            as DEPTHANALYSIS        } from '../subworkflows/local/depthanalysis/main'
-include { ANNOTATE_REGIONS          as ANNOTATEREGIONS      } from '../subworkflows/local/createpanels/annotateregions/main'
-include { CREATE_PANELS             as CREATEPANELS         } from '../subworkflows/local/createpanels/createpanels/main'
+include { CREATE_PANELS             as CREATEPANELS         } from '../subworkflows/local/createpanels/main'
 
 include { PLOT_DEPTHS               as PLOTDEPTHSALLCONS    } from '../subworkflows/local/plotdepths/main'
 include { PLOT_DEPTHS               as PLOTDEPTHSEXONS      } from '../subworkflows/local/plotdepths/main'
@@ -207,23 +206,20 @@ workflow DEEPCSA{
     DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
 
     // Panels annotation
-    ANNOTATEREGIONS(DEPTHANALYSIS.out.depths)
+    CREATEPANELS(DEPTHANALYSIS.out.depths)
 
     // Mutation preprocessing
     MUT_PREPROCESSING(meta_vcfs_alone,
-                        ANNOTATEREGIONS.out.all_consensus_bed_initial,
-                        ANNOTATEREGIONS.out.exons_bed_initial,
+                        CREATEPANELS.out.all_consensus_bed,
+                        CREATEPANELS.out.exons_bed,
                         TABLE2GROUP.out.json_allgroups,
                         group_keys_ch,
                         seqinfo_df,
-                        ANNOTATEREGIONS.out.added_custom_regions
+                        CREATEPANELS.out.added_custom_regions
                         )
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
 
     positive_selection_results = somatic_mutations
-
-    // Panels generation: all modalities
-    CREATEPANELS(ANNOTATEREGIONS.out.complete_annotated_panel, DEPTHANALYSIS.out.depths, MUT_PREPROCESSING.out.flagged_bed)
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, MUT_PREPROCESSING.out.mask_matrix)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
@@ -248,7 +244,7 @@ workflow DEEPCSA{
                  CREATEPANELS.out.prot_consensus_panel, 
                  CREATEPANELS.out.synonymous_consensus_panel, 
                  CREATEPANELS.out.exons_consensus_panel, 
-                 ANNOTATEREGIONS.out.domains_panel_bed, // domains_file
+                 CREATEPANELS.out.domains_panel_bed, // domains_file
                  CREATEPANELS.out.all_consensus_bed,
                  CREATEPANELS.out.nonprot_consensus_bed,
                  CREATEPANELS.out.prot_consensus_bed,
@@ -424,7 +420,7 @@ workflow DEEPCSA{
                     ENRICHPANELS.out.exons_consensus_expanded_panel,
                     custom_groups_table,
                     SYNMUTDENSITY.out.mutdensity,
-                    ANNOTATEREGIONS.out.panel_annotated_rich,
+                    CREATEPANELS.out.panel_annotated_rich,
                     "",
                     grouping_definitions,
                     ENRICHPANELS.out.exons_json_subgenic
@@ -450,7 +446,7 @@ workflow DEEPCSA{
                             ENRICHPANELS.out.exons_consensus_expanded_panel,
                             custom_groups_table,
                             SYNMUTREADSRATE.out.mutdensity,
-                            ANNOTATEREGIONS.out.panel_annotated_rich,
+                            CREATEPANELS.out.panel_annotated_rich,
                             ".multi",
                             grouping_definitions,
                             ENRICHPANELS.out.exons_json_subgenic
@@ -471,7 +467,7 @@ workflow DEEPCSA{
                             ENRICHPANELS.out.exons_consensus_expanded_panel,
                             custom_groups_table,
                             SYNMUTDENSITY.out.mutdensity,
-                            ANNOTATEREGIONS.out.panel_annotated_rich,
+                            CREATEPANELS.out.panel_annotated_rich,
                             ".non_protein_affecting",
                             grouping_definitions,
                             ENRICHPANELS.out.exons_json_subgenic
@@ -489,7 +485,7 @@ workflow DEEPCSA{
                                     ENRICHPANELS.out.exons_consensus_expanded_panel,
                                     custom_groups_table,
                                     SYNMUTREADSRATE.out.mutdensity,
-                                    ANNOTATEREGIONS.out.panel_annotated_rich,
+                                    CREATEPANELS.out.panel_annotated_rich,
                                     ".multi.non_protein_affecting",
                                     grouping_definitions,
                                     ENRICHPANELS.out.exons_json_subgenic
@@ -573,10 +569,10 @@ workflow DEEPCSA{
 
                         CREATEPANELS.out.exons_consensus_panel,
                         ENRICHPANELS.out.exons_consensus_expanded_panel,
-                        ANNOTATEREGIONS.out.panel_annotated_rich,
+                        CREATEPANELS.out.panel_annotated_rich,
 
                         seqinfo_df,
-                        ANNOTATEREGIONS.out.domains_in_panel,
+                        CREATEPANELS.out.domains_in_panel,
                         ENRICHPANELS.out.dna2protein_mapping_depth_exons,
                         group_keys_ch
                         )

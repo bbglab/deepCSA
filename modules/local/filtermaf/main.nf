@@ -18,32 +18,16 @@ process FILTER_BATCH {
     script:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    def filters = task.ext.filters ?: ""
-    def somatic_filters = task.ext.somatic_filters ?: ""
     def repetitive_variant = task.ext.repetitive_variant ?: "${params.repetitive_variant_thres}"
     def germline_threshold = task.ext.germline_threshold ?: "${params.germline_threshold}"
     def proportion_samples_nrich = task.ext.prop_samples_nrich ?: "${params.prop_samples_nrich}"
     """
-    cat > mutations_subset.conf << EOF
-    {
-        ${filters}
-    }
-    EOF
-
-    cat > somatic_mutations_subset.conf << EOF
-    {
-        ${somatic_filters}
-    }
-    EOF
-
     filter_cohort.py \\
         --maf-df-file ${maf} \\
         --sample-name ${prefix} \\
         --repetitive-variant-threshold ${repetitive_variant} \\
         --somatic-vaf-boundary ${germline_threshold} \\
         --n-rich-cohort-proportion ${proportion_samples_nrich} \\
-        --json-filters mutations_subset.conf \\
-        --json-filters-somatic somatic_mutations_subset.conf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
