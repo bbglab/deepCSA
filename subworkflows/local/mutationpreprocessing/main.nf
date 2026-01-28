@@ -8,8 +8,9 @@ include { VCF2MAF                       as VCF2MAF          }   from '../../../m
 include { FILTERBED                     as FILTERPANEL      }   from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTEREXONS      }   from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTERNANOSEQSNP }   from '../../../modules/local/filterbed/main'
-include { FILTERBED                     as FILTERNANOSEQNOISE}  from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQNOISE } from '../../../modules/local/filterbed/main'
 include { SAMPLE_FLAGGED_BED            as SAMPLEFLAGGEDBED }   from '../../../modules/local/sample_flagged_bed/main'
+include { CREATE_MASK_MATRIX            as CREATEMASKMATRIX }   from '../../../modules/local/create_mask_matrix/main'
 include { MERGE_BATCH                   as MERGEBATCH       }   from '../../../modules/local/mergemafs/main'
 include { FILTER_BATCH                  as FILTERBATCH      }   from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                    as WRITEMAF         }   from '../../../modules/local/writemaf/main'
@@ -93,9 +94,14 @@ workflow MUTATION_PREPROCESSING {
     // Extract sample-specific masked positions
     SAMPLEFLAGGEDBED(filtered_maf_panels)
 
+    // Join all samples' flagged bed files and put them in a channel to create the mask matrix
+    SAMPLEFLAGGEDBED.out.flagged_positions.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples_bed" ], it]}.set{ flagged_beds }
+
+    CREATEMASKMATRIX(flagged_beds)
+
     // Join all samples' MAFs and put them in a channel to be merged
     filtered_maf_panels.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
-
+    
     MERGEBATCH(samples_maf)
 
     FILTERBATCH(MERGEBATCH.out.cohort_maf)
@@ -176,7 +182,7 @@ workflow MUTATION_PREPROCESSING {
     emit:
     mafs                    = named_mafs
     flagged_bed             = FILTERBATCH.out.flagged_positions
-    sample_flagged_bed      = SAMPLEFLAGGEDBED.out.flagged_positions
+    mask_matrix             = CREATEMASKMATRIX.out.mask_matrix
     somatic_mafs            = SOMATICMUTATIONS.out.mutations
     clean_mafs              = CLEANMUTATIONS.out.mutations
     mutations_all_samples   = muts_all_samples

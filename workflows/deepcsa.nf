@@ -225,7 +225,7 @@ workflow DEEPCSA{
     // Panels generation: all modalities
     CREATEPANELS(ANNOTATEREGIONS.out.complete_annotated_panel, DEPTHANALYSIS.out.depths, MUT_PREPROCESSING.out.flagged_bed)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups)
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, MUT_PREPROCESSING.out.mask_matrix)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
 
     // if (params.downsample && params.downsample_proportion < 1) {
