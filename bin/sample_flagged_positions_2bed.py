@@ -30,7 +30,7 @@ from pathlib import Path
 import click
 import pandas as pd
 from read_utils import custom_na_values
-from utils_filter import expand_filter_column, extract_flagged_regions_bed
+from utils_filter import expand_filter_column
 
 # Logging
 logging.basicConfig(
@@ -40,10 +40,69 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("extract_sample_masked_bed")
 
-# Cohort-level filters to remove
-COHORT_LEVEL_FILTERS = ["cohort_n_rich", "cohort_n_rich_uni", "other_sample_SNP",  "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise"]
+def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[str]) -> pd.DataFrame | None:
+    """
+    Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
+    Creates a properly formatted BED file with 0-based coordinates and half-open intervals.
 
-def extract_flagged_positions(maf_file: str, json_filters: str, sample_name: str) -> None:
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Input MAF dataframe with filter columns. POS column should contain 1-based coordinates.
+    bed_format : bool
+        If True, output coordinates are converted to 0-based with half-open intervals [start, end).
+
+    Returns
+    -------
+    pd.DataFrame
+        A BED dataframe with discarded mutations and filters applied to each region.
+        Output coordinates are 0-based with half-open intervals [start, end).
+    """
+    # List of filter columns you want to check for
+    filter_columns = [f"FILTER.{f}" for f in FILTERS if f in ','.join(list(maf_df.columns))]
+
+    maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)]
+
+    if maf_df_filters.empty:
+        LOG.warning("No mutations were flagged based on the applied filters.")
+        return 
+
+    # Create BED-like dataframe with filter columns
+    bed_df = maf_df_filters[["CHROM", "POS"] + filter_columns]
+
+    # Transform to long format
+    _bed_melt = (pd.melt(bed_df,
+                    id_vars=["CHROM", "POS"],
+                    value_vars=filter_columns,
+                    var_name="FILTERS")
+            .query("value == True")
+            )
+
+    LOG.info("Mutations flagged: %s", _bed_melt.shape[0])
+
+    # Aggregate filters per position
+    bed_annotated = (
+                _bed_melt
+                .drop_duplicates()
+                .groupby(["CHROM","POS"])["FILTERS"]
+                .agg(','.join)
+                .reset_index()
+                .rename(columns={"POS": "START"})
+    )
+
+    # This creates 1-based inclusive coordinates -> not BED format
+    # This is because this bed will be used to mask positions in depth files which are 1-based
+    bed_annotated["END"] = bed_annotated["START"]
+
+    LOG.info("Unique regions flagged: %s", bed_annotated.shape[0])
+
+    # Write BED file without header or index
+    (bed_annotated[["CHROM", "START", "END", "FILTERS"]]
+        .sort_values(by=["CHROM", "START"])
+        .to_csv(f"{name}.flagged-pos.bed", sep="\t", header=False, index=False)
+    )
+
+def extract_flagged_positions(maf_file: str, json_filters: str, json_filters_somatic, sample_name: str) -> None:
     """
     Extract sample-specific masked positions from a per-sample MAF file.
 
@@ -68,19 +127,21 @@ def extract_flagged_positions(maf_file: str, json_filters: str, sample_name: str
     # Load the filter criteria from the JSON file
     with open(json_filters, 'r') as file:
         filter_data = json.load(file)
+    with open(json_filters_somatic, 'r') as file:
+        filter_data_somatic = json.load(file)
     
     # Extract the FILTER list from the JSON structure
-    filter_criteria = filter_data.get("FILTER", [])
+    filter_criteria = filter_data.get("FILTER", []) + filter_data_somatic.get("FILTER", [])
     LOG.info(f"Loaded filter criteria: {filter_criteria}")
     
-    # Remove cohort-level filters from consideration
-    SAMPLE_FILTERS = [f.replace("notcontains ", "") for f in filter_criteria if "notcontains" in f and f.replace("notcontains ", "") not in COHORT_LEVEL_FILTERS]
+    # Get all the filters to consider for this sample from the filter criteria and filter criteria somatic
+    FILTERS = [f.replace("notcontains ", "") for f in filter_criteria if "notcontains" in f]
 
     # Extract sample-specific masked positions to BED file
-    LOG.info(f"Extracting sample-specific filters: {SAMPLE_FILTERS}")
+    LOG.info(f"Extracting sample-specific filters: {FILTERS}")
     
     # Extract flagged regions (will create {sample_name}.flagged-pos.bed)
-    extract_flagged_regions_bed(maf_df, sample_name, SAMPLE_FILTERS, bed_format = False)
+    extract_flagged_regions_bed(maf_df, sample_name, FILTERS)
     
     # Rename to the requested output name if different
     generated_bed = f"{sample_name}.flagged-pos.bed"
@@ -95,14 +156,16 @@ def extract_flagged_positions(maf_file: str, json_filters: str, sample_name: str
               help='Input per-sample MAF file (TSV, can be gzipped)')
 @click.option('--json-filters', required=True, type=click.Path(), 
               help='Path to json file with list of filter criteria to consider for masking.')
+@click.option('--json-filters-somatic', required=True, type=click.Path(), 
+              help='Path to json file with list of filter criteria to consider for masking.')
 @click.option('--sample-name', required=True, type=str, 
               help='Sample identifier')
-def main(maf_file: str, json_filters: str, sample_name: str):
+def main(maf_file: str, json_filters: str, json_filters_somatic: str, sample_name: str):
     """
     CLI wrapper for extracting sample-specific masked positions.
     """
     try:
-        extract_flagged_positions(maf_file, json_filters, sample_name)
+        extract_flagged_positions(maf_file, json_filters, json_filters_somatic, sample_name)
     except Exception as e:
         LOG.error(f"Error processing sample {sample_name}: {e}")
         raise
