@@ -10,7 +10,7 @@ Utility functions for extracting filters from a MAF DataFrame.
 LOG = logging.getLogger(__name__)
 
 
-def load_filter_criteria(json_filters: str, json_filters_somatic: str, include_cohort_filters: bool = False) -> list[str]:
+def load_filter_criteria(json_filters: str, json_filters_somatic: str, only_cohort_filters: bool = False) -> list[str]:
     """
     Load filter criteria from JSON configuration files.
     
@@ -45,9 +45,9 @@ def load_filter_criteria(json_filters: str, json_filters_somatic: str, include_c
     'cohort_n_rich_threshold', 'other_sample_SNP', 'gnomAD_SNP'
     }
     # Optionally exclude cohort-level filters
-    if include_cohort_filters:
+    if only_cohort_filters:
         filters = [f for f in filters if f in COHORT_FILTERS]
-    elif not include_cohort_filters:
+    else:
         filters = [f for f in filters if f not in COHORT_FILTERS]
         
     LOG.info(f"Loaded {len(filters)} filter criteria: {filters}")
@@ -99,11 +99,13 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[s
     # List of filter columns you want to check for
     filter_columns = [f"FILTER.{f}" for f in FILTERS if f in ','.join(list(maf_df.columns))]
 
-    maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)]
+    maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)] if filter_columns else pd.DataFrame()
 
     if maf_df_filters.empty:
-        LOG.warning("No mutations were flagged based on the applied filters.")
-        return 
+        LOG.warning("No mutations were flagged based on the applied filters. Creating empty BED file.")
+        # Create empty BED file to satisfy pipeline requirements
+        Path(f"{name}.flagged-pos.bed").touch()
+        return
 
     # Create BED-like dataframe with filter columns
     bed_df = maf_df_filters[["CHROM", "POS"] + filter_columns]

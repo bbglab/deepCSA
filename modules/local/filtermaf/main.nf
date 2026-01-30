@@ -53,7 +53,8 @@ process FILTER_BATCH {
 
     stub:
     """
-    touch all_samples.cohort.filtered.tsv.gz
+    touch shared_cohort
+    .cohort.filtered.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

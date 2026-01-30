@@ -64,7 +64,7 @@ def extract_flagged_positions(maf_file: str, json_filters: str, json_filters_som
     maf_df = expand_filter_column(maf_df)
     
     # Load filter criteria (excluding cohort-level filters)
-    FILTERS = load_filter_criteria(json_filters, json_filters_somatic, include_cohort_filters=False)
+    FILTERS = load_filter_criteria(json_filters, json_filters_somatic, only_cohort_filters=False)
 
     # Extract sample-specific masked positions to BED file
     LOG.info(f"Extracting sample-specific filters: {FILTERS}")
@@ -72,12 +72,7 @@ def extract_flagged_positions(maf_file: str, json_filters: str, json_filters_som
     # Extract flagged regions (will create {sample_name}.flagged-pos.bed)
     extract_flagged_regions_bed(maf_df, sample_name, FILTERS)
     
-    # Rename to the requested output name if different
-    generated_bed = f"{sample_name}.flagged-pos.bed"
-    if Path(generated_bed).exists():
-        LOG.info(f"Sample-specific masked BED file created: {generated_bed}")
-    else:
-        LOG.warning(f"No masked positions found for sample {sample_name}")
+    LOG.info(f"Sample-specific masked BED file created: {sample_name}.flagged-pos.bed")
 
 
 @click.command()

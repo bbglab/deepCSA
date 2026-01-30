@@ -343,7 +343,7 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
 
     # Determine which cohort-level filters to extract based on configuration
     # Load filter criteria (only cohort-level filters)
-    cohort_filters = load_filter_criteria(json_filters, json_filters_somatic, include_cohort_filters=True)
+    cohort_filters = load_filter_criteria(json_filters, json_filters_somatic, only_cohort_filters=True)
     LOG.info(f"Extracting cohort-level filters from configuration: {cohort_filters}")
     
     # Extract flagged regions to BED file (cohort-wide, applies to all samples)

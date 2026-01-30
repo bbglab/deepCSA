@@ -3,19 +3,20 @@
 """
 Create Position per Sample Mask Matrix from BED Files
 
-This script aggregates per-sample and one cohort-wide flagged position BED file into a single
+This script aggregates the per-sample and cohort-wide flagged position BED file into a single
 mask matrix where rows are positions and columns are samples. 
 
 - Sample-specific BED files (*.flagged-pos.bed): positions masked only for that sample
 - Cohort-wide BED file (shared_cohort.flagged-pos.bed): positions masked for ALL samples
+
 The output is a TSV with 1/0 values indicating whether a position should be kept (1) 
 or masked (0) for each sample.
 
 Command-line Arguments
 ----------------------
 bed-files : str
-    Space-separated list of sample BED files and one cohort-wide BED file
-    (all_samples.flagged-pos.bed)
+    Space-separated list of sample BED files and the cohort-wide BED file
+    (shared_cohort.flagged-pos.bed)
 
 Usage
 -----
