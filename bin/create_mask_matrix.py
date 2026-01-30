@@ -3,24 +3,24 @@
 """
 Create Position per Sample Mask Matrix from BED Files
 
-This script aggregates per-sample flagged position BED files into a single
-mask matrix where rows are positions and columns are samples.
+This script aggregates per-sample and one cohort-wide flagged position BED file into a single
+mask matrix where rows are positions and columns are samples. 
 
-The output is a TSV with TRUE/FALSE values indicating whether a position
-should be masked (depth set to 0) for a given sample.
+- Sample-specific BED files (*.flagged-pos.bed): positions masked only for that sample
+- Cohort-wide BED file (shared_cohort.flagged-pos.bed): positions masked for ALL samples
+The output is a TSV with 1/0 values indicating whether a position should be kept (1) 
+or masked (0) for each sample.
 
 Command-line Arguments
 ----------------------
 bed-files : str
-    Space-separated list of sample BED files (*.flagged-pos.bed)
-output : str
-    Output mask matrix file path (TSV, gzipped)
+    Space-separated list of sample BED files and one cohort-wide BED file
+    (all_samples.flagged-pos.bed)
 
 Usage
 -----
 create_mask_matrix.py \\
     --bed-files sample1.flagged-pos.bed sample2.flagged-pos.bed ... \\
-    --output flagged_positions.mask.tsv.gz
 """
 
 import logging
@@ -37,6 +37,47 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("create_mask_matrix")
 
+def add_bed_positions(bed_df: pd.DataFrame, 
+                      sample_names: set, 
+                      masked_positions: set, 
+                      mask_data: list) -> int:
+    """
+    Add BED positions to mask data for specified samples.
+    
+    Parameters
+    ----------
+    bed_df : pd.DataFrame
+        BED dataframe with CHROM, START, END, FILTER columns
+    sample_names : set
+        Set of sample names to apply masking to
+    masked_positions : set
+        Set tracking already-masked (CHROM, POS, SAMPLE) tuples
+    mask_data : list
+        List to append mask entries to
+    
+    Returns
+    -------
+    int
+        Number of new entries added
+    """
+    entries_added = 0
+    
+    for row in bed_df.itertuples():
+        for pos in range(row.START, row.END + 1):
+            for sample_name in sample_names:
+                key = (row.CHROM, pos, sample_name)
+                if key not in masked_positions:
+                    mask_data.append({
+                        'CHROM': row.CHROM,
+                        'POS': pos,
+                        'SAMPLE': sample_name,
+                        'KEEP': 0,
+                    })
+                    masked_positions.add(key)
+                    entries_added += 1
+    
+    return entries_added
+
 
 def create_mask_matrix(bed_files: list) -> None:
     """
@@ -45,20 +86,59 @@ def create_mask_matrix(bed_files: list) -> None:
     Parameters
     ----------
     bed_files : list
-        List of paths to sample-specific BED files
-    output_file : str
-        Output path for the mask matrix (TSV, gzipped)
+        List of paths to sample-specific BED files and one cohort-wide BED file
+        (shared_cohort.flagged-pos.bed) that applies to all samples
     """
     LOG.info(f"Processing {len(bed_files)} BED files...")
-    # Collect all positions and their associated samples
-    mask_data = []
+    
+    # Separate the single cohort-wide BED from sample-specific BEDs
+    cohort_bed_file = None
+    sample_bed_files = []
     
     for bed_file in bed_files:
-        # Extract sample name from filename (e.g., "sample1.flagged-pos.bed" -> "sample1")
+        if 'shared_cohort.flagged-pos.bed' in str(bed_file):
+            cohort_bed_file = bed_file
+        else:
+            sample_bed_files.append(bed_file)
+    
+    LOG.info(f"Found {len(sample_bed_files)} sample-specific BED files")
+    LOG.info(f"Found cohort-wide BED file: {cohort_bed_file is not None}")
+    
+    # Collect all sample's names
+    all_samples = set()
+    for bed_file in sample_bed_files:
+        sample_name = Path(bed_file).stem.replace('.flagged-pos', '')
+        all_samples.add(sample_name)
+    
+    # Track already-masked positions using a set for lookups
+    masked_positions = set()  # Set of (CHROM, POS, SAMPLE) tuples
+    mask_data = []
+    
+    # Process the single cohort-wide BED file first (applies to ALL samples)
+    cohort_count = 0
+    if cohort_bed_file:
+        try:
+            bed_df = pd.read_csv(cohort_bed_file, sep="\t", header=None,
+                                names=["CHROM", "START", "END", "FILTER"])
+            
+            if not bed_df.empty:
+                # Add cohort positions for all samples
+                cohort_count = add_bed_positions(bed_df, all_samples, masked_positions, mask_data)
+                LOG.info(f"Added {len(bed_df)} cohort-wide positions → {cohort_count} total entries (across all samples)")
+            else:
+                LOG.info("No cohort-wide flagged positions")
+            
+        except Exception as e:
+            LOG.warning(f"Could not process cohort BED {cohort_bed_file}: {e}")
+    else:
+        LOG.info("No cohort-wide BED file provided")
+    
+    # Process sample-specific BED files (skip if already in cohort)
+    sample_count = 0
+    for bed_file in sample_bed_files:
         sample_name = Path(bed_file).stem.replace('.flagged-pos', '')
         
         try:
-            # Read BED file (CHROM, START, END, FILTER)
             bed_df = pd.read_csv(bed_file, sep="\t", header=None,
                                 names=["CHROM", "START", "END", "FILTER"])
             
@@ -66,24 +146,17 @@ def create_mask_matrix(bed_files: list) -> None:
                 LOG.info(f"No flagged positions for {sample_name}")
                 continue
             
-            # Expand each region to individual positions
-            for _, row in bed_df.iterrows():
-                # BED files are 1-based inclusive (non-standard format)
-                # For SNVs: START == END, so we just take that position
-                # For ranges: include both START and END
-                for pos in range(row['START'], row['END'] + 1):
-                    mask_data.append({
-                        'CHROM': row['CHROM'],
-                        'POS': pos,
-                        'SAMPLE': sample_name,
-                        'KEEP': 0,  # Indicate position should be masked
-                    })
+            # Add sample-specific positions (only if not already masked by cohort)
+            sample_specific = add_bed_positions(bed_df, {sample_name}, masked_positions, mask_data)
             
-            LOG.info(f"Added {len(bed_df)} positions for {sample_name}")
+            LOG.info(f"{sample_name}: {len(bed_df)} positions in BED, {sample_specific} unique entries added")
+            sample_count += sample_specific
             
         except Exception as e:
             LOG.warning(f"Could not process {bed_file}: {e}")
             continue
+    
+    LOG.info(f"Total mask entries: {len(mask_data)} ({cohort_count} from cohort, {sample_count} sample-specific)")
     
     # Handle case where no positions need masking
     if not mask_data:
