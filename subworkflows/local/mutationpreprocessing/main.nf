@@ -10,7 +10,7 @@ include { FILTERBED                     as FILTEREXONS      }   from '../../../m
 include { FILTERBED                     as FILTERNANOSEQSNP }   from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTERNANOSEQNOISE } from '../../../modules/local/filterbed/main'
 include { SAMPLE_FLAGGED_BED            as SAMPLEFLAGGEDBED }   from '../../../modules/local/sample_flagged_bed/main'
-include { CREATE_MASK_MATRIX            as CREATEMASKMATRIX }   from '../../../modules/local/create_mask_matrix/main'
+include { CREATE_MASK_MATRIX            as CREATEMASKMATRIX }   from '../../../modules/local/createmaskmatrix/main'
 include { MERGE_BATCH                   as MERGEBATCH       }   from '../../../modules/local/mergemafs/main'
 include { FILTER_BATCH                  as FILTERBATCH      }   from '../../../modules/local/filtermaf/main'
 include { WRITE_MAFS                    as WRITEMAF         }   from '../../../modules/local/writemaf/main'
@@ -94,17 +94,28 @@ workflow MUTATION_PREPROCESSING {
     // Extract sample-specific masked positions
     SAMPLEFLAGGEDBED(filtered_maf_panels)
 
-    // Join all samples' flagged bed files and put them in a channel to create the mask matrix
-    SAMPLEFLAGGEDBED.out.flagged_positions.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples_bed" ], it]}.set{ flagged_beds }
-
-    CREATEMASKMATRIX(flagged_beds)
-
     // Join all samples' MAFs and put them in a channel to be merged
     filtered_maf_panels.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
     
     MERGEBATCH(samples_maf)
 
     FILTERBATCH(MERGEBATCH.out.cohort_maf)
+
+    // Collect sample-level flagged BED files
+    SAMPLEFLAGGEDBED.out.flagged_positions.map{ it -> it[1] }.collect().set{ sample_flagged_beds }
+    
+    // Collect cohort-wide flagged BED file (applies to all samples)
+    FILTERBATCH.out.cohort_flagged_positions.set{ cohort_flagged_bed }
+    
+    // Combine sample-level BEDs with cohort-wide BED for mask matrix creation
+    sample_flagged_beds
+        .concat(cohort_flagged_bed)
+        .flatten()
+        .collect()
+        .map{ it -> [[ id:"all_samples_bed" ], it]}
+        .set{ all_flagged_beds }
+
+    CREATEMASKMATRIX(all_flagged_beds)
 
     PLOTMAF(FILTERBATCH.out.cohort_maf)
 
