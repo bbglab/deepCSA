@@ -16,7 +16,7 @@ process CREATE_MASK_MATRIX {
     script:
     """
     create_mask_matrix.py \\
-        --bed-files ${bed_files.join(' --bed-files ')} \\
+        --bed-files ${bed_files.join(' --bed-files ')}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

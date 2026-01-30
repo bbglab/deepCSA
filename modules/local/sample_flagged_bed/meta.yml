@@ -1,18 +1,30 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/yaml-schema.json
-name: extract_sample_masked_bed
-description: Extracts sample-specific masked positions from a per-sample MAF file into BED format
+name: SAMPLE_FLAGGED_BED
+description: |
+  Extracts sample-specific flagged positions from MAF files into BED format for masking in depth analysis.
+  This module identifies positions that should be masked due to sample-level quality issues such as:
+  low mappability (n_rich), NanoSeq-specific artifacts (nanoseq_snp, nanoseq_noise), 
+  lack of pileup support (no_pileup_support), and panel coverage issues (not_covered, not_in_exons).
+  
+  Cohort-level filters (repetitive_variant, other_sample_SNP, etc.) are excluded as they are 
+  handled separately by FILTER_BATCH.
+  
+  The module accepts filter criteria via JSON configuration files generated from pipeline parameters.
 keywords:
   - filter
   - mask
   - bed
   - maf
   - quality control
+  - sample-level
+  - flagged positions
 tools:
   - custom:
       description: |
-        Custom Python script to extract sample-specific filters from MAF files.
-        Focuses on sample-level artifacts like low mappability, N-rich regions,
-        and panel coverage issues.
+        Custom Python script (sample_flagged_positions_2bed.py) that extracts sample-specific 
+        flagged positions from MAF files. Uses JSON-based filter configuration to identify 
+        positions affected by sample-level quality issues that should be masked in depth analysis.
+        Excludes cohort-level filters which are handled by FILTER_BATCH.
       homepage: https://github.com/bbglab/deepcsa
       licence: ["MIT"]
 
@@ -33,10 +45,13 @@ output:
       description: |
         Groovy Map containing sample information
         e.g. [id: 'sample_id']
-  - masked_bed:
+  - flagged_positions:
       type: file
-      description: BED file with sample-specific masked positions and associated filters
-      pattern: "*.masked.bed"
+      description: |
+        BED file containing sample-specific flagged positions with 1-based coordinates.
+        Each position includes the filters that flagged it (e.g., FILTER.n_rich, FILTER.not_covered).
+        These positions will be masked (set to 0) in the mask matrix for this specific sample.
+      pattern: "*.flagged-pos.bed"
   - versions:
       type: file
       description: File containing software versions

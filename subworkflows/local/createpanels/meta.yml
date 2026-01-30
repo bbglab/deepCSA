@@ -1,8 +1,12 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
-name: "ANNOTATE_PANELS"
-description: Comprehensive annotation workflow for annotating capture panels with genomic features, VEP annotations, and domains.
-  ANNOTATE_PANELS outputs two panels (all_consensus_bed_initial, and exons_bed_initial) that will only be used by MUTPREPROCESSING, not further downstream.
-  MUTPREPROCESSING will output a flagged-bed that will be used in CREATE_PANELS, which will output the final version of the panels used in the pipeline.
+name: "CREATE_PANELS"
+description: |
+  Creates comprehensive genomic panels from depth files through a multi-stage annotation pipeline.
+  This workflow generates both captured panels (all possible mutations in sequenced regions) and 
+  consensus panels (regions with adequate depth coverage across samples). It performs VEP annotation,
+  optional custom annotation processing, protein domain mapping, and creates panel variants for 
+  different genomic features (protein-affecting, exons, synonymous, etc.). The outputs are used 
+  throughout the pipeline for mutation filtering, depth analysis, and selection analysis.
 keywords:
   - annotation
   - panel
@@ -11,6 +15,7 @@ keywords:
   - domains
   - consensus
   - captured regions
+  - depth coverage
 components:
   - SITESFROMPOSITIONS
   - VCF_ANNOTATE_ENSEMBLVEP
@@ -18,71 +23,187 @@ components:
   - CUSTOM_ANNOTATION_PROCESSING
   - DOMAIN_ANNOTATION
   - CREATECAPTUREDPANELS
-  - CREATESAMPLEPANELS
   - CREATECONSENSUSPANELS
 
 input:
   - depths:
       type: file
       description: |
-        Channel containing depth information files for captured regions.
-        Used to generate all possible sites and mutations within the captured panel.
-      pattern: "*.{txt,tsv,bed}"
+        Channel containing per-sample depth information files for all captured/sequenced regions.
+        These files are used to (1) generate all possible mutations within the captured panel and 
+        (2) determine which regions have consensus coverage (adequate depth across the cohort).
+      pattern: "*.{txt,tsv,bed,gz}"
 
 output:
   - full_panel_annotated:
       type: file
       description: |
-        Full VEP annotation output in tab-separated format before postprocessing.
-        Contains complete annotation information from Ensembl VEP.
+        Complete VEP annotation output in tab-separated format (raw VEP output).
+        Contains all transcript annotations before postprocessing.
       pattern: "*.tab"
   - complete_annotated_panel:
       type: file
       description: |
-        Compact version of the annotated panel with one annotation per mutation.
-        This is the main output after postprocessing and optional custom annotation.
+        Compact annotated panel with one annotation per mutation (postprocessed).
+        Optionally includes custom annotation modifications if params.customize_annotation is true.
+        This is the primary annotation reference used throughout the pipeline.
       pattern: "*.tsv"
   - panel_annotated_rich:
       type: file
       description: |
-        Rich annotated panel containing detailed annotation information.
-        Includes extended VEP fields and is used for domain annotation.
+        Rich annotated panel with extended VEP annotation fields.
+        Used for detailed analyses and domain annotation mapping.
       pattern: "*.tsv"
   - added_custom_regions:
       type: file
       description: |
-        Regions that were added during custom annotation processing (if enabled).
+        Regions added or modified during custom annotation processing.
         Empty channel if params.customize_annotation is false.
       pattern: "*.tsv"
   - domains_panel_bed:
       type: file
       description: |
-        BED file containing protein domain coordinates mapped to genomic regions.
+        BED file with protein domain coordinates mapped to genomic positions.
+        Used for domain-level selection analysis.
       pattern: "*.bed"
   - domains_in_panel:
       type: file
       description: |
-        Tab-separated file listing all protein domains found in the panel.
+        Tab-separated file listing all protein domains present in the captured panel.
       pattern: "*.tsv"
   - postprocessed_panel:
       type: file
       description: |
-        Compact panel annotation before custom processing (first output).
+        Compact panel annotation immediately after VEP postprocessing (before custom annotation).
       pattern: "*.tsv"
   - postprocessed_panel_rich:
       type: file
       description: |
-        Rich panel annotation before custom processing (first output).
+        Rich panel annotation immediately after VEP postprocessing (before custom annotation).
       pattern: "*.tsv"
-  - all_consensus_bed_initial:
+  - all_panel:
       type: file
       description: |
-        Initial consensus panel BED file containing all consensus regions. Only used by MUTPREPROCESSING.
+        Captured panel containing all possible mutations in sequenced regions (TSV format).
+      pattern: "*.tsv"
+  - all_bed:
+      type: file
+      description: |
+        Captured panel BED file containing all sequenced genomic regions.
       pattern: "*.bed"
-  - exons_bed_initial:
+  - prot_panel:
       type: file
       description: |
-        BED file containing exons and splice sites from the captured panel. Only used by MUTPREPROCESSING.
+        Captured panel subset: protein-affecting mutations only (missense, nonsense, etc.).
+      pattern: "*.tsv"
+  - prot_bed:
+      type: file
+      description: |
+        Captured panel BED file for protein-affecting regions.
+      pattern: "*.bed"
+  - nonprot_panel:
+      type: file
+      description: |
+        Captured panel subset: non-protein-affecting mutations (introns, intergenic, UTRs).
+      pattern: "*.tsv"
+  - nonprot_bed:
+      type: file
+      description: |
+        Captured panel BED file for non-protein-affecting regions.
+      pattern: "*.bed"
+  - exons_panel:
+      type: file
+      description: |
+        Captured panel subset: exons and splice sites.
+      pattern: "*.tsv"
+  - exons_bed:
+      type: file
+      description: |
+        Captured panel BED file for exons and splice sites. Used by FILTEREXONS process.
+      pattern: "*.bed"
+  - introns_panel:
+      type: file
+      description: |
+        Captured panel subset: introns and intergenic regions.
+      pattern: "*.tsv"
+  - introns_bed:
+      type: file
+      description: |
+        Captured panel BED file for introns and intergenic regions.
+      pattern: "*.bed"
+  - synonymous_panel:
+      type: file
+      description: |
+        Captured panel subset: synonymous mutations only.
+      pattern: "*.tsv"
+  - synonymous_bed:
+      type: file
+      description: |
+        Captured panel BED file for regions containing synonymous mutations.
+      pattern: "*.bed"
+  - all_consensus_panel:
+      type: file
+      description: |
+        Consensus panel: regions with adequate depth coverage across the cohort (all regions).
+        Used for downstream depth analysis and mutation filtering.
+      pattern: "*.tsv"
+  - all_consensus_bed:
+      type: file
+      description: |
+        Consensus panel BED file for all regions with adequate coverage.
+        Used by FILTERPANEL to mark mutations outside consensus regions as "not_covered".
+      pattern: "*.bed"
+  - prot_consensus_panel:
+      type: file
+      description: |
+        Consensus panel subset: protein-affecting regions with adequate coverage.
+      pattern: "*.tsv"
+  - prot_consensus_bed:
+      type: file
+      description: |
+        Consensus panel BED file for protein-affecting regions with adequate coverage.
+      pattern: "*.bed"
+  - nonprot_consensus_panel:
+      type: file
+      description: |
+        Consensus panel subset: non-protein-affecting regions with adequate coverage.
+      pattern: "*.tsv"
+  - nonprot_consensus_bed:
+      type: file
+      description: |
+        Consensus panel BED file for non-protein-affecting regions with adequate coverage.
+      pattern: "*.bed"
+  - exons_consensus_panel:
+      type: file
+      description: |
+        Consensus panel subset: exons and splice sites with adequate coverage.
+      pattern: "*.tsv"
+  - exons_consensus_bed:
+      type: file
+      description: |
+        Consensus panel BED file for exons and splice sites with adequate coverage.
+        Used for exon-specific depth plots and analyses.
+      pattern: "*.bed"
+  - introns_consensus_panel:
+      type: file
+      description: |
+        Consensus panel subset: introns and intergenic regions with adequate coverage.
+      pattern: "*.tsv"
+  - introns_consensus_bed:
+      type: file
+      description: |
+        Consensus panel BED file for introns and intergenic regions with adequate coverage.
+      pattern: "*.bed"
+  - synonymous_consensus_panel:
+      type: file
+      description: |
+        Consensus panel subset: synonymous mutation sites with adequate coverage.
+      pattern: "*.tsv"
+  - synonymous_consensus_bed:
+      type: file
+      description: |
+        Consensus panel BED file for synonymous mutation sites with adequate coverage.
+        Used for synonymous-specific selection analyses.
       pattern: "*.bed"
 
 authors:

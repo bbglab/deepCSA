@@ -109,12 +109,13 @@ workflow MUTATION_PREPROCESSING {
     
     // Combine sample-level BEDs with cohort-wide BED for mask matrix creation
     sample_flagged_beds
-        .concat(cohort_flagged_bed)
         .flatten()
+        .mix(cohort_flagged_bed)
         .collect()
         .map{ it -> [[ id:"all_samples_bed" ], it]}
         .set{ all_flagged_beds }
 
+    // Create the mask matrix used to mask positions in the depths
     CREATEMASKMATRIX(all_flagged_beds)
 
     PLOTMAF(FILTERBATCH.out.cohort_maf)
