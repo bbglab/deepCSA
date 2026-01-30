@@ -1,11 +1,57 @@
 #!/usr/bin/env python
+import json
 import logging
 import pandas as pd
+from pathlib import Path
 """
 Utility functions for extracting filters from a MAF DataFrame.
 """
 
 LOG = logging.getLogger(__name__)
+
+
+def load_filter_criteria(json_filters: str, json_filters_somatic: str, include_cohort_filters: bool = False) -> list[str]:
+    """
+    Load filter criteria from JSON configuration files.
+    
+    Parameters
+    ----------
+    json_filters : str
+        Path to JSON file with filter criteria
+    json_filters_somatic : str
+        Path to JSON file with somatic filter criteria
+    include_cohort_filters : bool
+        If True, only include cohort-level filters from the returned list
+    
+    Returns
+    -------
+    list[str]
+        List of filter names to apply
+    """
+    # Load the filter criteria from the JSON files
+    with open(json_filters, 'r') as file:
+        filter_data = json.load(file)
+    with open(json_filters_somatic, 'r') as file_somatic:
+        filter_data_somatic = json.load(file_somatic)
+    
+    # Extract the FILTER list from the JSON structure
+    filter_criteria = filter_data.get("FILTER", []) + filter_data_somatic.get("FILTER", [])
+    
+    # Extract filter names (remove "notcontains " prefix if present)
+    filters = [f.replace("notcontains ", "") for f in filter_criteria if "notcontains" in f]
+    COHORT_FILTERS = {
+    'repetitive_variant', 'repetitive_mapping_variant',
+    'cohort_n_rich', 'cohort_n_rich_uni',
+    'cohort_n_rich_threshold', 'other_sample_SNP', 'gnomAD_SNP'
+    }
+    # Optionally exclude cohort-level filters
+    if include_cohort_filters:
+        filters = [f for f in filters if f in COHORT_FILTERS]
+    elif not include_cohort_filters:
+        filters = [f for f in filters if f not in COHORT_FILTERS]
+        
+    LOG.info(f"Loaded {len(filters)} filter criteria: {filters}")
+    return filters
 
 def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -32,7 +78,7 @@ def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
 
     return maf_df
 
-def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[str], bed_format: bool = True) -> pd.DataFrame | None:
+def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[str]) -> pd.DataFrame | None:
     """
     Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
     Creates a properly formatted BED file with 0-based coordinates and half-open intervals.
@@ -82,16 +128,8 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[s
                 .rename(columns={"POS": "START"})
     )
 
-    if bed_format:
-        # Create BED format coordinates (0-based, half-open interval)
-        # Input POS is 1-based (from VCF), convert to 0-based BED format
-        # For SNPs: 1-based POS -> 0-based [START, END) where END = START + 1
-        bed_annotated["END"] = bed_annotated["START"]        # Half-open interval
-        bed_annotated["START"] = bed_annotated["START"] - 1  # Convert 1-based to 0-based
-
-    else:
-        # If not bed_format, keep END as START (1-based)
-        bed_annotated["END"] = bed_annotated["START"]
+    # The idea is to filter depth files at these positions, so make END = START (1-based)
+    bed_annotated["END"] = bed_annotated["START"]
 
     LOG.info("Unique regions flagged: %s", bed_annotated.shape[0])
 
