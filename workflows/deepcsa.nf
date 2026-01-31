@@ -254,37 +254,10 @@ workflow DEEPCSA{
         DEPTHSSYNONYMOUSCONS(annotated_depths, CREATEPANELS.out.synonymous_consensus_bed)
     }
 
-    if (run_mutdensity){
-        // Mutation Density
-        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel.first())
-        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel.first())
-        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel.first())
-        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel.first())
-
-        channel.of([ [ id: "all_samples" ] ])
-        .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
-        .set{ all_samples_syn_mutdensity }
-
-        SYNMUTDENSITY(all_samples_syn_mutdensity)
-
-        SYNMUTREADSDENSITY(all_samples_syn_mutdensity)
-
-
-        // Concatenate all outputs into a single file
-        channel.empty()
-        .concat(MUTDENSITYALL.out.mutdensities.map{ it -> it[1]}.flatten())
-        .concat(MUTDENSITYPROT.out.mutdensities.map{ it -> it[1]}.flatten())
-        .concat(MUTDENSITYNONPROT.out.mutdensities.map{ it -> it[1]}.flatten())
-        .concat(MUTDENSITYSYNONYMOUS.out.mutdensities.map{ it -> it[1]}.flatten())
-        .set{ all_mutdensities }
-        all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
-
-    }
-
-
     // Mutational profile
-    if ( params.profileall || run_mutabilities || params.omega ){
+    if ( params.profileall || run_mutabilities || params.omega || run_mutdensity){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+
         if (run_mutdensity){
             MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
 
@@ -296,6 +269,14 @@ workflow DEEPCSA{
             MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities_flat }
             all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true)
+
+            channel.of([ [ id: "all_samples" ] ])
+            .join( MUTDENSITYADJUSTED.out.mutdensities )
+            .set{ all_samples_adj_mutdensity }
+
+            SYNMUTDENSITY(all_samples_adj_mutdensity)
+
+            SYNMUTREADSDENSITY(all_samples_adj_mutdensity)
         }
     }
     if (params.profilenonprot){
@@ -307,6 +288,25 @@ workflow DEEPCSA{
     if (params.profileintrons){
         DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
         MUTPROFILEINTRONS(somatic_mutations, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+    }
+
+
+    if (run_mutdensity){
+        // Mutation Density
+        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel.first())
+        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel.first())
+        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel.first())
+        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel.first())
+
+        // Concatenate all outputs into a single file
+        channel.empty()
+        .concat(MUTDENSITYALL.out.mutdensities.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYPROT.out.mutdensities.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYNONPROT.out.mutdensities.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYSYNONYMOUS.out.mutdensities.map{ it -> it[1]}.flatten())
+        .set{ all_mutdensities }
+        all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
+
     }
 
 
