@@ -16,6 +16,15 @@ def main(maf_file, groups_json):
     with open(groups_json, 'r') as file:
         groups_info = json.load(file)
 
+    all_samples = set([item for sublist in groups_info.values() for item in sublist])
+    available_samples = set(maf_df["SAMPLE_ID"].unique())
+    requested_n_available_samples = available_samples.intersection(all_samples)
+    if len(all_samples) != len(requested_n_available_samples):
+        missing_samples = all_samples - available_samples
+        raise ValueError("Some SAMPLE_IDs listed in the features table have no matching entries in the MAF file."
+                            "Missing SAMPLE_IDs: " + ", ".join(missing_samples))
+
+
     for group_name, samples in groups_info.items():
         samples = [str(x) for x in samples]
         maf_df[maf_df["SAMPLE_ID"].isin(samples)].sort_values(by=["CHROM", "POS"]).to_csv(
