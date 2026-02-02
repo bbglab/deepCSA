@@ -10,17 +10,17 @@ Utility functions for extracting filters from a MAF DataFrame.
 LOG = logging.getLogger(__name__)
 
 
-def load_filter_criteria(json_filters: str, json_filters_somatic: str, only_cohort_filters: bool = False) -> list[str]:
+def load_filter_criteria(filters: str, somatic_filters: str, only_cohort_filters: bool = False) -> list[str]:
     """
-    Load filter criteria from JSON configuration files.
+    Parse filter criteria from comma-separated strings.
     
     Parameters
     ----------
-    json_filters : str
-        Path to JSON file with filter criteria
-    json_filters_somatic : str
-        Path to JSON file with somatic filter criteria
-    include_cohort_filters : bool
+    filters : str
+        Comma-separated list of filter criteria
+    somatic_filters : str
+        Comma-separated list of somatic filter criteria
+    only_cohort_filters : bool
         If True, only include cohort-level filters from the returned list
     
     Returns
@@ -28,30 +28,28 @@ def load_filter_criteria(json_filters: str, json_filters_somatic: str, only_coho
     list[str]
         List of filter names to apply
     """
-    # Load the filter criteria from the JSON files
-    with open(json_filters, 'r') as file:
-        filter_data = json.load(file)
-    with open(json_filters_somatic, 'r') as file_somatic:
-        filter_data_somatic = json.load(file_somatic)
+    # Parse comma-separated strings into lists
+    filter_list = [f.strip() for f in filters.split(',') if f.strip()]
+    somatic_filter_list = [f.strip() for f in somatic_filters.split(',') if f.strip()]
     
-    # Extract the FILTER list from the JSON structure
-    filter_criteria = filter_data.get("FILTER", []) + filter_data_somatic.get("FILTER", [])
+    # Combine both lists
+    all_filters = filter_list + somatic_filter_list
     
-    # Extract filter names (remove "notcontains " prefix if present)
-    filters = [f.replace("notcontains ", "") for f in filter_criteria if "notcontains" in f]
+    # Define cohort-level filters
     COHORT_FILTERS = {
-    'repetitive_variant', 'repetitive_mapping_variant',
-    'cohort_n_rich', 'cohort_n_rich_uni',
-    'cohort_n_rich_threshold', 'other_sample_SNP', 'gnomAD_SNP'
+        'repetitive_variant', 'repetitive_mapping_variant',
+        'cohort_n_rich', 'cohort_n_rich_uni',
+        'cohort_n_rich_threshold', 'other_sample_SNP', 'gnomAD_SNP'
     }
-    # Optionally exclude cohort-level filters
+    
+    # Filter based on cohort_filters flag
     if only_cohort_filters:
-        filters = [f for f in filters if f in COHORT_FILTERS]
+        result = [f.replace("notcontains ", "") for f in all_filters if f.startswith("notcontains ") and f.replace("notcontains ", "") in COHORT_FILTERS]
     else:
-        filters = [f for f in filters if f not in COHORT_FILTERS]
+        result = [f.replace("notcontains ", "") for f in all_filters if f.startswith("notcontains ") and f.replace("notcontains ", "") not in COHORT_FILTERS]
         
-    LOG.info(f"Loaded {len(filters)} filter criteria: {filters}")
-    return filters
+    LOG.info(f"Loaded {len(result)} filter criteria: {result}")
+    return result
 
 def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
     """

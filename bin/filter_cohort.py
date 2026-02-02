@@ -37,7 +37,9 @@ python filter_cohort.py \\
     --sample-name sample1 \\
     --repetitive-variant-threshold 5 \\
     --somatic-vaf-boundary 0.4 \\
-    --n-rich-cohort-proportion 0.1
+    --n-rich-cohort-proportion 0.1 \\
+    --filters "filter1,filter2,filter3" \\
+    --somatic-filters "somatic_filter1,somatic_filter2"
 
 """
 import logging
@@ -294,8 +296,8 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
                repetitive_variant_threshold: int,
                somatic_vaf_boundary: float,
                n_rich_cohort_proportion: float,
-               json_filters: str,
-               json_filters_somatic: str) -> None:
+               filters: str,
+               somatic_filters: str) -> None:
     """
     Script to process a MAF (Mutation Annotation Format) file.
     It filters out repetitive variants, cohort_n_rich variants, and SNPs from other samples.
@@ -312,10 +314,10 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
         VAF threshold to distinguish somatic mutations
     n_rich_cohort_proportion : float
         Proportion threshold for n-rich cohort filtering
-    json_filters : str
-        Path to JSON file with filter criteria
-    json_filters_somatic : str
-        Path to JSON file with somatic filter criteria
+    filters : str
+        Comma-separated list of filter criteria
+    somatic_filters : str
+        Comma-separated list of somatic filter criteria
     """
     ## Filter repetitive variants,
     # both based on frequency and including information on position in read
@@ -343,8 +345,7 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
 
     # Determine which cohort-level filters to extract based on configuration
     # Load filter criteria (only cohort-level filters)
-    cohort_filters = load_filter_criteria(json_filters, json_filters_somatic, only_cohort_filters=True)
-    LOG.info(f"Extracting cohort-level filters from configuration: {cohort_filters}")
+    cohort_filters = load_filter_criteria(filters, somatic_filters, only_cohort_filters=True)
     
     # Extract flagged regions to BED file (cohort-wide, applies to all samples)
     extract_flagged_regions_bed(maf_df, "shared_cohort", cohort_filters)
@@ -355,11 +356,11 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
 @click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
 @click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
 @click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
-@click.option('--json-filters', required=False, type=click.Path(exists=True), help='JSON file with filter criteria')
-@click.option('--json-filters-somatic', required=False, type=click.Path(exists=True), help='JSON file with somatic filter criteria')
+@click.option('--filters', required=False, type=str, default='', help='Comma-separated list of filter criteria')
+@click.option('--somatic-filters', required=False, type=str, default='', help='Comma-separated list of somatic filter criteria')
 def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
          somatic_vaf_boundary: float, n_rich_cohort_proportion: float,
-         json_filters: str, json_filters_somatic: str):
+         filters: str, somatic_filters: str):
     """
     CLI wrapper for filter_maf function.
     """
@@ -372,8 +373,8 @@ def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
         repetitive_variant_threshold,
         somatic_vaf_boundary, 
         n_rich_cohort_proportion,
-        json_filters,
-        json_filters_somatic)
+        filters,
+        somatic_filters)
     
 
 if __name__ == '__main__':

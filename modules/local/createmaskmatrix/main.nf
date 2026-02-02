@@ -14,9 +14,10 @@ process CREATE_MASK_MATRIX {
     path "versions.yml"                            , topic: versions
 
     script:
+    def bed_args = bed_files.collect { "\"${it}\"" }.join(' --bed-files ')
     """
     create_mask_matrix.py \\
-        --bed-files ${bed_files.join(' --bed-files ')}
+        --bed-files ${bed_args}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

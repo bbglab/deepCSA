@@ -19,22 +19,10 @@ process SAMPLE_FLAGGED_BED {
     def filters = task.ext.filters ?: ""
     def somatic_filters = task.ext.somatic_filters ?: ""
     """
-    cat > mutations_subset.conf << EOF
-    {
-        ${filters}
-    }
-    EOF
-
-    cat > mutations_somatic_subset.conf << EOF
-    {
-        ${somatic_filters}
-    }
-    EOF
-
     sample_flagged_positions_2bed.py \\
         --maf-file ${maf} \\
-        --json-filters mutations_subset.conf \\
-        --json-filters-somatic mutations_somatic_subset.conf \\
+        --filters "${filters}" \\
+        --somatic-filters "${somatic_filters}" \\
         --sample-name ${prefix}
 
     cat <<-END_VERSIONS > versions.yml

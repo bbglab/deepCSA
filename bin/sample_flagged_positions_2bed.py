@@ -10,17 +10,20 @@ Command-line Arguments
 ----------------------
 maf-file : str
     Path to the per-sample MAF file (can be gzipped).
-json-filters : str
-    Path to json file with list of filter criteria to consider for masking.
-sample-id : str
+filters : str
+    Comma-separated list of filter criteria to consider for masking.
+somatic-filters : str
+    Comma-separated list of somatic filter criteria to consider for masking.
+sample-name : str
     Sample identifier for output naming.
 
 Usage
 -----
 sample_flagged_positions_2bed.py \\
     --maf-file sample.filtered.tsv.gz \\
-    --json-filters filters.txt \\
-    --sample-id sample_name
+    --filters "filter1,filter2,filter3" \\
+    --somatic-filters "somatic_filter1,somatic_filter2" \\
+    --sample-name sample_name
 
 """
 import json
@@ -41,7 +44,7 @@ logging.basicConfig(
 LOG = logging.getLogger("extract_sample_masked_bed")
 
 
-def extract_flagged_positions(maf_file: str, json_filters: str, json_filters_somatic, sample_name: str) -> None:
+def extract_flagged_positions(maf_file: str, filters: str, somatic_filters: str, sample_name: str) -> None:
     """
     Extract sample-specific masked positions from a per-sample MAF file.
 
@@ -49,8 +52,10 @@ def extract_flagged_positions(maf_file: str, json_filters: str, json_filters_som
     ----------
     maf_file : str
         Path to input MAF file
-    json_filters : str
-        Path to json file with list of filter criteria to consider for masking.
+    filters : str
+        Comma-separated list of filter criteria to consider for masking
+    somatic_filters : str
+        Comma-separated list of somatic filter criteria to consider for masking
     sample_name : str
         Sample identifier for output naming.
     """
@@ -64,10 +69,7 @@ def extract_flagged_positions(maf_file: str, json_filters: str, json_filters_som
     maf_df = expand_filter_column(maf_df)
     
     # Load filter criteria (excluding cohort-level filters)
-    FILTERS = load_filter_criteria(json_filters, json_filters_somatic, only_cohort_filters=False)
-
-    # Extract sample-specific masked positions to BED file
-    LOG.info(f"Extracting sample-specific filters: {FILTERS}")
+    FILTERS = load_filter_criteria(filters, somatic_filters, only_cohort_filters=False)
     
     # Extract flagged regions (will create {sample_name}.flagged-pos.bed)
     extract_flagged_regions_bed(maf_df, sample_name, FILTERS)
@@ -78,18 +80,18 @@ def extract_flagged_positions(maf_file: str, json_filters: str, json_filters_som
 @click.command()
 @click.option('--maf-file', required=True, type=click.Path(exists=True), 
               help='Input per-sample MAF file (TSV, can be gzipped)')
-@click.option('--json-filters', required=True, type=click.Path(), 
-              help='Path to json file with list of filter criteria to consider for masking.')
-@click.option('--json-filters-somatic', required=True, type=click.Path(), 
-              help='Path to json file with list of filter criteria to consider for masking.')
+@click.option('--filters', required=True, type=str, 
+              help='Comma-separated list of filter criteria to consider for masking')
+@click.option('--somatic-filters', required=True, type=str, 
+              help='Comma-separated list of somatic filter criteria to consider for masking')
 @click.option('--sample-name', required=True, type=str, 
               help='Sample identifier')
-def main(maf_file: str, json_filters: str, json_filters_somatic: str, sample_name: str):
+def main(maf_file: str, filters: str, somatic_filters: str, sample_name: str):
     """
     CLI wrapper for extracting sample-specific masked positions.
     """
     try:
-        extract_flagged_positions(maf_file, json_filters, json_filters_somatic, sample_name)
+        extract_flagged_positions(maf_file, filters, somatic_filters, sample_name)
     except Exception as e:
         LOG.error(f"Error processing sample {sample_name}: {e}")
         raise

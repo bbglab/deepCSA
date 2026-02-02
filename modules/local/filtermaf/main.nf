@@ -24,26 +24,14 @@ process FILTER_BATCH {
     def filters = task.ext.filters ?: ""
     def somatic_filters = task.ext.somatic_filters ?: ""
     """
-    cat > mutations_subset.conf << EOF
-    {
-        ${filters}
-    }
-    EOF
-
-    cat > mutations_somatic_subset.conf << EOF
-    {
-        ${somatic_filters}
-    }
-    EOF
-
     filter_cohort.py \\
         --maf-df-file ${maf} \\
         --sample-name ${prefix} \\
         --repetitive-variant-threshold ${repetitive_variant} \\
         --somatic-vaf-boundary ${germline_threshold} \\
         --n-rich-cohort-proportion ${proportion_samples_nrich} \\
-        --json-filters mutations_subset.conf \\
-        --json-filters-somatic mutations_somatic_subset.conf
+        --filters "${filters}" \\
+        --somatic-filters "${somatic_filters}"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
