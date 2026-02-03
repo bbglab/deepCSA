@@ -16,7 +16,7 @@ process MUTATION_DENSITY {
     def sample_name = "${meta.id}"
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    compute_mutdensity.py \\
+    mut_density_simple.py \\
                 --maf_path ${mutations} \\
                 --depths_path ${depth} \\
                 --annot_panel_path ${consensus_panel} \\
