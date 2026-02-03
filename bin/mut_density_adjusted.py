@@ -61,14 +61,17 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
 
     for csqn, csqn_set in broadimpact_grouping_dict_with_synonymous.items():
         
-        for gene in panel_df['GENE'].unique():
+        for gene in list(panel_df['GENE'].unique()) + ["ALL_GENES"]:
             
             # compute vector of sum of depths per trinucleotide context
             # tailored to the specific gene-impact target
-            region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)].copy()
+            if gene == 'ALL_GENES':
+                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set))][['CHROM', 'POS']].drop_duplicates()
+            else:
+                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)][['CHROM', 'POS']].drop_duplicates()
 
             # counting every position once
-            dh = pd.merge(region_df[['CHROM', 'POS']],
+            dh = pd.merge(region_df,
                           depths_df[['CHROM', 'POS', 'CONTEXT', sample_name]],
                           on=['CHROM', 'POS'], how='left')
             depth_sum_df = dh.groupby(by='CONTEXT').agg({sample_name: 'sum'}).reset_index()
@@ -88,10 +91,13 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
             except AssertionError:
                 res.loc[gene, csqn] = None
                 continue
-            
-            # observed somatic mutations
 
-            n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set)) & (somatic_mutations_df['GENE'] == gene)].shape[0]
+
+            # observed somatic mutations
+            if gene == 'ALL_GENES':
+                n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set))].shape[0]
+            else:
+                n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set)) & (somatic_mutations_df['GENE'] == gene)].shape[0]
 
             res.loc[gene, csqn] = n / effective_length
     
