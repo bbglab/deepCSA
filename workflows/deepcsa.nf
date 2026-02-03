@@ -148,6 +148,7 @@ workflow DEEPCSA{
     all_compiled_omegas             = channel.empty()
     all_compiled_omegasgloballoc    = channel.empty()
     all_mutdensities_file           = channel.empty()
+    compiled_adjusted_mutdensities  = channel.empty()
 
 
     // if the user wants to use custom gene groups, import the gene groups table
@@ -264,7 +265,7 @@ workflow DEEPCSA{
             // Concatenate all outputs into a single file
             MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities }
-            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true)
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true).set{ compiled_adjusted_mutdensities }
 
             MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities_flat }
@@ -576,6 +577,7 @@ workflow DEEPCSA{
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         somatic_mutations,
                         all_mutdensities_file.first(),
+                        compiled_adjusted_mutdensities.first(),
                         
                         site_comparison_results,
                         ANNOTATEDEPTHS.out.all_samples_depths.first(),

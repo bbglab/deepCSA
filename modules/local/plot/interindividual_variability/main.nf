@@ -6,10 +6,11 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
-    path(samples_json)
-    path(all_groups_json)
+    path (samples_json)
+    path (all_groups_json)
     tuple val(meta), path(panel_file)
-    path(mutdensities_file)
+    path (mutdensities_file)
+    path (adjusted_mutdensities_file)
 
     output:
     path("**.pdf")      , emit: plots
@@ -23,6 +24,7 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     mkdir ${prefix}.variability_plots
     plot_explore_variability.py \\
                     --mutdensities ${mutdensities_file} \\
+                    --adjusted-mutdensities ${adjusted_mutdensities_file} \\
                     --panel-regions ${panel_file} \\
                     --outdir ${prefix}.variability_plots \\
                     --samples-json ${samples_json} \\
