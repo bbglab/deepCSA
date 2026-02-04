@@ -177,6 +177,10 @@ def main(maf_df_file, sample_name, repetitive_variant_threshold, somatic_vaf_bou
                                                                     axis = 1
                                                                 )
 
+    if 'VAF_distorted_expanded_sq' in maf_df.columns:
+        maf_df["FILTER"] = maf_df[["FILTER","VAF_distorted_expanded_sq"]].apply(lambda x: add_filter(x["FILTER"], x["VAF_distorted_expanded_sq"], "VAF_distorted_expanded_sq"),
+                                                                                        axis = 1
+                                                                                    )
 
     for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
         maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))
