@@ -11,8 +11,7 @@ import tempfile
 import shutil
 import unittest
 from pathlib import Path
-import pandas as pd
-import gzip
+import polars as pl
 
 # Add the bin directory to the path to import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -53,7 +52,7 @@ class TestCreateMaskMatrix(unittest.TestCase):
 
     def read_mask_matrix(self, filename="flagged_positions.mask.tsv.gz"):
         """Read and return the mask matrix"""
-        return pd.read_csv(filename, sep="\t", compression='gzip')
+        return pl.read_csv(filename, separator="\t").to_pandas()
 
     def test_single_sample_single_position(self):
         """Test creating mask matrix with one sample and one position"""
@@ -294,10 +293,10 @@ class TestApplyMaskMatrix(unittest.TestCase):
         
         Returns
         -------
-        pd.DataFrame
+        pl.DataFrame
             Mock depths dataframe
         """
-        return pd.DataFrame(data)
+        return pl.DataFrame(data)
 
     def create_mock_mask_matrix(self, data, filename="mask_matrix.tsv.gz"):
         """
@@ -310,8 +309,8 @@ class TestApplyMaskMatrix(unittest.TestCase):
         filename : str
             Output filename
         """
-        mask_df = pd.DataFrame(data)
-        mask_df.to_csv(filename, sep="\t", index=False, compression='gzip')
+        mask_df = pl.DataFrame(data)
+        mask_df.write_csv(filename, separator="\t")
         return filename
 
     def test_basic_masking(self):
@@ -337,14 +336,14 @@ class TestApplyMaskMatrix(unittest.TestCase):
         result = apply_mask_matrix(depths, mask_file)
         
         # Verify results
-        self.assertEqual(result.loc[result['POS'] == 100, 'sample1'].values[0], 50)  # Kept
-        self.assertEqual(result.loc[result['POS'] == 200, 'sample1'].values[0], 0)   # Masked
-        self.assertEqual(result.loc[result['POS'] == 300, 'sample1'].values[0], 70)  # Kept
+        self.assertEqual(result.filter(pl.col('POS') == 100)['sample1'][0], 50)  # Kept
+        self.assertEqual(result.filter(pl.col('POS') == 200)['sample1'][0], 0)   # Masked
+        self.assertEqual(result.filter(pl.col('POS') == 300)['sample1'][0], 70)  # Kept
         
         # sample2 should remain unchanged
-        self.assertEqual(result.loc[result['POS'] == 100, 'sample2'].values[0], 40)
-        self.assertEqual(result.loc[result['POS'] == 200, 'sample2'].values[0], 50)
-        self.assertEqual(result.loc[result['POS'] == 300, 'sample2'].values[0], 60)
+        self.assertEqual(result.filter(pl.col('POS') == 100)['sample2'][0], 40)
+        self.assertEqual(result.filter(pl.col('POS') == 200)['sample2'][0], 50)
+        self.assertEqual(result.filter(pl.col('POS') == 300)['sample2'][0], 60)
 
     def test_multiple_samples_masked(self):
         """Test masking across multiple samples at the same position"""
@@ -369,14 +368,14 @@ class TestApplyMaskMatrix(unittest.TestCase):
         result = apply_mask_matrix(depths, mask_file)
         
         # Position 100 should be 0 for sample1 and sample2, kept for sample3
-        self.assertEqual(result.loc[result['POS'] == 100, 'sample1'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 100, 'sample2'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 100, 'sample3'].values[0], 30)
+        self.assertEqual(result.filter(pl.col('POS') == 100)['sample1'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 100)['sample2'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 100)['sample3'][0], 30)
         
         # Position 200 should be kept for all
-        self.assertEqual(result.loc[result['POS'] == 200, 'sample1'].values[0], 60)
-        self.assertEqual(result.loc[result['POS'] == 200, 'sample2'].values[0], 50)
-        self.assertEqual(result.loc[result['POS'] == 200, 'sample3'].values[0], 40)
+        self.assertEqual(result.filter(pl.col('POS') == 200)['sample1'][0], 60)
+        self.assertEqual(result.filter(pl.col('POS') == 200)['sample2'][0], 50)
+        self.assertEqual(result.filter(pl.col('POS') == 200)['sample3'][0], 40)
 
     def test_realistic_example(self):
         """Test with realistic example from user's data"""
@@ -404,22 +403,22 @@ class TestApplyMaskMatrix(unittest.TestCase):
         
         # Check specific positions
         # chr1:1071610 - P19_0004_BTR_01 should be masked (0)
-        self.assertEqual(result.loc[result['POS'] == 1071610, 'P19_0004_BTR_01'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 1071610, 'P19_0001_BDO_01'].values[0], 45)
+        self.assertEqual(result.filter(pl.col('POS') == 1071610)['P19_0004_BTR_01'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 1071610)['P19_0001_BDO_01'][0], 45)
         
         # chr1:11059842 - All samples should be masked except (P19_0001_BTR_01 and others have 0)
-        self.assertEqual(result.loc[result['POS'] == 11059842, 'P19_0001_BDO_01'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 11059842, 'P19_0001_BTR_01'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 11059842, 'P19_0004_BTR_01'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 11059842, 'P19_0005_BTR_01'].values[0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 11059842)['P19_0001_BDO_01'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 11059842)['P19_0001_BTR_01'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 11059842)['P19_0004_BTR_01'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 11059842)['P19_0005_BTR_01'][0], 0)
         
         # chr1:23495229 - P19_0004_BTR_01 should be masked
-        self.assertEqual(result.loc[result['POS'] == 23495229, 'P19_0004_BTR_01'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 23495229, 'P19_0001_BDO_01'].values[0], 60)
+        self.assertEqual(result.filter(pl.col('POS') == 23495229)['P19_0004_BTR_01'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 23495229)['P19_0001_BDO_01'][0], 60)
         
         # chr1:26729792 - P19_0001_BDO_01 should be masked
-        self.assertEqual(result.loc[result['POS'] == 26729792, 'P19_0001_BDO_01'].values[0], 0)
-        self.assertEqual(result.loc[result['POS'] == 26729792, 'P19_0001_BTR_01'].values[0], 60)
+        self.assertEqual(result.filter(pl.col('POS') == 26729792)['P19_0001_BDO_01'][0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 26729792)['P19_0001_BTR_01'][0], 60)
 
     def test_all_positions_kept(self):
         """Test when all positions have mask=1 (nothing masked)"""
@@ -441,8 +440,9 @@ class TestApplyMaskMatrix(unittest.TestCase):
         result = apply_mask_matrix(depths, mask_file)
         
         # All depths should remain unchanged
-        pd.testing.assert_frame_equal(result[['CHROM', 'POS', 'sample1', 'sample2']], 
-                                      depths[['CHROM', 'POS', 'sample1', 'sample2']])
+        expected = depths.select(['CHROM', 'POS', 'sample1', 'sample2'])
+        actual = result.select(['CHROM', 'POS', 'sample1', 'sample2'])
+        self.assertTrue(expected.equals(actual))
 
     def test_all_positions_masked(self):
         """Test when all positions have mask=0 (everything masked)"""
@@ -464,8 +464,8 @@ class TestApplyMaskMatrix(unittest.TestCase):
         result = apply_mask_matrix(depths, mask_file)
         
         # All depths should be 0
-        self.assertTrue((result['sample1'] == 0).all())
-        self.assertTrue((result['sample2'] == 0).all())
+        self.assertTrue(result['sample1'].to_list() == [0, 0])
+        self.assertTrue(result['sample2'].to_list() == [0, 0])
 
     def test_empty_mask_matrix(self):
         """Test handling of empty mask matrix"""
@@ -485,7 +485,7 @@ class TestApplyMaskMatrix(unittest.TestCase):
         result = apply_mask_matrix(depths, mask_file)
         
         # Should return original depths unchanged
-        pd.testing.assert_frame_equal(result, depths)
+        self.assertTrue(result.equals(depths))
 
     def test_partial_overlap(self):
         """Test when mask matrix has only some positions from depths"""
@@ -506,11 +506,11 @@ class TestApplyMaskMatrix(unittest.TestCase):
         result = apply_mask_matrix(depths, mask_file)
         
         # Position 100 should be masked
-        self.assertEqual(result.loc[result['POS'] == 100, 'sample1'].values[0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 100)['sample1'][0], 0)
         # Position 200 should be kept
-        self.assertEqual(result.loc[result['POS'] == 200, 'sample1'].values[0], 60)
+        self.assertEqual(result.filter(pl.col('POS') == 200)['sample1'][0], 60)
         # Position 300 not in mask, should remain unchanged
-        self.assertEqual(result.loc[result['POS'] == 300, 'sample1'].values[0], 70)
+        self.assertEqual(result.filter(pl.col('POS') == 300)['sample1'][0], 70)
 
     def test_structure_preservation(self):
         """Test that CHROM, POS, and CONTEXT columns are preserved"""
@@ -531,9 +531,9 @@ class TestApplyMaskMatrix(unittest.TestCase):
         
         # Check structure is preserved
         self.assertListEqual(list(result.columns), ['CHROM', 'POS', 'CONTEXT', 'sample1'])
-        self.assertListEqual(result['CHROM'].tolist(), ['chr1', 'chr2'])
-        self.assertListEqual(result['POS'].tolist(), [100, 200])
-        self.assertListEqual(result['CONTEXT'].tolist(), ['ACA', 'TCG'])
+        self.assertListEqual(result['CHROM'].to_list(), ['chr1', 'chr2'])
+        self.assertListEqual(result['POS'].to_list(), [100, 200])
+        self.assertListEqual(result['CONTEXT'].to_list(), ['ACA', 'TCG'])
 
     def test_zero_depth_remains_zero(self):
         """Test that positions already at depth=0 remain at 0 regardless of mask"""
@@ -553,9 +553,9 @@ class TestApplyMaskMatrix(unittest.TestCase):
         result = apply_mask_matrix(depths, mask_file)
         
         # Position 100 was already 0, should remain 0 even with mask=1
-        self.assertEqual(result.loc[result['POS'] == 100, 'sample1'].values[0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 100)['sample1'][0], 0)
         # Position 200 should be masked to 0
-        self.assertEqual(result.loc[result['POS'] == 200, 'sample1'].values[0], 0)
+        self.assertEqual(result.filter(pl.col('POS') == 200)['sample1'][0], 0)
 
 if __name__ == '__main__':
     unittest.main()
