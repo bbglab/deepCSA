@@ -101,11 +101,15 @@ workflow MUTATION_PREPROCESSING {
 
     FILTERBATCH(MERGEBATCH.out.cohort_maf)
 
+    PLOTMAF(FILTERBATCH.out.cohort_maf)
+
+    WRITEMAF(FILTERBATCH.out.cohort_maf, all_groups)
+
     // Collect sample-level flagged BED files
     SAMPLEFLAGGEDBED.out.flagged_positions.map{ it -> it[1] }.collect().set{ sample_flagged_beds }
     
-    // Collect cohort-wide flagged BED file (applies to all samples)
-    FILTERBATCH.out.cohort_flagged_positions.set{ cohort_flagged_bed }
+    // Collect cohort-wide flagged BED file from WRITEMAF (applies to all samples)
+    WRITEMAF.out.cohort_flagged_positions.set{ cohort_flagged_bed }
     
     // Combine sample-level BEDs with cohort-wide BED for mask matrix creation
     sample_flagged_beds
@@ -117,10 +121,6 @@ workflow MUTATION_PREPROCESSING {
 
     // Create the mask matrix used to mask positions in the depths
     CREATEMASKMATRIX(all_flagged_beds)
-
-    PLOTMAF(FILTERBATCH.out.cohort_maf)
-
-    WRITEMAF(FILTERBATCH.out.cohort_maf, all_groups)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
@@ -148,7 +148,6 @@ workflow MUTATION_PREPROCESSING {
     // Keep only somatic mutations
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
 
-    
 
     Channel.of([["id": "all_samples"]])
     .join(named_mafs).first()

@@ -10,14 +10,19 @@ process WRITE_MAFS {
     path (json_groups)
 
     output:
-    path("*.filtered.tsv.gz") , emit: mafs
-    path "versions.yml"       , topic: versions
+    path("*.filtered.tsv.gz")              , emit: mafs
+    path("shared_cohort.flagged-pos.bed") , emit: cohort_flagged_positions
+    path "versions.yml"                   , topic: versions
 
     script:
+    def filters = task.ext.filters ?: ""
+    def somatic_filters = task.ext.somatic_filters ?: ""
     """
     write_mafs.py \\
         --maf-file ${maf} \\
-        --groups-json ${json_groups}
+        --groups-json ${json_groups} \\
+        --filters "${filters}" \\
+        --somatic-filters "${somatic_filters}"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -27,7 +32,8 @@ process WRITE_MAFS {
 
     stub:
     """
-    touch all_samples.cohort.tsv.gz
+    touch all_samples.filtered.tsv.gz
+    touch shared_cohort.flagged-pos.bed
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

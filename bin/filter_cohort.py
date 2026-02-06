@@ -295,9 +295,7 @@ def flag_gnomad_snp(maf_df: pd.DataFrame) -> pd.DataFrame:
 def flag_maf(maf_df: pd.DataFrame, sample_name: str,
                repetitive_variant_threshold: int,
                somatic_vaf_boundary: float,
-               n_rich_cohort_proportion: float,
-               filters: str,
-               somatic_filters: str) -> None:
+               n_rich_cohort_proportion: float) -> None:
     """
     Script to process a MAF (Mutation Annotation Format) file.
     It filters out repetitive variants, cohort_n_rich variants, and SNPs from other samples.
@@ -314,10 +312,6 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
         VAF threshold to distinguish somatic mutations
     n_rich_cohort_proportion : float
         Proportion threshold for n-rich cohort filtering
-    filters : str
-        Comma-separated list of filter criteria
-    somatic_filters : str
-        Comma-separated list of somatic filter criteria
     """
     ## Filter repetitive variants,
     # both based on frequency and including information on position in read
@@ -343,24 +337,14 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
     
     LOG.info("Cohort flagging complete!")
 
-    # Determine which cohort-level filters to extract based on configuration
-    # Load filter criteria (only cohort-level filters)
-    cohort_filters = load_filter_criteria(filters, somatic_filters, only_cohort_filters=True)
-    
-    # Extract flagged regions to BED file (cohort-wide, applies to all samples)
-    extract_flagged_regions_bed(maf_df, "shared_cohort", cohort_filters)
-
 @click.command()
 @click.option('--maf-df-file', required=True, type=click.Path(exists=True), help='Input gzipped MAF file (TSV)')
 @click.option('--sample-name', required=True, type=str, help='Sample name for output file')
 @click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
 @click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
 @click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
-@click.option('--filters', required=False, type=str, default='', help='Comma-separated list of filter criteria')
-@click.option('--somatic-filters', required=False, type=str, default='', help='Comma-separated list of somatic filter criteria')
 def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
-         somatic_vaf_boundary: float, n_rich_cohort_proportion: float,
-         filters: str, somatic_filters: str):
+         somatic_vaf_boundary: float, n_rich_cohort_proportion: float):
     """
     CLI wrapper for filter_maf function.
     """
@@ -372,9 +356,7 @@ def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
         sample_name,
         repetitive_variant_threshold,
         somatic_vaf_boundary, 
-        n_rich_cohort_proportion,
-        filters,
-        somatic_filters)
+        n_rich_cohort_proportion)
     
 
 if __name__ == '__main__':

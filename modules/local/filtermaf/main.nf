@@ -11,7 +11,6 @@ process FILTER_BATCH {
 
     output:
     tuple val(meta), path("*.cohort.filtered.tsv.gz")  , emit: cohort_maf
-    path("shared_cohort.flagged-pos.bed")              , emit: cohort_flagged_positions
     path "versions.yml"                                , topic: versions
 
 
@@ -21,17 +20,13 @@ process FILTER_BATCH {
     def repetitive_variant = task.ext.repetitive_variant ?: "${params.repetitive_variant_thres}"
     def germline_threshold = task.ext.germline_threshold ?: "${params.germline_threshold}"
     def proportion_samples_nrich = task.ext.prop_samples_nrich ?: "${params.prop_samples_nrich}"
-    def filters = task.ext.filters ?: ""
-    def somatic_filters = task.ext.somatic_filters ?: ""
     """
     filter_cohort.py \\
         --maf-df-file ${maf} \\
         --sample-name ${prefix} \\
         --repetitive-variant-threshold ${repetitive_variant} \\
         --somatic-vaf-boundary ${germline_threshold} \\
-        --n-rich-cohort-proportion ${proportion_samples_nrich} \\
-        --filters "${filters}" \\
-        --somatic-filters "${somatic_filters}"
+        --n-rich-cohort-proportion ${proportion_samples_nrich}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
