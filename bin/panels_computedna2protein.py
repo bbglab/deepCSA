@@ -7,7 +7,8 @@ import requests
 import numpy as np
 import pandas as pd
 import click
-
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 #####
 # Define functions
@@ -29,6 +30,88 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
     return gene_transcript_pairs
 
 
+def plot_coverage_per_gene(depths_df):
+
+    dna_coverage = depths_df.drop_duplicates(subset=['GENE', 'DNA_POS', 'COVERED'])
+    dna_coverage_summary = dna_coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
+    plot_single_coverage(dna_coverage_summary, "DNA")
+
+    prot_coverage = depths_df.drop_duplicates(subset=['GENE', 'PROT_POS', 'COVERED'])
+    prot_coverage_summary = prot_coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
+    plot_single_coverage(prot_coverage_summary, "Protein")
+
+    exon_coverage = depths_df.drop_duplicates(subset=['GENE', 'EXON_RANK', 'COVERED'])
+    exon_coverage_summary = exon_coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
+    plot_single_coverage(exon_coverage_summary, "Exon")
+
+
+def plot_single_coverage(coverage_summary, prefix, batch_size = 5):
+
+    coverage_pivot = coverage_summary.pivot(index='GENE', columns='COVERED', values='COUNT').fillna(0)
+    coverage_pivot = coverage_pivot.sort_values(1, ascending=False).reset_index()
+    coverage_pivot = coverage_pivot.set_index('GENE')
+    genes_list = coverage_pivot.index.tolist()
+    coverage_perc = coverage_pivot.div(coverage_pivot.sum(axis=1), axis=0) * 100
+    coverage_pivot.to_csv(f"coverage_count_{prefix}.tsv", header=True, index=True, sep='\t')
+    coverage_perc.to_csv(f"coverage_perc_{prefix}.tsv", header=True, index=True, sep='\t')
+
+    if len(genes_list) < batch_size:
+
+        fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+
+        covered_col = True if True in coverage_pivot.columns else (1 if 1 in coverage_pivot.columns else coverage_pivot.columns[-1])
+
+        coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'],
+                            )
+
+        axes[0].set_title(f'{prefix} : covered vs. non-covered')
+        axes[0].set_ylabel(f'Number of {prefix}')
+        axes[0].set_xlabel('Gene')
+        axes[0].legend(title='Covered', loc='upper right')
+        axes[0].tick_params(axis='x', rotation=45)
+
+        coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
+        axes[1].set_title(f'{prefix} : percentage of covered')
+        axes[1].set_ylabel('Percentage (%)')
+        axes[1].set_xlabel('Gene')
+        axes[1].set_ylim(0, 100)
+        axes[1].tick_params(axis='x', rotation=45)
+
+        plt.tight_layout()
+        plt.savefig(f"coverage_per_{prefix}.pdf", dpi=300)
+        plt.show()
+
+
+    else:
+        with PdfPages(f"coverage_per_{prefix}_batches.pdf") as pdf:
+            # split into batches N genes
+            for i in range(0, len(genes_list), batch_size): 
+                batch_genes = genes_list[i:i+batch_size]
+                batch_coverage_pivot = coverage_pivot.loc[batch_genes]
+                batch_coverage_perc = coverage_perc.loc[batch_genes]
+
+                fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+
+                covered_col = True if True in batch_coverage_pivot.columns else (1 if 1 in batch_coverage_pivot.columns else batch_coverage_pivot.columns[-1])
+
+                batch_coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'])
+                axes[0].set_title(f'{prefix} : covered vs. non-covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
+                axes[0].set_ylabel(f'Number of {prefix}')
+                axes[0].set_xlabel('Gene')
+                axes[0].legend(title='Covered', loc='upper right')
+                axes[0].tick_params(axis='x', rotation=45)
+
+                batch_coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
+                axes[1].set_title(f'{prefix} : percentage of covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
+                axes[1].set_ylabel('Percentage (%)')
+                axes[1].set_xlabel('Gene')
+                axes[1].set_ylim(0, 100)
+                axes[1].tick_params(axis='x', rotation=45)
+
+                plt.tight_layout()
+                pdf.savefig(dpi=300)
+                plt.show()
+                plt.close()
 
 
 # Depth
@@ -369,6 +452,8 @@ def main(mutations_file, consensus_file, depths_file):
 
     exons_coordinates_bed_like = exons_coord_id[['Chr', 'Start', 'End', 'ID']]
     exons_coordinates_bed_like.to_csv("panel_exons.bed4.bed", header = False, index = False, sep = '\t')
+
+    plot_coverage_per_gene(exons_depth)
 
 
 if __name__ == '__main__':
