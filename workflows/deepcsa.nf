@@ -195,7 +195,7 @@ workflow DEEPCSA{
     DEPTHANALYSIS(INPUT_CHECK.out.sample_inputs, custom_bed_file)
 
     // Panels generation: all modalities
-    CREATEPANELS(DEPTHANALYSIS.out.depths)
+    CREATEPANELS(DEPTHANALYSIS.out.depths, wgs_trinucs)
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }

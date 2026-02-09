@@ -7,10 +7,12 @@ process COMPUTE_TRINUCLEOTIDE {
 
     input:
     tuple val(meta), path(depths)
+    path (wgs_trinuc)
 
     output:
-    tuple val(meta), path("*.trinucleotides.tsv.gz"), emit: trinucleotides
-    path "versions.yml"                             , topic: versions
+    tuple val(meta), path("*.trinucleotides.tsv.gz")                    , emit: trinucleotides
+    tuple val(meta), path("*.png")                  , optional : true   ,  emit: proportions_plot
+    path "versions.yml"                                                 , topic: versions
 
 
     script:
@@ -21,6 +23,7 @@ process COMPUTE_TRINUCLEOTIDE {
     mutprof_2compute_trinucleotide.py \\
                     --depths_file ${depths} \\
                     --sample_name ${prefix} \\
+                    --ref_wgs_trinucleotides ${wgs_trinuc} \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
