@@ -3,7 +3,7 @@ process PLOT_MUTDENSITY_QC {
     tag "${group_name}"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     path (all_mutdensities)

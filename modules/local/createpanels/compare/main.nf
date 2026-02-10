@@ -2,7 +2,7 @@ process COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS {
     tag "1"
     label 'process_single'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
 
     input:

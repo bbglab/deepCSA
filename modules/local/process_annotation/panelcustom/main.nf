@@ -6,7 +6,7 @@ process CUSTOM_ANNOTATION_PROCESSING {
     label 'time_low'
     label 'process_high_memory'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta) , path(panel_annotated)
