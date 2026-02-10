@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import json
 import logging
 import pandas as pd
 from pathlib import Path
@@ -10,7 +9,7 @@ Utility functions for extracting filters from a MAF DataFrame.
 LOG = logging.getLogger(__name__)
 
 
-def load_filter_criteria(filters: str, somatic_filters: str, only_cohort_filters: bool = False) -> list[str]:
+def load_filter_criteria(filters: str, somatic_filters: str) -> list[str]:
     """
     Parse filter criteria from comma-separated strings.
     
@@ -34,20 +33,9 @@ def load_filter_criteria(filters: str, somatic_filters: str, only_cohort_filters
     
     # Combine both lists
     all_filters = filter_list + somatic_filter_list
-    
-    # Define cohort-level filters
-    COHORT_FILTERS = {
-        'repetitive_variant', 'repetitive_mapping_variant',
-        'cohort_n_rich', 'cohort_n_rich_uni',
-        'cohort_n_rich_threshold', 'other_sample_SNP', 'gnomAD_SNP'
-    }
-    
-    # Filter based on cohort_filters flag
-    if only_cohort_filters:
-        result = [f.replace("notcontains ", "") for f in all_filters if f.startswith("notcontains ") and f.replace("notcontains ", "") in COHORT_FILTERS]
-    else:
-        result = [f.replace("notcontains ", "") for f in all_filters if f.startswith("notcontains ") and f.replace("notcontains ", "") not in COHORT_FILTERS]
-        
+
+    result = [f.replace("notcontains ", "") for f in all_filters if f.startswith("notcontains ")]
+
     LOG.info(f"Loaded {len(result)} filter criteria: {result}")
     return result
 

@@ -1,7 +1,7 @@
 process WRITE_MAFS {
 
     tag "${meta.id}"
-    label 'process_low'
+    label 'process_high_memory'
 
     container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
@@ -11,8 +11,9 @@ process WRITE_MAFS {
 
     output:
     path("*.filtered.tsv.gz")              , emit: mafs
-    path("shared_cohort.flagged-pos.bed") , emit: cohort_flagged_positions
-    path "versions.yml"                   , topic: versions
+    path("all_samples.flagged-pos.bed")    , emit: all_samples_flagged_positions
+    path("*.flagged-pos.bed")              , emit: sample_flagged_beds
+    path "versions.yml"                    , topic: versions
 
     script:
     def filters = task.ext.filters ?: ""
@@ -33,7 +34,8 @@ process WRITE_MAFS {
     stub:
     """
     touch all_samples.filtered.tsv.gz
-    touch shared_cohort.flagged-pos.bed
+    touch all_samples.flagged-pos.bed
+    touch *.flagged-pos.bed
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

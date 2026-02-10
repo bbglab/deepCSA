@@ -37,9 +37,7 @@ python filter_cohort.py \\
     --sample-name sample1 \\
     --repetitive-variant-threshold 5 \\
     --somatic-vaf-boundary 0.4 \\
-    --n-rich-cohort-proportion 0.1 \\
-    --filters "filter1,filter2,filter3" \\
-    --somatic-filters "somatic_filter1,somatic_filter2"
+    --n-rich-cohort-proportion 0.1
 
 """
 import logging
@@ -49,7 +47,7 @@ import click
 import pandas as pd
 from utils import add_filter
 from read_utils import custom_na_values
-from utils_filter import expand_filter_column, extract_flagged_regions_bed, load_filter_criteria
+from utils_filter import expand_filter_column
 
 # Logging
 logging.basicConfig(
@@ -346,7 +344,7 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
 def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
          somatic_vaf_boundary: float, n_rich_cohort_proportion: float):
     """
-    CLI wrapper for filter_maf function.
+    CLI wrapper for flag_maf function.
     """
     # Load MAF dataframe
     maf_df = pd.read_csv(maf_df_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)

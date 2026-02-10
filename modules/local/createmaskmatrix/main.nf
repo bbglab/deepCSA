@@ -7,7 +7,7 @@ process CREATE_MASK_MATRIX {
     container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
-    tuple val(meta), path(bed_files)  // List of sample-specific flagged position BED files
+    path(bed_files)  // List of sample-specific flagged position BED files
 
     output:
     path("flagged_positions.mask.tsv.gz")          , emit: mask_matrix

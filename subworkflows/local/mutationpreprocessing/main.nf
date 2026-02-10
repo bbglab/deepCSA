@@ -9,7 +9,6 @@ include { FILTERBED                     as FILTERPANEL      }   from '../../../m
 include { FILTERBED                     as FILTEREXONS      }   from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTERNANOSEQSNP }   from '../../../modules/local/filterbed/main'
 include { FILTERBED                     as FILTERNANOSEQNOISE } from '../../../modules/local/filterbed/main'
-include { SAMPLE_FLAGGED_BED            as SAMPLEFLAGGEDBED }   from '../../../modules/local/sample_flagged_bed/main'
 include { CREATE_MASK_MATRIX            as CREATEMASKMATRIX }   from '../../../modules/local/createmaskmatrix/main'
 include { MERGE_BATCH                   as MERGEBATCH       }   from '../../../modules/local/mergemafs/main'
 include { FILTER_BATCH                  as FILTERBATCH      }   from '../../../modules/local/filtermaf/main'
@@ -90,9 +89,6 @@ workflow MUTATION_PREPROCESSING {
         filtered_maf_masks = params.nanoseq_noise ? FILTERNANOSEQNOISE.out.maf : filtered_maf_snp
     }
     filtered_maf_panels = masks_applied ? filtered_maf_masks : FILTERPANEL.out.maf
-    
-    // Extract sample-specific masked positions
-    SAMPLEFLAGGEDBED(filtered_maf_panels)
 
     // Join all samples' MAFs and put them in a channel to be merged
     filtered_maf_panels.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
@@ -104,23 +100,9 @@ workflow MUTATION_PREPROCESSING {
     PLOTMAF(FILTERBATCH.out.cohort_maf)
 
     WRITEMAF(FILTERBATCH.out.cohort_maf, all_groups)
-
-    // Collect sample-level flagged BED files
-    SAMPLEFLAGGEDBED.out.flagged_positions.map{ it -> it[1] }.collect().set{ sample_flagged_beds }
     
-    // Collect cohort-wide flagged BED file from WRITEMAF (applies to all samples)
-    WRITEMAF.out.cohort_flagged_positions.set{ cohort_flagged_bed }
-    
-    // Combine sample-level BEDs with cohort-wide BED for mask matrix creation
-    sample_flagged_beds
-        .flatten()
-        .mix(cohort_flagged_bed)
-        .collect()
-        .map{ it -> [[ id:"all_samples_bed" ], it]}
-        .set{ all_flagged_beds }
-
     // Create the mask matrix used to mask positions in the depths
-    CREATEMASKMATRIX(all_flagged_beds)
+    CREATEMASKMATRIX(WRITEMAF.out.sample_flagged_beds)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
