@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
-from utils import filter_maf
+from utils_filter import filter_maf
 from read_utils import custom_na_values
 
 
