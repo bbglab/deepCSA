@@ -17,8 +17,6 @@ include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS                  
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS                    } from '../../../modules/local/createpanels/consensus/main'
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS                 } from '../../../modules/local/createpanels/consensus/main'
 
-include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS     } from '../../../modules/local/createpanels/compare/main'
-
 include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS      } from '../../../modules/local/createpanels/compare/main'
 
 def restructurePanel(panel) {
