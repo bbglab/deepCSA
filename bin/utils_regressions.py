@@ -207,7 +207,7 @@ def process_mutdensity(mutdensity_file, mutdensity_config,
     metric: str (default: "mutdensity")
         Mutation rate metric to use, which can be mutation density or
         mutated reads rate.
-        Allowed values: mutdensity, mutreadsrate
+        Allowed values: mutdensity, mutreadsdensity
 
     Returns
     -------
@@ -229,8 +229,8 @@ def process_mutdensity(mutdensity_file, mutdensity_config,
     ## main metric
     if metric == "mutdensity":
         metric = "MUTDENSITY_MB"
-    elif metric == "mutreadsrate":
-        metric = "MUTREADSRATE_MB"
+    elif metric == "mutreadsdensity":
+        metric = "MUTREADSDENSITY_MB"
 
     ## region
     regressions2mutdensity_regions = {"all": "all",
@@ -1010,7 +1010,7 @@ def plot_linreg_coeffs(coeffs_df, lowi_df, highi_df, pvals_df,
 keyword2title = {
     # methods
     'mutdensity': "Mutation density",
-    'mutreadsrate': "Mutated reads rate",
+    'mutreadsdensity': "Mutated reads density",
     'oncodrivefml': "OncodriveFML",
     'omega': "Omega",
     'omegagloballoc': "Omega global",

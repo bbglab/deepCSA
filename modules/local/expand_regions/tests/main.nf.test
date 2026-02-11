@@ -6,9 +6,9 @@ nextflow_process {
     test("Testing a run without autoexons and autodomains, it should fail") {
         when {
             params {
-                omega_autoexons = false
-                omega_autodomains = false
-                omega_subgenic_bedfile = false
+                autoexons = false
+                autodomains = false
+                subgenic_bedfile = false
             }
             process {
                 """
@@ -31,9 +31,9 @@ nextflow_process {
     test("Should run with autoexons and autodomains") {
         when {
             params {
-                omega_autoexons = true
-                omega_autodomains = true
-                omega_subgenic_bedfile = false
+                autoexons = true
+                autodomains = true
+                subgenic_bedfile = false
             }
             process {
                 """

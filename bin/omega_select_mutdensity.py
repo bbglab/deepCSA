@@ -20,7 +20,7 @@ def select_syn_mutdensity(mutdensity_file, output_file, mode):
     if mode == 'mutations':
         synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'MUTDENSITY_MB_ADJUSTED']]
     elif mode == 'mutated_reads':
-        synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'MUTREADSRATE_MB_ADJUSTED']]
+        synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'MUTREADSDENSITY_MB_ADJUSTED']]
 
     synonymous_mutdensities_genes.columns = ["GENE", "MUTDENSITY"]
     synonymous_mutdensities_genes.to_csv(f"{output_file}",

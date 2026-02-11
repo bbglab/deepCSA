@@ -3,15 +3,13 @@ process PLOT_SATURATION_PROPORTIONS {
     tag "$meta.id"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta) , path(mutations)
     tuple val(meta1), path(panel_file)
     tuple val(meta2), path(captured_panel_rich)
     tuple val(meta3), path(expanded_panel, stageAs: "expanded_panel.tsv")
-
-
 
     output:
     tuple val(meta), path("**.pdf"), optional : true    ,  emit: plots

@@ -53,10 +53,14 @@ def generate_all_side_figures(sample,
     # Check and load omega data
     if "omega_trunc" in tools or "omega_mis" in tools:
         omega_file = f"output_mle.{sample}.tsv"
+        flagged_omega_file = f"omega.flagged_annotated.tsv"
         if os.path.exists(omega_file):
             omega_data = pd.read_table(omega_file)
+            flagged_omega_data = pd.read_table(flagged_omega_file)
+            omega_data = omega_data.merge(flagged_omega_data, how='left')
             omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
-                                        & ~(omega_data["gene"].str.contains('--'))        # select only genes
+                                        & ~(omega_data["gene"].str.contains('--'))  # select only genes
+                                        & ~(omega_data["flagged"])                  # remove flagged genes
                                     ]
             if "omega_trunc" in tools :
                 omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
@@ -581,9 +585,13 @@ def get_all_data(sample, outdir,
     if os.path.exists(omega_file) and ("omega_trunc" in tracks or "omega_mis" in tracks):
         try:
             omega_data = pd.read_table(omega_file)
+            flagged_omega_file = f"omega.flagged_annotated.tsv"
+            flagged_omega_data = pd.read_table(flagged_omega_file)
+            omega_data = omega_data.merge(flagged_omega_data, how='left')
             omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
-                                            & ~(omega_data["gene"].str.contains('--'))
-                                        ]
+                                        & ~(omega_data["gene"].str.contains('--'))  # select only genes
+                                        & ~(omega_data["flagged"])                  # remove flagged genes
+                                    ]
             
             if "omega_trunc" in tracks:
                 omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "dnds", "pvalue", "lower", "upper"]]

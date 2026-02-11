@@ -26,6 +26,7 @@ include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS          } from '
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS        } from '../../../modules/local/createpanels/consensus/main'
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS     } from '../../../modules/local/createpanels/consensus/main'
 
+include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS     } from '../../../modules/local/createpanels/compare/main'
 
 
 def restructurePanel(panel) {
@@ -47,8 +48,11 @@ workflow CREATE_PANELS {
 
     take:
     depths
+    wgs_trinucleotides
 
     main:
+
+
 
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
@@ -83,7 +87,7 @@ workflow CREATE_PANELS {
     } else {
         complete_annotated_panel = POSTPROCESSVEPPANEL.out.compact_panel_annotation
         rich_annotated = POSTPROCESSVEPPANEL.out.rich_panel_annotation
-        added_regions = Channel.empty()
+        added_regions = channel.empty()
     }
 
     domains = file(params.domains_file, checkIfExists: true)
@@ -124,8 +128,20 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSINTRONS(introns_panel, depths)
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
+    channel.empty()
+    .concat(CREATECONSENSUSPANELSALL.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSEXONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSINTRONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .collect()
+    .set{ all_consensus_panels }
+
+    COMPAREPANELPROPORTIONS(all_consensus_panels, wgs_trinucleotides)
+
     emit:
-    full_panel_annotated        = VCFANNOTATEPANEL.out.tab
+    full_panel_annotated        = VCFANNOTATEPANEL.out.tab.first()
     all_panel                   = all_panel.first()
     all_bed                     = all_bed.first()
     prot_panel                  = prot_panel.first()
@@ -153,14 +169,13 @@ workflow CREATE_PANELS {
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
-    panel_annotated_rich        = rich_annotated
-    added_custom_regions        = added_regions
+    panel_annotated_rich        = rich_annotated.first()
+    added_custom_regions        = added_regions.first()
     domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
     domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
 
     postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
     postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
-
     // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
     // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
     // prot_sample_panel       = restructureSamplePanel(CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel.flatten())

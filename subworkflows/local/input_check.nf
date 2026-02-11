@@ -13,7 +13,7 @@ workflow INPUT_CHECK {
     SAMPLESHEET_CHECK ( samplesheet, require_bams)
         .csv
         .splitCsv ( header:true, sep:',' )
-        .map { create_input_channel(it, require_bams) }
+        .map { it -> create_input_channel(it, require_bams) }
         .set { sample_inputs }
 
     emit:
@@ -43,8 +43,6 @@ def create_input_channel(LinkedHashMap row, required_bams=true) {
         }
         vcf_bam_meta = [ meta, file(row.vcf)]
     }
-
-    
 
     return vcf_bam_meta
 }
