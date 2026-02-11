@@ -123,14 +123,9 @@ def create_mask_matrix(bed_files: list) -> None:
     """
     LOG.info(f"Processing {len(bed_files)} BED files...")
     
-    # Filter out all_samples aggregated file if present
-    sample_bed_files = [f for f in bed_files if 'all_samples' not in Path(f).stem]
-    
-    LOG.info(f"Found {len(sample_bed_files)} sample-specific BED files")
-    
     # Collect all sample's names
     all_samples = set()
-    for bed_file in sample_bed_files:
+    for bed_file in bed_files:
         sample_name = Path(bed_file).stem.replace('.flagged-pos', '')
         all_samples.add(sample_name)
     
@@ -140,7 +135,7 @@ def create_mask_matrix(bed_files: list) -> None:
     
     # Process sample-specific BED files
     sample_count = 0
-    for bed_file in sample_bed_files:
+    for bed_file in bed_files:
         sample_name = Path(bed_file).stem.replace('.flagged-pos', '')
         
         try:

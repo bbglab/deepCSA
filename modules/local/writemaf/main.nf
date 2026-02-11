@@ -10,10 +10,10 @@ process WRITE_MAFS {
     path (json_groups)
 
     output:
-    path("*.filtered.tsv.gz")              , emit: mafs
-    path("all_samples.flagged-pos.bed")    , emit: all_samples_flagged_positions
-    path("*.flagged-pos.bed")              , emit: sample_flagged_beds
-    path "versions.yml"                    , topic: versions
+    path("*.filtered.tsv.gz")                   , emit: mafs
+    path("*.flagged-pos.bed")                   , emit: sample_flagged_beds
+    path("all_samples.cohort-flagged-pos.bed")
+    path "versions.yml"                         , topic: versions
 
     script:
     def filters = task.ext.filters ?: ""
@@ -34,7 +34,7 @@ process WRITE_MAFS {
     stub:
     """
     touch all_samples.filtered.tsv.gz
-    touch all_samples.flagged-pos.bed
+    touch all_samples.cohort-flagged-pos.bed
     touch *.flagged-pos.bed
 
     cat <<-END_VERSIONS > versions.yml

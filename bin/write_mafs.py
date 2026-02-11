@@ -115,7 +115,7 @@ def main(maf_file, groups_json, filters: str, somatic_filters: str):
 
     # Extract flagged regions to BED file (cohort-wide, applies to all samples)
     LOG.info("Extracting cohort-wide flagged positions to BED file.")
-    extract_flagged_regions_bed(maf_df, "all_samples", filter_criteria)
+    extract_flagged_regions_bed(maf_df, "all_samples", filter_criteria, "cohort-")
 
 if __name__ == '__main__':
     main()

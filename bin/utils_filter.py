@@ -8,6 +8,64 @@ Utility functions for extracting filters from a MAF DataFrame.
 
 LOG = logging.getLogger(__name__)
 
+def filter_maf(maf_df, filter_criteria):
+    '''
+    Filter a MAF dataframe with filtering information coming from a list of tuples.
+    This can be either a dictionary transformed to list with the .items() method or by directly creating a list of tuples.
+    [('VAF', 'le 0.3'), ('VAF_AM', 'le 0.3'), ('vd_VAF', 'le 0.3'),
+    ('DEPTH', 'ge 40'), ('FILTER', 'notcontains n_rich'),
+    ('FILTER', 'notcontains cohort_n_rich_uni'), ('FILTER', 'notcontains NM20'),
+    ('FILTER', 'notcontains no_pileup_support'), ('FILTER', 'notcontains other_sample_SNP'),
+    ('FILTER', 'notcontains low_mappability')]
+    '''
+
+    # Define mappings for operators used in criteria
+    operators = {
+        'eq': lambda x, y: x == y,
+        'ne': lambda x, y: x != y,
+        'lt': lambda x, y: x < y,
+        'le': lambda x, y: x <= y,
+        'gt': lambda x, y: x > y,
+        'ge': lambda x, y: x >= y,
+        'not': lambda x, y: x != y,
+        'notcontains': lambda x, y: x.apply(lambda z : y not in z.split(";")), # (~maf_df["FILTER"].str.contains("not_in_panel"))
+        'contains': lambda x, y: x.apply(lambda z : y in z.split(";"))
+    }
+
+    # Apply filters based on criteria from the JSON file
+    for col, criterion in filter_criteria:
+
+        if isinstance(criterion, bool):
+            pref_len = maf_df.shape[0]
+            maf_df = maf_df[maf_df[col] == criterion]
+            print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+
+        elif ' ' in criterion:
+            operator, value = criterion.split(maxsplit=1)
+
+            if len(operator) == 2 and operator in operators:
+                # 'VAF' : 'le 0.35'
+                pref_len = maf_df.shape[0]
+                maf_df = maf_df[operators[operator](maf_df[col], float(value))]
+                print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+
+            elif operator in operators:
+                # 'FILTER' : 'notcontains n_rich',
+                pref_len = maf_df.shape[0]
+                maf_df = maf_df[operators[operator](maf_df[col], value)]
+                print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+
+            else:
+                print(f"We have no filtering criteria defined for {col}:{criterion} filter.")
+
+
+        else:
+            # 'TYPE' : 'SNV'
+            pref_len = maf_df.shape[0]
+            maf_df = maf_df[maf_df[col] == criterion]
+            print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
+
+    return maf_df
 
 def load_filter_criteria(filters: str, somatic_filters: str) -> list[str]:
     """
@@ -19,8 +77,6 @@ def load_filter_criteria(filters: str, somatic_filters: str) -> list[str]:
         Comma-separated list of filter criteria
     somatic_filters : str
         Comma-separated list of somatic filter criteria
-    only_cohort_filters : bool
-        If True, only include cohort-level filters from the returned list
     
     Returns
     -------
@@ -64,7 +120,7 @@ def expand_filter_column(maf_df: pd.DataFrame) -> pd.DataFrame:
 
     return maf_df
 
-def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[str]) -> pd.DataFrame | None:
+def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[str], specification: str = "") -> pd.DataFrame | None:
     """
     Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
     Creates a properly formatted BED file with 0-based coordinates and half-open intervals.
@@ -73,8 +129,12 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[s
     ----------
     maf_df : pd.DataFrame
         Input MAF dataframe with filter columns. POS column should contain 1-based coordinates.
-    bed_format : bool
-        If True, output coordinates are converted to 0-based with half-open intervals [start, end).
+    name : str
+        Sample name to be used in the output BED file name.
+    FILTERS : list[str]
+        List of filter criteria to check for in the MAF dataframe.
+    specification : str, optional
+        Additional string to include in the output BED file name (e.g., "cohort-"), by default "".
 
     Returns
     -------
@@ -110,6 +170,7 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[s
     bed_annotated = (
                 _bed_melt
                 .drop_duplicates()
+                .sort_values(by=["CHROM", "POS"])
                 .groupby(["CHROM","POS"])["FILTERS"]
                 .agg(','.join)
                 .reset_index()
@@ -123,6 +184,5 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[s
 
     # Write BED file without header or index
     (bed_annotated[["CHROM", "START", "END", "FILTERS"]]
-        .sort_values(by=["CHROM", "START"])
-        .to_csv(f"{name}.flagged-pos.bed", sep="\t", header=False, index=False)
+        .to_csv(f"{name}.{specification}flagged-pos.bed", sep="\t", header=False, index=False)
     )

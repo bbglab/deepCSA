@@ -4,7 +4,7 @@ process CREATE_MASK_MATRIX {
     label 'process_low'
     label 'time_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    container "docker.io/bbglab/deepcsa-core:0.1.0"
 
     input:
     path(bed_files)  // List of sample-specific flagged position BED files

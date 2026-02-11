@@ -165,16 +165,13 @@ def flag_cohort_n_rich(maf_df: pd.DataFrame,
     number_of_samples = max(2, (max_samples * n_rich_cohort_proportion) // 1)
     LOG.info(f"Flagging mutations that are n_rich in at least: {number_of_samples} samples as cohort_n_rich")
 
-    # Work with already filtered df + somatic only to explore potential artifacts
+    # Work with already filtered df to explore potential artifacts
     # take only variant and sample info from the df.
-    maf_df_f_somatic = maf_df[["MUT_ID", "SAMPLE_ID", "VAF_Ns", "FILTER"]].reset_index(drop = True)
-    
-    # Note: Pending discussion on whether to filter by somatic VAF boundary here or not
-    # maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID", "SAMPLE_ID", "VAF_Ns", "FILTER"]].reset_index(drop = True)
+    maf_df_f = maf_df[["MUT_ID", "SAMPLE_ID", "VAF_Ns", "FILTER"]].reset_index(drop = True)
 
     # Aggregate n_rich variants
     n_rich_vars_df = (
-        maf_df_f_somatic[maf_df_f_somatic["FILTER"].str.contains("n_rich")]
+        maf_df_f[maf_df_f["FILTER"].str.contains("n_rich")]
         .groupby("MUT_ID")
         .agg(
             N_rich_frequency=('SAMPLE_ID', 'count'),
