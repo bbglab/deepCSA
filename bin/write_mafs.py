@@ -17,7 +17,7 @@ def main(maf_file, groups_json):
         groups_info = json.load(file)
 
     all_samples = set([item for sublist in groups_info.values() for item in sublist])
-    available_samples = set(maf_df["SAMPLE_ID"].unique())
+    available_samples = set(maf_df["SAMPLE_ID"])
     requested_n_available_samples = available_samples.intersection(all_samples)
     if len(all_samples) != len(requested_n_available_samples):
         missing_samples = all_samples - available_samples

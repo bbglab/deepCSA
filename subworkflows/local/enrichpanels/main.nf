@@ -42,22 +42,23 @@ workflow ENRICHPANELS {
     if (params.create_subgenic_regions){
         EXPANDREGIONSALL(all_consensus_panel, domains_ch, exons_ch, subgenic_ch)
         all_expanded_panel = EXPANDREGIONSALL.out.panel_increased
-        all_json_subgenic = EXPANDREGIONSALL.out.new_regions_json
 
         EXPANDREGIONSNONPROT(nonprot_consensus_panel, domains_ch, exons_ch, subgenic_ch)
         nonprot_expanded_panel = EXPANDREGIONSNONPROT.out.panel_increased
-        nonprot_json_subgenic = EXPANDREGIONSNONPROT.out.new_regions_json
 
         EXPANDREGIONSPROT(prot_consensus_panel, domains_ch, exons_ch, subgenic_ch)
         prot_expanded_panel = EXPANDREGIONSPROT.out.panel_increased
-        prot_json_subgenic = EXPANDREGIONSPROT.out.new_regions_json
 
         EXPANDREGIONSSYNONYMOUS(synonymous_consensus_panel, domains_ch, exons_ch, subgenic_ch)
         synonymous_expanded_panel = EXPANDREGIONSSYNONYMOUS.out.panel_increased
-        synonymous_json_subgenic = EXPANDREGIONSSYNONYMOUS.out.new_regions_json
 
         EXPANDREGIONSEXONS(exons_consensus_panel, domains_ch, exons_ch, subgenic_ch)
         exons_expanded_panel = EXPANDREGIONSEXONS.out.panel_increased
+
+        // all_json_subgenic = EXPANDREGIONSALL.out.new_regions_json
+        // nonprot_json_subgenic = EXPANDREGIONSNONPROT.out.new_regions_json
+        // prot_json_subgenic = EXPANDREGIONSPROT.out.new_regions_json
+        // synonymous_json_subgenic = EXPANDREGIONSSYNONYMOUS.out.new_regions_json
         exons_json_subgenic = EXPANDREGIONSEXONS.out.new_regions_json
 
     } else {
@@ -67,13 +68,6 @@ workflow ENRICHPANELS {
         synonymous_expanded_panel   = synonymous_consensus_panel
         exons_expanded_panel        = exons_consensus_panel
 
-        // FIXME
-        // these are dummy channels that should not be used when
-        // create_subgenic_regions is false check if they can be empty
-        all_json_subgenic           = all_bedfile
-        nonprot_json_subgenic       = nonprot_bedfile
-        prot_json_subgenic          = prot_bedfile
-        synonymous_json_subgenic    = synonymous_bedfile
         exons_json_subgenic         = exons_bedfile
     }
 
@@ -85,10 +79,6 @@ workflow ENRICHPANELS {
     synonymous_consensus_expanded_panel = synonymous_expanded_panel.first()
     exons_consensus_expanded_panel      = exons_expanded_panel.first()
 
-    all_json_subgenic                   = all_json_subgenic.first()
-    nonprot_json_subgenic               = nonprot_json_subgenic.first()
-    prot_json_subgenic                  = prot_json_subgenic.first()
-    synonymous_json_subgenic            = synonymous_json_subgenic.first()
     exons_json_subgenic                 = exons_json_subgenic.first()
 
     dna2protein_mapping_depth_exons     = DNA2PROTEINMAPPING.out.depths_exons_positions.first()

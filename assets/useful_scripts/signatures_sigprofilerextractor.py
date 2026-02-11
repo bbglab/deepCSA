@@ -20,7 +20,22 @@ from SigProfilerExtractor import sigpro as sig
 
 # Run SigProfilerExtractor
 def main(input_type, output_dir, input, ref_genome, max_sig, nmf_replicates, cpu):
+    """  
+    Run SigProfilerExtractor with the specified parameters.  
+    This script can be run using the deepCSA output available at: 
+    processing_files/matrixconcatwgs/samples_matrix.*sp.round.tsv  
 
+    Usage:  
+    ----------  
+    python3 signatures_sigprofilerextractor.py  
+        matrix \  
+        ./output_dir \  
+        count_matrix_wgs_20240821.txt \  
+        --ref_genome GRCh38 \  
+        --max_sig 10 \  
+        --nmf_replicates 100 \  
+        --cpu 10  
+    """  
     sig.sigProfilerExtractor(
         input_type=input_type,
         output=output_dir,
@@ -35,6 +50,3 @@ def main(input_type, output_dir, input, ref_genome, max_sig, nmf_replicates, cpu
 if __name__ == "__main__":
     main()
 
-### EXAMPLE OF COMMAND:
-# python3 sigprofiler_extractor2.py matrix ./output_dir count_matrix_wgs_20240821.txt --ref_genome GRCh38 --max_sig 10 --nmf_replicates 100 --cpu 10
-# This can be run using the deepCSA output available at: processing_files/matrixconcatwgs/samples_matrix.*sp.round.tsv

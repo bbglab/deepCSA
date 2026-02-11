@@ -9,7 +9,13 @@ import numpy as np
 
 
 def plot_trinucleotide_proportions(wgs_counts_file):
+    """  
+    This function generates two scatter plots showing how trinucleotide contexts are distributed across  
+    WGS versus four consensus panels: all, non_protein_affecting, introns_intergenic, and exons_splice_sites.  
 
+    Args:  
+        wgs_counts_file (str): Path to tab-separated file containing WGS trinucleotide context counts.
+    """  
     wgs_counts = pd.read_table(wgs_counts_file)
     wgs_counts.columns = ['CONTEXT', 'COUNT_WGS']
 
