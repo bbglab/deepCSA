@@ -51,6 +51,10 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("write_mafs")
 
+# Constants
+# Define flags that are applied for all samples equally.
+COHORT_FLAGS = ["cohort_n_rich", "cohort_n_rich_uni", "repetitive_variant", "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise", "not_covered", "not_in_exons"]
+
 def create_group_mafs(maf_df: pd.DataFrame, group_name: str, samples: list[str]) -> None:
     """
     Create separate MAF files for each group defined in the groups_info.
@@ -114,8 +118,13 @@ def main(maf_file, groups_json, filters: str, somatic_filters: str):
     create_sample_flagged_bed(maf_df, all_samples_bed, filter_criteria)
 
     # Extract flagged regions to BED file (cohort-wide, applies to all samples)
-    LOG.info("Extracting cohort-wide flagged positions to BED file.")
-    extract_flagged_regions_bed(maf_df, "all_samples", filter_criteria, "cohort-")
+    LOG.info("Extracting all flagged positions to BED file.")
+    extract_flagged_regions_bed(maf_df, "all_samples", filter_criteria, "all-")
+
+    # Extract flagged regions applied only for all the cohort, not sample-specific
+    LOG.info("Extracting only cohort-wide flagged positions to BED file.")
+    cohort_wide_filters = [f for f in COHORT_FLAGS if f in filter_criteria]
+    extract_flagged_regions_bed(maf_df, "all_samples", cohort_wide_filters, "cohort-wide-")
 
 if __name__ == '__main__':
     main()
