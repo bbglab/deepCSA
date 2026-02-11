@@ -41,8 +41,6 @@ class RowChecker:
         **kwargs,
     ):
         """
-        # TODO: update this docstring
-
         Initialize the row checker with the expected column names.
 
         Args:

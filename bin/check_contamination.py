@@ -356,6 +356,9 @@ def contamination_detection(maf_file, somatic_maf_file):
                                                sep  = '\t',
                                                index = False)
 
+    if contamination_detailed_df.empty:
+        print("No contaminated samples detected.")
+        return
     contamination_detailed_df_long = contamination_detailed_df.explode("SOURCE_SAMPLEID_COUNTS")
     expanded_df = pd.DataFrame(contamination_detailed_df_long["SOURCE_SAMPLEID_COUNTS"].tolist())
     expanded_df.columns = ["SHARED_VARIANT_COUNT", "SOURCE_SAMPLEID"]

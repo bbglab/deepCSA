@@ -4,7 +4,7 @@ process COMPUTE_PROFILE {
     label 'process_low'
 
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta), path(matrix), path(trinucleotide)

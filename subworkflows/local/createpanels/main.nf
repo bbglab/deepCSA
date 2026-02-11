@@ -26,6 +26,7 @@ include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS          } from '
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS        } from '../../../modules/local/createpanels/consensus/main'
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS     } from '../../../modules/local/createpanels/consensus/main'
 
+include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS     } from '../../../modules/local/createpanels/compare/main'
 
 
 def restructurePanel(panel) {
@@ -47,8 +48,11 @@ workflow CREATE_PANELS {
 
     take:
     depths
+    wgs_trinucleotides
 
     main:
+
+
 
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
@@ -123,6 +127,18 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSEXONS(exons_panel, depths)
     CREATECONSENSUSPANELSINTRONS(introns_panel, depths)
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
+
+    channel.empty()
+    .concat(CREATECONSENSUSPANELSALL.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSEXONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSINTRONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .collect()
+    .set{ all_consensus_panels }
+
+    COMPAREPANELPROPORTIONS(all_consensus_panels, wgs_trinucleotides)
 
     emit:
     full_panel_annotated        = VCFANNOTATEPANEL.out.tab.first()

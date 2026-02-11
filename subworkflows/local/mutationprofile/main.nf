@@ -34,7 +34,7 @@ workflow MUTATIONAL_PROFILE {
     .map{ it -> [ it[0], it[1]]  }
     .set{ sigprofiler_matrix }
 
-    COMPUTETRINUC(depth)
+    COMPUTETRINUC(depth, wgs_trinuc)
 
     COMPUTEMATRIX.out.matrix
     .join(COMPUTETRINUC.out.trinucleotides)

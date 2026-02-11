@@ -12,10 +12,9 @@ from read_utils import custom_na_values
 @click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
 @click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
 @click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
-def main(maf_df_file, sample_name, repetitive_variant_threshold, somatic_vaf_boundary, n_rich_cohort_proportion):
+@click.option('--vaf-ns-threshold', required=False, type=float, default=0.1, help='VAF of Ns threshold for filtering variants')
+def main(maf_df_file, sample_name, repetitive_variant_threshold, somatic_vaf_boundary, n_rich_cohort_proportion, vaf_ns_threshold):
     maf_df = pd.read_csv(maf_df_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)
-    sequenced_genes = list(pd.unique(maf_df["SYMBOL"]))
-
 
     #######
     ###  Filter repetitive variants,
@@ -131,6 +130,13 @@ def main(maf_df_file, sample_name, repetitive_variant_threshold, somatic_vaf_bou
         maf_df = maf_df.drop("cohort_n_rich_threshold", axis = 1)
 
 
+        # flag variants that have a proportion of Ns higher than vaf_ns_threshold
+        maf_df["high_n_vaf"] = maf_df[["VAF_Ns", "VAF_Ns_AM"]].ge(vaf_ns_threshold).any(axis=1)
+        maf_df["FILTER"] = maf_df[["FILTER","high_n_vaf"]].apply(lambda x: add_filter(x["FILTER"], x["high_n_vaf"], "high_n_vaf"),
+                                                                            axis = 1
+                                                                        )
+        maf_df = maf_df.drop("high_n_vaf", axis = 1)
+
 
 
 
@@ -171,6 +177,10 @@ def main(maf_df_file, sample_name, repetitive_variant_threshold, somatic_vaf_bou
                                                                     axis = 1
                                                                 )
 
+    if 'VAF_distorted_expanded_sq' in maf_df.columns:
+        maf_df["FILTER"] = maf_df[["FILTER","VAF_distorted_expanded_sq"]].apply(lambda x: add_filter(x["FILTER"], x["VAF_distorted_expanded_sq"], "VAF_distorted_expanded_sq"),
+                                                                                        axis = 1
+                                                                                    )
 
     for filt in pd.unique(maf_df["FILTER"].str.split(";").explode()):
         maf_df[f"FILTER.{filt}"] = maf_df["FILTER"].apply(lambda x: filt in x.split(";"))

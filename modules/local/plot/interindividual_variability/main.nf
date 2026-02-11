@@ -3,7 +3,7 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     tag "samples"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     path (samples_json)

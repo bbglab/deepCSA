@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/bbglab/deepCSA/main/nextflow_schema.json",
     "title": "bbglab/deepCSA pipeline parameters",
-    "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of DNA sequencing data when there is information about the number of unique molecules sequenced for each site",
+    "description": "deepCSA : deepClonalStructureAnalysis is a pipeline for the analysis of the clonal structure of tissues using duplex-sequencing data.",
     "type": "object",
     "$defs": {
         "input_output_options": {
@@ -735,9 +735,8 @@
                 },
                 "exclude_subgroups": {
                     "type": "string",
-                    "default": "[\\'UV_signatures\\', \\'MMR_deficiency_signatures\\', \\'POL_deficiency_signatures\\', \\'HR_deficiency_signatures\\',\\'BER_deficiency_signatures\\', \\'Artifact_signatures\\', \\'Lymphoid_signatures\\']",
                     "description": "List-like (python) string with the different groups of signatures to be removed from SigProfilerAssignment.",
-                    "help_text": "List-like (python) string with the different groups of signatures to be removed from SigProfilerAssignment.",
+                    "help_text": "Find the possibilities here: https://github.com/SigProfilerSuite/SigProfilerAssignment?tab=readme-ov-file#-signature-subgroups ",
                     "fa_icon": "far fa-file-code"
                 },
                 "datasets3d": {
