@@ -5,7 +5,7 @@ process SUMMARIZE_ANNOTATION {
     label 'process_high_memory'
     label 'time_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta)  , path(tab_files)

@@ -17,6 +17,7 @@ include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS                  
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS                    } from '../../../modules/local/createpanels/consensus/main'
 include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS                 } from '../../../modules/local/createpanels/consensus/main'
 
+include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS     } from '../../../modules/local/createpanels/compare/main'
 
 include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS      } from '../../../modules/local/createpanels/compare/main'
 
@@ -33,6 +34,8 @@ workflow CREATE_PANELS {
     wgs_trinucleotides
 
     main:
+
+
 
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
@@ -112,17 +115,7 @@ workflow CREATE_PANELS {
 
 
     emit:
-    full_panel_annotated           = VCFANNOTATEPANEL.out.tab.first()
-    complete_annotated_panel       = complete_annotated_panel
-
-    panel_annotated_rich           = rich_annotated.first()
-    added_custom_regions           = added_regions.first()
-    domains_panel_bed              = DOMAINANNOTATION.out.domains_bed.first()
-    domains_in_panel               = DOMAINANNOTATION.out.domains_tsv.first()
-
-    postprocessed_panel            = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
-    postprocessed_panel_rich       = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
-
+    full_panel_annotated        = VCFANNOTATEPANEL.out.tab.first()
     all_panel                   = all_panel.first()
     all_bed                     = all_bed.first()
     prot_panel                  = prot_panel.first()
@@ -150,4 +143,12 @@ workflow CREATE_PANELS {
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
+
+    panel_annotated_rich        = rich_annotated.first()
+    added_custom_regions        = added_regions.first()
+    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
+    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
+
+    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
+    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
 }

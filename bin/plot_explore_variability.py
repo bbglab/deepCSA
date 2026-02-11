@@ -38,7 +38,7 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
     """
     Take a DataFrame and create mutation density heatmaps, storing all plots in a single PDF file.
     Allows control over figure size and sample/gene ordering.
-    SAMPLE_ID       GENE    REGIONS MUTTYPES        DEPTH   N_MUTS  N_MUTATED       MUTDENSITY_MB   MUTDENSITY_MB_ADJUSTED MUTREADSRATE_MB  MUTREADSRATE_MB_ADJUSTED
+    SAMPLE_ID       GENE    REGIONS MUTTYPES        DEPTH   N_MUTS  N_MUTATED       MUTDENSITY_MB   MUTDENSITY_MB_ADJUSTED MUTREADSDENSITY_MB  MUTREADSDENSITY_MB_ADJUSTED
     """
     data = data[data["SAMPLE_ID"].isin(samples_list)].reset_index(drop = True)
 

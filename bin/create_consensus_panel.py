@@ -39,6 +39,9 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
         consensus_panel = consensus_panel.filter(pl.col("GENE").is_in(gene_list))
 
     consensus_panel = consensus_panel.sort(["CHROM", "POS", "REF", "ALT"])
+
+    if consensus_panel.is_empty():
+        raise ValueError("No positions pass the consensus criteria. Adjust parameters or check input data.")
     consensus_panel.write_csv(f"consensus.{version}.tsv", separator="\t")
 
 

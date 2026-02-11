@@ -37,11 +37,11 @@ workflow MUTATION_PREPROCESSING {
     main:
 
     nanoseq_snp_file   = params.nanoseq_snp
-                            ? Channel.fromPath( params.nanoseq_snp, checkIfExists: true).map{ path -> [ [id: "nanoseq_snp_mask"], path ] }.first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.nanoseq_snp, checkIfExists: true).map{ path -> [ [id: "nanoseq_snp_mask"], path ] }.first()
+                            : channel.empty()
     nanoseq_noise_file = params.nanoseq_noise
-                            ? Channel.fromPath( params.nanoseq_noise, checkIfExists: true).map{ path -> [ [id: "nanoseq_noise_mask"], path ] }.first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.nanoseq_noise, checkIfExists: true).map{ path -> [ [id: "nanoseq_noise_mask"], path ] }.first()
+                            : channel.empty()
 
     VCFANNOTATE(vcfs,
                     params.fasta,
@@ -54,7 +54,7 @@ workflow MUTATION_PREPROCESSING {
     // Join all annotated samples and put them in a channel to be summarized together
     VCFANNOTATE.out.tab.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ annotated_samples }
 
-    hotspots_definition_file = params.hotspots_annotation ? Channel.fromPath( params.hotspots_definition_file, checkIfExists: true).first() : Channel.fromPath(params.input).first()
+    hotspots_definition_file = params.hotspots_annotation ? channel.fromPath( params.hotspots_definition_file, checkIfExists: true).first() : channel.fromPath(params.input).first()
     SUMANNOTATION(annotated_samples, hotspots_definition_file)
 
     if (params.customize_annotation) {
@@ -109,7 +109,7 @@ workflow MUTATION_PREPROCESSING {
 
     // Remove mutations that are blacklisted
     if (params.blacklist_mutations) {
-        blacklist_mutations  = Channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
+        blacklist_mutations  = channel.fromPath( params.blacklist_mutations ?: params.input, checkIfExists: true).first()
         BLACKLISTMUTS(named_mafs, blacklist_mutations)
         _all_clean_mutations = BLACKLISTMUTS.out.mutations
     } else {
@@ -131,11 +131,11 @@ workflow MUTATION_PREPROCESSING {
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
 
 
-    Channel.of([["id": "all_samples"]])
+    channel.of([["id": "all_samples"]])
     .join(named_mafs).first()
     .set{raw_muts_all_samples}
 
-    Channel.of([["id": "all_samples"]])
+    channel.of([["id": "all_samples"]])
     .join(SOMATICMUTATIONS.out.mutations).first()
     .set{muts_all_samples}
 
@@ -152,7 +152,7 @@ workflow MUTATION_PREPROCESSING {
         SOMATICMUTATIONS.out.mutations
         .map { mut -> tuple(mut[0].id, mut) }
         .join(groups)
-        .map { it[1] }
+        .map { it -> it[1] }
         .set { muts_for_plotting }
     }
     PLOTNEEDLES(muts_for_plotting, sequence_information_df)

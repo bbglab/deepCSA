@@ -3,8 +3,8 @@ process ANNOTATE_DEPTHS {
     label 'process_low'
     label 'time_low'
 
-    container 'deepcsa_core'
-
+    label 'deepcsa_core'
+    
     input:
     tuple val(meta) , path(depths)
     tuple val(meta2), path(panel_all)

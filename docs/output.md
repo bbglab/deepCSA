@@ -102,7 +102,7 @@ All paths are relative to the top-level results directory.
 ├──sitesfrompositions
 ├──sumannotation
 ├──synmutrate
-├──synmutreadsrate
+├──synmutreadsdensity
 └──table2group
 work/
 .nextflow.log
@@ -210,7 +210,7 @@ Optional:
 - matrixconcatwgs
 - mutability
 - synmutrate
-- synmutreadsrate
+- synmutreadsdensity
 
 ## Positive selection
 
