@@ -1,4 +1,4 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSETINDELS           } from '../../../modules/local/subsetmaf/main'
 
@@ -13,9 +13,9 @@ workflow INDELS_SELECTION {
 
     main:
 
-    SUBSETMUTATIONS(mutations, bedfile)
+    QUERYMUTATIONS(mutations, bedfile)
 
-    SUBSETINDELS(SUBSETMUTATIONS.out.subset)
+    SUBSETINDELS(QUERYMUTATIONS.out.subset)
 
     INDELS(SUBSETINDELS.out.mutations)
 

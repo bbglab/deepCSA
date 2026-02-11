@@ -19,19 +19,20 @@ from SigProfilerExtractor import sigpro as sig
 @click.argument('output_dir')                     
 @click.argument('input')                           
 @click.option('--ref_genome', default='GRCh38', help='Reference genome to use') # When option parameter has to be specified in the command
+@click.option('--min_sig', default=1, help='Minimum number of signatures')
 @click.option('--max_sig', default=10, help='Maximum number of signatures')
 @click.option('--nmf_replicates', default=100, help='Number of NMF replicates')
 @click.option('--cpu', default=-1, help='Number of processors to be used to extract the signatures. Default value will use all available processors, which may cause a memory error.')
 
 # Run SigProfilerExtractor
-def main(input_type, output_dir, input, ref_genome, max_sig, nmf_replicates, cpu):
+def main(input_type, output_dir, input, ref_genome, min_sig, max_sig, nmf_replicates, cpu):
     
     sig.sigProfilerExtractor(
         input_type=input_type,
         output=output_dir,
         input_data=input, 
         reference_genome=ref_genome,
-        minimum_signatures=1,
+        minimum_signatures=min_sig,
         maximum_signatures=max_sig,
         nmf_replicates=nmf_replicates,
 	    cpu=cpu

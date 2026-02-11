@@ -56,8 +56,8 @@ def mutdensity_sample(maf_df, depths_df, depths_adj_df, sample_name):
 
         sample_features["MUTDENSITY_MB"] = ( sample_features["N_MUTS"] / sample_features["DEPTH"] * 1000000 ).astype(float)
         sample_features["MUTDENSITY_MB_ADJUSTED"] = ( sample_features["N_MUTS"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
-        sample_features["MUTREADSRATE_MB"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH"] * 1000000 ).astype(float)
-        sample_features["MUTREADSRATE_MB_ADJUSTED"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
+        sample_features["MUTREADSDENSITY_MB"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH"] * 1000000 ).astype(float)
+        sample_features["MUTREADSDENSITY_MB_ADJUSTED"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
 
         sample_features["GENE"] = "ALL_GENES"
         sample_features["MUTTYPES"] = types_included
@@ -114,8 +114,8 @@ def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name):
         mut_depths_df["MUTDENSITY_MB"] = (mut_depths_df["N_MUTS"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
         mut_depths_df["MUTDENSITY_MB_ADJUSTED"] = (mut_depths_df["N_MUTS"] / mut_depths_df["DEPTH_ADJUSTED"] * 1000000).astype(float)
 
-        mut_depths_df["MUTREADSRATE_MB"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
-        mut_depths_df["MUTREADSRATE_MB_ADJUSTED"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH_ADJUSTED"] * 1000000).astype(float)
+        mut_depths_df["MUTREADSDENSITY_MB"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
+        mut_depths_df["MUTREADSDENSITY_MB_ADJUSTED"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH_ADJUSTED"] * 1000000).astype(float)
 
         mut_depths_df["MUTTYPES"] = types_included
         impact_group_results.append(mut_depths_df.reset_index())
@@ -185,7 +185,7 @@ def compute_mutdensity(maf_path, depths_path, annot_panel_path, sample_name, pan
                 "DEPTH",
                 "N_MUTS", "N_MUTATED",
                 "MUTDENSITY_MB", "MUTDENSITY_MB_ADJUSTED",
-                "MUTREADSRATE_MB", "MUTREADSRATE_MB_ADJUSTED",
+                "MUTREADSDENSITY_MB", "MUTREADSDENSITY_MB_ADJUSTED",
                 ]].to_csv(f"{sample_name}.{panel_v}.mutdensities.tsv",
                                                             sep = "\t",
                                                             header = True,

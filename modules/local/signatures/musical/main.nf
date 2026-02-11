@@ -22,7 +22,6 @@ process MUSICAL {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def min_processes = task.ext.min_processes ?: "1"
     def max_processes = task.ext.max_processes ?: "10"
@@ -41,7 +40,6 @@ process MUSICAL {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.pdf

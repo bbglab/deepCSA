@@ -3,7 +3,7 @@ process ANNOTATE_OMEGA_QC {
     tag "all_samples"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     path (all_omegas)

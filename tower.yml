@@ -1,0 +1,3 @@
+reports:
+  "plots/mutations_summary_somatic/*.pdf":
+    display: "Mutations summary"

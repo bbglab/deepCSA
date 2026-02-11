@@ -97,19 +97,19 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { TABLE_2_GROUP             as TABLE2GROUP          } from '../modules/local/table2groups/main'
-include { ANNOTATE_DEPTHS           as ANNOTATEDEPTHS       } from '../modules/local/annotatedepth/main'
-include { DOWNSAMPLE_DEPTHS         as DOWNSAMPLEDEPTHS     } from '../modules/local/downsample/depths/main'
+include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../modules/local/table2groups/main'
+include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
+include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
 
-include { SELECT_MUTDENSITIES       as SYNMUTDENSITY        } from '../modules/local/select_mutdensity/main'
-include { SELECT_MUTDENSITIES       as SYNMUTREADSRATE      } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as SYNMUTDENSITY            } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY       } from '../modules/local/select_mutdensity/main'
 
-include { DNA_2_PROTEIN_MAPPING     as DNA2PROTEINMAPPING   } from '../modules/local/dna2protein/main'
+include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../modules/local/dna2protein/main'
 
 include { MAF_2_VCF                     as MAF2VCF                  } from '../modules/local/maf2vcf/main'
 include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR    } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
 
-include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/local/mutations2sbs/main'
+include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -120,81 +120,70 @@ include { MUTATIONS_2_SIGNATURES    as MUTS2SIGS            } from '../modules/l
 workflow DEEPCSA{
 
     // // Input channel definitions
-    features_table  = Channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
+    features_table  = channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
 
     wgs_trinucs     = params.wgs_trinuc_counts
-                            ? Channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.wgs_trinuc_counts, checkIfExists: true).first()
+                            : channel.empty()
     cosmic_ref      = params.cosmic_ref_signatures
-                            ? Channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first()
+                            : channel.empty()
     datasets3d      = params.datasets3d
-                            ? Channel.fromPath( params.datasets3d, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.datasets3d, checkIfExists: true).first()
+                            : channel.empty()
     annotations3d   = params.annotations3d
-                            ? Channel.fromPath( params.annotations3d, checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( params.annotations3d, checkIfExists: true).first()
+                            : channel.empty()
     seqinfo_df      = params.datasets3d
-                            ? Channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( "${params.datasets3d}/seq_for_mut_prob.tsv", checkIfExists: true).first()
+                            : channel.empty()
     cadd_scores     = params.cadd_scores
-                            ? Channel.of([
+                            ? channel.of([
                                 file(params.cadd_scores, checkIfExists : true),
                                 file(params.cadd_scores_ind, checkIfExists : true)
                                 ]).first()
-                            : Channel.empty()
+                            : channel.empty()
 
+    site_comparison_results         = channel.empty()
+    all_compiled_omegas             = channel.empty()
+    all_compiled_omegasgloballoc    = channel.empty()
+    all_mutdensities_file           = channel.empty()
 
-    site_comparison_results         = Channel.empty()
-    all_compiled_omegas             = Channel.empty()
-    all_compiled_omegasgloballoc    = Channel.empty()
-    all_mutdensities_file           = Channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
     custom_groups_table = params.custom_groups_file
-                                ? Channel.fromPath( params.custom_groups_file, checkIfExists: true).first()
-                                : Channel.fromPath(params.input)
+                                ? channel.fromPath( params.custom_groups_file, checkIfExists: true).first()
+                                : channel.fromPath(params.input)
 
     // if the user wants to use custom BED file for computing the depths, import the BED file
     // otherwise I am using the input csv as a dummy value channel
     custom_bed_file     = params.custom_bedfile
-                                ? Channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
-                                : Channel.fromPath( params.input )
+                                ? channel.fromPath( params.custom_bedfile, checkIfExists: true).first()
+                                : channel.fromPath( params.input )
 
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
-    def run_mutdensity         = (params.mutationdensity || params.omega)
+    def run_mutdensity      = (params.mutationdensity || params.omega)
 
-    //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    //
-    INPUT_CHECK (
-        file(params.input)
-    )
+    INPUT_CHECK( file(params.input), !params.use_custom_depths )
 
-
-    //
-    // Separate input BAMs and VCFs
-    //
-    INPUT_CHECK.out.mutations
+    // Separate samples and VCFs
+    INPUT_CHECK.out.sample_inputs
     .map{ it -> [ "id" : it[0].id ]}
     .set{ meta_samples_alone }
 
-    INPUT_CHECK.out.mutations
+    INPUT_CHECK.out.sample_inputs
     .map{ it -> [it[0], it[1]]}
     .set{ meta_vcfs_alone }
-
-    INPUT_CHECK.out.mutations
-    .map{ it -> [it[0], it[2]]}
-    .set{ meta_bams_alone }
 
 
     TABLE2GROUP(features_table)
     grouping_definitions = TABLE2GROUP.out.json_samples.concat(TABLE2GROUP.out.json_groups).concat(TABLE2GROUP.out.json_allgroups).collect()
 
     // Load group keys from JSON file in 'groups' channel
-    def group_keys = TABLE2GROUP.out.json_groups.map { json_path ->
+    TABLE2GROUP.out.json_groups.map { json_path ->
         def json = file(json_path).text
         groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
     }.flatten().unique()
@@ -203,10 +192,10 @@ workflow DEEPCSA{
 
     // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
+    DEPTHANALYSIS(INPUT_CHECK.out.sample_inputs, custom_bed_file)
 
     // Panels generation: all modalities
-    CREATEPANELS(DEPTHANALYSIS.out.depths)
+    CREATEPANELS(DEPTHANALYSIS.out.depths, wgs_trinucs)
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
@@ -219,8 +208,10 @@ workflow DEEPCSA{
         annotated_depths = annotated_depths_full
     }
 
-    PLOTDEPTHSALLCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
-    PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
+    if (params.plot_depths){
+        PLOTDEPTHSALLCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
+        PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
+    }
     PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
 
     // Mutation preprocessing
@@ -272,17 +263,17 @@ workflow DEEPCSA{
         MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel)
         MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel)
 
-        Channel.of([ [ id: "all_samples" ] ])
+        channel.of([ [ id: "all_samples" ] ])
         .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
         .set{ all_samples_syn_mutdensity }
 
         SYNMUTDENSITY(all_samples_syn_mutdensity)
 
-        SYNMUTREADSRATE(all_samples_syn_mutdensity)
+        SYNMUTREADSDENSITY(all_samples_syn_mutdensity)
 
 
         // Concatenate all outputs into a single file
-        Channel.empty()
+        channel.empty()
         .concat(MUTDENSITYALL.out.mutdensities.map{ it -> it[1]}.flatten())
         .concat(MUTDENSITYPROT.out.mutdensities.map{ it -> it[1]}.flatten())
         .concat(MUTDENSITYNONPROT.out.mutdensities.map{ it -> it[1]}.flatten())
@@ -294,7 +285,7 @@ workflow DEEPCSA{
 
 
     // Mutational profile
-    if (params.profileall){
+    if ( params.profileall || run_mutabilities || params.omega ){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
         if (run_mutdensity){
             MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
@@ -302,11 +293,11 @@ workflow DEEPCSA{
             // Concatenate all outputs into a single file
             MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities }
-            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true)
 
             MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities_flat }
-            all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensityadj", skip: 1, keepHeader: true)
+            all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true)
         }
     }
     if (params.profilenonprot){
@@ -363,7 +354,7 @@ workflow DEEPCSA{
 
     // OncodriveFML
     if (params.oncodrivefml){
-        oncodrivefml_regressions_files = Channel.empty()
+        oncodrivefml_regressions_files = channel.empty()
         if (params.profileall){
             mode = "all"
             ONCODRIVEFMLALL(somatic_mutations, MUTABILITYALL.out.mutability,
@@ -409,26 +400,28 @@ workflow DEEPCSA{
     }
 
     if (params.omega){
-        omega_regressions_files = Channel.empty()
-        omega_regressions_files_gloc = Channel.empty()
+        omega_regressions_files = channel.empty()
+        omega_regressions_files_gloc = channel.empty()
 
         // Omega
         if (params.profileall){
             OMEGA(somatic_mutations,
                     DEPTHSEXONSCONS.out.subset,
                     MUTPROFILEALL.out.profile,
-                    CREATEPANELS.out.exons_consensus_bed,
-                    ENRICHPANELS.out.exons_consensus_expanded_panel,
+                    CREATEPANELS.out.exons_consensus_bed.first(),
+                    ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
                     custom_groups_table,
-                    SYNMUTDENSITY.out.mutdensity,
+                    SYNMUTDENSITY.out.mutdensity.first(),
                     CREATEPANELS.out.panel_annotated_rich,
                     "",
                     grouping_definitions,
                     ENRICHPANELS.out.exons_json_subgenic
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
-            site_comparison_results = OMEGA.out.site_comparison
             all_compiled_omegas = OMEGA.out.all_compiled
+            if (params.omega_mutabilities){
+                site_comparison_results = OMEGA.out.site_comparison
+            }
             if (params.omega_globalloc){
                 positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
                 all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
@@ -445,17 +438,19 @@ workflow DEEPCSA{
                 OMEGAMULTI(somatic_mutations,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILEALL.out.profile,
-                            CREATEPANELS.out.exons_consensus_bed,
-                            ENRICHPANELS.out.exons_consensus_expanded_panel,
+                            CREATEPANELS.out.exons_consensus_bed.first(),
+                            ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
                             custom_groups_table,
-                            SYNMUTREADSRATE.out.mutdensity,
+                            SYNMUTREADSDENSITY.out.mutdensity.first(),
                             CREATEPANELS.out.panel_annotated_rich,
                             ".multi",
                             grouping_definitions,
                             ENRICHPANELS.out.exons_json_subgenic
                             )
                 positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
-                positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
+                if (params.omega_globalloc){
+                    positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
+                }
                 if (params.regressions){
                     omega_regressions_files = omega_regressions_files.mix(OMEGAMULTI.out.results.map{ it -> it[1] })
                     omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGAMULTI.out.results_global.map{ it -> it[1] })
@@ -466,10 +461,10 @@ workflow DEEPCSA{
             OMEGANONPROT(somatic_mutations,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
-                            CREATEPANELS.out.exons_consensus_bed,
-                            ENRICHPANELS.out.exons_consensus_expanded_panel,
+                            CREATEPANELS.out.exons_consensus_bed.first(),
+                            ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
                             custom_groups_table,
-                            SYNMUTDENSITY.out.mutdensity,
+                            SYNMUTDENSITY.out.mutdensity.first(),
                             CREATEPANELS.out.panel_annotated_rich,
                             ".non_protein_affecting",
                             grouping_definitions,
@@ -484,10 +479,10 @@ workflow DEEPCSA{
                 OMEGANONPROTMULTI(somatic_mutations,
                                     DEPTHSEXONSCONS.out.subset,
                                     MUTPROFILENONPROT.out.profile,
-                                    CREATEPANELS.out.exons_consensus_bed,
-                                    ENRICHPANELS.out.exons_consensus_expanded_panel,
+                                    CREATEPANELS.out.exons_consensus_bed.first(),
+                                    ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
                                     custom_groups_table,
-                                    SYNMUTREADSRATE.out.mutdensity,
+                                    SYNMUTREADSDENSITY.out.mutdensity.first(),
                                     CREATEPANELS.out.panel_annotated_rich,
                                     ".multi.non_protein_affecting",
                                     grouping_definitions,
@@ -527,7 +522,7 @@ workflow DEEPCSA{
 
     if (params.signatures){
 
-        Channel.of([ [ id: "all_samples" ] ])
+        channel.of([ [ id: "all_samples" ] ])
         .join( somatic_mutations )
         .set{ maf2vcf_inputs }
 
@@ -559,7 +554,26 @@ workflow DEEPCSA{
         }
     }
 
+    PLOTTINGQC(
+                somatic_mutations,
+                all_mutdensities_file.first(),
+                all_compiled_omegas,
+                // site_comparison_results,
+                // ANNOTATEDEPTHS.out.all_samples_depths,
+                // TABLE2GROUP.out.json_allgroups,
+                CREATEPANELS.out.exons_consensus_panel,
+                TABLE2GROUP.out.json_allgroups.first(),
+                group_keys_ch
+                // CREATEPANELS.out.panel_annotated_rich,
+                // seqinfo_df,
+                // CREATEPANELS.out.domains_in_panel,
+                // DNA2PROTEINMAPPING.out.depths_exons_positions
+                )
+
     if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) {
+        if (params.omega){
+            positive_selection_results = positive_selection_results.combine(PLOTTINGQC.out.flagged_omegas)
+        }
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         somatic_mutations,
@@ -570,34 +584,17 @@ workflow DEEPCSA{
                         TABLE2GROUP.out.json_samples.first(),
                         TABLE2GROUP.out.json_allgroups.first(),
 
-                        CREATEPANELS.out.exons_consensus_panel,
-                        ENRICHPANELS.out.exons_consensus_expanded_panel,
-                        CREATEPANELS.out.panel_annotated_rich,
+                        CREATEPANELS.out.exons_consensus_panel.first(),
+                        ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
+                        CREATEPANELS.out.panel_annotated_rich.first(),
 
                         seqinfo_df,
-                        CREATEPANELS.out.domains_in_panel,
-                        ENRICHPANELS.out.dna2protein_mapping_depth_exons,
+                        CREATEPANELS.out.domains_in_panel.first(),
+                        ENRICHPANELS.out.dna2protein_mapping_depth_exons.first(),
                         group_keys_ch
                         )
     }
 
-    // positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
-    PLOTTINGQC(
-                    // positive_selection_results_ready,
-                    somatic_mutations,
-                    all_mutdensities_file.first(),
-                    all_compiled_omegas,
-                    // site_comparison_results,
-                    // ANNOTATEDEPTHS.out.all_samples_depths,
-                    // TABLE2GROUP.out.json_allgroups,
-                    CREATEPANELS.out.exons_consensus_panel,
-                    TABLE2GROUP.out.json_allgroups.first(),
-                    group_keys_ch
-                    // CREATEPANELS.out.panel_annotated_rich,
-                    // seqinfo_df,
-                    // CREATEPANELS.out.domains_in_panel,
-                    // DNA2PROTEINMAPPING.out.depths_exons_positions
-                    )
 
     // Regressions
     if (params.regressions){
@@ -621,16 +618,16 @@ workflow DEEPCSA{
     }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
-        Channel.topic('versions').unique().collectFile(name: 'collated_versions.yml')
+        channel.topic('versions').unique().collectFile(name: 'collated_versions.yml')
     )
 
 
     //
     // MODULE: MultiQC
     //
-    ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-    ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+    ch_multiqc_config          = channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    ch_multiqc_custom_config   = params.multiqc_config ? channel.fromPath( params.multiqc_config, checkIfExists: true ) : channel.empty()
+    ch_multiqc_logo            = params.multiqc_logo   ? channel.fromPath( params.multiqc_logo, checkIfExists: true ) : channel.empty()
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
     // Info required for completion email and summary
@@ -638,12 +635,12 @@ workflow DEEPCSA{
 
     def summary_params = paramsSummaryMap(workflow)
     workflow_summary    = paramsSummaryMultiqc(summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    ch_workflow_summary = channel.value(workflow_summary)
 
     methods_description    = methodsDescriptionText(ch_multiqc_custom_methods_description)
-    ch_methods_description = Channel.value(methods_description)
+    ch_methods_description = channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())

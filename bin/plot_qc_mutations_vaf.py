@@ -296,26 +296,28 @@ def get_top_mutations_all_samples(maf_file, output_prefix, top_n=50):
     maf_df = pd.read_csv(maf_file, sep='\t', na_values=custom_na_values)
     most_repeated_mutations = maf_df["MUT_ID"].value_counts().reset_index()
     most_repeated_mutations.columns = ["MUT_ID", "COUNT"]
-    repeated_maf_df = maf_df.merge(most_repeated_mutations, on="MUT_ID")[['COUNT',
-                                                                 'MUT_ID',
-                                             'CONTEXT_MUT', 'canonical_SYMBOL',
-                                             'canonical_Consequence_single',
-                                             'canonical_Amino_acids'
-                                             ]].drop_duplicates().sort_values(by='COUNT', ascending=False)
+    repeated_maf_df = maf_df.merge(most_repeated_mutations,
+                                   on="MUT_ID")[['COUNT',
+                                                 'MUT_ID',
+                                                 'CONTEXT_MUT', 'canonical_SYMBOL',
+                                                 'canonical_Consequence_single',
+                                                 'canonical_Protein_position',
+                                                 'canonical_Amino_acids'
+                                                 ]].drop_duplicates().sort_values(by='COUNT', ascending=False)
 
     output_csv_path = f"{output_prefix}.cohort_most_repeated_mutations.tsv"
     repeated_maf_df.iloc[:200,:].to_csv(output_csv_path, sep='\t', index=False)
     print(f"Most repeated mutations saved to {output_csv_path}")
 
     most_repeated_mutations = maf_df.groupby(by =["MUT_ID",
-                                                  "FILTER",
+                                                  "canonical_SYMBOL",
                                                   "canonical_Consequence_single",
-                                                  "canonical_SYMBOL",                                                  
                                                   'canonical_Protein_position',
                                                   "canonical_Amino_acids"
                                                   ]).agg({"VAF": "mean",
                                                             "ALT_DEPTH": "mean",
-                                                            "SAMPLE_ID": "size"
+                                                            "SAMPLE_ID": "size",
+                                                            "FILTER": lambda x: ';'.join(sorted(x.unique()))
                                                             }).reset_index()
     most_repeated_mutations = most_repeated_mutations[most_repeated_mutations["SAMPLE_ID"] > 1]
 
