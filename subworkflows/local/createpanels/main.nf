@@ -1,21 +1,25 @@
-include { SITESFROMPOSITIONS                                            } from '../../../modules/local/sitesfrompositions/main'
-include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
+include { SITESFROMPOSITIONS                                                        } from '../../../modules/local/sitesfrompositions/main'
+include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL                         } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
 
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/panel/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL                      } from '../../../modules/local/process_annotation/panel/main'
 
-include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING             } from '../../../modules/local/process_annotation/panelcustom/main'
-include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH         } from '../../../modules/local/process_annotation/panelcustom/main'
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING                         } from '../../../modules/local/process_annotation/panelcustom/main'
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH                     } from '../../../modules/local/process_annotation/panelcustom/main'
 
-include { DOMAIN_ANNOTATION             as DOMAINANNOTATION             } from '../../../modules/local/process_annotation/domain/main'
+include { DOMAIN_ANNOTATION             as DOMAINANNOTATION                         } from '../../../modules/local/process_annotation/domain/main'
 
-include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
+include { CREATECAPTUREDPANELS                                                      } from '../../../modules/local/createpanels/captured/main'
 
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL            } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT     } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT  } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS          } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS        } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS     } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL                        } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT                 } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT              } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS                      } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS                    } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS                 } from '../../../modules/local/createpanels/consensus/main'
+
+
+include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS      } from '../../../modules/local/createpanels/compare/main'
+
 def restructurePanel(panel) {
         // return panel.map{ it -> [[id: it[0].name.tokenize('.')[0..1].join('.')], it[1]] }
         // return panel.map { it -> [[id: it.name.tokenize('.')[0..1].join('.')], it] }
@@ -26,6 +30,7 @@ workflow CREATE_PANELS {
 
     take:
     depths
+    wgs_trinucleotides
 
     main:
 
@@ -62,7 +67,7 @@ workflow CREATE_PANELS {
     } else {
         complete_annotated_panel = POSTPROCESSVEPPANEL.out.compact_panel_annotation
         rich_annotated = POSTPROCESSVEPPANEL.out.rich_panel_annotation
-        added_regions = Channel.empty()
+        added_regions = channel.empty()
     }
 
     domains = file(params.domains_file, checkIfExists: true)
@@ -92,13 +97,26 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSINTRONS(introns_panel, depths)
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
+    // Compare trinucleotide proportions in the panels to WGS background - QC plots
+    channel.empty()
+    .concat(CREATECONSENSUSPANELSALL.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSEXONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSINTRONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .collect()
+    .set{ all_consensus_panels }
+
+    COMPAREPANELPROPORTIONS(all_consensus_panels, wgs_trinucleotides)
+
 
     emit:
-    full_panel_annotated           = VCFANNOTATEPANEL.out.tab
+    full_panel_annotated           = VCFANNOTATEPANEL.out.tab.first()
     complete_annotated_panel       = complete_annotated_panel
 
-    panel_annotated_rich           = rich_annotated
-    added_custom_regions           = added_regions
+    panel_annotated_rich           = rich_annotated.first()
+    added_custom_regions           = added_regions.first()
     domains_panel_bed              = DOMAINANNOTATION.out.domains_bed.first()
     domains_in_panel               = DOMAINANNOTATION.out.domains_tsv.first()
 

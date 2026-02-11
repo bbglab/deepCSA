@@ -286,11 +286,65 @@ def flag_gnomad_snp(maf_df: pd.DataFrame) -> pd.DataFrame:
 
     return maf_df
 
+def flag_vaf_ns_threshold(maf_df: pd.DataFrame, vaf_ns_threshold: float) -> pd.DataFrame:
+
+    """
+    Flag variants that have a proportion of Ns higher than vaf_ns_threshold
+
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
+    vaf_ns_threshold : float
+        VAF of Ns threshold for filtering variants
+
+    Returns
+    -------
+    maf_df : pandas.DataFrame
+        MAF dataframe with variants exceeding VAF_Ns threshold flagged
+    """
+    LOG.info("Flagging variants with proportion of Ns higher than VAF_Ns threshold...")
+
+    maf_df["high_n_vaf"] = maf_df[["VAF_Ns", "VAF_Ns_AM"]].ge(vaf_ns_threshold).any(axis=1)
+    LOG.info("%s muts flagged as high_n_vaf", maf_df["high_n_vaf"].sum())
+
+    maf_df["FILTER"] = maf_df[["FILTER","high_n_vaf"]].apply(
+                                                                lambda x: add_filter(x["FILTER"], x["high_n_vaf"], "high_n_vaf"),
+                                                                axis = 1
+                                                            )
+    maf_df = maf_df.drop("high_n_vaf", axis = 1)
+
+    return maf_df
+
+def flag_distorted_expanded(maf_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    If there is a column named VAF_distorted_expanded_sq, add a filter flag for variants with distorted VAF distribution.
+
+    Parameters
+    ----------
+    maf_df : pandas.DataFrame
+        MAF dataframe
+
+    Returns
+    -------
+    maf_df : pandas.DataFrame
+        MAF dataframe with variants having distorted VAF distribution flagged
+    """
+    LOG.info("Flagging variants with distorted VAF distribution...")
+
+    if 'VAF_distorted_expanded_sq' in maf_df.columns:
+        maf_df["FILTER"] = maf_df[["FILTER","VAF_distorted_expanded_sq"]].apply(
+                                                lambda x: add_filter(x["FILTER"], x["VAF_distorted_expanded_sq"], "VAF_distorted_expanded_sq"),
+                                                axis = 1
+                                                                                )
+
+    return maf_df
 
 def flag_maf(maf_df: pd.DataFrame, sample_name: str,
                repetitive_variant_threshold: int,
                somatic_vaf_boundary: float,
-               n_rich_cohort_proportion: float) -> None:
+               n_rich_cohort_proportion: float,
+               vaf_ns_threshold: float) -> None:
     """
     Script to process a MAF (Mutation Annotation Format) file.
     It filters out repetitive variants, cohort_n_rich variants, and SNPs from other samples.
@@ -307,6 +361,8 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
         VAF threshold to distinguish somatic mutations
     n_rich_cohort_proportion : float
         Proportion threshold for n-rich cohort filtering
+    vaf_ns_threshold : float
+        VAF of Ns threshold for filtering variants
     """
     ## Filter repetitive variants,
     # both based on frequency and including information on position in read
@@ -315,11 +371,17 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
     ## Filter cohort_n_rich variants
     maf_df = flag_cohort_n_rich(maf_df, n_rich_cohort_proportion, somatic_vaf_boundary)
 
-    ### Filter other sample's SNP
+    ## Filter variants with high VAF of Ns
+    maf_df = flag_vaf_ns_threshold(maf_df, vaf_ns_threshold)
+
+    ## Filter other sample's SNP
     maf_df = flag_other_samples_snp(maf_df, somatic_vaf_boundary)
 
     ## Filter gnomad SNP
     maf_df = flag_gnomad_snp(maf_df)
+
+    ## Optionally, flag variants with distorted VAF distribution if the corresponding column is present
+    maf_df = flag_distorted_expanded(maf_df)
 
     ## Expand FILTER column
     maf_df = expand_filter_column(maf_df)
@@ -338,8 +400,9 @@ def flag_maf(maf_df: pd.DataFrame, sample_name: str,
 @click.option('--repetitive-variant-threshold', required=True, type=int, help='Threshold for repetitive variants')
 @click.option('--somatic-vaf-boundary', required=True, type=float, help='VAF boundary for somatic variants')
 @click.option('--n-rich-cohort-proportion', required=True, type=float, help='Proportion for n-rich cohort filtering')
+@click.option('--vaf-ns-threshold', required=False, type=float, default=0.1, help='VAF of Ns threshold for filtering variants')
 def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
-         somatic_vaf_boundary: float, n_rich_cohort_proportion: float):
+         somatic_vaf_boundary: float, n_rich_cohort_proportion: float, vaf_ns_threshold: float):
     """
     CLI wrapper for flag_maf function.
     """
@@ -351,7 +414,8 @@ def main(maf_df_file: str, sample_name: str, repetitive_variant_threshold: int,
         sample_name,
         repetitive_variant_threshold,
         somatic_vaf_boundary, 
-        n_rich_cohort_proportion)
+        n_rich_cohort_proportion,
+        vaf_ns_threshold)
     
 
 if __name__ == '__main__':

@@ -61,7 +61,8 @@ def preprocess(annotation_file: str, depths_file: str) -> tuple[pl.DataFrame, li
 
     sample_columns = [col for col in annot_depth.columns if col not in COLS]
 
-    rename_map = {col: col.split('.')[0] for col in sample_columns}  # Dict to remove the .*.bam suffix
+    # Dict to remove the .*.bam suffix if there is one
+    rename_map = {col: col.split('.')[0] if "bam" in col else col for col in sample_columns}
 
     # Ensure all columns but CHROM and CONTEXT are numeric
     annot_depth = annot_depth.with_columns([

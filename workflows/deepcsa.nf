@@ -206,7 +206,7 @@ workflow DEEPCSA{
     DEPTHANALYSIS(meta_bams_alone, custom_bed_file)
 
     // Panels annotation
-    CREATEPANELS(DEPTHANALYSIS.out.depths)
+    CREATEPANELS(DEPTHANALYSIS.out.depths, wgs_trinucs)
 
     // Mutation preprocessing
     MUT_PREPROCESSING(meta_vcfs_alone,

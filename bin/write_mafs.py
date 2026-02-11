@@ -106,16 +106,27 @@ def main(maf_file, groups_json, filters: str, somatic_filters: str):
     with open(groups_json, 'r') as file:
         groups_info = json.load(file)
 
-    # Obtain the set of all samples
-    all_samples_bed = list(groups_info.get("all_samples"))
+    # Obtain the set of all samples to be analyzed
+    all_samples = set(groups_info.get("all_samples"))
+    # Obtain the set of samples for which we have information in the MAF file
+    available_samples = set(maf_df["SAMPLE_ID"].unique())
 
+    requested_n_available_samples = available_samples.intersection(all_samples)
+
+    if len(all_samples) != len(requested_n_available_samples):
+        missing_samples = all_samples - available_samples
+
+        error = f"Some SAMPLE_IDs listed in the features table have no matching entries in the MAF file. Missing SAMPLE_IDs: {', '.join(missing_samples)}"
+        LOG.error(error)
+        raise ValueError(error)
+        
     for group_name, samples in groups_info.items():
         samples = [str(x) for x in samples]
         # Extract group-specific MAFs
         create_group_mafs(maf_df, group_name, samples)
 
     # Extract flagged regions for each sample in the group if not already done
-    create_sample_flagged_bed(maf_df, all_samples_bed, filter_criteria)
+    create_sample_flagged_bed(maf_df, list(all_samples), filter_criteria)
 
     # Extract flagged regions to BED file (cohort-wide, applies to all samples)
     LOG.info("Extracting all flagged positions to BED file.")
