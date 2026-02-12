@@ -1,25 +1,26 @@
 // Annotation
-include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATE      } from '../../nf-core/vcf_annotate_ensemblvep/main'
+include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATE      }   from '../../nf-core/vcf_annotate_ensemblvep/main'
 
 
-include { SUMMARIZE_ANNOTATION          as SUMANNOTATION    } from '../../../modules/local/process_annotation/mutations/main'
-include { CUSTOM_MUTATION_PROCESSING    as CUSTOMANNOTATION } from '../../../modules/local/process_annotation/mutations_custom/main'
-include { VCF2MAF                       as VCF2MAF          } from '../../../modules/local/vcf2maf/main'
-include { FILTERBED                     as FILTERPANEL      } from '../../../modules/local/filterbed/main'
-include { FILTERBED                     as FILTEREXONS      } from '../../../modules/local/filterbed/main'
-include { FILTERBED                     as FILTERNANOSEQSNP } from '../../../modules/local/filterbed/main'
-include { FILTERBED                     as FILTERNANOSEQNOISE} from '../../../modules/local/filterbed/main'
-include { MERGE_BATCH                   as MERGEBATCH       } from '../../../modules/local/mergemafs/main'
-include { FILTER_BATCH                  as FILTERBATCH      } from '../../../modules/local/filtermaf/main'
-include { WRITE_MAFS                    as WRITEMAF         } from '../../../modules/local/writemaf/main'
-include { SUBSET_MAF                    as SOMATICMUTATIONS } from '../../../modules/local/subsetmaf/main'
-include { SUBSET_MAF                    as CLEANMUTATIONS   } from '../../../modules/local/subsetmaf/main'
-include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    } from '../../../modules/local/blacklistmuts/main'
-include { PLOT_MUTATIONS                as PLOTMAF          } from '../../../modules/local/plot/mutations_summary/main'
-include { PLOT_MUTATIONS                as PLOTSOMATICMAF   } from '../../../modules/local/plot/mutations_summary/main'
-include { PLOT_NEEDLES                  as PLOTNEEDLES      } from '../../../modules/local/plot/needles/main'
-include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   } from '../../../modules/local/downsample/mutations/main'
-include { COMPUTE_CONTAMINATION         as CONTAMINATION    } from '../../../modules/local/contamination/main'
+include { SUMMARIZE_ANNOTATION          as SUMANNOTATION    }   from '../../../modules/local/process_annotation/mutations/main'
+include { CUSTOM_MUTATION_PROCESSING    as CUSTOMANNOTATION }   from '../../../modules/local/process_annotation/mutations_custom/main'
+include { VCF2MAF                       as VCF2MAF          }   from '../../../modules/local/vcf2maf/main'
+include { FILTERBED                     as FILTERPANEL      }   from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTEREXONS      }   from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQSNP }   from '../../../modules/local/filterbed/main'
+include { FILTERBED                     as FILTERNANOSEQNOISE } from '../../../modules/local/filterbed/main'
+include { CREATE_MASK_MATRIX            as CREATEMASKMATRIX }   from '../../../modules/local/createmaskmatrix/main'
+include { MERGE_BATCH                   as MERGEBATCH       }   from '../../../modules/local/mergemafs/main'
+include { FILTER_BATCH                  as FILTERBATCH      }   from '../../../modules/local/filtermaf/main'
+include { WRITE_MAFS                    as WRITEMAF         }   from '../../../modules/local/writemaf/main'
+include { SUBSET_MAF                    as SOMATICMUTATIONS }   from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                    as CLEANMUTATIONS   }   from '../../../modules/local/subsetmaf/main'
+include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    }   from '../../../modules/local/blacklistmuts/main'
+include { PLOT_MUTATIONS                as PLOTMAF          }   from '../../../modules/local/plot/mutations_summary/main'
+include { PLOT_MUTATIONS                as PLOTSOMATICMAF   }   from '../../../modules/local/plot/mutations_summary/main'
+include { PLOT_NEEDLES                  as PLOTNEEDLES      }   from '../../../modules/local/plot/needles/main'
+include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   }   from '../../../modules/local/downsample/mutations/main'
+include { COMPUTE_CONTAMINATION         as CONTAMINATION    }   from '../../../modules/local/contamination/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -88,9 +89,10 @@ workflow MUTATION_PREPROCESSING {
         filtered_maf_masks = params.nanoseq_noise ? FILTERNANOSEQNOISE.out.maf : filtered_maf_snp
     }
     filtered_maf_panels = masks_applied ? filtered_maf_masks : FILTERPANEL.out.maf
+
     // Join all samples' MAFs and put them in a channel to be merged
     filtered_maf_panels.map{ it -> it[1] }.collect().map{ it -> [[ id:"all_samples" ], it]}.set{ samples_maf }
-
+    
     MERGEBATCH(samples_maf)
 
     FILTERBATCH(MERGEBATCH.out.cohort_maf)
@@ -98,6 +100,9 @@ workflow MUTATION_PREPROCESSING {
     PLOTMAF(FILTERBATCH.out.cohort_maf)
 
     WRITEMAF(FILTERBATCH.out.cohort_maf, all_groups)
+    
+    // Create the mask matrix used to mask positions in the depths
+    CREATEMASKMATRIX(WRITEMAF.out.sample_flagged_beds)
 
     // Here we flatten the output of the WRITEMAF module to have a channel where each item is a sample-maf pair
     WRITEMAF.out.mafs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ named_mafs }
@@ -125,7 +130,6 @@ workflow MUTATION_PREPROCESSING {
     // Keep only somatic mutations
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
 
-    
 
     channel.of([["id": "all_samples"]])
     .join(named_mafs).first()
@@ -170,6 +174,7 @@ workflow MUTATION_PREPROCESSING {
 
     emit:
     mafs                    = named_mafs
+    mask_matrix             = CREATEMASKMATRIX.out.mask_matrix
     somatic_mafs            = SOMATICMUTATIONS.out.mutations
     clean_mafs              = CLEANMUTATIONS.out.mutations
     mutations_all_samples   = muts_all_samples

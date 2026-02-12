@@ -23,7 +23,7 @@ include { PLOT_DEPTHS               as PLOTDEPTHSEXONSCONS  } from '../subworkfl
 
 include { MUTATION_PREPROCESSING    as MUT_PREPROCESSING    } from '../subworkflows/local/mutationpreprocessing/main'
 
-include { ENRICHPANELS              as ENRICHPANELS           } from '../subworkflows/local/enrichpanels/main'
+include { ENRICHPANELS              as ENRICHPANELS         } from '../subworkflows/local/enrichpanels/main'
 
 
 include { MUTATION_DENSITY          as MUTDENSITYALL           } from '../subworkflows/local/mutationdensity/main'
@@ -194,10 +194,23 @@ workflow DEEPCSA{
     // Depth analysis: compute and plots
     DEPTHANALYSIS(INPUT_CHECK.out.sample_inputs, custom_bed_file)
 
-    // Panels generation: all modalities
+    // Panels annotation
     CREATEPANELS(DEPTHANALYSIS.out.depths, wgs_trinucs)
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, file(params.input))
+    // Mutation preprocessing
+    MUT_PREPROCESSING(meta_vcfs_alone,
+                        CREATEPANELS.out.all_consensus_bed,
+                        CREATEPANELS.out.exons_bed,
+                        TABLE2GROUP.out.json_allgroups,
+                        group_keys_ch,
+                        seqinfo_df,
+                        CREATEPANELS.out.added_custom_regions
+                        )
+    somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
+
+    positive_selection_results = somatic_mutations
+
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, MUT_PREPROCESSING.out.mask_matrix)
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
 
     // if (params.downsample && params.downsample_proportion < 1) {
@@ -213,20 +226,6 @@ workflow DEEPCSA{
         PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
     }
     PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
-
-    // Mutation preprocessing
-    MUT_PREPROCESSING(meta_vcfs_alone,
-                        CREATEPANELS.out.all_consensus_bed,
-                        CREATEPANELS.out.exons_bed,
-                        TABLE2GROUP.out.json_allgroups,
-                        group_keys_ch,
-                        seqinfo_df,
-                        CREATEPANELS.out.added_custom_regions
-                        )
-    somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
-
-    positive_selection_results = somatic_mutations
-
 
     // Enrich regions in consensus panels
     ENRICHPANELS(MUT_PREPROCESSING.out.mutations_all_samples,

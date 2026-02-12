@@ -5,7 +5,7 @@ import click
 import json
 import pandas as pd
 
-from utils import filter_maf
+from utils_filter import filter_maf
 from read_utils import custom_na_values
 
 
