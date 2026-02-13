@@ -31,6 +31,8 @@ def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, f
     triplet_counts = np.array(l)
 
     # genome length in Mb
+    #   accounting for the fact that each position contributes:
+    #   3*depth because of the 3 mutations available at each position
     genome_length = sum(triplet_counts) / (3 * 1e6)
 
     # vector of relative mutabilities in 96-channel canonical sorting
@@ -66,12 +68,13 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
             # compute vector of sum of depths per trinucleotide context
             # tailored to the specific gene-impact target
             if gene == 'ALL_GENES':
-                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set))][['CHROM', 'POS']].drop_duplicates()
+                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set))][['CHROM', 'POS', 'REF', 'ALT']].drop_duplicates()
             else:
-                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)][['CHROM', 'POS']].drop_duplicates()
+                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)][['CHROM', 'POS', 'REF', 'ALT']].drop_duplicates()
 
-            # counting every position once
-            dh = pd.merge(region_df,
+            # counting every position as many times as the number of possible
+            # mutations of the selected consequences at that position (1,2 or 3)
+            dh = pd.merge(region_df[['CHROM', 'POS']],
                           depths_df[['CHROM', 'POS', 'CONTEXT', sample_name]],
                           on=['CHROM', 'POS'], how='left')
             depth_sum_df = dh.groupby(by='CONTEXT').agg({sample_name: 'sum'}).reset_index()
