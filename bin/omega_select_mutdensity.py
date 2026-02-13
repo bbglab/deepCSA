@@ -17,7 +17,7 @@ def select_syn_mutdensity(mutdensity_file, output_file, mode):
 
     mutdensity_df = pd.read_csv(mutdensity_file, sep = "\t", header = 0, na_values = custom_na_values)
 
-    synonymous_mutdensities_all_samples = mutdensity_df[(mutdensity_df["SAMPLE"] == 'all_samples') &
+    synonymous_mutdensities_all_samples = mutdensity_df[(mutdensity_df["SAMPLE_ID"] == 'all_samples') &
                                                         ~(mutdensity_df["GENE"].str.contains("--"))
                                                         ]["synonymous"].reset_index(drop = True)
 
