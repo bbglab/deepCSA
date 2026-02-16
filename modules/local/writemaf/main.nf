@@ -10,10 +10,10 @@ process WRITE_MAFS {
     path (json_groups)
 
     output:
-    path("*.filtered.tsv.gz")                   , emit: mafs
-    path("*.flagged-pos.bed")                   , emit: sample_flagged_beds
-    path("all_samples.all-flagged-pos.bed")
-    path("all_samples.cohort-wide-flagged-pos.bed")
+    path("*.filtered.tsv.gz")                                       , emit: mafs
+    path("*.flagged-pos.bed")                                       , emit: sample_flagged_beds
+    path("all_samples.all-flagged-pos.bed")         , optional: true
+    path("all_samples.cohort-wide-flagged-pos.bed") , optional: true
     path "versions.yml"                         , topic: versions
 
     script:
