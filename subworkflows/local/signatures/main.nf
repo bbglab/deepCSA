@@ -16,12 +16,12 @@ workflow SIGNATURES {
 
     MATRIXCONCATWGS(all_matrices_wgs, samples)
 
-    MATRIXCONCATWGS.out.wgs_tsv.flatten()
+    MATRIXCONCATWGS.out.wgs_round_tsv.flatten()
     .map{ it -> 
         def parts = it.name.tokenize('.')
         [ [id: parts[0]], parts[1], it ]
     }
-    .set{ named_matrices_wgs }
+    .set{ named_matrices_wgs_sp }
 
     MATRIXCONCATWGS.out.wgs_tsv_hdp.flatten()
     .map{ it -> 
@@ -30,7 +30,7 @@ workflow SIGNATURES {
     }
     .set{ named_matrices_wgs_hdp }
 
-    SIGPROFILERASSIGNMENT(named_matrices_wgs, reference_signatures)
+    SIGPROFILERASSIGNMENT(named_matrices_wgs_sp, reference_signatures)
 
     SIGPROFILERASSIGNMENT.out.mutation_probs.map{ it -> it[1] }.collect().map{ it -> [[ id: "all_samples" ], it]}.set{ all_sigs_probs }
     SIGPROBS(all_sigs_probs)
