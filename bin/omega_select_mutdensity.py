@@ -19,9 +19,9 @@ def select_syn_mutdensity(mutdensity_file, output_file, mode):
 
     synonymous_mutdensities_all_samples = mutdensity_df[(mutdensity_df["SAMPLE_ID"] == 'all_samples') &
                                                         ~(mutdensity_df["GENE"].str.contains("--"))
-                                                        ]["synonymous"].reset_index(drop = True)
+                                                        ].reset_index(drop = True)
 
-    synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'synonymous']]
+    synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'synonymous']].copy()
 
     # TODO implement these different modes if appropriate
     # if mode == 'mutations':
