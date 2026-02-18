@@ -150,7 +150,7 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[s
     if maf_df_filters.empty:
         LOG.warning("No mutations were flagged based on the applied filters. Creating empty BED file.")
         # Create empty BED file to satisfy pipeline requirements
-        Path(f"{name}.flagged-pos.bed").touch()
+        Path(f"{name}.{specification}flagged-pos.bed").touch()
         return
 
     # Create BED-like dataframe with filter columns
