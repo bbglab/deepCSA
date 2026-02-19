@@ -96,8 +96,8 @@ def create_sample_flagged_bed(maf_df: pd.DataFrame, samples: list[str], filter_c
 @click.command()
 @click.option('--maf-file', required=True, type=click.Path(exists=True), help='Input gzipped MAF file (TSV)')
 @click.option('--groups-json', required=True, type=click.Path(exists=True), help='Optional JSON file with group/sample mapping')
-@click.option('--filters', required=True, type=str, default='', help='Comma-separated list of filter criteria')
-@click.option('--somatic-filters', required=True, type=str, default='', help='Comma-separated list of somatic filter criteria')
+@click.option('--filters', required=False, type=str, default='', help='Comma-separated list of filter criteria')
+@click.option('--somatic-filters', required=False, type=str, default='', help='Comma-separated list of somatic filter criteria')
 def main(maf_file, groups_json, filters: str, somatic_filters: str):
     maf_df = pd.read_csv(maf_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)
     maf_df["SAMPLE_ID"] = maf_df["SAMPLE_ID"].astype(str)
