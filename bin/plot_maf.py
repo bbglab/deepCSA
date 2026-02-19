@@ -241,12 +241,12 @@ def variable_plot_wrapper(sample_name, maf, parameters = {}):
     return fig_list
 
 
-def plot_mutation_counts(maf):
+def plot_mutation_counts(maf, count_column):
 
     hue_order = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"]
 
     # Convert 'ALT_DEPTH' values to '10+'
-    maf['ALT_DEPTH_cat'] = maf['ALT_DEPTH'].apply(
+    maf['ALT_DEPTH_cat'] = maf[count_column].apply(
         lambda x: '10+' if x >= 10 else str(x)
     )
 
@@ -272,7 +272,7 @@ def plot_mutation_counts(maf):
         )
 
     ax.set_xlabel("")
-    ax.set_ylabel("Proportion of mutations with\nalternate reads count of N")
+    ax.set_ylabel(f"Proportion of mutations with\nalternate reads count of N\n{count_column}")
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
     sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1), title="Number of\nalternate\nreads")
@@ -327,7 +327,11 @@ def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
                     plt.close()
             
             # add mutation counts plot
-            fig = plot_mutation_counts(maf)
+            fig = plot_mutation_counts(maf, 'ALT_DEPTH')
+            pdf.savefig(fig)
+            plt.close()
+
+            fig = plot_mutation_counts(maf, 'ALT_DEPTH_AM')
             pdf.savefig(fig)
             plt.close()
 
