@@ -103,6 +103,7 @@ include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../m
 
 include { SELECT_MUTDENSITIES           as SYNMUTDENSITY            } from '../modules/local/select_mutdensity/main'
 include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY       } from '../modules/local/select_mutdensity/main'
+include { DNDS_PROXY                    as DNDSPROXY                } from '../modules/local/dnds_proxy/main'
 
 include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../modules/local/dna2protein/main'
 
@@ -280,6 +281,8 @@ workflow DEEPCSA{
             SYNMUTDENSITY(all_samples_adj_mutdensity)
 
             SYNMUTREADSDENSITY(all_samples_adj_mutdensity)
+
+            DNDSPROXY(compiled_adjusted_mutdensities, SYNMUTDENSITY.out.mutdensity.first())
         }
     }
     if (params.profilenonprot){
