@@ -23,10 +23,11 @@ def compute_dnds_proxy(mutdensity_file, cohort_syn_mutdensities_file, output_fil
     cohort_syn_mutdensity_df = cohort_syn_mutdensity_df.set_index("GENE")
 
     init_cohort_syn_df = pd.DataFrame(index = all_possible_genes)
-    cohort_syn_df = pd.concat((init_cohort_syn_df, cohort_syn_mutdensity_df), axis = 0)
+    cohort_syn_df = pd.concat((init_cohort_syn_df, cohort_syn_mutdensity_df), axis = 1)
     
     # filling the null mutation densities with the value of the 1st decile
-    cohort_syn_df = cohort_syn_df.fillna(cohort_syn_df[~(cohort_syn_df.isna())].quantile(.1))
+    cohort_syn_df = cohort_syn_df.fillna(cohort_syn_df[~(cohort_syn_df.isna())].quantile(.1)).reset_index()
+    cohort_syn_df.columns = ['GENE', 'cohort_synonymous']
 
     mutdensity_df = mutdensity_df_init.merge(cohort_syn_df, on = "GENE")
     for impact in ["missense", "truncating", "nonsynonymous_splice"]:
@@ -34,18 +35,18 @@ def compute_dnds_proxy(mutdensity_file, cohort_syn_mutdensities_file, output_fil
         mutdensity_df[f"d_{impact}/d_cohort_synonymous"] = mutdensity_df[impact] / mutdensity_df["cohort_synonymous"]
 
     # summary at all_samples level
-    subset_mutdensities = mutdensity_df[(mutdensity_df["SAMPLE"] == 'all_samples')]
+    subset_mutdensities = mutdensity_df[(mutdensity_df["SAMPLE_ID"] == 'all_samples')]
     for impact in ["missense", "truncating"]:
         print(subset_mutdensities.sort_values(by=f"d_{impact}/d_synonymous", ascending=False)[
-            ["GENE", "SAMPLE", impact, "synonymous", f"d_{impact}/d_synonymous"]
+            ["GENE", "SAMPLE_ID", impact, "synonymous", f"d_{impact}/d_synonymous"]
             ].head(10))
 
 
     # # summary at sample-level
-    # subset_mutdensities = mutdensity_df[(mutdensity_df["SAMPLE"] != 'all_samples')]
+    # subset_mutdensities = mutdensity_df[(mutdensity_df["SAMPLE_ID"] != 'all_samples')]
     # for impact in ["missense", "truncating"]:
     #     print(subset_mutdensities.sort_values(by=f"d_{impact}/d_synonymous", ascending=False)[
-    #         ["GENE", "SAMPLE", impact, "synonymous", f"d_{impact}/d_synonymous"]
+    #         ["GENE", "SAMPLE_ID", impact, "synonymous", f"d_{impact}/d_synonymous"]
     #         ].head(10))
 
     # TODO implement these different modes if appropriate
