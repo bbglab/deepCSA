@@ -9,8 +9,8 @@ process DNDS_PROXY {
     tuple val(meta), path(cohort_synonymous_mutdensities)
 
     output:
-    tuple val(meta), path("*.gene_mutdensities.tsv") , emit: mutdensity
-    path  "versions.yml"                             , topic: versions
+    tuple val(meta), path("*.gene_mutdensities_n_dnds.tsv") , emit: mutdensity_with_dnds
+    path  "versions.yml"                                    , topic: versions
 
 
 

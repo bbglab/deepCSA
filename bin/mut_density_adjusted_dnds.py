@@ -3,6 +3,7 @@
 
 import click
 import pandas as pd
+import numpy as np
 from read_utils import custom_na_values
 
 
@@ -16,6 +17,7 @@ def compute_dnds_proxy(mutdensity_file, cohort_syn_mutdensities_file, output_fil
     """
 
     mutdensity_df_init = pd.read_csv(mutdensity_file, sep = "\t", header = 0, na_values = custom_na_values)
+    mutdensity_df_init["synonymous"] = mutdensity_df_init["synonymous"].replace(0, np.nan)
     all_possible_genes = list(mutdensity_df_init["GENE"].unique())
 
     cohort_syn_mutdensity_df = pd.read_csv(cohort_syn_mutdensities_file, sep = "\t", header = 0, na_values = custom_na_values)
