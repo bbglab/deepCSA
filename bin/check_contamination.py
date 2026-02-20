@@ -315,7 +315,7 @@ def contamination_detection(maf_file, somatic_maf_file):
         print()
 
 
-        subseeeet = maf_df[["SAMPLE_ID", "MUT_ID", 'canonical_SYMBOL', 'canonical_Consequence_broader', 'FILTER', "ALT_DEPTH", "DEPTH", "VAF"]]
+        subseeeet = maf_df[["SAMPLE_ID", "MUT_ID", 'canonical_SYMBOL', "ALT_DEPTH", "DEPTH", "VAF", 'canonical_Consequence_broader', 'FILTER']]
         p_dest = subseeeet[subseeeet["SAMPLE_ID"] == sample].drop("SAMPLE_ID", axis = 1)
 
         p_source_germ = germline_vars_all_samples[germline_vars_all_samples["SAMPLE_ID"] == source_sampleid]
