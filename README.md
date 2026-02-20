@@ -16,8 +16,8 @@ First, prepare a samplesheet with your input data that looks as follows:
 
 ```csv
 sample,vcf,bam
-sample1,sample1.high.filtered.vcf,sample1.sorted.bam
-sample2,sample2.high.filtered.vcf,sample2.sorted.bam
+sample1,sample1.filtered.vcf,sample1.sorted.bam
+sample2,sample2.filtered.vcf,sample2.sorted.bam
 ```
 
 Each row represents a single sample with a single-sample VCF containing the mutations called in that sample and the BAM file that was used for getting those variant calls. The mutations will be obtained from the VCF and the BAM file will be used for computing the sequencing depth at each position and using this for the downstream analysis.
@@ -27,8 +27,6 @@ Each row represents a single sample with a single-sample VCF containing the muta
 **There are specific datasets that need to be prepared before running deepCSA. You can find a list of those, and instructions for downloading them in [the documentation section of the repo](docs/usage.md#mandatory-parameter-configuration).**
 
 After making sure that these files are ready, you can now run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 git clone https://github.com/bbglab/deepCSA.git
@@ -74,4 +72,14 @@ We are working to provide the biggest possible detail on the [usage](docs/usage.
 
 ## Publications
 
-> [Sex and smoking bias in the selection of somatic mutations in human bladder](https://www.nature.com/articles/s41586-025-09521-x)
+> **Sex and smoking bias in the selection of somatic mutations in human bladder**
+>
+> Ferriol Calvet, Raquel Blanco Martinez-Illescas, Ferran Muiños, Maria Tretiakova, Elena S. Latorre-Esteves, Jeanne Fredrickson, Maria Andrianova, Stefano Pellegrini, Axel Rosendahl Huber, Joan Enric Ramis-Zaldivar, Shuyi Charlotte An, Elana Thieme, Brendan F. Kohrn, Miguel L. Grau, Abel Gonzalez-Perez, Nuria Lopez-Bigas & Rosa Ana Risques
+>
+>_Nature_ (2025) doi:[10.1038/s41586-025-09521-x](https://doi.org/10.1038/s41586-025-09521-x)
+
+> **DeepClone, an end-to-end protocol to study somatic mutagenesis and selection at high resolution**
+>
+> Ferriol Calvet, Morena Pinheiro-Santin, Erika Lopez,Raquel Blanco Martinez-Illescas, Núria Samper, Miguel L. Grau, Ferran Muiños,Rocío Chamorro González, Maria Andrianova, Federica Brando,Stefano Pellegrini, Marta Huertas, Elisabet Figuerola-Bou,Coohleen Coombes,Brendan F. Kohrn, Jeanne Fredrickson, Rosa Ana Risques, Nuria Lopez-Bigas, Abel Gonzalez-Perez
+>
+> _protocols.io_ (2026) doi:[10.17504/protocols.io.dm6gp1jodgzp/v2](https://dx.doi.org/10.17504/protocols.io.dm6gp1jodgzp/v2)
