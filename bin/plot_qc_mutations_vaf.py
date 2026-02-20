@@ -361,6 +361,32 @@ def get_top_mutations(maf_file, output_prefix, top_n=50):
         output_csv_path = f"{output_prefix}.top_{top_n}_mutations_by_{criteria}.tsv"
         top_mutations_small.to_csv(output_csv_path, sep='\t', index=False)
         print(f"Top {top_n} mutations by {criteria} saved to {output_csv_path}")
+        
+    def plot_vaf_vs_vafam_histogram (maf_file, output_pdf):
+        """
+        Plot VAF distribution compared to VAF_AM in a histogram.
+        
+        Parameters:
+        -----------
+        maf_df : DataFrame
+            MAF dataframe containing VAF and VAF_AM columns
+        """
+        df_long = maf_file.melt(value_vars=["VAF", "VAF_AM"], 
+                           var_name="VAF_type", 
+                           value_name="VAF_values")
+
+        fig, ax = plt.subplots(figsize=(5, 4))
+        sns.histplot(data=df_long, x="VAF_value", hue="VAF_type", 
+                     ax=ax, palette=["dodgerblue", "orange"],
+                     log_scale=True, element="step")
+
+        plt.title('VAF vs VAF_AM distribution', 
+                    fontsize=plots_general_config["title_fontsize"])
+        plt.tight_layout()
+        output_pdf.savefig()
+        plt.close()
+        plt.show()
+
 
 @click.command()
 @click.option('--sample_name', type=str, required=True, help='Name of the sample')
@@ -386,6 +412,7 @@ def main(sample_name, maf_file, output_prefix, max_n):
             maf_df = pd.read_csv(maf_file, sep='\t', na_values=custom_na_values)
             plot_vaf_vs_depth_per_site(maf_df, pdf, sample_name, max_n=max_n)
             plot_vaf_depth_heatmap(maf_df, pdf, sample_name)
+            plot_vaf_vs_vafam_histogram(maf_df, pdf)
     
     print(f"Plots saved to {output_pdf_path}")
 
