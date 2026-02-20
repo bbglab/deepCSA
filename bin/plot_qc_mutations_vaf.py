@@ -362,7 +362,7 @@ def get_top_mutations(maf_file, output_prefix, top_n=50):
         top_mutations_small.to_csv(output_csv_path, sep='\t', index=False)
         print(f"Top {top_n} mutations by {criteria} saved to {output_csv_path}")
         
-def plot_vaf_vs_vafam_histogram (maf_file, output_pdf):
+def plot_vaf_vs_vafam_histogram (maf_df, output_pdf):
     """
     Plot VAF distribution compared to VAF_AM in a histogram.
     
@@ -371,9 +371,9 @@ def plot_vaf_vs_vafam_histogram (maf_file, output_pdf):
     maf_df : DataFrame
         MAF dataframe containing VAF and VAF_AM columns
     """
-    df_long = maf_file.melt(value_vars=["VAF", "VAF_AM"], 
+    df_long = maf_df.melt(value_vars=["VAF", "VAF_AM"], 
                        var_name="VAF_type", 
-                       value_name="VAF_values")
+                       value_name="VAF_value")
 
     fig, ax = plt.subplots(figsize=(5, 4))
     sns.histplot(data=df_long, x="VAF_value", hue="VAF_type", 
