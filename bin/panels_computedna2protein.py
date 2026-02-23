@@ -1,8 +1,36 @@
 #!/usr/bin/env python
 
-import time
+"""
+Panels Compute DNA to Protein - MAF processing to protein positions and 
+coverage computation.
 
-# Third-party imports
+This script processes the MAF file to retrieve the transcript-gene pairs,
+then retrieves exon, and CDS coordinates and maps DNA positions to protein positions.
+It also computes the coverage of each position and generates plots of coverage
+per gene.
+
+Arguments:
+----------------------
+--mutations-file : str 
+    Path to the MAF file containing mutations.
+--consensus-file : str
+    Path to the consensus panel file.
+--depths-file : str
+    Path to the file containing depth information for all samples.
+
+Authors
+----------------------
+Author  : Stefano Pellegrini (@St3451)
+Email   : stefano.pellegrini@irbbarcelona.org
+
+Contributors
+----------------------
+- Ferriol Calvet - @FerriolCalvet (ferriol.calvet@irbbarcelona.org)
+- Marta Huertas - @m-huertasp (marta.huertas@irbbarcelona.org)
+"""
+
+import time
+import logging
 import requests
 import numpy as np
 import pandas as pd
@@ -10,14 +38,35 @@ import click
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+# Logging
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
+)
+LOG = logging.getLogger("DNA2protein")
+
 #####
 # Define functions
 #####
 def get_transcript_gene_from_maf(path_maf, consensus_file):
+    """
+    Process MAF file to retrieve gene-transcript pairs for the genes in the consensus panel.
+
+    Parameters
+    ----------
+    path_maf : str
+        Path to the MAF file containing mutations.
+    consensus_file : str
+        Path to the consensus panel file.
+
+    Returns
+    -------
+    gene_transcript_pairs : pandas.DataFrame
+        DataFrame with gene-transcript pairs.
+    """
     maf_df = pd.read_table(path_maf)
     genes_in_consensus = pd.read_table(consensus_file)["GENE"].unique()
 
-    # Final filter
+    # Filter MAF (keep only positions with canonical protein position)
     maf_df_f = maf_df[
         (maf_df["TYPE"].isin(["SNV", "INSERTION", "DELETION"]))
         & (maf_df["canonical_SYMBOL"].isin(genes_in_consensus))
@@ -27,27 +76,45 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
     gene_transcript_pairs = maf_df_f[["canonical_SYMBOL", "canonical_Feature"]].drop_duplicates().reset_index(drop=True)
     gene_transcript_pairs.columns = ["Gene", "Ens_transcript_ID"]
 
+    LOG.info(f"Retrieved {len(gene_transcript_pairs)} gene-transcript pairs from MAF file.")
     return gene_transcript_pairs
 
 
 def plot_coverage_per_gene(depths_df):
+    """
+    Wrapper function to plot coverage per gene for DNA, protein and exon levels.
 
-    dna_coverage = depths_df.drop_duplicates(subset=['GENE', 'DNA_POS', 'COVERED'])
-    dna_coverage_summary = dna_coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
-    plot_single_coverage(dna_coverage_summary, "DNA")
+    Parameters
+    ----------
+    depths_df : pandas.DataFrame
+        DataFrame containing depth and coverage information for DNA, protein and exon positions.
+        In this case, it will be the "exons_depth" created in `get_dna2prot_depth` function.
+    """
+    coverage = depths_df.drop_duplicates(subset=['GENE', 'DNA_POS', 'COVERED'])
+    coverage_summary = coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
 
-    prot_coverage = depths_df.drop_duplicates(subset=['GENE', 'PROT_POS', 'COVERED'])
-    prot_coverage_summary = prot_coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
-    plot_single_coverage(prot_coverage_summary, "Protein")
-
-    exon_coverage = depths_df.drop_duplicates(subset=['GENE', 'EXON_RANK', 'COVERED'])
-    exon_coverage_summary = exon_coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
-    plot_single_coverage(exon_coverage_summary, "Exon")
+    for prefix in ["DNA", "Protein", "Exon"]:
+        LOG.info(f"Plotting coverage for {prefix}...")
+        plot_single_coverage(coverage_summary, prefix)
 
 
 def plot_single_coverage(coverage_summary, prefix, batch_size = 5):
+    """
+    Plot coverage for a single prefix (DNA, protein or exon) and save the results in a PDF file.
 
-    coverage_pivot = coverage_summary.pivot(index='GENE', columns='COVERED', values='COUNT').fillna(0)
+    Parameters
+    ----------
+    coverage_summary : pandas.DataFrame
+        DataFrame containing the coverage summary for each gene and coverage status.
+    prefix : str
+        The prefix to plot (DNA, Protein or Exon).
+    batch_size : int, optional
+        The number of genes to include in each batch when plotting (default is 5).
+    """
+    # Generate copy of the coverage summary to avoid modifying the original DataFrame
+    coverage_summary_cp = coverage_summary.copy()
+
+    coverage_pivot = coverage_summary_cp.pivot(index='GENE', columns='COVERED', values='COUNT').fillna(0)
     coverage_pivot = coverage_pivot.sort_values(1, ascending=False).reset_index()
     coverage_pivot = coverage_pivot.set_index('GENE')
     genes_list = coverage_pivot.index.tolist()
