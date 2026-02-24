@@ -29,12 +29,16 @@ Contributors
 - Marta Huertas - @m-huertasp (marta.huertas@irbbarcelona.org)
 """
 
+import click
 import time
 import logging
 import requests
 import numpy as np
 import pandas as pd
-import click
+import polars as pl
+import io
+import gzip
+import re
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -183,66 +187,118 @@ def plot_single_coverage(coverage_summary, prefix, batch_size = 5):
 
 # Depth
 # =====
-
-
-def get_tr_lookup(transcript_id, max_iter = 20):
+# Generator to filter lines before they reach a dataframe
+def get_gff_to_generator(release: int = 111):
     """
-    Get exons coord
+    Get GFF file from ensembl FTP and filter it on the fly to keep only exon and CDS lines.
+
+    Parameters
+    ------------
+    release : int
+        The release number of the Ensembl GFF file to retrieve (default is 111).
+
+    Returns
+    ------------
+    generator
+        A generator that yields lines from the GFF file that correspond to exon and CDS features.
+    """
+    url = f"https://ftp.ensembl.org/pub/release-{release}/gff3/homo_sapiens/Homo_sapiens.GRCh38.{release}.gff3.gz"
+
+    # Open request
+    response = requests.get(url, stream=True)
+    # decompress the stream on the fly
+    with gzip.GzipFile(fileobj=response.raw) as gz:
+        for line in gz:
+            # Decode bytes to string
+            line_str = line.decode('utf-8')
+            
+            # Skip comments
+            if line_str.startswith('#'):
+                continue
+            
+            # Only "yield" lines that are exon or CDS
+            # This drastically reduces the data sent to the DataFrame
+            parts = line_str.split('\t')
+            if parts[2] in ["exon", "CDS"]:
+                yield line_str
+
+def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int = 111) -> pd.DataFrame:
+    """
+    Transforms the yields from get_gff_to_generator into a filtered DataFrame. The reading and filtering is done with polars
+    to improve efficiency.
+
+    Parameters
+    ------------
+    gene_n_transcript : pd.DataFrame
+        A DataFrame containing gene and transcript information.
+    release : int
+        The Ensembl release number to use for GFF file retrieval (default is 111).
+
+    Returns
+    ------------
+    pd.DataFrame
+        A filtered DataFrame of GFF lines for the specified genes and release.
+    """
+    # Join the generator into a single buffer for Polars to read
+    filtered_buffer = io.StringIO("".join(get_gff_to_generator(release=release)))
+
+    # Read generator with polars, generate transcript_id column and filter by the genes in the panel
+    df = (
+        pl.read_csv(
+            filtered_buffer,
+            separator="\t",
+            has_header=False,
+            new_columns=["chr", "source", "feature", "start", "end", "score", "strand", "phase", "attributes"],
+            schema_overrides={"start": pl.Int64, "end": pl.Int64, "chr": pl.Utf8, "feature": pl.Utf8, "attributes": pl.Utf8}
+        )
+        .with_columns([
+            pl.col("attributes").str.extract(r"transcript:(ENST\d+)", 1).alias("transcript_id")
+        ])
+        .filter(
+            [pl.col("transcript_id").is_in(gene_n_transcript["Ens_transcript_ID"].to_list())]
+        )
+    )
+    
+    # Transform to pandas for easier manipulation later on
+    return df.to_pandas()
+
+def parse_cds_coord(exon: pd.Series) -> tuple[str, list] | list[int]:
+    """
+    Parses the coordinates of an exon row from the GFF DataFrame and returns the exon ID and its coordinates in a list format.
+
+    Parameters
+    ----------
+    exon : pandas.Series
+        A row from the GFF DataFrame corresponding to an exon feature.
+
+    Returns
+    -------
+    exon_id : str
+        The ID of the exon extracted from the attributes column.
+    exons_coord : list
+        A list containing the chromosome, start, end, and strand information of the exon.
     """
 
-    server = "https://rest.ensembl.org"
-    ext = f"/lookup/id/{transcript_id}?expand=1"
-
-    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-
-    iter_count = 0
-    while not r.ok and iter_count < max_iter:
-        print("Retrying lookup... (attempt {}/{})".format(iter_count+1, max_iter))
-        time.sleep(5)
-        r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-        iter_count += 1
-
-    return r.json()
-
-
-def get_cds_coord(transcript_id, len_cds_with_utr, max_iter = 20):
-    """
-    Get CDS coordinates
-    """
-    server = "https://rest.ensembl.org"
-    ext = f"/map/cds/{transcript_id}/1..{len_cds_with_utr}?"
-
-    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-
-    iter_count = 0
-    while not r.ok and iter_count < max_iter:
-        print("Retrying CDS map... (attempt {}/{})".format(iter_count+1, max_iter))
-        time.sleep(5)
-        r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
-        iter_count += 1
-
-    return r.json()["mappings"]
-
-
-def parse_cds_coord(exon):
-
-    strand = exon["strand"]
+    strand = 1 if exon.strand == "+" else -1
 
     if strand == 1:
-        start = exon["start"]
-        end = exon["end"]
+        start = exon.start
+        end = exon.end
     else:
-        start = exon["end"]
-        end = exon["start"]
+        start = exon.end
+        end = exon.start
 
-    if "id" in exon:
-        exon_id = exon["id"]
-        chrom = f'chr{exon["seq_region_name"]}'
+    # Extract exon_id using regex
+    match = re.search(r"exon_id=([^;]+)", exon.attributes)
+    if match:
+        # Extract exon_id using regex
+        exon_id = match.group(1)
+        chrom = f'chr{exon.chr}'
 
         return exon_id, [chrom, start, end, strand]
 
     else:
-        chrom = exon["seq_region_name"]
+        chrom = exon.chr
 
         return [chrom, start, end, strand]
 
@@ -295,38 +351,69 @@ def get_prot_coverage(dna_prot_df, gene, filter_masked_depth=True):
     return gene_dna_prot_df
 
 
-def get_exon_coord_wrapper(gene_n_transcript):
+def get_exon_coord_wrapper_new(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: 
+    """
+    Wrapper function to retrieve exon and CDS coordinates for the genes and transcripts in the panel.
 
-    # Init df for coordinates
-    coord_df = gene_n_transcript
+    Parameters
+    ----------
+    gene_n_transcript : pandas.DataFrame
+        A DataFrame containing gene and transcript information for the panel.
+    gff_df : pandas.DataFrame
+        A DataFrame containing the GFF data filtered for exon and CDS features.
 
-    # Get coord
+    Returns
+    -------
+    final_coord_df : pandas.DataFrame
+        A DataFrame containing the CDS coordinates for each gene-transcript pair, along with protein position mapping.
+    final_exons_df : pandas.DataFrame
+        A DataFrame containing the exon coordinates (including UTRs) for each gene-transcript pair.
+    """
     coord_df_lst = []
     exons_coord_df_lst = []
-    for gene, transcript in coord_df.values:
-        print("Processing gene:", gene)
-        coord_lst = []
 
-        # Get the coord of exons with CDS and UTR as well as the length with UTR and exons ID
-        exons_lookup = get_tr_lookup(transcript) # We will use this to get Exons ID
-        for i, exon in enumerate(exons_lookup["Exon"]):
+    for gene, transcript in gene_n_transcript.values:
+        print(f"Processing gene: {gene}")
+        
+        # Get all features for this transcript once to avoid double filtering
+        transcript_data = gff_df[gff_df["transcript_id"] == transcript]
+        if transcript_data.empty:
+            continue
+
+        # Determine strand from the first available entry
+        strand = transcript_data["strand"].iloc[0]
+        is_positive = (strand == "+")
+
+        # --- Handle exons (with UTRs) ---
+        exons_lookup = transcript_data[transcript_data["feature"] == "exon"]
+        # Sort based on strand: '+' is low-to-high, '-' is high-to-low
+        exons_lookup = exons_lookup.sort_values("start", ascending=is_positive)
+
+        for i, exon in enumerate(exons_lookup.itertuples(index=False)):
             exon_id, exons_coord = parse_cds_coord(exon)
             exons_coord_df_lst.append([f"{gene}--exon_{i+1}_{transcript}_{exon_id}"] + exons_coord)
 
-        # Get the CDS coordinates of the exons removing UTRs to map to protein positions
-        for i, exon in enumerate(get_cds_coord(transcript, exons_lookup["length"])):
-            coord_lst.append((parse_cds_coord(exon) + [i]))
+        # --- Handle CDS ---
+        cds_lookup = transcript_data[transcript_data["feature"] == "CDS"]
+        cds_lookup = cds_lookup.sort_values("start", ascending=is_positive)
 
-        gene_coord_df = pd.DataFrame(coord_lst, columns = ["Chr", "Start", "End", "Strand", "Exon_rank"])
-        gene_coord_df["Gene"] = gene
-        gene_coord_df["Ens_transcript_ID"] = transcript
-        coord_df_lst.append(gene_coord_df)
+        coord_lst = []
+        for i, exon in enumerate(cds_lookup.itertuples(index=False)):
+            exons_coord = parse_cds_coord(exon)
+            # Include the biological rank (i)
+            coord_lst.append(exons_coord + [i])
 
-    coord_df = pd.concat(coord_df_lst)
-    exons_coord_df = pd.DataFrame(exons_coord_df_lst, columns = ["ID", "Chr", "Start", "End", "Strand"])
+        if coord_lst:
+            gene_coord_df = pd.DataFrame(coord_lst, columns=["Chr", "Start", "End", "Strand", "Exon_rank"])
+            gene_coord_df["Gene"] = gene
+            gene_coord_df["Ens_transcript_ID"] = transcript
+            coord_df_lst.append(gene_coord_df)
 
-    return coord_df, exons_coord_df
+    # Combine results
+    final_coord_df = pd.concat(coord_df_lst) if coord_df_lst else pd.DataFrame()
+    final_exons_df = pd.DataFrame(exons_coord_df_lst, columns=["ID", "Chr", "Start", "End", "Strand"])
 
+    return final_coord_df, final_exons_df
 
 
 def dna2prot_depth(gene_list, coord_df, dna_sites, depth_df):
