@@ -20,12 +20,14 @@ process DNA_2_PROTEIN_MAPPING {
 
 
     script:
+    def ensembl_release = task.ext.vep_cache_version ? "--ensembl-release \"${task.ext.vep_cache_version}\"" : ""
     """
     cut -f 1,2,6 ${panel_file} | uniq > ${meta2.id}.panel.unique.tsv
     panels_computedna2protein.py \\
                 --mutations-file ${mutations_file} \\
                 --consensus-file ${meta2.id}.panel.unique.tsv \\
-                --depths-file ${all_samples_depths}
+                --depths-file ${all_samples_depths} \\
+                ${ensembl_release}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

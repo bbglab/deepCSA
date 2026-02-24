@@ -129,12 +129,11 @@ def get_gff_to_generator(release: int = 111):
                 continue
             
             # Only "yield" lines that are exon or CDS
-            # This drastically reduces the data sent to the DataFrame
             parts = line_str.split('\t')
             if parts[2] in ["exon", "CDS"]:
                 yield line_str
 
-def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int = 111) -> pd.DataFrame:
+def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.DataFrame:
     """
     Transforms the yields from get_gff_to_generator into a filtered DataFrame. The reading and filtering is done with polars
     to improve efficiency.
@@ -218,25 +217,6 @@ def parse_exon_coord(exon: pd.Series) -> tuple[str, list]:
 
     return exon_id, [chrom, start, end, strand]
 
-def parse_cds_coord(exon: pd.Series) -> list:
-    """
-    Parses the coordinates of a CDS row from the GFF DataFrame and returns the coordinates in a list format.
-
-    Parameters
-    ------------
-    exon : pandas.Series
-        A row from the GFF DataFrame corresponding to an exon feature.
-
-    Returns
-    ------------
-    coord : list
-        A list containing the chromosome, start, end, and strand information of the CDS.
-    """
-    chrom, start, end, strand = _parse_strand_coords(exon)
-
-    # Return the CDS ID and coordinates
-    return [chrom, start, end, strand]
-
 def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: 
     """
     Wrapper function to retrieve exon and CDS coordinates for the genes and transcripts in the panel.
@@ -284,7 +264,7 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
 
         coord_lst = []
         for i, exon in enumerate(cds_lookup.itertuples(index=False)):
-            exons_coord = parse_cds_coord(exon)
+            exons_coord = list(_parse_strand_coords(exon))
             # Include the biological rank (i)
             coord_lst.append(exons_coord + [i])
 
@@ -474,7 +454,7 @@ def dna2prot_depth(gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFr
     return dna_prot_df
 
 
-def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str, release: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Function to get the DNA to protein mapping for all positions in the provided list of genes,
     along with coverage and depth information for each position, and the definition of all exons of
@@ -501,7 +481,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
 
     consensus_df = pd.read_table(consensus_file)
     depth_df = pd.read_table(depth_file)
-    gff_df = gff_to_filtered_df(gene_n_transcript_info)
+    gff_df = gff_to_filtered_df(gene_n_transcript_info, release=release)
 
     consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on = ["CHROM", "POS"], how = 'left')
     consensus_df = consensus_df.rename(columns={"POS" : "DNA_POS"})
@@ -626,11 +606,12 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
 @click.option('--mutations-file', type=click.Path(exists=True), help='Mutations file')
 @click.option('--consensus-file', type=click.Path(exists=True), help='Input consensus panel file')
 @click.option('--depths-file', type=click.Path(exists=True), help='Input depths of all samples file')
-def main(mutations_file, consensus_file, depths_file):
+@click.option('--ensembl-release', type=int, default=111, help='Ensembl release number to use for GFF file retrieval (default is 111)')
+def main(mutations_file, consensus_file, depths_file, ensembl_release):
     # Count each mutation only ones if it appears in multiple reads
     gene_n_transcript = get_transcript_gene_from_maf(mutations_file, consensus_file)
 
-    exons_depth, exons_coord_id = get_dna2prot_depth(gene_n_transcript, depths_file, consensus_file)
+    exons_depth, exons_coord_id = get_dna2prot_depth(gene_n_transcript, depths_file, consensus_file, ensembl_release)
     LOG.info("Exons coordinates and depth computed!")
     exons_depth.to_csv("depths_per_position_exon_gene.tsv", header = True, index = False, sep = '\t')
 
