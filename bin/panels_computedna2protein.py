@@ -45,6 +45,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
 )
+logging.getLogger('matplotlib').setLevel(logging.WARNING) # Avoid too much logging
+
 LOG = logging.getLogger("DNA2protein")
 
 
@@ -62,7 +64,7 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
         Path to the consensus panel file.
 
     Returns
-    -------
+    ------------
     gene_transcript_pairs : pandas.DataFrame
         DataFrame with gene-transcript pairs.
     """
@@ -169,6 +171,7 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int = 111) -> p
         )
     )
     
+    LOG.info(f"Filtered GFF data to {df.shape[0]} rows for the specified genes and release.")
     # Transform to pandas for easier manipulation later on
     return df.to_pandas()
 
@@ -186,25 +189,32 @@ def parse_exon_coord(exon: pd.Series) -> tuple[str, list]:
     Parses the coordinates of an exon row from the GFF DataFrame and returns the exon ID and its coordinates in a list format.
 
     Parameters
-    ----------
+    ------------
     exon : pandas.Series
         A row from the GFF DataFrame corresponding to an exon feature.
 
     Returns
-    -------
+    ------------
     exon_id : str
         The ID of the exon extracted from the attributes column.
     exons_coord : list
         A list containing the chromosome, start, end, and strand information of the exon.
     """
     chrom, start, end, strand = _parse_strand_coords(exon)
+    
+    # Add "chr" prefix to chromosome
+    chrom = f'chr{exon.chr}'
 
     # Extract exon_id using regex
     match = re.search(r"exon_id=([^;]+)", exon.attributes)
     
     # Extract exon_id using regex
-    exon_id = match.group(1) if match else ""
-    chrom = f'chr{exon.chr}'
+    if match:
+        exon_id = match.group(1)
+        
+    else:
+        exon_id = ""
+        LOG.warning(f"Could not extract exon_id from attributes: {exon.transcript_id} - {exon.attributes}")
 
     return exon_id, [chrom, start, end, strand]
 
@@ -213,12 +223,12 @@ def parse_cds_coord(exon: pd.Series) -> list:
     Parses the coordinates of a CDS row from the GFF DataFrame and returns the coordinates in a list format.
 
     Parameters
-    ----------
+    ------------
     exon : pandas.Series
         A row from the GFF DataFrame corresponding to an exon feature.
 
     Returns
-    -------
+    ------------
     coord : list
         A list containing the chromosome, start, end, and strand information of the CDS.
     """
@@ -232,14 +242,14 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
     Wrapper function to retrieve exon and CDS coordinates for the genes and transcripts in the panel.
 
     Parameters
-    ----------
+    ------------
     gene_n_transcript : pandas.DataFrame
         A DataFrame containing gene and transcript information for the panel.
     gff_df : pandas.DataFrame
         A DataFrame containing the GFF data filtered for exon and CDS features.
 
     Returns
-    -------
+    ------------
     final_coord_df : pandas.DataFrame
         A DataFrame containing the CDS coordinates for each gene-transcript pair, along with protein position mapping.
     final_exons_df : pandas.DataFrame
@@ -249,7 +259,6 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
     exons_coord_df_lst = []
 
     for gene, transcript in gene_n_transcript.values:
-        print(f"Processing gene: {gene}")
         
         # Get all features for this transcript once to avoid double filtering
         transcript_data = gff_df[gff_df["transcript_id"] == transcript]
@@ -289,11 +298,12 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
     final_coord_df = pd.concat(coord_df_lst) if coord_df_lst else pd.DataFrame()
     final_exons_df = pd.DataFrame(exons_coord_df_lst, columns=["ID", "Chr", "Start", "End", "Strand"])
 
+    LOG.info(f"Retrieved coordinates for {len(final_coord_df['Gene'].unique())} genes and {len(final_exons_df['ID'].unique())} exons.")
     return final_coord_df, final_exons_df
 
 # Coordinate parsing and DNA-to-protein mapping functions
 # ----------------------------------------------------------
-def get_dna_exon_pos(exon_range: list, strand: int) -> list:
+def get_dna_exon_pos(exon_range: np.ndarray, strand: int) -> list:
     """
     Get the DNA positions of an exon given its range and strand.
     Parameters
@@ -315,7 +325,7 @@ def get_dna_exon_pos(exon_range: list, strand: int) -> list:
         return np.arange(exon_range[0], exon_range[1] + 1)
 
 
-def get_exon_ix(i: int, exon_range: list, strand: int) -> list:
+def get_exon_ix(i: int, exon_range: np.ndarray, strand: int):
     """
     Get the exon index for each DNA position in the exon, ordered according to the strand.
 
@@ -323,8 +333,8 @@ def get_exon_ix(i: int, exon_range: list, strand: int) -> list:
     ------------
     i : int
         The exon index (starting from 0).
-    exon_range : list
-        A list containing the start and end positions of the exon.
+    exon_range : np.ndarray
+        A numpy array containing the start and end positions of the exon.
     strand : int
         The strand of the exon (1 for positive strand, -1 for negative strand).
 
@@ -370,31 +380,48 @@ def get_dna_map_to_protein(coord_df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def find_exon(x_coord: dict, exon_coord_df: pd.DataFrame) -> str | np.nan:
+def find_exon(dna_prot_df: pd.DataFrame, exon_coord_df: pd.DataFrame):
     """
-    Find the exon ID for a given DNA position.
+    For each DNA position in *dna_prot_df* the function finds the matching exon
+    ID from *exon_coord_df* by merging on chromosome and filtering by positional
+    interval.  This avoids a Python-level loop and is orders of magnitude faster
+    than the ``apply`` approach for large panels.
+
     Parameters
     ------------
-    x_coord : dict
-        A dictionary containing the DNA position, chromosome, and strand information.
-    exon_coord_df : pandas.DataFrame
-        A DataFrame containing the coordinates of all exons.
+    dna_prot_df : pd.DataFrame
+        DataFrame with at least ``CHROM`` and ``DNA_POS`` columns.
+    exon_coord_df : pd.DataFrame
+        DataFrame with ``Chr``, ``Start``, ``End``, and ``ID`` columns.
 
     Returns
     ------------
-    str or np.nan
-        The ID of the exon that contains the given DNA position, or np.nan if no match is found.
+    np.ndarray
+        Array of exon IDs aligned to *dna_prot_df*\'s row order;
+        ``np.nan`` where no matching exon is found.
     """
+    # Normalise strand-swapped coordinates so lo <= hi in all cases
+    exon_df = exon_coord_df[["Chr", "Start", "End", "ID"]].copy()
+    exon_df["lo"] = exon_df[["Start", "End"]].min(axis=1)
+    exon_df["hi"] = exon_df[["Start", "End"]].max(axis=1)
 
-    dna_pos, chrom, strand = x_coord["DNA_POS"], x_coord["CHROM"], x_coord["REVERSE_STRAND"]
+    # Cross-merge on chromosome; each row of dna_prot_df is paired only with
+    # exons on the same chromosome, then filtered to those whose interval
+    # contains the DNA position.
+    merged = dna_prot_df[["CHROM", "DNA_POS"]].merge(
+        exon_df[["Chr", "lo", "hi", "ID"]],
+        left_on="CHROM", right_on="Chr",
+        how="left"
+    )
+    in_exon = (merged["DNA_POS"] >= merged["lo"]) & (merged["DNA_POS"] <= merged["hi"])
+    # Keep the first matching exon per position
+    matched = merged[in_exon].drop_duplicates(subset=["CHROM", "DNA_POS"])
 
-    if strand == -1:
-        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] <= dna_pos) & (dna_pos <= exon_coord_df['Start'])]
-
-    else:
-        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] >= dna_pos) & (dna_pos >= exon_coord_df['Start'])]
-
-    return matches['ID'].values[0] if not matches.empty else np.nan
+    # Re-align to the original DataFrame row order
+    result = dna_prot_df[["CHROM", "DNA_POS"]].merge(
+        matched[["CHROM", "DNA_POS", "ID"]], on=["CHROM", "DNA_POS"], how="left"
+    )
+    return result["ID"].values
 
 
 # Depth computation and coverage functions
@@ -454,7 +481,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
     the genes/transcripts in the panel including UTR regions.
 
     Parameters
-    ----------
+    ------------
     gene_n_transcript_info : pandas.DataFrame
         A DataFrame containing gene and transcript information for the panel.
     depth_file : str
@@ -463,7 +490,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
         Path to the consensus panel file containing DNA positions and coverage information.
     
     Returns
-    ----------
+    ------------
     dna_prot_df : pandas.DataFrame
         A DataFrame containing the mapping of DNA positions to protein positions for the specified genes,
         along with coverage and depth information for each position.
@@ -479,15 +506,15 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
     consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on = ["CHROM", "POS"], how = 'left')
     consensus_df = consensus_df.rename(columns={"POS" : "DNA_POS"})
 
-    if "DEPTH" not in depth_df:
+    if "DEPTH" not in depth_df.columns:
         depth_df["DEPTH"] = depth_df.drop(columns=["CHROM", "POS", "CONTEXT"]).mean(1)
-    depth_df = depth_df[["CHROM", "POS", "DEPTH"]].rename(columns = {"POS" : "DNA_POS"})
+    depth_df = depth_df[["CHROM", "POS", "DEPTH"]]
 
     coord_df, exons_coord_df = get_exon_coord_wrapper(gene_n_transcript_info, gff_df)
     gene_list = list(coord_df["Gene"].unique())
-    dna_prot_df = dna2prot_depth(gene_list, coord_df, consensus_df, depth_df)
+    dna_prot_df = dna2prot_depth(gene_list=gene_list, coord_df=coord_df, dna_sites=consensus_df, depth_df=depth_df)
 
-    dna_prot_df["EXON_ID"] = dna_prot_df.apply(lambda x: find_exon(x, exons_coord_df), axis=1)
+    dna_prot_df["EXON_ID"] = find_exon(dna_prot_df, exons_coord_df)
 
     # fix coordinates order in exons_coord_df for BED
     exons_coord_df_final = exons_coord_df.copy()
@@ -495,58 +522,6 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
     exons_coord_df_final.loc[exons_coord_df_final["Strand"] == -1, "End"] = exons_coord_df.loc[exons_coord_df["Strand"] == -1, "Start"]
 
     return dna_prot_df, exons_coord_df_final
-
-def get_exon_depth_saturation(gene_depth: pd.DataFrame, gene_mut: pd.DataFrame, dna: bool = False) -> pd.DataFrame:
-    """
-    Compute the depth and saturation of each exon in a gene.
-
-    Parameters
-    ----------
-    gene_depth : pandas.DataFrame
-        A DataFrame containing the depth and coverage information for each DNA position in the gene, along with the corresponding
-        protein position and exon rank.
-    gene_mut : pandas.DataFrame
-        A DataFrame containing the mutation information for the gene, including the DNA positions of the mutations (if dna=True)
-        or the protein positions of the mutations (if dna=False).
-    dna : bool, optional
-        A boolean indicating whether the input data is at the DNA level (True) or at the protein level (False). This affects how
-        saturation is calculated (default is False).
-    
-    Returns
-    -------
-    exon_depth : pandas.DataFrame
-        A DataFrame containing the average depth, coverage, number of mutated positions, and saturation for each exon in the gene,
-        along with the starting protein position of each exon.
-    """
-    # Exon average depth
-    gene_depth = gene_depth.copy()
-    exon_depth = gene_depth.groupby("EXON_RANK").apply(
-        lambda x: 0 if sum(x.COVERED) == 0 else sum(x.DEPTH) / sum(x.COVERED)).reset_index().rename(columns = {0 : "DEPTH"})
-    exon_depth["START_PROT_POS"] = gene_depth.groupby("EXON_RANK").apply(lambda x: x.PROT_POS.min())
-
-    # Exon saturation
-    if dna:
-        exon_depth["COVERED"] = gene_depth.groupby("EXON_RANK").apply(lambda x: sum(x.COVERED)).values
-        gene_depth["MUTATED"] = gene_depth.DNA_POS.isin(gene_mut.DNA_POS.unique()).astype(int)
-        exon_depth["MUTATED"] = gene_depth.groupby("EXON_RANK").apply(lambda x: sum(x.MUTATED)).values
-        exon_depth["SATURATION"] = exon_depth["MUTATED"] / exon_depth["COVERED"]
-    else:
-
-        # If an amino acids from the same codon are in two exons, consider the position only in the second one
-        # (but look at booth to know if the residue is in the panel and if it is mutated)
-        exon_depth_prot = gene_depth.groupby("PROT_POS").apply(lambda x: (x.COVERED.max(), x.EXON_RANK.max())).reset_index()
-        exon_depth_prot[["COVERED", "EXON_RANK"]] = pd.DataFrame(exon_depth_prot[0].tolist(), index=exon_depth_prot.index)
-        exon_depth_prot = exon_depth_prot.drop(columns=[0])
-
-        exon_depth["COVERED"] = exon_depth_prot.groupby("EXON_RANK").apply(lambda x: sum(x.COVERED)).values
-        exon_depth_prot["MUTATED"] = exon_depth_prot["PROT_POS"].isin(gene_mut["Pos"].unique()).astype(int)
-        exon_depth["MUTATED"] = exon_depth_prot.groupby("EXON_RANK").apply(lambda x: sum(x.MUTATED)).values
-        exon_depth["SATURATION"] = exon_depth["MUTATED"] / exon_depth["COVERED"]
-
-    # check_mutated_masked = exon_depth_prot[(exon_depth_prot["MUTATED"] == 1) & (exon_depth_prot["COVERED"] == 0)]
-    # check_mutated_masked["GENE"] = gene_depth.GENE.unique()[0]
-
-    return exon_depth
 
 
 # Plots
@@ -645,7 +620,6 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
 
                 plt.tight_layout()
                 pdf.savefig(dpi=300)
-                plt.show()
                 plt.close()
 
 @click.command()
@@ -653,19 +627,19 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
 @click.option('--consensus-file', type=click.Path(exists=True), help='Input consensus panel file')
 @click.option('--depths-file', type=click.Path(exists=True), help='Input depths of all samples file')
 def main(mutations_file, consensus_file, depths_file):
-    click.echo("Starting to run plot saturation results...")
-
     # Count each mutation only ones if it appears in multiple reads
     gene_n_transcript = get_transcript_gene_from_maf(mutations_file, consensus_file)
 
     exons_depth, exons_coord_id = get_dna2prot_depth(gene_n_transcript, depths_file, consensus_file)
-    print("Exons coordinates and depth computed")
+    LOG.info("Exons coordinates and depth computed!")
     exons_depth.to_csv("depths_per_position_exon_gene.tsv", header = True, index = False, sep = '\t')
 
     exons_coordinates_bed_like = exons_coord_id[['Chr', 'Start', 'End', 'ID']]
     exons_coordinates_bed_like.to_csv("panel_exons.bed4.bed", header = False, index = False, sep = '\t')
 
     plot_coverage_per_gene(exons_depth)
+
+    LOG.info("All done!")
 
 
 if __name__ == '__main__':
