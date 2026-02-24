@@ -30,7 +30,6 @@ Contributors
 """
 
 import click
-import time
 import logging
 import requests
 import numpy as np
@@ -48,9 +47,9 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("DNA2protein")
 
-#####
-# Define functions
-#####
+
+#  Data parsing and processing functions
+# ----------------------------------------------------------
 def get_transcript_gene_from_maf(path_maf, consensus_file):
     """
     Process MAF file to retrieve gene-transcript pairs for the genes in the consensus panel.
@@ -83,110 +82,6 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
     LOG.info(f"Retrieved {len(gene_transcript_pairs)} gene-transcript pairs from MAF file.")
     return gene_transcript_pairs
 
-
-def plot_coverage_per_gene(depths_df):
-    """
-    Wrapper function to plot coverage per gene for DNA, protein and exon levels.
-
-    Parameters
-    ----------
-    depths_df : pandas.DataFrame
-        DataFrame containing depth and coverage information for DNA, protein and exon positions.
-        In this case, it will be the "exons_depth" created in `get_dna2prot_depth` function.
-    """
-    coverage = depths_df.drop_duplicates(subset=['GENE', 'DNA_POS', 'COVERED'])
-    coverage_summary = coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
-
-    for prefix in ["DNA", "Protein", "Exon"]:
-        LOG.info(f"Plotting coverage for {prefix}...")
-        plot_single_coverage(coverage_summary, prefix)
-
-
-def plot_single_coverage(coverage_summary, prefix, batch_size = 5):
-    """
-    Plot coverage for a single prefix (DNA, protein or exon) and save the results in a PDF file.
-
-    Parameters
-    ----------
-    coverage_summary : pandas.DataFrame
-        DataFrame containing the coverage summary for each gene and coverage status.
-    prefix : str
-        The prefix to plot (DNA, Protein or Exon).
-    batch_size : int, optional
-        The number of genes to include in each batch when plotting (default is 5).
-    """
-    # Generate copy of the coverage summary to avoid modifying the original DataFrame
-    coverage_summary_cp = coverage_summary.copy()
-
-    coverage_pivot = coverage_summary_cp.pivot(index='GENE', columns='COVERED', values='COUNT').fillna(0)
-    coverage_pivot = coverage_pivot.sort_values(1, ascending=False).reset_index()
-    coverage_pivot = coverage_pivot.set_index('GENE')
-    genes_list = coverage_pivot.index.tolist()
-    coverage_perc = coverage_pivot.div(coverage_pivot.sum(axis=1), axis=0) * 100
-    coverage_pivot.to_csv(f"coverage_count_{prefix}.tsv", header=True, index=True, sep='\t')
-    coverage_perc.to_csv(f"coverage_perc_{prefix}.tsv", header=True, index=True, sep='\t')
-
-    if len(genes_list) < batch_size:
-
-        fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
-
-        covered_col = True if True in coverage_pivot.columns else (1 if 1 in coverage_pivot.columns else coverage_pivot.columns[-1])
-
-        coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'],
-                            )
-
-        axes[0].set_title(f'{prefix} : covered vs. non-covered')
-        axes[0].set_ylabel(f'Number of {prefix}')
-        axes[0].set_xlabel('Gene')
-        axes[0].legend(title='Covered', loc='upper right')
-        axes[0].tick_params(axis='x', rotation=45)
-
-        coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
-        axes[1].set_title(f'{prefix} : percentage of covered')
-        axes[1].set_ylabel('Percentage (%)')
-        axes[1].set_xlabel('Gene')
-        axes[1].set_ylim(0, 100)
-        axes[1].tick_params(axis='x', rotation=45)
-
-        plt.tight_layout()
-        plt.savefig(f"coverage_per_{prefix}.pdf", dpi=300)
-        plt.show()
-
-
-    else:
-        with PdfPages(f"coverage_per_{prefix}_batches.pdf") as pdf:
-            # split into batches N genes
-            for i in range(0, len(genes_list), batch_size): 
-                batch_genes = genes_list[i:i+batch_size]
-                batch_coverage_pivot = coverage_pivot.loc[batch_genes]
-                batch_coverage_perc = coverage_perc.loc[batch_genes]
-
-                fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
-
-                covered_col = True if True in batch_coverage_pivot.columns else (1 if 1 in batch_coverage_pivot.columns else batch_coverage_pivot.columns[-1])
-
-                batch_coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'])
-                axes[0].set_title(f'{prefix} : covered vs. non-covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
-                axes[0].set_ylabel(f'Number of {prefix}')
-                axes[0].set_xlabel('Gene')
-                axes[0].legend(title='Covered', loc='upper right')
-                axes[0].tick_params(axis='x', rotation=45)
-
-                batch_coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
-                axes[1].set_title(f'{prefix} : percentage of covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
-                axes[1].set_ylabel('Percentage (%)')
-                axes[1].set_xlabel('Gene')
-                axes[1].set_ylim(0, 100)
-                axes[1].tick_params(axis='x', rotation=45)
-
-                plt.tight_layout()
-                pdf.savefig(dpi=300)
-                plt.show()
-                plt.close()
-
-
-# Depth
-# =====
 # Generator to filter lines before they reach a dataframe
 def get_gff_to_generator(release: int = 111):
     """
@@ -262,7 +157,7 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int = 111) -> p
     # Transform to pandas for easier manipulation later on
     return df.to_pandas()
 
-def parse_cds_coord(exon: pd.Series) -> tuple[str, list] | list[int]:
+def parse_cds_coord(exon: pd.Series) -> tuple[str, list] | list:
     """
     Parses the coordinates of an exon row from the GFF DataFrame and returns the exon ID and its coordinates in a list format.
 
@@ -302,56 +197,7 @@ def parse_cds_coord(exon: pd.Series) -> tuple[str, list] | list[int]:
 
         return [chrom, start, end, strand]
 
-
-# Get Exon coord to protein pos
-# -----------------------------
-
-def get_dna_exon_pos(exon_range, strand):
-
-    if strand == -1:
-        return np.arange(exon_range[1], exon_range[0] + 1)[::-1]
-    else:
-        return np.arange(exon_range[0], exon_range[1] + 1)
-
-
-def get_exon_ix(i, exon_range, strand):
-
-    len_exon = len(get_dna_exon_pos(exon_range, strand))
-
-    return np.repeat(i, len_exon)
-
-
-def get_dna_map_to_protein(coord_df):
-
-    strand = coord_df["Strand"].unique()[0]
-
-    exons_range = coord_df[["Start", "End"]].values
-    exons = np.concatenate([get_dna_exon_pos(exon, strand) for exon in exons_range])
-    exons_ix = np.concatenate([get_exon_ix(i, exon, strand) for i, exon in enumerate(exons_range)])
-    prot_pos = np.arange(len(exons)) // 3 + 1
-
-    df = pd.DataFrame({"GENE" : coord_df["Gene"].unique()[0],
-                        "CHROM" : f'chr{coord_df["Chr"].unique()[0]}',
-                        "DNA_POS" : exons,
-                        "PROT_POS" : prot_pos,
-                        "REVERSE_STRAND" : strand,
-                        "EXON_RANK" : exons_ix,
-                        "TRANSCRIPT_ID" : coord_df["Ens_transcript_ID"].unique()[0]})
-
-    return df
-
-
-def get_prot_coverage(dna_prot_df, gene, filter_masked_depth=True):
-
-    gene_dna_prot_df = dna_prot_df[dna_prot_df["GENE"] == gene]
-    gene_dna_prot_df = gene_dna_prot_df.dropna(subset=["PROT_POS"])[["PROT_POS", "COVERED", "DEPTH"]].reset_index(drop=True)
-    gene_dna_prot_df = gene_dna_prot_df.groupby("PROT_POS").sum().reset_index()
-    gene_dna_prot_df.COVERED = (gene_dna_prot_df.COVERED > 0).astype(int)
-
-    return gene_dna_prot_df
-
-
-def get_exon_coord_wrapper_new(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: 
+def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: 
     """
     Wrapper function to retrieve exon and CDS coordinates for the genes and transcripts in the panel.
 
@@ -415,11 +261,137 @@ def get_exon_coord_wrapper_new(gene_n_transcript: pd.DataFrame, gff_df: pd.DataF
 
     return final_coord_df, final_exons_df
 
+# Coordinate parsing and DNA-to-protein mapping functions
+# ----------------------------------------------------------
+def get_dna_exon_pos(exon_range: list, strand: int) -> list:
+    """
+    Get the DNA positions of an exon given its range and strand.
+    Parameters
+    ------------
+    exon_range : list
+        A list containing the start and end positions of the exon.
+    strand : int
+        The strand of the exon (1 for positive strand, -1 for negative strand).
 
-def dna2prot_depth(gene_list, coord_df, dna_sites, depth_df):
+    Returns
+    ------------
+    list
+        A list of DNA positions corresponding to the exon, ordered according to the strand.
+    """
+
+    if strand == -1:
+        return np.arange(exon_range[1], exon_range[0] + 1)[::-1]
+    else:
+        return np.arange(exon_range[0], exon_range[1] + 1)
+
+
+def get_exon_ix(i: int, exon_range: list, strand: int) -> list:
+    """
+    Get the exon index for each DNA position in the exon, ordered according to the strand.
+
+    Parameters
+    ------------
+    i : int
+        The exon index (starting from 0).
+    exon_range : list
+        A list containing the start and end positions of the exon.
+    strand : int
+        The strand of the exon (1 for positive strand, -1 for negative strand).
+
+    Returns
+    ------------
+    list
+        A list of exon indices corresponding to each DNA position in the exon,
+        ordered according to the strand.
+    """
+    len_exon = len(get_dna_exon_pos(exon_range, strand))
+
+    return np.repeat(i, len_exon)
+
+
+def get_dna_map_to_protein(coord_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Get a mapping of DNA positions to protein positions for a given gene-transcript pair.
+    
+    Parameters
+    ------------
+    coord_df : pandas.DataFrame
+        A DataFrame containing the coordinates of the CDS for a specific gene-transcript pair.
+
+    Returns
+    ------------
+    pandas.DataFrame
+        A DataFrame containing the mapping of DNA positions to protein positions.
+    """
+    strand = coord_df["Strand"].unique()[0]
+
+    exons_range = coord_df[["Start", "End"]].values
+    exons = np.concatenate([get_dna_exon_pos(exon, strand) for exon in exons_range])
+    exons_ix = np.concatenate([get_exon_ix(i, exon, strand) for i, exon in enumerate(exons_range)])
+    prot_pos = np.arange(len(exons)) // 3 + 1
+
+    df = pd.DataFrame({"GENE" : coord_df["Gene"].unique()[0],
+                        "CHROM" : f'chr{coord_df["Chr"].unique()[0]}',
+                        "DNA_POS" : exons,
+                        "PROT_POS" : prot_pos,
+                        "REVERSE_STRAND" : strand,
+                        "EXON_RANK" : exons_ix,
+                        "TRANSCRIPT_ID" : coord_df["Ens_transcript_ID"].unique()[0]})
+
+    return df
+
+def find_exon(x_coord: dict, exon_coord_df: pd.DataFrame) -> str | np.nan:
+    """
+    Find the exon ID for a given DNA position.
+    Parameters
+    ------------
+    x_coord : dict
+        A dictionary containing the DNA position, chromosome, and strand information.
+    exon_coord_df : pandas.DataFrame
+        A DataFrame containing the coordinates of all exons.
+
+    Returns
+    ------------
+    str or np.nan
+        The ID of the exon that contains the given DNA position, or np.nan if no match is found.
+    """
+
+    dna_pos, chrom, strand = x_coord["DNA_POS"], x_coord["CHROM"], x_coord["REVERSE_STRAND"]
+
+    if strand == -1:
+        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] <= dna_pos) & (dna_pos <= exon_coord_df['Start'])]
+
+    else:
+        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] >= dna_pos) & (dna_pos >= exon_coord_df['Start'])]
+
+    return matches['ID'].values[0] if not matches.empty else np.nan
+
+
+# Depth computation and coverage functions
+# ----------------------------------------------------------
+def dna2prot_depth(gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFrame, depth_df: pd.DataFrame) -> pd.DataFrame:
     """
     Get a DNA to protein mapping of all positions in the provided list of genes
-    Add as well coverage info & DNA to GENE annotation
+    Add coverage info & DNA to GENE annotation
+
+    Parameters
+    ------------
+    gene_list : list
+        A list of gene names for which to compute the DNA to protein mapping and coverage information.
+    coord_df : pandas.DataFrame
+        A DataFrame containing the coordinates of the CDS
+        for the genes in the panel.
+    dna_sites : pandas.DataFrame
+        A DataFrame containing the DNA positions that are part of the consensus panel,
+        along with their coverage information.
+    depth_df : pandas.DataFrame
+        A DataFrame containing the depth information for all positions in the genome.
+
+    Returns
+    ------------
+    pandas.DataFrame
+        A DataFrame containing the mapping of DNA positions to protein positions for the specified genes,
+        along with coverage and depth information for each position.
     """
 
     # Map DNA to protein pos, get exons index to protein pos, etc
@@ -428,10 +400,6 @@ def dna2prot_depth(gene_list, coord_df, dna_sites, depth_df):
         gene_coord_df = coord_df[coord_df["Gene"] == gene]
         dna_prot_df_lst.append(get_dna_map_to_protein(gene_coord_df))
     dna_prot_df = pd.concat(dna_prot_df_lst)
-
-    # dna_prot_df
-    #   contains all the protein positions of the genes in the panel
-    #     mapped to its corresponding genomic position
 
     # Merge CDS position with availble sites (not masked) and depth info
     # and any other site that was included in the panel (splicing sites out of the CDS)
@@ -449,14 +417,29 @@ def dna2prot_depth(gene_list, coord_df, dna_sites, depth_df):
     return dna_prot_df
 
 
-def get_dna2prot_depth(gene_n_transcript_info, depth_file, consensus_file):
+def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    This function outputs:
-    dna_prot_df:
+    Function to get the DNA to protein mapping for all positions in the provided list of genes,
+    along with coverage and depth information for each position, and the definition of all exons of
+    the genes/transcripts in the panel including UTR regions.
 
-    exons_coord_df:
-        df containing the definition of all exons of the genes/transcripts in the panel
-        including UTR regions
+    Parameters
+    ----------
+    gene_n_transcript_info : pandas.DataFrame
+        A DataFrame containing gene and transcript information for the panel.
+    depth_file : str
+        Path to the file containing depth information for all positions in the genome.
+    consensus_file : str
+        Path to the consensus panel file containing DNA positions and coverage information.
+    
+    Returns
+    ----------
+    dna_prot_df : pandas.DataFrame
+        A DataFrame containing the mapping of DNA positions to protein positions for the specified genes,
+        along with coverage and depth information for each position.
+    exons_coord_df_final : pandas.DataFrame
+        A DataFrame containing the coordinates of all exons (including UTRs) for the genes and transcripts
+        in the panel, formatted for BED files.
     """
 
     consensus_df = pd.read_table(consensus_file)
@@ -482,26 +465,28 @@ def get_dna2prot_depth(gene_n_transcript_info, depth_file, consensus_file):
 
     return dna_prot_df, exons_coord_df_final
 
+def get_exon_depth_saturation(gene_depth: pd.DataFrame, gene_mut: pd.DataFrame, dna: bool = False) -> pd.DataFrame:
+    """
+    Compute the depth and saturation of each exon in a gene.
 
-# Utils function to retrieve exon ID from coordinate
-
-def find_exon(x_coord, exon_coord_df):
-
-    dna_pos, chrom, strand = x_coord["DNA_POS"], x_coord["CHROM"], x_coord["REVERSE_STRAND"]
-
-    if strand == -1:
-        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] <= dna_pos) & (dna_pos <= exon_coord_df['Start'])]
-
-    else:
-        matches = exon_coord_df[(exon_coord_df['Chr'] == chrom) & (exon_coord_df['End'] >= dna_pos) & (dna_pos >= exon_coord_df['Start'])]
-
-    return matches['ID'].values[0] if not matches.empty else np.nan
-
-
-
-
-def get_exon_depth_saturation(gene_depth, gene_mut, dna=False):
-
+    Parameters
+    ----------
+    gene_depth : pandas.DataFrame
+        A DataFrame containing the depth and coverage information for each DNA position in the gene, along with the corresponding
+        protein position and exon rank.
+    gene_mut : pandas.DataFrame
+        A DataFrame containing the mutation information for the gene, including the DNA positions of the mutations (if dna=True)
+        or the protein positions of the mutations (if dna=False).
+    dna : bool, optional
+        A boolean indicating whether the input data is at the DNA level (True) or at the protein level (False). This affects how
+        saturation is calculated (default is False).
+    
+    Returns
+    -------
+    exon_depth : pandas.DataFrame
+        A DataFrame containing the average depth, coverage, number of mutated positions, and saturation for each exon in the gene,
+        along with the starting protein position of each exon.
+    """
     # Exon average depth
     gene_depth = gene_depth.copy()
     exon_depth = gene_depth.groupby("EXON_RANK").apply(
@@ -533,62 +518,104 @@ def get_exon_depth_saturation(gene_depth, gene_mut, dna=False):
     return exon_depth
 
 
-def get_exon_mid_prot_pos(exon_info, prot_len):
-
-    lst_end_pos = []
-    for i in range(len(exon_info)):
-        exon = exon_info.iloc[i]
-        start_pos = int(exon.START_PROT_POS)
-        end_pos = int(exon_info.iloc[i+1].START_PROT_POS) if i < len(exon_info) -1 else prot_len
-        lst_end_pos.append(end_pos)
-    exon_info["END_PROT_POS"] = lst_end_pos
-    exon_info["MID_PROT_POS"] = (exon_info["START_PROT_POS"] + exon_info["END_PROT_POS"]) / 2
-
-    return exon_info
-
-
-def get_res_coverage(dna_prot_df):
-
-    res_depth = dna_prot_df.dropna(subset=["PROT_POS"])[["PROT_POS", "COVERED", "DEPTH"]].reset_index(drop=True)
-    res_depth = res_depth.groupby("PROT_POS").mean().reset_index()
-
-    return res_depth
-
-
-def add_consecutive_numbers(nums, max_n):
-
-    result = []
-    for i in range(len(nums)):
-        result.append(nums[i])
-        # Check if the current number is the start of a consecutive sequence
-        if i < len(nums) - 1 and nums[i] + 1 != nums[i + 1]:
-            result.append(nums[i] + 1)
-
-    # Add the last consecutive number after the final element
-    result.append(nums[-1] + 1)
-
-    return result
-
-
-def where_plus(condition):
+# Plots
+# ----------------------------------------------------------
+def plot_coverage_per_gene(depths_df: pd.DataFrame) -> None:
     """
-    Util function to extend the color of mpl filling to the next position.
+    Wrapper function to plot coverage per gene for DNA, protein and exon levels.
+
+    Parameters
+    ----------
+    depths_df : pandas.DataFrame
+        DataFrame containing depth and coverage information for DNA, protein and exon positions.
+        In this case, it will be the "exons_depth" created in `get_dna2prot_depth` function.
     """
+    coverage = depths_df.drop_duplicates(subset=['GENE', 'DNA_POS', 'COVERED'])
+    coverage_summary = coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
 
-    ix = np.where(condition)[0]
+    for prefix in ["DNA", "Protein", "Exon"]:
+        LOG.info(f"Plotting coverage for {prefix}...")
+        plot_single_coverage(coverage_summary, prefix)
 
-    if len(ix) > 0:
-        ix = add_consecutive_numbers(ix, max_n=len(condition))
-        if len(condition) in ix:
-            ix.remove(len(condition))
-        boolean_vector = np.zeros(len(condition), dtype=bool)
-        boolean_vector[ix] = True
 
-        return pd.Series(boolean_vector)
+def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size: int = 5):
+    """
+    Plot coverage for a single prefix (DNA, protein or exon) and save the results in a PDF file.
 
+    Parameters
+    ----------
+    coverage_summary : pandas.DataFrame
+        DataFrame containing the coverage summary for each gene and coverage status.
+    prefix : str
+        The prefix to plot (DNA, Protein or Exon).
+    batch_size : int, optional
+        The number of genes to include in each batch when plotting (default is 5).
+    """
+    # Generate copy of the coverage summary to avoid modifying the original DataFrame
+    coverage_summary_cp = coverage_summary.copy()
+
+    coverage_pivot = coverage_summary_cp.pivot(index='GENE', columns='COVERED', values='COUNT').fillna(0)
+    coverage_pivot = coverage_pivot.sort_values(1, ascending=False).reset_index()
+    coverage_pivot = coverage_pivot.set_index('GENE')
+    genes_list = coverage_pivot.index.tolist()
+    coverage_perc = coverage_pivot.div(coverage_pivot.sum(axis=1), axis=0) * 100
+    coverage_pivot.to_csv(f"coverage_count_{prefix}.tsv", header=True, index=True, sep='\t')
+    coverage_perc.to_csv(f"coverage_perc_{prefix}.tsv", header=True, index=True, sep='\t')
+
+    if len(genes_list) < batch_size:
+
+        fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+
+        covered_col = True if True in coverage_pivot.columns else (1 if 1 in coverage_pivot.columns else coverage_pivot.columns[-1])
+
+        coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'],
+                            )
+
+        axes[0].set_title(f'{prefix} : covered vs. non-covered')
+        axes[0].set_ylabel(f'Number of {prefix}')
+        axes[0].set_xlabel('Gene')
+        axes[0].legend(title='Covered', loc='upper right')
+        axes[0].tick_params(axis='x', rotation=45)
+
+        coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
+        axes[1].set_title(f'{prefix} : percentage of covered')
+        axes[1].set_ylabel('Percentage (%)')
+        axes[1].set_xlabel('Gene')
+        axes[1].set_ylim(0, 100)
+        axes[1].tick_params(axis='x', rotation=45)
+
+        plt.tight_layout()
+        plt.savefig(f"coverage_per_{prefix}.pdf", dpi=300)
     else:
-        return condition
+        with PdfPages(f"coverage_per_{prefix}_batches.pdf") as pdf:
+            # split into batches N genes
+            for i in range(0, len(genes_list), batch_size): 
+                batch_genes = genes_list[i:i+batch_size]
+                batch_coverage_pivot = coverage_pivot.loc[batch_genes]
+                batch_coverage_perc = coverage_perc.loc[batch_genes]
 
+                fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+
+                covered_col = True if True in batch_coverage_pivot.columns else (1 if 1 in batch_coverage_pivot.columns else batch_coverage_pivot.columns[-1])
+
+                batch_coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'])
+                axes[0].set_title(f'{prefix} : covered vs. non-covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
+                axes[0].set_ylabel(f'Number of {prefix}')
+                axes[0].set_xlabel('Gene')
+                axes[0].legend(title='Covered', loc='upper right')
+                axes[0].tick_params(axis='x', rotation=45)
+
+                batch_coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
+                axes[1].set_title(f'{prefix} : percentage of covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
+                axes[1].set_ylabel('Percentage (%)')
+                axes[1].set_xlabel('Gene')
+                axes[1].set_ylim(0, 100)
+                axes[1].tick_params(axis='x', rotation=45)
+
+                plt.tight_layout()
+                pdf.savefig(dpi=300)
+                plt.show()
+                plt.close()
 
 @click.command()
 @click.option('--mutations-file', type=click.Path(exists=True), help='Mutations file')
