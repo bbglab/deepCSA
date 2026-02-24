@@ -20,7 +20,7 @@ process DNA_2_PROTEIN_MAPPING {
 
 
     script:
-  def ensembl_release = task.ext.ensembl_release
+    def ensembl_release = task.ext.ensembl_release
     """
     cut -f 1,2,6 ${panel_file} | uniq > ${meta2.id}.panel.unique.tsv
     panels_computedna2protein.py \\
