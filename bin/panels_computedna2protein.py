@@ -100,7 +100,22 @@ def get_gff_to_generator(release: int = 111):
     url = f"https://ftp.ensembl.org/pub/release-{release}/gff3/homo_sapiens/Homo_sapiens.GRCh38.{release}.gff3.gz"
 
     # Open request
-    response = requests.get(url, stream=True)
+    try:
+        response = requests.get(url, stream=True, timeout=60)
+        response.raise_for_status()
+    except requests.exceptions.Timeout:
+        error = RuntimeError(f"Request timed out while fetching Ensembl GFF3 (release {release}) from: {url}")
+        LOG.error(error)
+        raise error
+    except requests.exceptions.HTTPError as e:
+        error = RuntimeError(f"HTTP error {response.status_code} while fetching Ensembl GFF3 (release {release}) from: {url}")
+        LOG.error(error)
+        raise error
+    except requests.exceptions.RequestException as e:
+        error = RuntimeError(f"Failed to fetch Ensembl GFF3 (release {release}) from: {url}")
+        LOG.error(error)
+        raise error
+
     # decompress the stream on the fly
     with gzip.GzipFile(fileobj=response.raw) as gz:
         for line in gz:
@@ -157,7 +172,16 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int = 111) -> p
     # Transform to pandas for easier manipulation later on
     return df.to_pandas()
 
-def parse_cds_coord(exon: pd.Series) -> tuple[str, list] | list:
+def _parse_strand_coords(exon) -> tuple[str, int, int, int]:
+    """Extract chromosome, strand-ordered start/end, and strand integer from a GFF row."""
+    strand = 1 if exon.strand == "+" else -1
+    if strand == 1:
+        start, end = exon.start, exon.end
+    else:
+        start, end = exon.end, exon.start
+    return exon.chr, start, end, strand
+
+def parse_exon_coord(exon: pd.Series) -> tuple[str, list]:
     """
     Parses the coordinates of an exon row from the GFF DataFrame and returns the exon ID and its coordinates in a list format.
 
@@ -173,29 +197,35 @@ def parse_cds_coord(exon: pd.Series) -> tuple[str, list] | list:
     exons_coord : list
         A list containing the chromosome, start, end, and strand information of the exon.
     """
-
-    strand = 1 if exon.strand == "+" else -1
-
-    if strand == 1:
-        start = exon.start
-        end = exon.end
-    else:
-        start = exon.end
-        end = exon.start
+    chrom, start, end, strand = _parse_strand_coords(exon)
 
     # Extract exon_id using regex
     match = re.search(r"exon_id=([^;]+)", exon.attributes)
-    if match:
-        # Extract exon_id using regex
-        exon_id = match.group(1)
-        chrom = f'chr{exon.chr}'
+    
+    # Extract exon_id using regex
+    exon_id = match.group(1) if match else ""
+    chrom = f'chr{exon.chr}'
 
-        return exon_id, [chrom, start, end, strand]
+    return exon_id, [chrom, start, end, strand]
 
-    else:
-        chrom = exon.chr
+def parse_cds_coord(exon: pd.Series) -> list:
+    """
+    Parses the coordinates of a CDS row from the GFF DataFrame and returns the coordinates in a list format.
 
-        return [chrom, start, end, strand]
+    Parameters
+    ----------
+    exon : pandas.Series
+        A row from the GFF DataFrame corresponding to an exon feature.
+
+    Returns
+    -------
+    coord : list
+        A list containing the chromosome, start, end, and strand information of the CDS.
+    """
+    chrom, start, end, strand = _parse_strand_coords(exon)
+
+    # Return the CDS ID and coordinates
+    return [chrom, start, end, strand]
 
 def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: 
     """
@@ -236,7 +266,7 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
         exons_lookup = exons_lookup.sort_values("start", ascending=is_positive)
 
         for i, exon in enumerate(exons_lookup.itertuples(index=False)):
-            exon_id, exons_coord = parse_cds_coord(exon)
+            exon_id, exons_coord = parse_exon_coord(exon)
             exons_coord_df_lst.append([f"{gene}--exon_{i+1}_{transcript}_{exon_id}"] + exons_coord)
 
         # --- Handle CDS ---
@@ -444,6 +474,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
 
     consensus_df = pd.read_table(consensus_file)
     depth_df = pd.read_table(depth_file)
+    gff_df = gff_to_filtered_df(gene_n_transcript_info)
 
     consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on = ["CHROM", "POS"], how = 'left')
     consensus_df = consensus_df.rename(columns={"POS" : "DNA_POS"})
@@ -452,7 +483,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
         depth_df["DEPTH"] = depth_df.drop(columns=["CHROM", "POS", "CONTEXT"]).mean(1)
     depth_df = depth_df[["CHROM", "POS", "DEPTH"]].rename(columns = {"POS" : "DNA_POS"})
 
-    coord_df, exons_coord_df = get_exon_coord_wrapper(gene_n_transcript_info)
+    coord_df, exons_coord_df = get_exon_coord_wrapper(gene_n_transcript_info, gff_df)
     gene_list = list(coord_df["Gene"].unique())
     dna_prot_df = dna2prot_depth(gene_list, coord_df, consensus_df, depth_df)
 
