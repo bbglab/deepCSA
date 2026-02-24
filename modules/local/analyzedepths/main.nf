@@ -8,7 +8,8 @@ process ANALYZE_DEPTHS_GROUPS {
     input:
     path(features_table)
     // add another path with the depths per gene per sample
-    // optionally add another one with the depth per sample
+    // (take into account that maybe the format is not a single path but it comes with a name at the beginning (as a tuple) explore other modules for examples of this)
+    // optionally add another one with the depth per sample 
 
     output:
     // the main outputs will be the PDFs
