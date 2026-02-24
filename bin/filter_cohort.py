@@ -281,8 +281,7 @@ def flag_gnomad_snp(maf_df: pd.DataFrame) -> pd.DataFrame:
                                                                     lambda x: add_filter(x["FILTER"], x["gnomAD_SNP"], "gnomAD_SNP"),
                                                                     axis = 1
                                                                 )
-    
-    maf_df = maf_df.drop("gnomAD_SNP", axis = 1)
+        maf_df = maf_df.drop("gnomAD_SNP", axis = 1)
 
     return maf_df
 
