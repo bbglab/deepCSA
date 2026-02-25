@@ -67,7 +67,7 @@ def plot_depth_per_group(df, group_col, data_type, pdf):
 @click.command()
 @click.option('--table-filename', required=True, type=click.Path(exists=True), help='Input features table file')
 @click.option('--depth-table', required=True, type=click.Path(exists=True), help='Input depth table file')
-@click.option('--separator', required=True, type=click.Choice(['tab', 'comma']), help='Separator: tab or comma')
+@click.option('--separator', required=True, type=click.Choice(['tab', 'comma']), help='Separator used in features table: tab or comma')
 @click.option('--unique-identifier', default=None, type=str, help='Unique identifier column name')
 @click.option('--groups', default=None, type=str, help='List of columns with grouping information')
 @click.option('--custom-genes', required=False, type=str, help='Comma separated list of custom genes')
@@ -80,7 +80,7 @@ def main(table_filename, depth_table, unique_identifier, separator, groups, cust
     
     # Read tables
     features_table = pd.read_table(table_filename, header=0, sep=sep_char)
-    depth_table = pd.read_table(depth_table, header=0, sep=sep_char)
+    depth_table = pd.read_table(depth_table, header=0, sep="\t")
 
     # Process panel genes 
     panel_genes = sorted(set(depth_table['GENE'].unique()))
@@ -92,7 +92,7 @@ def main(table_filename, depth_table, unique_identifier, separator, groups, cust
     else:
         print(f'No custom genes provided, plotting all genes in the panel: {panel_genes}')
 
-    output_pdf_path = f"{output_prefix}.plot_depth_per_group.pdf"
+    output_name = f"{output_prefix}.plot_depth_per_group.pdf"
 
     # groups may contain lists of lists, but all formatted into a string
     groups_of_interest_init = [group.strip().strip(",").split(",") for group in groups.replace("[", ";;;").replace("]", "").split(";;;")] if groups else []
@@ -108,7 +108,7 @@ def main(table_filename, depth_table, unique_identifier, separator, groups, cust
 
     print(f"Processing data for the groups of interest: {groups_of_interest}")
 
-    with PdfPages(output_pdf_path) as pdf:
+    with PdfPages(output_name) as pdf:
         for group in groups_of_interest:
             print(f"Processing {group} group, type: {type(group)}")
             metadata_group_df = features_table[[uniq_name, str(group[0])]]
@@ -126,7 +126,7 @@ def main(table_filename, depth_table, unique_identifier, separator, groups, cust
                 print('Length of gene data for gene', gene, ':', len(gene_data))
                 plot_depth_per_group(gene_data, group, 'gene', pdf)
 
-            print(f"Plots saved to {output_pdf_path}")
+            print(f"Plots saved as {output_name}")
 
 if __name__ == "__main__":
     main()
@@ -140,5 +140,5 @@ python depth_group_comparison.py \
         --unique-identifier Sample_Name \
         --groups "[ ["Sample_Group"], ["cancer"], ["Age_onset"], ["Cancer_age_group"] , ["Bacterial_Signatures_identified"]]" \
         --custom-genes APC,BRAF,FBXW7,KRAS,PIK3CA,SMAD4,TP53' \
-        --output_prefix /data/bbg/projects/prominent/dev/internal_development/depth_group_comparison
+        --output_prefix depth_group_comparison
 '''
