@@ -232,6 +232,13 @@ workflow DEEPCSA{
     // define it as a module very similar to the table2group one
     ANALYZEDEPTHSGROUPS(features_table, PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample)
 
+    // Load group keys from JSON file in 'groups' channel
+    TABLE2GROUP.out.json_groups.map { json_path ->
+        def json = file(json_path).text
+        groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
+    }.flatten().unique()
+    .set { group_keys_ch } // this is a channel that contains only the group names as elements of the channel
+
 
     // Enrich regions in consensus panels
     ENRICHPANELS(MUT_PREPROCESSING.out.mutations_all_samples,
