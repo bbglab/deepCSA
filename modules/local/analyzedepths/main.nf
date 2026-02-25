@@ -20,7 +20,7 @@ process ANALYZE_DEPTHS_GROUPS {
     script:
     // Use meta.id to ensure each sample gets a unique folder/file name
     def output_path = task.workDir 
-    def separator = task.ext.separator ? " --separator \"${task.ext.separator}\" " : ""
+    def separator = task.ext.separator ? " --separator \"${task.ext.custom_groups_separator}\" " : ""
     def custom_groups = task.ext.features_groups ? "--groups \"${task.ext.features_groups}\" " : ""
     def custom_genes = task.ext.features_genes ? "--custom-genes \"${task.ext.features_genes}\" " : ""
     def unique_identifier = task.ext.unique_identifier ? "--unique-identifier ${task.ext.unique_identifier}" : ""
