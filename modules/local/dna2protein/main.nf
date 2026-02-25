@@ -21,13 +21,17 @@ process DNA_2_PROTEIN_MAPPING {
 
     script:
     def ensembl_release = task.ext.ensembl_release
+    def ensembl_species = task.ext.ensembl_species
+    def ensembl_genome  = task.ext.ensembl_genome
     """
     cut -f 1,2,6 ${panel_file} | uniq > ${meta2.id}.panel.unique.tsv
     panels_computedna2protein.py \\
                 --mutations-file ${mutations_file} \\
                 --consensus-file ${meta2.id}.panel.unique.tsv \\
                 --depths-file ${all_samples_depths} \\
-                --ensembl-release ${ensembl_release}
+                --ensembl-release ${ensembl_release} \\
+                --ensembl-species ${ensembl_species} \\
+                --ensembl-genome ${ensembl_genome}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

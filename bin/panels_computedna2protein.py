@@ -85,7 +85,7 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
     return gene_transcript_pairs
 
 # Generator to filter lines before they reach a dataframe
-def get_gff_to_generator(release: int = 111):
+def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", genome: str = "GRCh38"):
     """
     Get GFF file from ensembl FTP and filter it on the fly to keep only exon and CDS lines.
 
@@ -99,7 +99,7 @@ def get_gff_to_generator(release: int = 111):
     generator
         A generator that yields lines from the GFF file that correspond to exon and CDS features.
     """
-    url = f"https://ftp.ensembl.org/pub/release-{release}/gff3/homo_sapiens/Homo_sapiens.GRCh38.{release}.gff3.gz"
+    url = f"https://ftp.ensembl.org/pub/release-{release}/gff3/{species}/{species.capitalize()}.{genome}.{release}.gff3.gz"
 
     # Open request
     try:
@@ -454,7 +454,7 @@ def dna2prot_depth(gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFr
     return dna_prot_df
 
 
-def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str, release: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str, release: int, species: str, genome: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Function to get the DNA to protein mapping for all positions in the provided list of genes,
     along with coverage and depth information for each position, and the definition of all exons of
@@ -606,12 +606,14 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
 @click.option('--mutations-file', type=click.Path(exists=True), help='Mutations file')
 @click.option('--consensus-file', type=click.Path(exists=True), help='Input consensus panel file')
 @click.option('--depths-file', type=click.Path(exists=True), help='Input depths of all samples file')
+@click.option('--ensembl-species', type=str, default="homo_sapiens", help='Ensembl species name to use for GFF file retrieval (default)')
+@click.option('--ensembl-genome', type=str, default="GRCh38", help='Ensembl genome name to use for GFF file retrieval (default)')
 @click.option('--ensembl-release', type=int, default=111, help='Ensembl release number to use for GFF file retrieval (default is 111)')
-def main(mutations_file, consensus_file, depths_file, ensembl_release):
+def main(mutations_file, consensus_file, depths_file, ensembl_species, ensembl_genome, ensembl_release):
     # Count each mutation only ones if it appears in multiple reads
     gene_n_transcript = get_transcript_gene_from_maf(mutations_file, consensus_file)
 
-    exons_depth, exons_coord_id = get_dna2prot_depth(gene_n_transcript, depths_file, consensus_file, ensembl_release)
+    exons_depth, exons_coord_id = get_dna2prot_depth(gene_n_transcript, depths_file, consensus_file, ensembl_release, ensembl_species, ensembl_genome)
     LOG.info("Exons coordinates and depth computed!")
     exons_depth.to_csv("depths_per_position_exon_gene.tsv", header = True, index = False, sep = '\t')
 
