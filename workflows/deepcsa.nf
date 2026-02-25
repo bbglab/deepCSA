@@ -230,7 +230,9 @@ workflow DEEPCSA{
     PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
 
     // define it as a module very similar to the table2group one
+if (params.features_groups_list) {
     ANALYZEDEPTHSGROUPS(features_table, PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample)
+}
 
     // Load group keys from JSON file in 'groups' channel
     TABLE2GROUP.out.json_groups.map { json_path ->

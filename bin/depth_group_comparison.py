@@ -69,7 +69,7 @@ def plot_depth_per_group(df, group_col, data_type, pdf):
 @click.option('--depth-table', required=True, type=click.Path(exists=True), help='Input depth table file')
 @click.option('--separator', required=True, type=click.Choice(['tab', 'comma']), help='Separator used in features table: tab or comma')
 @click.option('--unique-identifier', default=None, type=str, help='Unique identifier column name')
-@click.option('--groups', default=None, type=str, help='List of columns with grouping information')
+@click.option('--groups', required=True, type=str, help='List of columns with grouping information')
 @click.option('--custom-genes', required=False, type=str, help='Comma separated list of custom genes')
 @click.option('--output_prefix', type=str, required=True, help='Prefix for output files')
 
@@ -95,14 +95,11 @@ def main(table_filename, depth_table, unique_identifier, separator, groups, cust
     output_name = f"{output_prefix}.plot_depth_per_group.pdf"
 
     # groups may contain lists of lists, but all formatted into a string
-    groups_of_interest_init = [group.strip().strip(",").split(",") for group in groups.replace("[", ";;;").replace("]", "").split(";;;")] if groups else []
+import ast
 
+    groups_of_interest_init = ast.literal_eval(groups) if groups else []
     groups_of_interest = []
-    for comparison in groups_of_interest_init:
-        comparison_group_clean = [item.strip() for item in comparison]
-        comparison_group = [item for item in comparison_group_clean if item != '']
-        if len(comparison_group) > 0:
-            groups_of_interest.append(comparison_group)
+groups_of_interest =  list(dict.fromkeys(item.strip() for sublist in groups_of_interest_init for item in sublist if item != ''))
 
     uniq_name = unique_identifier if unique_identifier else "sample"
 
