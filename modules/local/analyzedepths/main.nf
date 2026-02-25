@@ -36,7 +36,7 @@ process ANALYZE_DEPTHS_GROUPS {
                 ${unique_identifier} \\
                 ${custom_groups} \\
                 ${custom_genes} \\
-                --output_prefix ${output_prefix}/
+                --output_prefix ${output_prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
