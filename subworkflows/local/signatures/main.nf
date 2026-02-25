@@ -1,7 +1,8 @@
-include { MATRIX_CONCAT                 as MATRIXCONCATWGS          } from '../../../modules/local/sig_matrix_concat/main'
-include { SIGPROFILERASSIGNMENT                                     } from '../../../modules/local/signatures/sigprofiler/assignment/main'
-include { SIGNATURES_PROBABILITIES      as SIGPROBS                 } from '../../../modules/local/combine_sbs/main'
-include { HDP_EXTRACTION                as HDPEXTRACTION            } from '../signatures_hdp/main'
+include { MATRIX_CONCAT                         as MATRIXCONCATWGS          } from '../../../modules/local/sig_matrix_concat/main'
+include { SIGPROFILERASSIGNMENT_COSMIC_FIT      as SIGPROFILERASSIGNMENT    } from '../../../modules/local/signatures/sigprofiler/assignment/cosmic_fit/main'
+include { SIGPROFILERASSIGNMENT_DECOMPOSE_FIT   as HDPREASSIGNMENT          } from '../../../modules/local/signatures/sigprofiler/assignment/decompose_fit/main'
+include { SIGNATURES_PROBABILITIES              as SIGPROBS                 } from '../../../modules/local/combine_sbs/main'
+include { HDP_EXTRACTION                        as HDPEXTRACTION            } from '../signatures_hdp/main'
 
 
 workflow SIGNATURES {
@@ -38,6 +39,7 @@ workflow SIGNATURES {
 
     HDPEXTRACTION(named_matrices_wgs_hdp, reference_signatures)
 
+    HDPREASSIGNMENT(named_matrices_wgs_sp, HDPEXTRACTION.out.signatures, reference_signatures)
 
     emit:
     plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]

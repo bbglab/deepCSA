@@ -9,8 +9,9 @@ process  PROCESS_HDP_RESULTS {
     tuple val(meta2), path (iteration_dir)
 
     output:
-    tuple val(meta), path("output_dir"), emit: processed_results
-    path "versions.yml"                , topic: versions
+    tuple val(meta), path("output_dir")         , emit: processed_results
+    tuple val(meta), path("**/components.txt")   , emit: signatures
+    path "versions.yml"                         , topic: versions
 
 
     script:

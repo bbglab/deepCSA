@@ -1,4 +1,4 @@
-process SIGPROFILERASSIGNMENT {
+process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
     tag "$meta.id"
     label 'process_medium'
 
@@ -6,7 +6,8 @@ process SIGPROFILERASSIGNMENT {
 
     input:
     tuple val(meta), val(type), path(matrix)
-    path(reference_signatures)
+    path (extracted_signatures)
+    path (reference_signatures)
 
     output:
     tuple val(meta), path("**.pdf")                                         , emit: plots
@@ -27,20 +28,21 @@ process SIGPROFILERASSIGNMENT {
     export SIGPROFILERPLOTTING_VOLUME='./spa_volume'
     export SIGPROFILERASSIGNMENT_VOLUME='./spa_volume'
 
-    SigProfilerAssignment cosmic_fit \\
+    SigProfilerAssignment decompose_fit \\
             ${matrix} \\
-            output_${name} \\
-            --signatures ${reference_signatures} \\
+            signature_decomposition_${name} \\
+            --signatures ${extracted_signatures} \\
+            --signature_database ${reference_signatures} \\
             --genome_build ${assembly} \\
             --cpu ${task.cpus} \\
             --volume spa_volume
 
-    mv output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
+    #mv signature_decomposition_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt signature_decomposition_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
-        SigProfilerAssignment : 0.1.1
+        SigProfilerAssignment : 1.1.3
     END_VERSIONS
     """
 
@@ -53,7 +55,7 @@ process SIGPROFILERASSIGNMENT {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
-        SigProfilerAssignment : 0.1.1
+        SigProfilerAssignment : 1.1.3
     END_VERSIONS
     """
 }
