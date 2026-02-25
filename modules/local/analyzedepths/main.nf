@@ -15,27 +15,28 @@ process ANALYZE_DEPTHS_GROUPS {
 
     output:
     // the main outputs will be the PDFs
-    path("*.plot_depth_per_group.pdf")                           , emit: plots
+    path("*.plot_depth_per_group.pdf")                           , emit: plots_per_gene_per_group
 
     script:
     // Use meta.id to ensure each sample gets a unique folder/file name
-    def output_path = task.workDir 
-    def separator = task.ext.separator ? " --separator \"${task.ext.custom_groups_separator}\" " : ""
+    def output_prefix = "depth_group_comparison" 
+    def separator = task.ext.separator ?: "comma"
     def custom_groups = task.ext.features_groups ? "--groups \"${task.ext.features_groups}\" " : ""
     def custom_genes = task.ext.features_genes ? "--custom-genes \"${task.ext.features_genes}\" " : ""
     def unique_identifier = task.ext.unique_identifier ? "--unique-identifier ${task.ext.unique_identifier}" : ""
 
     // depth_group_comparison.py is in bin/ and has execution permissions add shebang 
+    // ${average_depth_gene_sample} comes from subworkflows/local/plotdepths/main.nf
     """
 
     depth_group_comparison.py \\
-                --table-filename $features_table \\
-                --depth-table $average_depth_gene_sample \\
-                $separator \\
-                $unique_identifier \\
-                $custom_groups \\
-                $custom_genes \\
-                --output_prefix ${output_path}/
+                --table-filename ${features_table} \\
+                --depth-table ${average_depth_gene_sample} \\
+                --separator ${separator} \\
+                ${unique_identifier} \\
+                ${custom_groups} \\
+                ${custom_genes} \\
+                --output_prefix ${output_prefix}/
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -45,7 +46,7 @@ process ANALYZE_DEPTHS_GROUPS {
 
     stub:
     """
-    touch groups.json all_groups.json
+    touch depth_group_comparison.plot_depth_per_group.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
