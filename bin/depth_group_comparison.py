@@ -37,7 +37,7 @@ def plot_depth_per_group(df, group_col, data_type, pdf):
     col_name = group_col[0] if isinstance(group_col, list) else group_col
 
     # Get the number of unique categories to plot
-    num_categories = df[col_name].nunique() + 1
+    num_categories = df[col_name].nunique() + 2
     plt.figure(figsize=(num_categories, 4))
 
     ax = sns.boxplot(data=df, x=col_name, y="MEAN_GENE_DEPTH", hue=col_name, showfliers=False, showmeans=False,legend=False)
