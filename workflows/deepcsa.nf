@@ -576,7 +576,7 @@ workflow DEEPCSA{
                 // DNA2PROTEINMAPPING.out.depths_exons_positions
                 )
 
-    if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) {
+    if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels || run_mutdensity) {
         if (params.omega){
             positive_selection_results = positive_selection_results.combine(PLOTTINGQC.out.flagged_omegas)
         }
