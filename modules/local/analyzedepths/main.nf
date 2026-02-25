@@ -18,8 +18,7 @@ process ANALYZE_DEPTHS_GROUPS {
     path("*.plot_depth_per_group.pdf")                           , emit: plots_per_gene_per_group
 
     script:
-    // Use meta.id to ensure each sample gets a unique folder/file name
-    def output_prefix = "depth_group_comparison" 
+
     def separator = task.ext.separator ?: "comma"
     def custom_groups = task.ext.features_groups ? "--groups \"${task.ext.features_groups}\" " : ""
     def custom_genes = task.ext.features_genes ? "--custom-genes \"${task.ext.features_genes}\" " : ""
@@ -36,7 +35,6 @@ process ANALYZE_DEPTHS_GROUPS {
                 ${unique_identifier} \\
                 ${custom_groups} \\
                 ${custom_genes} \\
-                --output_prefix ${output_prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
+import ast
 
 mpl.rcParams.update({
     'axes.titlesize': plots_general_config["title_fontsize"],
@@ -71,12 +72,12 @@ def plot_depth_per_group(df, group_col, data_type, pdf):
 @click.option('--unique-identifier', default=None, type=str, help='Unique identifier column name')
 @click.option('--groups', required=True, type=str, help='List of columns with grouping information')
 @click.option('--custom-genes', required=False, type=str, help='Comma separated list of custom genes')
-@click.option('--output_prefix', type=str, required=True, help='Prefix for output files')
 
 
-def main(table_filename, depth_table, unique_identifier, separator, groups, custom_genes, output_prefix):
+def main(table_filename, depth_table, unique_identifier, separator, groups, custom_genes):
 
     sep_char = separator2character[separator]
+    uniq_name = unique_identifier if unique_identifier else "sample"
     
     # Read tables
     features_table = pd.read_table(table_filename, header=0, sep=sep_char)
@@ -92,21 +93,19 @@ def main(table_filename, depth_table, unique_identifier, separator, groups, cust
     else:
         print(f'No custom genes provided, plotting all genes in the panel: {panel_genes}')
 
-    output_name = f"{output_prefix}.plot_depth_per_group.pdf"
-
-    # groups may contain lists of lists, but all formatted into a string
-import ast
-
+    # Process groups
     groups_of_interest_init = ast.literal_eval(groups) if groups else []
     groups_of_interest = []
-groups_of_interest =  list(dict.fromkeys(item.strip() for sublist in groups_of_interest_init for item in sublist if item != ''))
+    groups_of_interest =  list(dict.fromkeys(item.strip() for sublist in groups_of_interest_init for item in sublist if item != ''))
 
-    uniq_name = unique_identifier if unique_identifier else "sample"
 
     print(f"Processing data for the groups of interest: {groups_of_interest}")
 
-    with PdfPages(output_name) as pdf:
-        for group in groups_of_interest:
+    # Handle groups so each group has its own plot in all and individual genes and stored in the same pdf file per group
+    for group in groups_of_interest:
+        output_name = f"{group}.plot_depth_per_group.pdf"
+        
+        with PdfPages(output_name) as pdf:    
             print(f"Processing {group} group, type: {type(group)}")
             metadata_group_df = features_table[[uniq_name, str(group[0])]]
             merged_depth_df = pd.merge(metadata_group_df, depth_table, how='left', left_on=uniq_name, right_on='SAMPLE_ID')
@@ -137,5 +136,4 @@ python depth_group_comparison.py \
         --unique-identifier Sample_Name \
         --groups "[ ["Sample_Group"], ["cancer"], ["Age_onset"], ["Cancer_age_group"] , ["Bacterial_Signatures_identified"]]" \
         --custom-genes APC,BRAF,FBXW7,KRAS,PIK3CA,SMAD4,TP53' \
-        --output_prefix depth_group_comparison
 '''
