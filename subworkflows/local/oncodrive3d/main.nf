@@ -14,15 +14,13 @@ workflow ONCODRIVE3D_ANALYSIS{
     take:
     mutations
     mutabilities
-    bedfile
     datasets
     annotations
     raw_vep
 
     main:
 
-    QUERYMUTATIONS(mutations, bedfile)
-    SUBSETONCODRIVE3D(QUERYMUTATIONS.out.subset)
+    SUBSETONCODRIVE3D(mutations)
 
     // mutations preprocessing
     if (params.o3d_raw_vep){

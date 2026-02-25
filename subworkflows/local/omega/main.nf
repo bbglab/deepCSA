@@ -45,12 +45,10 @@ workflow OMEGA_ANALYSIS{
     all_gloc_results        = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
-    QUERYMUTATIONS(mutations, bedfile)
-
     QUERYPANEL(panel_captured_rich, bedfile)
 
-    SUBSETOMEGA(QUERYMUTATIONS.out.subset)
-    SUBSETOMEGAMULTI(QUERYMUTATIONS.out.subset)
+    SUBSETOMEGA(mutations)
+    SUBSETOMEGAMULTI(mutations)
 
     SUBSETOMEGA.out.mutations
     .join( depth )

@@ -16,19 +16,10 @@ workflow MUTABILITY {
     depth
     profile
     panel_file
-    bedfiles
 
     main:
-    // actual code
 
-    // this line was not needed nor used in the computation of mutabilities,
-    // since there is an additional left_join merge in the compute mutabilities code,
-    // the depths can be the full ones
-    // QUERYDEPTHS(depth, bedfiles)
-    QUERYMUTATIONS(mutations, bedfiles)
-
-
-    SUBSETMUTABILITY(QUERYMUTATIONS.out.subset)
+    SUBSETMUTABILITY(mutations)
     SUBSETMUTABILITY.out.mutations
     .join(profile)
     .join(depth)
