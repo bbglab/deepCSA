@@ -35,7 +35,7 @@ process SIGPROFILERASSIGNMENT_COSMIC_FIT {
             --cpu ${task.cpus} \\
             --volume spa_volume
 
-    mv output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
+    cp output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

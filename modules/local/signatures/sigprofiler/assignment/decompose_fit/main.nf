@@ -6,7 +6,7 @@ process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
 
     input:
     tuple val(meta), val(type), path(matrix)
-    path (extracted_signatures)
+    tuple val(meta2), path (extracted_signatures)
     path (reference_signatures)
 
     output:
@@ -17,6 +17,7 @@ process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
 
 
     script:
+    def args = task.ext.args ?: ''
     def name = "${meta.id}.${type}"
     def assembly = task.ext.assembly ?: "GRCh38"
     
@@ -35,9 +36,10 @@ process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
             --signature_database ${reference_signatures} \\
             --genome_build ${assembly} \\
             --cpu ${task.cpus} \\
-            --volume spa_volume
+            --volume spa_volume \\
+            ${args}
 
-    #mv signature_decomposition_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt signature_decomposition_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
+    cp signature_decomposition_${name}/Decompose_Solution/Activities/Decomposed_MutationType_Probabilities.txt signature_decomposition_${name}/Decompose_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

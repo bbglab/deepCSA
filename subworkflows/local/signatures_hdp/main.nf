@@ -31,7 +31,7 @@ workflow HDP_EXTRACTION {
 
     COMPARESIGNATURES(PROCESS_HDP_RESULTS.out.processed_results, reference_signatures)
 
-    REFORMATSIGNATURES(PROCESS_HDP_RESULTS.out.processed_results)
+    REFORMATSIGNATURES(PROCESS_HDP_RESULTS.out.signatures)
 
 
     emit:
