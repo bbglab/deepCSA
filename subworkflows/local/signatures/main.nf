@@ -39,7 +39,7 @@ workflow SIGNATURES {
 
     HDPEXTRACTION(named_matrices_wgs_hdp, reference_signatures)
 
-    HDPREASSIGNMENT(named_matrices_wgs_sp, HDPEXTRACTION.out.signatures, reference_signatures)
+    HDPREASSIGNMENT(named_matrices_wgs_sp, HDPEXTRACTION.out.signatures.first(), reference_signatures)
 
     emit:
     plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]

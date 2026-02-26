@@ -39,8 +39,7 @@ process SIGPROFILERASSIGNMENT_COSMIC_FIT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-        SigProfilerAssignment : 0.1.1
+        SigProfilerAssignment : 1.1.3
     END_VERSIONS
     """
 
@@ -52,8 +51,7 @@ process SIGPROFILERASSIGNMENT_COSMIC_FIT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-        SigProfilerAssignment : 0.1.1
+        SigProfilerAssignment : 1.1.3
     END_VERSIONS
     """
 }

@@ -24,11 +24,12 @@ data = data.sort_index().reset_index()
 data.columns = ["Type"] + [f"HDP_{x}" for x in data.columns[1:]]
 data.to_csv("${signatures.baseName}.sp_formatted.tsv", sep='\\t', header=True, index=False)
 CODE
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
-    """
+
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+    python: \$(python --version | sed 's/Python //g')
+END_VERSIONS
+    """    
 
     stub:
     def prefix = task.ext.prefix ?: ""
