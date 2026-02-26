@@ -7,9 +7,9 @@ process ANALYZE_DEPTHS_GROUPS {
 
     input:
     path(features_table)
-    //input depth file
-    // note that the variable for depth is defined in /deepCSA/subworkflows/local/plotdepths/main.nf
+    // note that these input depth files are generated in another step and defined in /deepCSA/subworkflows/local/plotdepths/main.nf
     tuple val(meta) , path(average_depth_gene_sample) // needs to be added as a tupple since in PLOT_DEPTHS module (/modules/plot/depths_summary/main.nf) the output is set up as a tupple to"track" to which metadata belongs to this file
+    tuple val(meta) , path(average_depth_sample) 
     
 
 
