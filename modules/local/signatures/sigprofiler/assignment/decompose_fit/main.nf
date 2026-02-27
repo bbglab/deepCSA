@@ -53,6 +53,8 @@ process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
     prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.pdf
+    touch ${prefix}.txt
+    touch ${prefix}.Decomposed_MutationType_Probabilities.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

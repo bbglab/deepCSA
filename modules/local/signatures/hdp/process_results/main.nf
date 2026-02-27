@@ -38,6 +38,7 @@ process  PROCESS_HDP_RESULTS {
     prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.pdf
+    touch components.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
