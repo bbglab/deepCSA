@@ -1,5 +1,6 @@
 process SIGPROFILERASSIGNMENT {
     tag "$meta.id"
+    label 'process_medium'
 
     container 'docker.io/ferriolcalvet/sigprofiler_assignment:1.1.3'
 

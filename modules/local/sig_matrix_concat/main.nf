@@ -1,5 +1,6 @@
 process MATRIX_CONCAT {
     tag "$meta.id"
+    label 'process_low'
 
     label 'deepcsa_core'
 

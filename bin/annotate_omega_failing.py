@@ -338,26 +338,8 @@ def main(omegas_file: str, compiled_flagged_files: str, output: str) -> None:
         lines = [ln.strip() for ln in fh if ln.strip()]
     flagged_paths = [Path(l) for l in lines]
 
-    # Read omegas with resilience to missing header lines
-    # Some aggregation steps may drop the header; if so, re-read with explicit names
-    def _read_omegas(path: Path) -> pd.DataFrame:
-        try:
-            df = pd.read_csv(path, sep="\t", header=0, dtype=str, skip_blank_lines=True)
-        except pd.errors.EmptyDataError:
-            return pd.DataFrame(columns=["gene","sample","impact","mutations","dnds","pvalue","lower","upper"])  # empty
-        # If expected columns are missing (e.g., header was dropped), re-read with names
-        expected = {"gene","sample","impact","mutations","dnds","pvalue","lower","upper"}
-        if not expected.issubset(set(map(str, df.columns))):
-            df = pd.read_csv(path,
-                             sep="\t",
-                             header=None,
-                             names=["gene","sample","impact","mutations","dnds","pvalue","lower","upper"],
-                             dtype=str,
-                             skip_blank_lines=True)
-        return df.fillna("")
-
     # Read omegas
-    omegas = _read_omegas(omegas_path)
+    omegas = pd.read_csv(omegas_path, sep="\t", header=0, dtype=str).fillna("")
 
     syn_flagged, npa_flagged = load_flagged_tables(flagged_paths)
 

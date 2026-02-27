@@ -1,8 +1,8 @@
 process SORT_MERGED_PANEL {
 
     tag "${meta.id}"
+    label 'deepcsa_core'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:
     tuple val(meta), path(panel)

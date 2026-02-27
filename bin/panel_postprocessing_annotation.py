@@ -3,9 +3,6 @@
 import click
 import pandas as pd
 import numpy as np
-import sys
-import gc
-
 from itertools import product
 from bgreference import hg38, hg19, mm10, mm39
 from utils_context import transform_context
@@ -81,10 +78,6 @@ def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
     return returned_df
 
 
-def safe_transform_context(row, chosen_assembly):
-    if pd.isna(row["POS"]) or pd.isna(row["CHROM"]) or pd.isna(row["REF"]) or pd.isna(row["ALT"]):
-        return "UNKNOWN"
-    return transform_context(row["CHROM"], row["POS"], f'{row["REF"]}/{row["ALT"]}', chosen_assembly)
 
 
 def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = False):
@@ -137,28 +130,36 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
 
 
 
-def process_chunk(chunk, chosen_assembly, using_canonical):
+
+
+
+def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file,
+                                    assembly = 'hg38',
+                                    using_canonical = True
+                                    ):
     """
-    Process a single chunk of VEP annotation data.
+    Process VEP output and summarize annotations for a panel.
     """
-    print("Processing chunk...")
-    chunk.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Feature', 'Consequence', 'Protein_position', 'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
+    all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
+                                        header = None, na_values = custom_na_values)
+    print("All possible sites loaded")
+    all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Feature', 'Consequence', 'Protein_position',
+                                   'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
 
     if using_canonical:
-        annotated_variants = VEP_annotation_to_single_row_only_canonical(chunk, keep_genes= True)
+        annotated_variants = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
         if annotated_variants is not None:
             annotated_variants.columns = [ x.replace("canonical_", "") for x in annotated_variants.columns]
             print("Using only canonical transcript annotations for the panel")
         else:
-            annotated_variants = VEP_annotation_to_single_row(chunk, keep_genes= True)
+            annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
             print("CANONICAL was not available in the panel annotation.")
             print("Using most deleterious consequence for the panel")
     else:
-        annotated_variants = VEP_annotation_to_single_row(chunk, keep_genes= True)
+        annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
         print("Using most deleterious consequence for the panel")
 
-    del chunk
-    gc.collect()
+    del all_possible_sites
     annotated_variants[annotated_variants.columns[1:]] = annotated_variants[annotated_variants.columns[1:]].fillna('-')
     print("VEP to single row working")
 
@@ -171,8 +172,8 @@ def process_chunk(chunk, chosen_assembly, using_canonical):
 
     # add context type to all SNVs
     # remove context from the other substitution types
-    
-    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda row: safe_transform_context(row, chosen_assembly), axis=1)
+    chosen_assembly = assembly_name2function[assembly]
+    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', chosen_assembly) , axis = 1)
     print("Context added")
 
     annotated_variants["CONTEXT"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: x[:3])
@@ -182,41 +183,26 @@ def process_chunk(chunk, chosen_assembly, using_canonical):
     annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] )
     print("Annotation sorted")
 
-    return annotated_variants_reduced
+    annotated_variants_reduced.to_csv(f"{all_possible_sites_annotated_file}_rich.tsv",
+                                        header = True,
+                                        index = False,
+                                        sep = "\t")
 
-def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file,
-                                    assembly = 'hg38',
-                                    using_canonical = True,
-                                    chunk_size = 100000
-                                    ):
-    """
-    Process VEP output and summarize annotations for a panel using chunked reading.
-    """
-    chosen_assembly = assembly_name2function[assembly]
 
-    reader = pd.read_csv(VEP_output_file, sep="\t", header=None, na_values=custom_na_values, chunksize=chunk_size)
-    
-    with open(f"{all_possible_sites_annotated_file}_rich.tsv", "w") as rich_out_file, \
-         open(f"{all_possible_sites_annotated_file}.tsv", "w") as simple_out_file:
-        
-        for i, chunk in enumerate(reader):
-            processed_chunk = process_chunk(chunk, chosen_assembly, using_canonical)
-            
-            rich_out_file.write(processed_chunk.to_csv(header=(i == 0), index=False, sep="\t"))
-            simple_out_file.write(processed_chunk[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT', 'CONTEXT']]
-                                  .to_csv(header=(i == 0), index=False, sep="\t"))
-            
-            del processed_chunk
-            gc.collect()
+    annotated_variants_reduced = annotated_variants_reduced[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'IMPACT', 'CONTEXT_MUT', 'CONTEXT']]
+    print("Annotation simple selected")
+    annotated_variants_reduced.to_csv(f"{all_possible_sites_annotated_file}.tsv",
+                                        header = True,
+                                        index = False,
+                                        sep = "\t")
 
 
 @click.command()
 @click.option('--vep_output_file', type=click.Path(exists=True), required=True, help='Path to the VEP output file.')
 @click.option('--assembly', type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), default='hg38', help='Genome assembly.')
-@click.option('--output_file', type=click.Path(), required=True, help='Path to the output annotated file (prefix without .tsv).')
+@click.option('--output_file', type=click.Path(), required=True, help='Path to the output annotated file.')
 @click.option('--only_canonical', is_flag=True, default=False, help='Use only canonical transcripts.')
-@click.option('--chunk-size', type=int, default=100000, show_default=True, help='Chunk size for streamed reading of VEP output.')
-def main(vep_output_file, assembly, output_file, only_canonical, chunk_size):
+def main(vep_output_file, assembly, output_file, only_canonical):
     """
     CLI entry point for processing VEP annotations and summarizing them for a panel.
     """
@@ -224,8 +210,7 @@ def main(vep_output_file, assembly, output_file, only_canonical, chunk_size):
     click.echo(f"Using assembly: {assembly}")
     click.echo(f"Output file: {output_file}")
     click.echo(f"Using only canonical transcripts: {only_canonical}")
-    click.echo(f"Chunk size: {chunk_size}")
-    vep2summarizedannotation_panel(vep_output_file, output_file, assembly, only_canonical, chunk_size)
+    vep2summarizedannotation_panel(vep_output_file, output_file, assembly, only_canonical)
     click.echo("Annotation processing completed.")
 
 

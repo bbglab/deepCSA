@@ -41,24 +41,15 @@ process SITESFROMPOSITIONS {
     if [ ${chunk_size} -gt 0 ]; then
         echo "[SITESFROMPOSITIONS] Chunking sites file with chunk_size=${chunk_size}"
         
-        # Extract header
-        head -n 1 captured_positions.sites4VEP.full.tsv > header.tmp
-        
         # Split file into chunks (excluding header)
-        tail -n +2 captured_positions.sites4VEP.full.tsv | split -l ${chunk_size} --additional-suffix=.tsv -d - captured_positions.sites4VEP.chunk
-        
-        # Add header to each chunk
-        for chunk in captured_positions.sites4VEP.chunk*.tsv; do
-            cat header.tmp "\$chunk" > "\${chunk}.tmp" && mv "\${chunk}.tmp" "\$chunk"
-        done
+        cat captured_positions.sites4VEP.full.tsv | split -l ${chunk_size} --additional-suffix=.tsv -d - captured_positions.sites4VEP.chunk
         
         n_chunks=\$(ls captured_positions.sites4VEP.chunk*.tsv | wc -l)
         echo "[SITESFROMPOSITIONS] Created \${n_chunks} chunks"
-        
-        rm header.tmp captured_positions.sites4VEP.full.tsv
+
     else
         echo "[SITESFROMPOSITIONS] No chunking (chunk_size=0), processing as single file"
-        mv captured_positions.sites4VEP.full.tsv captured_positions.sites4VEP.chunk1.tsv
+        cp captured_positions.sites4VEP.full.tsv captured_positions.sites4VEP.chunk1.tsv
     fi
 
     cat <<-END_VERSIONS > versions.yml
@@ -69,7 +60,7 @@ process SITESFROMPOSITIONS {
 
     stub:
     """
-    touch captured_positions.sites4VEP.tsv;
+    touch captured_positions.sites4VEP.chunk1.tsv;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

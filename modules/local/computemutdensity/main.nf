@@ -1,5 +1,6 @@
 process MUTATION_DENSITY {
     tag "$meta.id"
+    label 'process_single'
 
     label 'deepcsa_core'
 

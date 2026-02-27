@@ -1,6 +1,7 @@
 process MUTATIONS_2_SIGNATURES {
 
     tag "${meta.id}"
+    label 'process_low'
 
     label 'deepcsa_core'
 

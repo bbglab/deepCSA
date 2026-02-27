@@ -1,5 +1,7 @@
 process TABLE_2_GROUP {
+
     tag "groups"
+    label 'process_low'
 
     label 'deepcsa_core'
 

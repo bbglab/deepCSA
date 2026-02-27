@@ -1,5 +1,6 @@
 process GROUP_GENES {
     tag "groups"
+    label 'process_low'
 
     label 'deepcsa_core'
 

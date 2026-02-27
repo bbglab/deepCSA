@@ -1,6 +1,9 @@
 process PLOT_DEPTHS {
 
     tag "$meta.id"
+    label 'process_single'
+    label 'time_low'
+    label 'process_high_memory'
 
     label 'deepcsa_core'
 

@@ -129,7 +129,6 @@ workflow OMEGA_ANALYSIS{
         global_loc_results = ESTIMATORGLOBALLOC.out.results
         
         global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
-
         all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/selection/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
 
         PREPROCESSING.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts }

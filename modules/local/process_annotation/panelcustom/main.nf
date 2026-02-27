@@ -21,7 +21,6 @@ process CUSTOM_ANNOTATION_PROCESSING {
 
     script:
     def simple = task.ext.simple ? "--simple" : ""
-    def chr_chunk_size = task.ext.chr_chunk_size ?: params.panel_custom_processing_chunk_size
     // TODO
     // Document this custom_regions has to be a TSV file with the following columns:
     // chromosome  start   end gene_name    impactful_mutations [neutral_impact] [new_impact]
@@ -31,16 +30,10 @@ process CUSTOM_ANNOTATION_PROCESSING {
     // neutral_impact      : (optional, default; synonymous)
     // new_impact          : (optional, default: missense) is the impact that the mutations listed in impactful_mutations will receive.
     """
-    # Calculate expected number of chunks
-    n_lines=\$(wc -l < ${panel_annotated})
-    n_chunks=\$(( (n_lines + ${chr_chunk_size} - 1) / ${chr_chunk_size} ))
-    echo "[CUSTOM_ANNOTATION_PROCESSING] Processing ${meta.id} with internal chr_chunk_size=${chr_chunk_size} (\${n_lines} lines, ~\${n_chunks} chunks)"
-    
     panel_custom_processing.py \\
         --vep-output-file ${panel_annotated} \\
         --custom-regions-file ${custom_regions} \\
         --customized-output-annotation-file ${panel_annotated.getBaseName()}.custom.tsv \\
-        --chr-chunk-size ${chr_chunk_size} \\
         ${simple} ;
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

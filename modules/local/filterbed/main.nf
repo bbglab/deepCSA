@@ -1,6 +1,7 @@
 process FILTERBED {
 
     tag "$meta.id"
+    label 'process_high'
 
     label 'deepcsa_core'
 

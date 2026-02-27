@@ -1,5 +1,9 @@
 process OMEGA_PREPROCESS {
     tag "$meta.id"
+    label 'cpu_single_fixed'
+    label 'time_low'
+    label 'process_high_memory'
+
 
     container 'docker.io/bbglab/omega:0.2.1'
 
