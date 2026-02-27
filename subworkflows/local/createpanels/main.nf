@@ -43,8 +43,8 @@ workflow CREATE_PANELS {
     // Flatten chunks and create tuples for VEP annotation
     SITESFROMPOSITIONS.out.annotated_panel_reg
         .transpose()
-        .map{ meta, chunk -> 
-            def chunk_id = chunk.name.tokenize('.').find{ it.startsWith('chunk') }
+        .map{ _meta, chunk -> 
+            def chunk_id = chunk.name.tokenize('.').find{ it -> it.startsWith('chunk') }
             [[ id : "captured_panel_${chunk_id}"], chunk] 
         }
         .set{ sites_annotation }
@@ -63,13 +63,13 @@ workflow CREATE_PANELS {
 
     // Collect and merge all chunks using collectFile
     POSTPROCESSVEPPANEL.out.compact_panel_annotation
-        .map{ it[1] }
+        .map{ it -> it[1] }
         .collectFile(name: 'captured_panel.vep.annotation.tsv', keepHeader: true, skip: 1)
         .map{ file -> [[ id : "captured_panel"], file] }
         .set{ merged_compact_unsorted }
 
     POSTPROCESSVEPPANEL.out.rich_panel_annotation
-        .map{ it[1] }
+        .map{ it -> it[1] }
         .collectFile(name: 'captured_panel.vep.annotation.rich.tsv', keepHeader: true, skip: 1)
         .map{ file -> [[ id : "captured_panel"], file] }
         .set{ merged_rich_unsorted }
@@ -96,7 +96,7 @@ workflow CREATE_PANELS {
     } else {
         complete_annotated_panel = merged_compact
         rich_annotated = merged_rich
-        added_regions = Channel.empty()
+        added_regions = channel.empty()
     }
 
     domains = file(params.domains_file, checkIfExists: true)
@@ -175,6 +175,6 @@ workflow CREATE_PANELS {
     domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
     domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
 
-    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
-    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
+    postprocessed_panel         = merged_compact.first()
+    postprocessed_panel_rich    = merged_rich.first()
 }
