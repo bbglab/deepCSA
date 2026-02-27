@@ -400,7 +400,6 @@ workflow DEEPCSA{
     if (params.dnds){
         DNDS(mutations_in_exons,
                     DEPTHSEXONSCONS.out.subset,
-                    CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel
                     )
     }
