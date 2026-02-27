@@ -19,7 +19,7 @@ process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
     script:
     def args = task.ext.args ?: ''
     def name = "${meta.id}.${type}"
-    def assembly = task.ext.assembly ?: "GRCh38"
+    def assembly = task.ext.genome_assembly ?: "GRCh38"
     
     // FIXME: the definition of subgroups to exclude seems not to work in the new CLI SigProfilerAssignment
     // def exclude_signature_subgroups = params.exclude_subgroups ? "--exclude_signature_subgroups \"${params.exclude_subgroups}\"" : ""
