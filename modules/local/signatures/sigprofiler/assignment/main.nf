@@ -1,7 +1,7 @@
 process SIGPROFILERASSIGNMENT {
     tag "$meta.id"
 
-    container 'docker.io/ferriolcalvet/sigprofilerassignment'
+    container 'docker.io/ferriolcalvet/sigprofiler_assignment:1.1.3'
 
     input:
     tuple val(meta), val(type), path(matrix)
@@ -17,8 +17,22 @@ process SIGPROFILERASSIGNMENT {
     script:
     def name = "${meta.id}.${type}"
     def assembly = task.ext.assembly ?: "GRCh38"
+    
+    // FIXME: the definition of subgroups to exclude seems not to work in the new CLI SigProfilerAssignment
+    // def exclude_signature_subgroups = params.exclude_subgroups ? "--exclude_signature_subgroups \"${params.exclude_subgroups}\"" : ""
     """
-    python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output_${name}', input_type='matrix', context_type='96', genome_build='${assembly}', signature_database='${reference_signatures}', exclude_signature_subgroups=${params.exclude_subgroups})"
+    mkdir -p spa_volume
+    export SIGPROFILERMATRIXGENERATOR_VOLUME='./spa_volume'
+    export SIGPROFILERPLOTTING_VOLUME='./spa_volume'
+    export SIGPROFILERASSIGNMENT_VOLUME='./spa_volume'
+
+    SigProfilerAssignment cosmic_fit \\
+            ${matrix} \\
+            output_${name} \\
+            --signatures ${reference_signatures} \\
+            --genome_build ${assembly} \\
+            --cpu ${task.cpus} \\
+            --volume spa_volume
 
     mv output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
 

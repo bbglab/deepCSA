@@ -1,5 +1,5 @@
 
-include { TABIX_BGZIPTABIX_QUERY        as SUBSETMUTATIONS          } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY        as QUERYMUTATIONS          } from '../../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                    as SUBSETMUTEPIVAFAM        } from '../../../../modules/local/subsetmaf/main'
 include { MUTATED_GENOMES_FROM_VAF      as MUTATEDGENOMESFROMVAFAM  } from '../../../../modules/local/mutated_genomes_from_vaf/main'
@@ -17,9 +17,9 @@ workflow MUTATED_CELLS_VAF {
 
     main:
 
-    SUBSETMUTATIONS(mutations, bedfile)
+    QUERYMUTATIONS(mutations, bedfile)
 
-    SUBSETMUTEPIVAFAM(SUBSETMUTATIONS.out.subset)
+    SUBSETMUTEPIVAFAM(QUERYMUTATIONS.out.subset)
 
     SUBSETMUTEPIVAFAM.out.mutations
     .join(omegas)

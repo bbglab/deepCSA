@@ -1,7 +1,7 @@
 process DNA_2_PROTEIN_MAPPING {
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
 
     input:
@@ -13,6 +13,8 @@ process DNA_2_PROTEIN_MAPPING {
     output:
     tuple val(meta2), path("depths_per_position_exon_gene.tsv") , emit: depths_exons_positions
     tuple val(meta2), path("panel_exons.bed4.bed")              , emit: panel_exons_bed
+    tuple val(meta2), path("*.pdf")                             , emit: covered_genes_pdf
+    tuple val(meta2), path("coverage*.tsv")                     , emit: covered_genes_tsv
     path  "versions.yml"                                        , topic: versions
 
 

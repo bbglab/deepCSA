@@ -3,7 +3,7 @@ process PLOT_SATURATION {
     tag "$meta.id"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta) , path(results_files) , path(site_comparison) // includes all positive selection results and site comparisons
@@ -15,8 +15,8 @@ process PLOT_SATURATION {
     tuple val(meta4), path (exons_depths_df)
 
     output:
-    tuple val(meta), path("**.png")  , emit: plots
-    path "versions.yml"              , topic: versions
+    tuple val(meta), path("**.png"), optional : true    ,  emit: plots
+    path "versions.yml"                                 , topic: versions
 
 
     script:

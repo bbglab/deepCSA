@@ -3,7 +3,7 @@ process PLOT_MUTDENSITY_QC {
     tag "${group_name}"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     path (all_mutdensities)
@@ -12,9 +12,9 @@ process PLOT_MUTDENSITY_QC {
     val (group_name)
 
     output:
-    path("**.pdf")                              , emit: plots
-    path("**.csv")                              , emit: tables
-    path("**compiled_all_flagged_cases*.tsv")   , emit: compiled_flagged
+    path("**.pdf")                              , optional: true    , emit: plots
+    path("**.csv")                              , optional: true    , emit: tables
+    path("**compiled_all_flagged_cases*.tsv")   , optional: true    , emit: compiled_flagged
     path "versions.yml" , topic: versions
 
     script:

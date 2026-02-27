@@ -115,9 +115,9 @@ params {
     site_comparison_grouping    = 'all'
     omega_plot                  = true
 
-    omega_withingene            = true
-    omega_autodomains           = true
-    omega_autoexons             = true
+    create_subgenic_regions     = true
+    autodomains                 = true
+    autoexons                   = true
 
     mutated_cells_vaf           = true
     mutepi_genes_to_recode      = null
@@ -172,9 +172,9 @@ params {
     site_comparison_grouping    = 'all'
     omega_plot                  = true
 
-    omega_withingene            = true
-    omega_autodomains           = true
-    omega_autoexons             = true
+    create_subgenic_regions     = true
+    autodomains                 = true
+    autoexons                   = true
 
     regressions                 = true
     // additional regression parameters, see nextflow_schema.json for more info
@@ -259,7 +259,7 @@ params {
 
 
     // definition of specific regions within genes with specific interest on computing dN/dS
-    omega_subgenic_bedfile      = null
+    subgenic_bedfile      = null
 
     // define a file of mutations that should not be trusted
     //  and you want to remove from all the analysis

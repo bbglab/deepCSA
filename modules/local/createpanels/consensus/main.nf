@@ -9,9 +9,9 @@ process CREATECONSENSUSPANELS {
     tuple val(meta2), path(depths)
 
     output:
-    tuple val(meta), path("consensus*.tsv")         , emit: consensus_panel
-    tuple val(meta), path("consensus*.bed")         , emit: consensus_panel_bed
-    tuple val(meta), path("failing_consensus*.tsv") , emit: failing_consensus_panel
+    tuple val(meta), path("consensus*.tsv")                          , emit: consensus_panel
+    tuple val(meta), path("consensus*.bed")                          , emit: consensus_panel_bed
+    tuple val(meta), path("failing_consensus*.tsv") , optional : true, emit: failing_consensus_panel
     path "versions.yml"                             , topic: versions
 
 

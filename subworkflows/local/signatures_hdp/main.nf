@@ -14,13 +14,13 @@ workflow HDP_EXTRACTION {
 
     main:
 
-    Channel.of([ [ id: "samples_matrix" ] ])
+    channel.of([ [ id: "samples_matrix" ] ])
     .join( matrix )
     .set{ samples_matrix }
 
     PREPARE_INPUT(samples_matrix)
 
-    iter_ch = Channel.of(1..15)
+    iter_ch = channel.of(1..15)
     combined_input_ch = PREPARE_INPUT.out.input_data.combine(iter_ch)
 
     RUN_HDP_CHAIN_SAMPLING(combined_input_ch)

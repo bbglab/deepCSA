@@ -2,7 +2,11 @@ process CUSTOM_ANNOTATION_PROCESSING {
 
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'cpu_low'
+    label 'time_low'
+    label 'process_high_memory'
+
+    label 'deepcsa_core'
 
     input:
     tuple val(meta) , path(panel_annotated)
@@ -10,9 +14,9 @@ process CUSTOM_ANNOTATION_PROCESSING {
 
 
     output:
-    tuple val(meta), path("*.custom.tsv")      , emit: custom_panel_annotation
-    tuple val(meta), path("added_regions.tsv") , emit: added_regions
-    path  "versions.yml"                       , topic: versions
+    tuple val(meta), path("*.custom.tsv")       , emit: custom_panel_annotation
+    tuple val(meta), path("added_regions*.tsv") , emit: added_regions
+    path  "versions.yml"                        , topic: versions
 
 
     script:

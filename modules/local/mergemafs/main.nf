@@ -1,7 +1,10 @@
 process MERGE_BATCH {
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'process_high_memory'
+    label 'time_low'
+
+    label 'deepcsa_core'
 
     input:
     tuple val(meta), path(mafs)

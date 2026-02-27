@@ -3,7 +3,7 @@ process PLOT_OMEGASYN_QC {
     tag "all"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     path(all_obs_syn_muts)

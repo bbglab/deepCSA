@@ -3,6 +3,9 @@
 import sys
 import click
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 from utils import contexts_no_change
 
@@ -41,26 +44,71 @@ def compute_trinucleotides(sample_name, depths_file, pseudocount = 0):
                                                                 header = True,
                                                                 index = False)
 
+    return trinucleotides_per_sample[["CONTEXT", sample_name]]
+
+
+def plot_trinucleotide_proportions(wgs_counts_file, sample_trinucleotides, sample_name):
+    wgs_counts = pd.read_table(wgs_counts_file)
+    wgs_counts.columns = ['CONTEXT', 'COUNT_WGS']
+
+
+    counts_all = wgs_counts.copy()
+    counts_all = counts_all.merge(sample_trinucleotides, on = 'CONTEXT')
+    counts_all = counts_all.set_index("CONTEXT")
+    proportions_all = counts_all / counts_all.sum()
+
+    proportions_all_plot = proportions_all.copy()
+
+    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+       
+    rmse = np.sqrt(((proportions_all_plot["COUNT_WGS"] - proportions_all_plot[sample_name])**2).mean())
+    
+    # Scatter plot
+    sns.scatterplot(data=proportions_all_plot,
+                    x="COUNT_WGS",
+                    y=sample_name,
+                    hue="CONTEXT",
+                    legend=False,
+                    ax=ax)
+    
+    # Identity line (x = y)
+    lims = [
+        min(proportions_all_plot["COUNT_WGS"].min(), proportions_all_plot[sample_name].min()),
+        max(proportions_all_plot["COUNT_WGS"].max(), proportions_all_plot[sample_name].max()),
+    ]
+    ax.plot(lims, lims, '--', color='gray')
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    
+    # Annotate points with CONTEXT
+    for namee, row in proportions_all_plot.iterrows():
+        ax.text(row["COUNT_WGS"], row[sample_name], namee,
+                fontsize=6, alpha=0.7)
+    
+    ax.set_xlabel("Proportion WGS")
+    ax.set_ylabel(f"Proportion {sample_name}")
+    ax.set_title(f"{sample_name} (RMSE: {rmse:.4f})")
+
+    plt.tight_layout()
+    plt.savefig(f"{sample_name}.trinucleotide_content_comparisons.proportions.png", dpi=100)
+    plt.show()
+
+
 
 @click.command()
 @click.option('--sample_name', type=str, help='Name of the sample being processed.')
 @click.option('--depths_file', type=click.Path(exists=True), help='Input depths file')
-# @click.option('--out_matrix', type=click.Path(), help='Output mutation matrix file')
-# @click.option('--json_filters', type=click.Path(exists=True), help='Input mutation filtering criteria file')
-# @click.option('--method', type=click.Choice(['unique', 'multiple']), default='unique')
+@click.option('--ref_wgs_trinucleotides', default = None, type=click.Path(exists=True), help='File with trinucleotide counts for the whole-genome')
 @click.option('--pseud', type=float, default=0.5)
-
-# @click.option('--mutation_matrix', type=click.Path(exists=True), help='Mutation matrix file (for profile mode)')
-# @click.option('--trinucleotide_counts', type=click.Path(exists=True), help='Trinucleotide counts file (for profile mode)')
-# @click.option('--out_profile', type=click.Path(), help='JSON output file (for profile mode)')
-# @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
-
-# def main(mode, sample_name, mut_file, out_matrix, json_filters, method, pseud, mutation_matrix, trinucleotide_counts, out_profile, plot):
-def main(sample_name, depths_file, pseud):
+def main(sample_name, depths_file, ref_wgs_trinucleotides, pseud):
     click.echo(f"Running the trinucleotide computation...")
     click.echo(f"Using the pseudocount: {pseud}")
-    compute_trinucleotides(sample_name, depths_file, pseud )
+    sample_trinuc = compute_trinucleotides(sample_name, depths_file, pseud )
     click.echo("Trinucleotides computation completed.")
+    
+    click.echo("Plotting trinucleotides.")
+    if ref_wgs_trinucleotides is not None:
+        plot_trinucleotide_proportions(ref_wgs_trinucleotides, sample_trinuc, sample_name)
 
 if __name__ == '__main__':
     main()

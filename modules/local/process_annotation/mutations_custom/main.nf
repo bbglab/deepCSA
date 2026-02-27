@@ -1,7 +1,11 @@
 process CUSTOM_MUTATION_PROCESSING {
     tag "$meta.id"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'cpu_low'
+    label 'process_high_memory'
+    label 'time_low'
+
+    label 'deepcsa_core'
 
     input:
     tuple val(meta) , path(mutations_annotated)

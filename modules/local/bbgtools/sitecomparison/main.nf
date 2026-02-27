@@ -4,7 +4,7 @@ process SITE_COMPARISON {
     label 'time_low'
     label 'process_high_memory'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta) , path(mutations), path(mutabilities_per_site)
