@@ -1,6 +1,7 @@
 process DNA_2_PROTEIN_MAPPING {
     tag "$meta.id"
     label 'process_single'
+    label 'process_medium_high_memory'
 
     label 'deepcsa_core'
 
