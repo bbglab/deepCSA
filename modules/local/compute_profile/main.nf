@@ -16,6 +16,7 @@ process COMPUTE_PROFILE {
     tuple val(meta), path("*.proportion_mutations.WGS.tsv") , optional:true , emit: wgs_proportions
     tuple val(meta), path("*.matrix.WGS.tsv")               , optional:true , emit: wgs
     tuple val(meta), path("*.matrix.WGS.sigprofiler.tsv")   , optional:true , emit: wgs_sigprofiler
+    tuple val(meta), path("*.profile_stability.tsv")                        , emit: profile_stability
 
     tuple val(meta), path("*.pdf")                          , optional:true , emit: plots
 

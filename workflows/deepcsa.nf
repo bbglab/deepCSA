@@ -150,7 +150,7 @@ workflow DEEPCSA{
     all_compiled_omegas             = channel.empty()
     all_compiled_omegasgloballoc    = channel.empty()
     all_mutdensities_file           = channel.empty()
-
+    all_compiled_stabilities        = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -292,6 +292,7 @@ workflow DEEPCSA{
     // Mutational profile
     if ( params.profileall || run_mutabilities || params.omega ){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.mix(MUTPROFILEALL.out.profile_stabilities.map{ it -> it[1] })
         if (run_mutdensity){
             
             // TODO explore if we could use the ALL consensus panel instead of the exons one
@@ -310,14 +311,19 @@ workflow DEEPCSA{
     }
     if (params.profilenonprot){
         MUTPROFILENONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.mix(MUTPROFILENONPROT.out.profile_stabilities.map{ it -> it[1] })
     }
     if (params.profileexons){
         MUTPROFILEEXONS(somatic_mutations, DEPTHSEXONSCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.mix(MUTPROFILEEXONS.out.profile_stabilities.map{ it -> it[1] })
     }
     if (params.profileintrons){
         DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
         MUTPROFILEINTRONS(somatic_mutations, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.mix(MUTPROFILEINTRONS.out.profile_stabilities.map{ it -> it[1] })
     }
+    
+    all_compiled_stabilities.collectFile(name: "all_profile_stabilities.tsv", storeDir:"${params.outdir}/mutational_profile", skip: 1, keepHeader: true)
 
 
     if (run_mutabilities) {
