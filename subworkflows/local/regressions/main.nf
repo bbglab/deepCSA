@@ -8,19 +8,20 @@ workflow REGRESSIONS{
     take:
     config
     data
+    metadata
 
     main:
 
     CREATE_INPUT(config, data)
 
-    MODELS(config)
+    MODELS(config, CREATE_INPUT.out.inputs, metadata)
 
-    PLOT(config)
+    // PLOT(config, MODELS.out.models)
 
 
     emit:
     inputs = CREATE_INPUT.out.inputs
     models = MODELS.out.models
-    plots = PLOT.out.plots
+    // plots = PLOT.out.plots
 
 }

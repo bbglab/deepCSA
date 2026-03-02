@@ -3,10 +3,12 @@ process REGRESSIONS {
     tag "regressions"
     label 'process_single'
 
-    container "docker.io/bbglab/bbgregressions:0.1.0"
+    container "docker.io/rblancomi/bbgregressions:dev"
 
     input:
     path config
+    path data
+    path metadata
 
     output:
     path ("regressions/*")       , emit: models
@@ -22,16 +24,20 @@ process REGRESSIONS {
     with open('${config}', 'r') as f:
         config_data = yaml.safe_load(f)
 
-    config_data['predictors_file'] = '${params.bbgr_metadata}'
-    config_data['sample_column'] = '${params.bbgr_metadata_sampleIDcol}'
-    config_data['predictors'] = [${predictors.collect { "'$it'" }.join(', ')}]
+    config_data['general']['predictors_file'] = '${metadata.name}'
+    config_data['general']['sample_column'] = '${params.bbgr_metadata_sampleIDcol}'
+    config_data['general']['predictors'] = [${predictors.collect { "'$it'" }.join(', ')}]
 
     # Write modified config
-    with open('${config}', 'w') as f:
+    with open('updated_config.yaml', 'w') as f:
         yaml.dump(config_data, f, default_flow_style=False)
     EOF
 
-    bbgregressions regressions -config modified_config.yml
+    # create input folder and move data there
+    mkdir input
+    mv ${data} input/
+
+    bbgregressions regressions -config updated_config.yaml
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

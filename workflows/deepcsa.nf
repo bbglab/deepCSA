@@ -560,15 +560,18 @@ workflow DEEPCSA{
 
         if (params.mutationdensity && params.bbgr_mutdensity){
             REGRESSIONSMUTDENSITY(params.bbgr_mutdensity_config,
-                                all_mutdensities_file.first())
+                                all_mutdensities_file.first(),
+                                params.bbgr_metadata)
         }
         if (params.omega && params.bbgr_omega){
             REGRESSIONSOMEGA(params.bbgr_omega_config,
-                            OMEGA.out.all_compiled.first())
+                            OMEGA.out.all_compiled.first(),
+                            params.bbgr_metadata)
         }
         if (params.omega_globalloc && params.bbgr_omegagloballoc){
             REGRESSIONSOMEGAGLOB(params.bbgr_omegagloballoc_config,
-                                OMEGA.out.all_globalloc_compiled.first())
+                                OMEGA.out.all_globalloc_compiled.first(),
+                                params.bbgr_metadata)
         }
 
 
