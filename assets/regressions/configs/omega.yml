@@ -29,10 +29,3 @@ metrics:
 plot:
   predictors_colors: null
   predictors_names: null
-predictors:
-- age_decades
-- is_male
-- history_smoking
-- history_drinking
-- bmi_scaled
-- had_prior_chemotherapy

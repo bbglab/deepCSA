@@ -16,12 +16,12 @@ workflow REGRESSIONS{
 
     MODELS(config, CREATE_INPUT.out.inputs, metadata)
 
-    // PLOT(config, MODELS.out.models)
+    PLOT(config, MODELS.out.models, metadata)
 
 
     emit:
     inputs = CREATE_INPUT.out.inputs
     models = MODELS.out.models
-    // plots = PLOT.out.plots
+    plots = PLOT.out.plots
 
 }

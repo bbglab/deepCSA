@@ -33,7 +33,7 @@ process REGRESSIONS {
         yaml.dump(config_data, f, default_flow_style=False)
     EOF
 
-    bbgregressions regressions -config updated_config.yaml
+    bbgregressions  --verbose regressions -config updated_config.yaml
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
