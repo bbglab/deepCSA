@@ -3,14 +3,14 @@ process CREATE_INPUT {
     tag "regressions"
     label 'process_single'
 
-    container "docker.io/bbglab/bbgregressions:0.1.0"
+    container "docker.io/rblancomi/bbgregressions:dev"
 
     input:
-    path config
+    path config  // TODO: figure out a way of selecting specific elements and samples
     path data
 
     output:
-    path ("inputs/*")       , emit:  inputs
+    path ("input/*")        , emit:  inputs
     path "versions.yml"     , topic: versions
 
     script:

@@ -560,7 +560,7 @@ workflow DEEPCSA{
 
         if (params.mutationdensity && params.bbgr_mutdensity){
             REGRESSIONSMUTDENSITY(params.bbgr_mutdensity_config,
-                                all_mutdensities_file)
+                                all_mutdensities_file.first())
         }
         if (params.omega && params.bbgr_omega){
             REGRESSIONSOMEGA(params.bbgr_omega_config,

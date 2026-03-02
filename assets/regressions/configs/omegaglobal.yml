@@ -1,31 +1,40 @@
+general:
+  correct_pvals: true
+  elements: null
+  handle_na: ignore
+  model: linear
+  multi: true
+  output_dir: ./
+  predictor_random_effect: null
+  predictors: null
+  predictors_file: null
+  predictors_intercept_0: null
+  predictors_multi_force: null
+  sample_column: null
+  samples: null
+  significance_threshold: 0.2
 metrics:
   metric_1:
-    metric_name: omega
+    elements_total_by: included
     file: all_omegas_global_loc.tsv
-    global_loc: yes
-    multi: no
+    global_loc: true
     impact:
     - missense
     - truncating
     - nonsynonymous_splice
-    significance_threshold: 1
-    elements_total_by: included
+    metric_name: omega
+    multi: false
     samples_total_by: included
-general:
-  output_dir: ./output
-  handle_na: ignore
-  elements: # handled in the original file
-  samples: # handled based on creategroups / metadata
-  model: linear
-  multi: yes
-  predictors_file: # param
-  sample_column: # param
-  predictors: # param
-  predictors_intercept_0:
-  predictor_random_effect:
-  predictors_multi_force:
-  correct_pvals: yes
-  significance_threshold: 0.2
+    significance_threshold: 1
 plot:
-  predictors_names:
-  predictors_colors:
+  predictors_colors: null
+  predictors_names: null
+predictors:
+- age_decades
+- is_male
+- history_smoking
+- history_drinking
+- bmi_scaled
+- had_prior_chemotherapy
+predictors_file: /data/bbg/projects/bladder_ts/data/complete_cohort/samples_metadata/20250430_metadata_bladder.tsv
+sample_column: SAMPLE_ID
