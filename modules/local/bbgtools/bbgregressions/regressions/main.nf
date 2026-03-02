@@ -7,7 +7,7 @@ process REGRESSIONS {
 
     input:
     path config
-    path data
+    path data, stageAs: 'input/*'
     path metadata
 
     output:
@@ -32,10 +32,6 @@ process REGRESSIONS {
     with open('updated_config.yaml', 'w') as f:
         yaml.dump(config_data, f, default_flow_style=False)
     EOF
-
-    # create input folder and move data there
-    mkdir input
-    mv ${data} input/
 
     bbgregressions regressions -config updated_config.yaml
 
