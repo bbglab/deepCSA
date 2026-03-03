@@ -428,6 +428,18 @@
                     "description": "Whether to run the default 'first-pass' regression analysis or your customized version",
                     "help_text": "Choose 'default' for first pass exploration or 'custom' to provide your own bbgregressions configuration file"
                 },
+                "bbgr_custom_config": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "fa_icon": "far fa-file-code",
+                    "description": "Custom configuration file for bbgregressions",
+                    "help_text": "Path to your custom bbgregressions configuration file. Only used when bbgr_mode is set to 'custom'",
+                    "hidden": true,
+                    "dependsOn": {
+                        "bbgr_mode": "custom"
+                    }
+                },
                 "bbgr_mutdensity": {
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for mutdensity?",
@@ -464,31 +476,7 @@
                     "description": "Column names in your metadata table corresponding to the predictors you want to test, separated by commas",
                     "fa_icon": "far fa-list"
                 }
-            },
-            "allOf": [
-                {
-                    "if": {
-                        "properties": {
-                            "bbgr_mode": {
-                                "const": "custom"
-                            }
-                        }
-                    },
-                    "then": {
-                        "properties": {
-                            "bbgr_custom_config": {
-                                "type": "string",
-                                "format": "file-path",
-                                "mimetype": "text/plain",
-                                "fa_icon": "far fa-file-code",
-                                "description": "Custom configuration file for bbgregressions",
-                                "help_text": "Path to your custom bbgregressions configuration file. Only used when bbgr_mode is set to 'custom'"
-                            }
-                        },
-                        "required": ["bbgr_custom_config"]
-                    }
-                }
-            ]
+            }
         },
         "profile_computation_config": {
             "title": "Profile computation options",
