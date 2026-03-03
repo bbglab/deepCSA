@@ -30,7 +30,7 @@ process ANALYZE_DEPTHS_GROUPS {
 
     depth_group_comparison.py \\
                 --table-filename ${features_table} \\
-                ----depth-gene-sample ${average_depth_gene_sample} \\
+                --depth-gene-sample ${average_depth_gene_sample} \\
                 --depth-sample ${average_depth_sample} \\
                 --separator ${separator} \\
                 ${unique_identifier} \\
