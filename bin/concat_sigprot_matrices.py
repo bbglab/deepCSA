@@ -78,8 +78,8 @@ def main(filename_of_matrices, samples_json_file, type_of_profile):
     """
     click.echo(f"Processing matrices from: {filename_of_matrices}")
     click.echo(f"Using sample information from: {samples_json_file}")
-    click.echo(f"Profile type: {type_of_profile}")
-    concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_profile)
+    click.echo(f"Profile type: {type_of_profile.strip('.')}")
+    concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_profile.strip('.'))
     click.echo("Matrices concatenation completed.")
 
 

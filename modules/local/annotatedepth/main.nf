@@ -3,13 +3,13 @@ process ANNOTATE_DEPTHS {
     label 'process_low'
     label 'time_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
-
+    label 'deepcsa_core'
+    
     input:
     tuple val(meta) , path(depths)
     tuple val(meta2), path(panel_all)
     path (json_groups)
-    path (input_csv)
+    path (mask_matrix)
 
     output:
     // tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
@@ -25,8 +25,8 @@ process ANNOTATE_DEPTHS {
         --annotation ${panel_all}.contexts \\
         --depths ${depths} \\
         --json_file ${json_groups} \\
-        --input_csv ${input_csv}
-
+        --mask-matrix ${mask_matrix}
+        
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

@@ -2,7 +2,6 @@
 
 
 import click
-import sys
 import json
 import pandas as pd
 import numpy as np
@@ -10,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
-from utils import filter_maf
+from utils_filter import filter_maf
 from read_utils import custom_na_values
 
 
@@ -242,6 +241,46 @@ def variable_plot_wrapper(sample_name, maf, parameters = {}):
     return fig_list
 
 
+def plot_mutation_counts(maf, count_column):
+
+    hue_order = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"]
+
+    # Convert 'ALT_DEPTH' values to '10+'
+    maf['ALT_DEPTH_cat'] = maf[count_column].apply(
+        lambda x: '10+' if x >= 10 else str(x)
+    )
+
+    maf["SAMPLE_ID"] = maf["SAMPLE_ID"].astype(str)
+    maf = maf.sort_values(by = "SAMPLE_ID")
+    sample_order = sorted(maf["SAMPLE_ID"].unique())
+
+    fig, ax = plt.subplots(figsize = (max(5, len(sample_order) * 0.15), 5))
+
+    # Plot stacked barplot
+    sns.histplot(
+        data=maf,
+        x="SAMPLE_ID",
+        hue="ALT_DEPTH_cat",
+        multiple="fill",
+        stat="proportion",
+        color=None,
+        discrete=True,
+        hue_order=hue_order,
+        shrink=0.8, 
+        legend=True,
+        ax = ax
+        )
+
+    ax.set_xlabel("")
+    ax.set_ylabel(f"Proportion of mutations with\nalternate reads count of N\n{count_column}")
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+
+    sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1), title="Number of\nalternate\nreads")
+    sns.despine()
+
+    plt.tight_layout()
+
+    return fig
 
 dict_plotname2func = {
     "per_gene" : plot_mutations_per_gene,
@@ -286,6 +325,15 @@ def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
                     fig1 = dict_plotname2func[criterion](sample_name, maf)
                     pdf.savefig()
                     plt.close()
+            
+            # add mutation counts plot
+            fig = plot_mutation_counts(maf, 'ALT_DEPTH')
+            pdf.savefig(fig)
+            plt.close()
+
+            fig = plot_mutation_counts(maf, 'ALT_DEPTH_AM')
+            pdf.savefig(fig)
+            plt.close()
 
 
 # TODO add VAF distribution plot
@@ -306,21 +354,6 @@ def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
 #     ax1.set_xlabel("VAF")
 #     ax2.set_xlabel("VAF")
 #     plt.show()
-
-# @click.command()
-# @click.option('--sample_name', type=str, help='Name of the sample being processed.')
-# @click.option('--mut_file', type=click.Path(exists=True), help='Input mutation file')
-# @click.option('--out_maf', type=click.Path(), help='Output MAF file')
-# @click.option('--json_filters', type=click.Path(exists=True), help='Input mutation filtering criteria file')
-# @click.option('--req_plots', type=click.Path(exists=True), help='Column names to output')
-# # @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
-
-# def main(sample_name, mut_file, out_maf, json_filters, req_plots): # , plot):
-#     click.echo(f"Subsetting MAF file...")
-#     subset_mutation_dataframe(sample_name, mut_file, out_maf, json_filters, req_plots)
-
-# if __name__ == '__main__':
-#     main()
 
 
 

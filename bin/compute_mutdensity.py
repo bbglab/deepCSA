@@ -56,8 +56,8 @@ def mutdensity_sample(maf_df, depths_df, depths_adj_df, sample_name):
 
         sample_features["MUTDENSITY_MB"] = ( sample_features["N_MUTS"] / sample_features["DEPTH"] * 1000000 ).astype(float)
         sample_features["MUTDENSITY_MB_ADJUSTED"] = ( sample_features["N_MUTS"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
-        sample_features["MUTREADSRATE_MB"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH"] * 1000000 ).astype(float)
-        sample_features["MUTREADSRATE_MB_ADJUSTED"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
+        sample_features["MUTREADSDENSITY_MB"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH"] * 1000000 ).astype(float)
+        sample_features["MUTREADSDENSITY_MB_ADJUSTED"] = ( sample_features["N_MUTATED"] / sample_features["DEPTH_ADJUSTED"] * 1000000 ).astype(float)
 
         sample_features["GENE"] = "ALL_GENES"
         sample_features["MUTTYPES"] = types_included
@@ -88,6 +88,8 @@ def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name):
             unique_maf = maf_df[maf_df['TYPE'].isin(type_list)][["SAMPLE_ID", "GENE", "MUT_ID", "ALT_DEPTH"]].copy().drop_duplicates()
             types_included = '-'.join(sorted(type_list))
 
+        # create new gene column including exons/domains panel info
+        
         # count number of mutations and mutated reads per gene
         # make sure to count each mutation only once (avoid annotation issues)
         n_muts_gene = unique_maf.groupby(by = ["GENE"] ).agg({"ALT_DEPTH" : "count" })
@@ -112,8 +114,8 @@ def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name):
         mut_depths_df["MUTDENSITY_MB"] = (mut_depths_df["N_MUTS"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
         mut_depths_df["MUTDENSITY_MB_ADJUSTED"] = (mut_depths_df["N_MUTS"] / mut_depths_df["DEPTH_ADJUSTED"] * 1000000).astype(float)
 
-        mut_depths_df["MUTREADSRATE_MB"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
-        mut_depths_df["MUTREADSRATE_MB_ADJUSTED"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH_ADJUSTED"] * 1000000).astype(float)
+        mut_depths_df["MUTREADSDENSITY_MB"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH"] * 1000000).astype(float)
+        mut_depths_df["MUTREADSDENSITY_MB_ADJUSTED"] = (mut_depths_df["N_MUTATED"] / mut_depths_df["DEPTH_ADJUSTED"] * 1000000).astype(float)
 
         mut_depths_df["MUTTYPES"] = types_included
         impact_group_results.append(mut_depths_df.reset_index())
@@ -126,7 +128,7 @@ def mutdensity_gene(maf_df, depths_df, depths_adj_df, sample_name):
 
 def load_n_process_inputs(maf_path, depths_path, annot_panel_path, sample_name):
     # File loading
-    maf_df = pd.read_csv(maf_path, sep = "\t", na_values = custom_na_values)
+    maf_df_raw = pd.read_csv(maf_path, sep = "\t", na_values = custom_na_values)
     depths_df = pd.read_csv(depths_path, sep = "\t")
     depths_df = depths_df.drop("CONTEXT", axis = 1)
     annot_panel_df = pd.read_csv(annot_panel_path, sep = "\t", na_values = custom_na_values)
@@ -143,8 +145,17 @@ def load_n_process_inputs(maf_path, depths_path, annot_panel_path, sample_name):
     depths_subset_adj_sample_df = depths_df.merge(annot_panel_df.drop_duplicates(subset = ["CHROM", "POS", "REF", "ALT"])[["CHROM", "POS"]],
                                                     on = ["CHROM", "POS"], how = "inner")
 
-    return maf_df, depths_subset_df, depths_subset_adj_df, depths_subset_adj_sample_df
+    # Add domains and exons to maf_df
+    annot_panel_df['CHROM_POS'] = annot_panel_df['CHROM'].astype(str) + ':' + annot_panel_df['POS'].astype(str)
+    maf_df_raw['CHROM_POS'] = maf_df_raw['MUT_ID'].str.split('_', expand = True)[0]
 
+    maf_df = maf_df_raw.merge(annot_panel_df[['CHROM_POS', 'GENE']], on = ['CHROM_POS'], how = 'left', suffixes=['','_subgenic']).reset_index(drop=True)
+    maf_df = maf_df.drop(columns = ['GENE', 'CHROM_POS'])
+    maf_df = maf_df.rename(columns={ 'GENE_subgenic' : 'GENE'})
+
+    maf_df = maf_df.drop_duplicates()
+
+    return maf_df, depths_subset_df, depths_subset_adj_df, depths_subset_adj_sample_df
 
 
 # -- Main function -- #
@@ -174,7 +185,7 @@ def compute_mutdensity(maf_path, depths_path, annot_panel_path, sample_name, pan
                 "DEPTH",
                 "N_MUTS", "N_MUTATED",
                 "MUTDENSITY_MB", "MUTDENSITY_MB_ADJUSTED",
-                "MUTREADSRATE_MB", "MUTREADSRATE_MB_ADJUSTED",
+                "MUTREADSDENSITY_MB", "MUTREADSDENSITY_MB_ADJUSTED",
                 ]].to_csv(f"{sample_name}.{panel_v}.mutdensities.tsv",
                                                             sep = "\t",
                                                             header = True,

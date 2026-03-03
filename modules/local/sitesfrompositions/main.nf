@@ -6,7 +6,7 @@ process SITESFROMPOSITIONS {
     label 'time_low'
     label 'process_low_memory'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
 
     input:

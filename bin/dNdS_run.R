@@ -96,9 +96,11 @@ if (!is.null(opt$genelist)){
 
 # Loads the covs object
 load(opt$covariates)
+load(opt$referencetranscripts)
 
+reference_genes <- intersect(rownames(covs), unique(gr_genes$names))
 # Identify genes that are in 'genes' but not in the row names of 'covs'
-missing_genes <- setdiff(genes, rownames(covs))
+missing_genes <- setdiff(genes, reference_genes)
 
 # Print the missing genes, if any
 if (length(missing_genes) > 0) {
@@ -109,7 +111,7 @@ if (length(missing_genes) > 0) {
 }
 
 # Check that all the "requested" genes are in the covariates file
-genes <- intersect(rownames(covs), genes)
+genes <- intersect(reference_genes, genes)
 print("Keeping only the genes with in the covariates")
 
 
