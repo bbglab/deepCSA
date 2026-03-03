@@ -421,6 +421,12 @@
             "fa_icon": "fas fa-chart-line",
             "description": "Metrics for which to run the regression analysis and customize the configuration if wanted",
             "properties": {
+                "bbgr_mode": {
+                    "type": "string",
+                    "default": "default",
+                    "enum": ["default", "custom"],
+                    "description": "Whether to run the default bbgregressions mode or customize it"
+                }
                 "bbgr_mutdensity": {
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for mutdensity?",
@@ -1045,7 +1051,7 @@
         },
         {
             "$ref": "#/$defs/custom_depths_table_usage"
-        },        
+        },
         {
             "$ref": "#/$defs/subgenic_regions_definition"
         },
