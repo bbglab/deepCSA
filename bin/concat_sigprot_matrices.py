@@ -41,6 +41,13 @@ def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_pro
 
     # Save the groups matrix if it exists
     if groups_matrix is not None and groups_matrix.shape[0] > 0:
+
+        # identify samples without mutations
+        zero_rows = groups_matrix.index[groups_matrix.sum(axis=1) == 0]
+        if len(zero_rows) > 0:
+            print(f"Excluding samples without mutations: {list(zero_rows)}")
+            groups_matrix = groups_matrix.drop(zero_rows)
+
         groups_matrix.reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
         groups_matrix.round().astype(int).reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
 
@@ -55,6 +62,13 @@ def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_pro
 
     # Save the samples matrix if it exists
     if samples_only_matrix is not None and samples_only_matrix.shape[0] > 0:
+
+        # identify samples without mutations
+        zero_rows = samples_only_matrix.index[samples_only_matrix.sum(axis=1) == 0]
+        if len(zero_rows) > 0:
+            print(f"Excluding samples without mutations: {list(zero_rows)}")
+            samples_only_matrix = samples_only_matrix.drop(zero_rows)
+
         samples_only_matrix.reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
         samples_only_matrix.round().astype(int).reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
 
