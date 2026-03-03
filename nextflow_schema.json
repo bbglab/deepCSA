@@ -416,7 +416,7 @@
             }
         },
         "regressions_config": {
-            "title": "Regressions: metrics and custom configuration",
+            "title": "Regressions: metrics and configuration",
             "type": "object",
             "fa_icon": "fas fa-chart-line",
             "description": "Metrics for which to run the regression analysis and customize the configuration if wanted",
@@ -425,7 +425,8 @@
                     "type": "string",
                     "default": "default",
                     "enum": ["default", "custom"],
-                    "description": "Whether to run the default bbgregressions mode or customize it"
+                    "description": "Whether to run the default 'first-pass' regression analysis or your customized version",
+                    "help_text": "Choose 'default' for first pass exploration or 'custom' to provide your own bbgregressions configuration file"
                 },
                 "bbgr_mutdensity": {
                     "type": "boolean",
@@ -437,28 +438,10 @@
                     "description": "Do you want to run regression analysis for omega?",
                     "fa_icon": "fa-toggle-on"
                 },
-                "bbgr_omega_config": {
-                    "type": "string",
-                    "exists": true,
-                    "format": "file-path",
-                    "mimetype": "text/plain",
-                    "description": "Path to the omega configuration YAML to run customized analysis for this metric",
-                    "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
-                    "fa_icon": "far fa-file-code"
-                },
                 "bbgr_omegagloballoc": {
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for omega globalloc?",
                     "fa_icon": "fa-toggle-on"
-                },
-                "bbgr_omegagloballoc_config": {
-                    "type": "string",
-                    "exists": true,
-                    "format": "file-path",
-                    "mimetype": "text/plain",
-                    "description": "Path to the omega configuration YAML to run customized analysis for this metric",
-                    "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
-                    "fa_icon": "far fa-file-code"
                 },
                 "bbgr_metadata": {
                     "type": "string",
@@ -481,7 +464,31 @@
                     "description": "Column names in your metadata table corresponding to the predictors you want to test, separated by commas",
                     "fa_icon": "far fa-list"
                 }
-            }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "bbgr_mode": {
+                                "const": "custom"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "bbgr_custom_config": {
+                                "type": "string",
+                                "format": "file-path",
+                                "mimetype": "text/plain",
+                                "fa_icon": "far fa-file-code",
+                                "description": "Custom configuration file for bbgregressions",
+                                "help_text": "Path to your custom bbgregressions configuration file. Only used when bbgr_mode is set to 'custom'"
+                            }
+                        },
+                        "required": ["bbgr_custom_config"]
+                    }
+                }
+            ]
         },
         "profile_computation_config": {
             "title": "Profile computation options",
