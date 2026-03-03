@@ -101,6 +101,8 @@ include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../m
 include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
 include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
 
+include { ANALYZE_DEPTHS_GROUPS         as ANALYZEDEPTHSGROUPS      } from '../modules/local/analyzedepths/main'
+
 include { SELECT_MUTDENSITIES           as SYNMUTDENSITY            } from '../modules/local/select_mutdensity/main'
 include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY       } from '../modules/local/select_mutdensity/main'
 
@@ -226,6 +228,11 @@ workflow DEEPCSA{
         PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
     }
     PLOTDEPTHSEXONSCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel)
+
+    // ANALYZEDEPTHSGROUPS should run only when user defines a group list
+    if (params.features_groups_list) {
+        ANALYZEDEPTHSGROUPS(features_table, PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample, PLOTDEPTHSEXONSCONS.out.average_depth_sample)
+    }
 
     // Enrich regions in consensus panels
     ENRICHPANELS(MUT_PREPROCESSING.out.mutations_all_samples,

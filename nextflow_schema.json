@@ -630,6 +630,12 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "features_genes_list": {
+                    "type": "string",
+                    "description": "Comma-separated list of genes to focus the analysis of depths per group",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "create_sample_panels": {
                     "type": "boolean",
                     "description": "Do you want to generate the sample panels?",
