@@ -432,43 +432,43 @@
                     "description": "Do you want to run regression analysis for mutdensity?",
                     "fa_icon": "fas fa-toggle-on"
                 },
-                "bbgr_mutdensity_config": {
-                    "type": "string",
-                    "exists": true,
-                    "format": "file-path",
-                    "mimetype": "text/plain",
-                    "description": "Path to the mutdensity configuration YAML to run customized analysis for this metric",
-                    "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
-                    "fa_icon": "fa-file-code"
-                },
+                // "bbgr_mutdensity_config": {
+                //     "type": "string",
+                //     "exists": true,
+                //     "format": "file-path",
+                //     "mimetype": "text/plain",
+                //     "description": "Path to the mutdensity configuration YAML to run customized analysis for this metric",
+                //     "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
+                //     "fa_icon": "fa-file-code"
+                // },
                 "bbgr_omega": {
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for omega?",
                     "fa_icon": "fa-toggle-on"
                 },
-                "bbgr_omega_config": {
-                    "type": "string",
-                    "exists": true,
-                    "format": "file-path",
-                    "mimetype": "text/plain",
-                    "description": "Path to the omega configuration YAML to run customized analysis for this metric",
-                    "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
-                    "fa_icon": "far fa-file-code"
-                },
+                // "bbgr_omega_config": {
+                //     "type": "string",
+                //     "exists": true,
+                //     "format": "file-path",
+                //     "mimetype": "text/plain",
+                //     "description": "Path to the omega configuration YAML to run customized analysis for this metric",
+                //     "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
+                //     "fa_icon": "far fa-file-code"
+                // },
                 "bbgr_omegagloballoc": {
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for omega globalloc?",
                     "fa_icon": "fa-toggle-on"
                 },
-                "bbgr_omegagloballoc_config": {
-                    "type": "string",
-                    "exists": true,
-                    "format": "file-path",
-                    "mimetype": "text/plain",
-                    "description": "Path to the omega configuration YAML to run customized analysis for this metric",
-                    "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
-                    "fa_icon": "far fa-file-code"
-                },
+                // "bbgr_omegagloballoc_config": {
+                //     "type": "string",
+                //     "exists": true,
+                //     "format": "file-path",
+                //     "mimetype": "text/plain",
+                //     "description": "Path to the omega configuration YAML to run customized analysis for this metric",
+                //     "help_text": "The default YAML configuration file that needs to be edited can be found in the assets folder of the deepCSA repository. Provide here the path to your customized version of this file",
+                //     "fa_icon": "far fa-file-code"
+                // },
                 "bbgr_metadata": {
                     "type": "string",
                     "exists": true,
