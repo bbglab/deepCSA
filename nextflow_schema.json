@@ -422,6 +422,7 @@
             "description": "Metrics for which to run the regression analysis and customize the configuration if wanted",
             "properties": {
                 "bbgr_mode": {
+                    "title": "Regressions mode",
                     "type": "string",
                     "default": "default",
                     "enum": ["default", "custom"],
@@ -429,33 +430,34 @@
                     "help_text": "Choose 'default' for first pass exploration or 'custom' to provide your own bbgregressions configuration file"
                 },
                 "bbgr_custom_config": {
+                    "title": "Custom configuration file",
                     "type": "string",
                     "format": "file-path",
                     "mimetype": "text/plain",
                     "fa_icon": "far fa-file-code",
                     "description": "Custom configuration file for bbgregressions",
                     "help_text": "Path to your custom bbgregressions configuration file. Only used when bbgr_mode is set to 'custom'",
-                    "hidden": true,
-                    "dependsOn": {
-                        "bbgr_mode": "custom"
-                    }
                 },
                 "bbgr_mutdensity": {
+                    "title": "Run for mutdensity",
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for mutdensity?",
                     "fa_icon": "fas fa-toggle-on"
                 },
                 "bbgr_omega": {
+                    "title": "Run for omega",
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for omega?",
                     "fa_icon": "fa-toggle-on"
                 },
                 "bbgr_omegagloballoc": {
+                    "title": "Run for omegagloballoc",
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for omega globalloc?",
                     "fa_icon": "fa-toggle-on"
                 },
                 "bbgr_metadata": {
+                    "title": "Metadata file",
                     "type": "string",
                     "exists": true,
                     "format": "file-path",
@@ -465,12 +467,14 @@
                     "fa_icon": "far fa-table"
                 },
                 "bbgr_metadata_sampleIDcol": {
+                    "title": "Sample ID column in metadata file",
                     "type": "string",
                     "mimetype": "text/plain",
                     "description": "Column name in your metadata table corresponding to the sample identifiers",
                     "fa_icon": "far fa-columns"
                 },
                 "bbgr_predictors": {
+                    "title": "Predictors (list)",
                     "type": "string",
                     "mimetype": "text/plain",
                     "description": "Column names in your metadata table corresponding to the predictors you want to test, separated by commas",
