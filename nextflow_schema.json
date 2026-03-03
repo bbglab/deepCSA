@@ -426,7 +426,7 @@
                     "default": "default",
                     "enum": ["default", "custom"],
                     "description": "Whether to run the default bbgregressions mode or customize it"
-                }
+                },
                 "bbgr_mutdensity": {
                     "type": "boolean",
                     "description": "Do you want to run regression analysis for mutdensity?",
