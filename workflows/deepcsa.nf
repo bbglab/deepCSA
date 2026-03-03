@@ -231,7 +231,7 @@ workflow DEEPCSA{
 
     // ANALYZEDEPTHSGROUPS should run only when user defines a group list
     if (params.features_groups_list) {
-        ANALYZEDEPTHSGROUPS(features_table, PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample)
+        ANALYZEDEPTHSGROUPS(features_table, PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample, PLOTDEPTHSEXONSCONS.out.average_depth_sample)
     }
 
     // Enrich regions in consensus panels
