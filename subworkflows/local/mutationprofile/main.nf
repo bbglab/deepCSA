@@ -50,7 +50,7 @@ workflow MUTATIONAL_PROFILE {
     compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1] }.collect().map { files -> [ [id:'all_profiles'], files ] }
     CONCATPROFILES(compile_all_profiles, all_groups)
 
-    compile_stabilities = COMPUTEPROFILE.out.profile_stability.map{ it -> it[1] }.collect()
+    compile_stabilities = COMPUTEPROFILE.out.profile_stability.map{ it -> it[1] }.collect().map { files -> [ [id:'all_stabilities'], files ] }
 
 
     emit:

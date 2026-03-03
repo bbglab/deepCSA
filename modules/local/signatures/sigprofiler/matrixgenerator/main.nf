@@ -21,11 +21,6 @@ process SIGPROFILER_MATRIXGENERATOR {
     def args = task.ext.args ?: ""
     def genome = task.ext.genome_assembly ?: "GRCh38"
     """
-    mkdir -p spa_volume
-    export SIGPROFILERMATRIXGENERATOR_VOLUME='./spa_volume'
-    export SIGPROFILERPLOTTING_VOLUME='./spa_volume'
-    export SIGPROFILERASSIGNMENT_VOLUME='./spa_volume'
-
     mkdir input_mutations
     cp *.vcf input_mutations/.
 
@@ -33,7 +28,6 @@ process SIGPROFILER_MATRIXGENERATOR {
                 ${prefix} \\
                 ${genome} \\
                 input_mutations/ \\
-                --volume spa_volume \\
                 ${args}
             
     mv input_mutations/output/ ${prefix}_output/
