@@ -436,7 +436,7 @@
                     "mimetype": "text/plain",
                     "fa_icon": "far fa-file-code",
                     "description": "Custom configuration file for bbgregressions",
-                    "help_text": "Path to your custom bbgregressions configuration file. Only used when bbgr_mode is set to 'custom'",
+                    "help_text": "Path to your custom bbgregressions configuration file. Only used when bbgr_mode is set to custom"
                 },
                 "bbgr_mutdensity": {
                     "title": "Run for mutdensity",
