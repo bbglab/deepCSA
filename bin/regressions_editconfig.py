@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+import yaml
+import json
+import pandas as pd
+import click
+
+@click.command()
+@click.option('--config_file', type=click.Path(exists=True), required=True,
+            help='Path to the config file to be edited')
+@click.option('--mode', type=click.Choice(['custom', 'default']), required=True,
+            help='deepCSA mode to run the regressions')
+@click.option('--metric', type=click.Choice(['omega', 'omegagloballoc', "mutdensity"]), required=True,
+            help='When mode=custom, specific metric to be included in this config file')
+@click.option('--omega_res_file', type=click.Path(exists=True), required=True,
+            help='When mode=default, omega results to define the genes for which to run regressions')
+@click.option('--groups_file', type=click.Path(exists=True), required=True,
+            help='When mode=default, groups information to only include single samples in the regressions')
+
+
+def main(config_file: str,
+        mode: str,
+        metric: str,
+        omega_res_file: str,
+        groups_file: str):
+    """
+    Takes a bbgregressions formated config file and,
+    depending on mode, updates it:
+    *custom mode: retrieves the specific metric part of the file
+    and saves again
+    *default mode: updates elements and samples based on omega results
+    and excluding group categories, respectively
+    """
+
+    # load config
+    with open(config_file, "r") as f:
+        config = yaml.safe_load(f)
+
+    # custom mode: config edited to contain metric info
+    if mode == "custom":
+        config_upd = {}
+        config_upd["general"] = config["general"]
+        config_upd["plot"] = config["plot"]
+        config_upd["metrics"] = {}
+        for config_metric in config["metrics"]:
+            print(config_metric)
+            if config["metrics"][config_metric]["metric_name"] == metric:
+                config_upd["metrics"][config_metric] = config["metrics"][config_metric]
+
+                with open('config.yaml', 'w') as f:
+                    yaml.dump(config_upd, f, default_flow_style = False)
+
+                break
+
+    # default mode: elements are updated based on omega results; samples are updated to exclude groups
+    elif mode == "default":
+
+        # load omega res and select cohort-level significant unflagged genes (10 max)
+        omega_res = pd.read_csv(omega_res_file, sep = "\t")
+        omega_res = omega_res.loc[(omega_res["flagged"] == False)
+                                & (omega_res["pvalue"] < 0.05)
+                                & (omega_res["sample"] == "all_samples")]
+        omega_res = omega_res.sort_values(by = "dnds", ascending = False)
+        omega_res = omega_res.head(10)
+        if metric == "mutdensity":
+            genes = list(omega_res["gene"].unique())
+        else:
+            omega_res["gene_impact"] = omega_res.apply(lambda row: f"{row['gene']}_{row['impact']}",
+                                                        axis = 1)
+            genes = list(omega_res["gene_impact"].unique())
+
+        config["general"]["elements"] = genes
+
+        # load 'all_samples' group and identify included samples
+        with open(groups_file, 'r') as f:
+            groups = json.load(f)
+        samples = groups["all_samples"]
+        config["general"]["samples"] = samples
+
+        with open('config.yaml', 'w') as f:
+            yaml.dump(config, f, default_flow_style = False)
+
+if __name__ == '__main__':
+    main()
+
+

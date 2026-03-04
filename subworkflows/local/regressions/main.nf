@@ -1,7 +1,7 @@
+include { EDITCONFIG            }    from '../../../modules/local/bbgtools/bbgregressions/editconfig/main'
 include { CREATE_INPUT          }    from '../../../modules/local/bbgtools/bbgregressions/create_input/main'
 include { REGRESSIONS as MODELS }    from '../../../modules/local/bbgtools/bbgregressions/regressions/main'
 include { PLOT                  }    from '../../../modules/local/bbgtools/bbgregressions/plot/main'
-
 
 workflow REGRESSIONS{
 
@@ -9,14 +9,20 @@ workflow REGRESSIONS{
     config
     data
     metadata
+    mode
+    metric
+    omega_res
+    groups
 
     main:
 
-    CREATE_INPUT(config, data)
+    EDITCONFIG(config, mode, metric, omega_res, groups)
 
-    MODELS(config, CREATE_INPUT.out.inputs, metadata)
+    CREATE_INPUT(EDITCONFIG.out.config, data)
 
-    PLOT(config, MODELS.out.models, metadata)
+    MODELS(EDITCONFIG.out.config, CREATE_INPUT.out.inputs, metadata)
+
+    PLOT(EDITCONFIG.out.config, MODELS.out.models, metadata)
 
 
     emit:

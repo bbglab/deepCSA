@@ -589,23 +589,47 @@ workflow DEEPCSA{
     // Regressions
     if (params.regressions){
 
+        // Determine config file based on mode
+        def config_file = params.bbgr_mode == 'default' ? null : params.bbgr_custom_config
+
         if (params.mutationdensity && params.bbgr_mutdensity){
-            REGRESSIONSMUTDENSITY(params.bbgr_mutdensity_config,
-                                all_mutdensities_file.first(),
-                                params.bbgr_metadata)
+            metric = "mutdensity"
+            REGRESSIONSMUTDENSITY(
+                config_file ?: params.bbgr_mutdensity_config,
+                all_mutdensities_file.first(),
+                params.bbgr_metadata,
+                params.bbgr_mode,
+                metric,
+                PLOTTINGQC.out.flagged_omegas.first(),
+                TABLE2GROUP.out.json_allgroups.first()
+            )
         }
+
         if (params.omega && params.bbgr_omega){
-            REGRESSIONSOMEGA(params.bbgr_omega_config,
-                            OMEGA.out.all_compiled.first(),
-                            params.bbgr_metadata)
+            metric = "omega"
+            REGRESSIONSOMEGA(
+                config_file ?: params.bbgr_omega_config,
+                OMEGA.out.all_compiled.first(),
+                params.bbgr_metadata,
+                params.bbgr_mode,
+                metric,
+                PLOTTINGQC.out.flagged_omegas.first(),
+                TABLE2GROUP.out.json_allgroups.first()
+            )
         }
+
         if (params.omega_globalloc && params.bbgr_omegagloballoc){
-            REGRESSIONSOMEGAGLOB(params.bbgr_omegagloballoc_config,
-                                OMEGA.out.all_globalloc_compiled.first(),
-                                params.bbgr_metadata)
+            metric = "omegagloballoc"
+            REGRESSIONSOMEGAGLOB(
+                config_file ?: params.bbgr_omegagloballoc_config,
+                OMEGA.out.all_globalloc_compiled.first(),
+                params.bbgr_metadata,
+                params.bbgr_mode,
+                metric,
+                PLOTTINGQC.out.flagged_omegas.first(),
+                TABLE2GROUP.out.json_allgroups.first()
+            )
         }
-
-
     }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
