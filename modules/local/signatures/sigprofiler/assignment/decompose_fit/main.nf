@@ -54,7 +54,7 @@ process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
     """
     touch ${prefix}.pdf
     touch ${prefix}.txt
-    touch ${prefix}.Decomposed_MutationType_Probabilities.txt
+    touch Decomposed_MutationType_Probabilities.${prefix}.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

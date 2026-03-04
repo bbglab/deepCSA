@@ -1,6 +1,4 @@
 
-include { TABIX_BGZIPTABIX_QUERY        as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-
 include { SUBSET_MAF                    as SUBSETMUTABILITY         } from '../../../modules/local/subsetmaf/main'
 
 include { COMPUTE_RELATIVE_MUTABILITY   as RELATIVEMUTABILITY       } from '../../../modules/local/compute_mutability/main'

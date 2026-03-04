@@ -37,8 +37,9 @@ process  PROCESS_HDP_RESULTS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.pdf
-    touch components.txt
+    mkdir -p output_dir  
+    touch ${prefix}.pdf  
+    touch output_dir/components.txt 
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

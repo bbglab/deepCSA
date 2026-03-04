@@ -1,5 +1,3 @@
-include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS      } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-
 include { SUBSET_MAF                as SUBSETONCODRIVE3D    } from '../../../modules/local/subsetmaf/main'
 
 include { ONCODRIVE3D_PREPROCESSING                         } from '../../../modules/local/bbgtools/oncodrive3d/preprocessing/main'

@@ -74,12 +74,14 @@ We are working to provide the biggest possible detail on the [usage](docs/usage.
 
 > **Sex and smoking bias in the selection of somatic mutations in human bladder**
 >
-> Ferriol Calvet, Raquel Blanco Martinez-Illescas, Ferran Muiños, Maria Tretiakova, Elena S. Latorre-Esteves, Jeanne Fredrickson, Maria Andrianova, Stefano Pellegrini, Axel Rosendahl Huber, Joan Enric Ramis-Zaldivar, Shuyi Charlotte An, Elana Thieme, Brendan F. Kohrn, Miguel L. Grau, Abel Gonzalez-Perez, Nuria Lopez-Bigas & Rosa Ana Risques
+> Ferriol Calvet*, Raquel Blanco Martinez-Illescas*, Ferran Muiños, Maria Tretiakova, Elena S. Latorre-Esteves, Jeanne Fredrickson, Maria Andrianova, Stefano Pellegrini, Axel Rosendahl Huber, Joan Enric Ramis-Zaldivar, Shuyi Charlotte An, Elana Thieme, Brendan F. Kohrn, Miguel L. Grau, Abel Gonzalez-Perez, Nuria Lopez-Bigas & Rosa Ana Risques
 >
 >_Nature_ (2025) doi:[10.1038/s41586-025-09521-x](https://doi.org/10.1038/s41586-025-09521-x)
+>
+> *these authors contributed equally and the order was decided randomly
 
 > **DeepClone, an end-to-end protocol to study somatic mutagenesis and selection at high resolution**
 >
-> Ferriol Calvet, Morena Pinheiro-Santin, Erika Lopez,Raquel Blanco Martinez-Illescas, Núria Samper, Miguel L. Grau, Ferran Muiños,Rocío Chamorro González, Maria Andrianova, Federica Brando,Stefano Pellegrini, Marta Huertas, Elisabet Figuerola-Bou,Coohleen Coombes,Brendan F. Kohrn, Jeanne Fredrickson, Rosa Ana Risques, Nuria Lopez-Bigas, Abel Gonzalez-Perez
+> Ferriol Calvet, Morena Pinheiro-Santin, Erika Lopez, Raquel Blanco Martinez-Illescas, Núria Samper, Miguel L. Grau, Ferran Muiños, Rocío Chamorro González, Maria Andrianova, Federica Brando, Stefano Pellegrini, Marta Huertas, Elisabet Figuerola-Bou, Coohleen Coombes, Brendan F. Kohrn, Jeanne Fredrickson, Rosa Ana Risques, Nuria Lopez-Bigas, Abel Gonzalez-Perez
 >
 > _protocols.io_ (2026) doi:[10.17504/protocols.io.dm6gp1jodgzp/v2](https://dx.doi.org/10.17504/protocols.io.dm6gp1jodgzp/v2)
