@@ -5,6 +5,10 @@ import json
 import pandas as pd
 import click
 
+metric2filename = {"mutdensity": "all_mutdensities.tsv",
+                "omega": "all_omegas.tsv",
+                "omegagloballoc": "all_omegas_global_loc.tsv"}
+
 @click.command()
 @click.option('--config_file', type=click.Path(exists=True), required=True,
             help='Path to the config file to be edited')
@@ -38,19 +42,49 @@ def main(config_file: str,
 
     # custom mode: config edited to contain metric info
     if mode == "custom":
+
         config_upd = {}
         config_upd["general"] = config["general"]
+        config_upd["general"]["output_dir"] = "./"
         config_upd["plot"] = config["plot"]
         config_upd["metrics"] = {}
+        print(metric)
         for config_metric in config["metrics"]:
             print(config_metric)
-            if config["metrics"][config_metric]["metric_name"] == metric:
-                config_upd["metrics"][config_metric] = config["metrics"][config_metric]
+            print(config["metrics"][config_metric]["metric_name"])
+            if config["metrics"][config_metric]["metric_name"] in metric: # this way to account for omega/omegaglolloc
 
-                with open('config.yaml', 'w') as f:
-                    yaml.dump(config_upd, f, default_flow_style = False)
+                if metric == "mutdensity":
+                    print("went through mutdensity")
+                    config_upd["metrics"][config_metric] = config["metrics"][config_metric]
+                    # file must correspond the name in the pipeline
+                    config_upd["metrics"][config_metric]["file"] = metric2filename[metric]
+                    with open('config.yaml', 'w') as f:
+                        yaml.dump(config_upd, f, default_flow_style = False)
+                    break
 
-                break
+                elif metric == "omega":
+                    print("went through omega")
+                    if not config["metrics"][config_metric]["global_loc"]:
+                        config_upd["metrics"][config_metric] = config["metrics"][config_metric]
+                        # file must correspond the name in the pipeline
+                        config_upd["metrics"][config_metric]["file"] = metric2filename[metric]
+                        with open('config.yaml', 'w') as f:
+                            yaml.dump(config_upd, f, default_flow_style = False)
+                        break
+
+                elif metric == "omegagloballoc":
+                    print("went through omegaglobal")
+                    print(config["metrics"][config_metric]["global_loc"])
+                    if config["metrics"][config_metric]["global_loc"]:
+                        print("when through global_loc = yes")
+                        config_upd["metrics"][config_metric] = config["metrics"][config_metric]
+                        # file must correspond the name in the pipeline
+                        config_upd["metrics"][config_metric]["file"] = metric2filename[metric]
+                        with open('config.yaml', 'w') as f:
+                            yaml.dump(config_upd, f, default_flow_style = False)
+                        break
+
 
     # default mode: elements are updated based on omega results; samples are updated to exclude groups
     elif mode == "default":
