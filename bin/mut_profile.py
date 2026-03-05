@@ -204,7 +204,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     # compute profile stability and store the outputs in a file
     stability_output_dict = profile_stability(mutation_matrix[sample_name], contextmut_depth[sample_name])
     stability_outputs = pd.DataFrame(stability_output_dict.items()).set_index(0).T
-    stability_outputs[["SAMPLE_ID", "mode"]] = sample_name.split(("."))
+    stability_outputs[["SAMPLE_ID", "mode"]] = sample_name.split(".")
     stability_outputs[["SAMPLE_ID", "mode"] + list(stability_outputs.columns[:-2])].to_csv(f"{sample_name}.profile_stability.tsv", sep = "\t", index = False)
 
 
