@@ -3,7 +3,7 @@
 ## Definition of relationship between number of mutations detected and sequencing depth
 
 $$
-\text{Expected number of mutations} = (\text{ average depth * region of interest (bp) }) \times (\text{expected mutation density (muts/bp)})}
+\text{Expected number of mutations} = (\text{ average depth * region of interest (bp) }) \times (\text{expected mutation density (muts/bp)})
 $$
 
 ## Use cases
