@@ -274,7 +274,7 @@ These files identify sites overlapping common SNPs and noisy or variable genomic
 - Nanoseq SNP: Common SNP positions that should be excluded from analysis
 - Nanoseq Noise: Regions with high noise or variability
 
-Both files are available for GRCh37 and GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
+Both files are available for GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
 
 ## Additional customizable parameters
 

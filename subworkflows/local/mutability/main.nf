@@ -1,6 +1,4 @@
 
-include { TABIX_BGZIPTABIX_QUERY        as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-
 include { SUBSET_MAF                    as SUBSETMUTABILITY         } from '../../../modules/local/subsetmaf/main'
 
 include { COMPUTE_RELATIVE_MUTABILITY   as RELATIVEMUTABILITY       } from '../../../modules/local/compute_mutability/main'
@@ -16,19 +14,10 @@ workflow MUTABILITY {
     depth
     profile
     panel_file
-    bedfiles
 
     main:
-    // actual code
 
-    // this line was not needed nor used in the computation of mutabilities,
-    // since there is an additional left_join merge in the compute mutabilities code,
-    // the depths can be the full ones
-    // QUERYDEPTHS(depth, bedfiles)
-    QUERYMUTATIONS(mutations, bedfiles)
-
-
-    SUBSETMUTABILITY(QUERYMUTATIONS.out.subset)
+    SUBSETMUTABILITY(mutations)
     SUBSETMUTABILITY.out.mutations
     .join(profile)
     .join(depth)

@@ -630,6 +630,12 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "features_genes_list": {
+                    "type": "string",
+                    "description": "Comma-separated list of genes to focus the analysis of depths per group",
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "create_sample_panels": {
                     "type": "boolean",
                     "description": "Do you want to generate the sample panels?",
@@ -737,7 +743,8 @@
                     "type": "string",
                     "description": "List-like (python) string with the different groups of signatures to be removed from SigProfilerAssignment.",
                     "help_text": "Find the possibilities here: https://github.com/SigProfilerSuite/SigProfilerAssignment?tab=readme-ov-file#-signature-subgroups ",
-                    "fa_icon": "far fa-file-code"
+                    "fa_icon": "far fa-file-code",
+                    "hidden": true
                 },
                 "datasets3d": {
                     "type": "string",

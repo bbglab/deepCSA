@@ -50,10 +50,14 @@ workflow MUTATIONAL_PROFILE {
     compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1] }.collect().map { files -> [ [id:'all_samples'], files ] }
     CONCATPROFILES(compile_all_profiles, all_groups)
 
+    compile_stabilities = COMPUTEPROFILE.out.profile_stability.map{ it -> it[1] }.collect().map { files -> [ [id:'all_stabilities'], files ] }
+
+
     emit:
-    profile         = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
-    matrix_sigprof  = sigprofiler_matrix
-    trinucleotides  = COMPUTETRINUC.out.trinucleotides
-    wgs_sigprofiler = sigprofiler_wgs
-    compiled_profiles = CONCATPROFILES.out.compiled_profiles
+    profile             = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
+    matrix_sigprof      = sigprofiler_matrix
+    trinucleotides      = COMPUTETRINUC.out.trinucleotides
+    wgs_sigprofiler     = sigprofiler_wgs
+    compiled_profiles   = CONCATPROFILES.out.compiled_profiles
+    profile_stabilities = compile_stabilities
 }

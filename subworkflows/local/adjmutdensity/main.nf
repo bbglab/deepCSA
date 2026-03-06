@@ -1,4 +1,4 @@
-include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS           } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { SUBSET_MAF                as SUBSETMUTDENSITYADJUSTED } from '../../../modules/local/subsetmaf/main'
 
@@ -16,7 +16,7 @@ workflow MUTATION_DENSITY {
 
     main:
 
-    // Intersect BED of all sites with BED of sample filtered sites
+    // Intersect BED of all sites of interest with mutations
     QUERYMUTATIONS(mutations, bedfile)
 
     SUBSETMUTDENSITYADJUSTED(QUERYMUTATIONS.out.subset)
