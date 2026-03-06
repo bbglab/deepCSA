@@ -97,20 +97,21 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../modules/local/table2groups/main'
-include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
-include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
+include { TABLE_2_GROUP                 as TABLE2GROUP                  } from '../modules/local/table2groups/main'
+include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS               } from '../modules/local/annotatedepth/main'
+include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS             } from '../modules/local/downsample/depths/main'
+include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHSALLSAMPLES   } from '../modules/local/downsample/depths/main'
 
-include { SELECT_MUTDENSITIES           as SYNMUTDENSITY            } from '../modules/local/select_mutdensity/main'
-include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY       } from '../modules/local/select_mutdensity/main'
-include { DNDS_PROXY                    as DNDSPROXY                } from '../modules/local/dnds_proxy/main'
+include { SELECT_MUTDENSITIES           as SYNMUTDENSITY                } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY           } from '../modules/local/select_mutdensity/main'
+include { DNDS_PROXY                    as DNDSPROXY                    } from '../modules/local/dnds_proxy/main'
 
-include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../modules/local/dna2protein/main'
+include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING           } from '../modules/local/dna2protein/main'
 
-include { MAF_2_VCF                     as MAF2VCF                  } from '../modules/local/maf2vcf/main'
-include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR    } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
+include { MAF_2_VCF                     as MAF2VCF                      } from '../modules/local/maf2vcf/main'
+include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR        } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
 
-include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
+include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                    } from '../modules/local/mutations2sbs/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -206,8 +207,12 @@ workflow DEEPCSA{
     if (params.downsample ){
         DOWNSAMPLEDEPTHS(annotated_depths_full)
         annotated_depths = DOWNSAMPLEDEPTHS.out.downsampled_depths
+
+        DOWNSAMPLEDEPTHSALLSAMPLES(ANNOTATEDEPTHS.out.all_samples_depths)
+        all_samples_indv_annotated_depths = DOWNSAMPLEDEPTHSALLSAMPLES.out.downsampled_depths
     } else {
         annotated_depths = annotated_depths_full
+        all_samples_indv_annotated_depths = ANNOTATEDEPTHS.out.all_samples_depths
     }
 
     if (params.plot_depths){
@@ -409,9 +414,9 @@ workflow DEEPCSA{
 
         // Omega
         if (params.profileall){
-            OMEGA(somatic_mutations,
-                    DEPTHSEXONSCONS.out.subset,
-                    MUTPROFILEALL.out.profile,
+            OMEGA(MUT_PREPROCESSING.out.mutations_all_samples,
+                    all_samples_indv_annotated_depths,
+                    MUTPROFILEALL.out.compiled_profiles,
                     CREATEPANELS.out.exons_consensus_bed.first(),
                     ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
                     custom_groups_table,
