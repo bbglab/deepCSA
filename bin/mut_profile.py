@@ -98,6 +98,72 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method
                                             sep = "\t")
 
 
+
+def profile_stability(counts, denominator):
+    """
+    Compute stability score of a probability profile by
+    adding +1 to each channel individually and measuring
+    L1 (Total Variation) deviation.
+
+    Parameters
+    ----------
+    counts : array-like, shape (k,)
+        Raw integer counts per channel.
+    denominator : array-like, shape (k,)
+        Denominator for each channel (e.g., trinucleotide counts).
+
+    Returns
+    -------
+    results : dict
+        {
+            'mean_deviation': float,
+            'max_deviation': float,
+            'std_deviation': float,
+            'all_deviations': np.ndarray shape (k,)
+        }
+    """
+
+    # Convert to numpy arrays
+    counts = np.asarray(counts, dtype=float)
+    denominator = np.asarray(denominator, dtype=float)
+
+    if counts.ndim != 1:
+        raise ValueError("counts must be a 1D vector")
+    if denominator.ndim != 1:
+        raise ValueError("denominator must be a 1D vector")
+    if len(counts) != len(denominator):
+        raise ValueError("counts and denominator must have same length")
+    if np.any(denominator == 0):
+        raise ValueError("denominator contains zeros")
+
+    k = len(counts)
+
+    # ---- Baseline profile ----
+    ref_profile = counts / denominator
+    ref_profile = ref_profile / ref_profile.sum()
+    p = ref_profile
+
+    deviations = np.zeros(k)
+
+    # ---- Perturb each channel ----
+    for j in range(k):
+        perturbed = counts.copy()
+        perturbed[j] += 1
+
+        p_prime = perturbed / denominator
+        p_prime = p_prime / p_prime.sum()  # IMPORTANT: renormalize
+
+        deviations[j] = 0.5 * np.sum(np.abs(p - p_prime))
+
+    return {
+        "mean_deviation": deviations.mean(),
+        "min_deviation": deviations.min(),
+        "max_deviation": deviations.max(),
+        "std_deviation": deviations.std(),
+        "all_deviations": deviations.tolist()
+    }
+
+
 def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_counts_file, plot,
                                 wgs = False, wgs_trinucleotide_counts = False, sigprofiler = False):
     """
@@ -116,8 +182,9 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
     total_mutations = np.sum(mutation_matrix[sample_name])
 
     # proportion of SBS mutations per trinucleotide in panel
-    mutation_matrix[sample_name] = mutation_matrix[sample_name] / total_mutations
-    mutation_matrix.to_csv(f"{sample_name}.proportion_mutations.tsv",
+    mutation_matrix_proportions = mutation_matrix.copy()
+    mutation_matrix_proportions[sample_name] = mutation_matrix_proportions[sample_name] / total_mutations
+    mutation_matrix_proportions.to_csv(f"{sample_name}.proportion_mutations.tsv",
                                 header = True,
                                 index = True,
                                 sep = "\t")
@@ -133,6 +200,13 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 
     contextmut_depth = pd.DataFrame({sample_name : trinuc_per_contextmuts, "CONTEXT_MUT": contexts_formatted})
     contextmut_depth = contextmut_depth.set_index("CONTEXT_MUT")
+
+    # compute profile stability and store the outputs in a file
+    stability_output_dict = profile_stability(mutation_matrix[sample_name], contextmut_depth[sample_name])
+    stability_outputs = pd.DataFrame(stability_output_dict.items()).set_index(0).T
+    stability_outputs[["SAMPLE_ID", "mode"]] = sample_name.split(".")
+    stability_outputs[["SAMPLE_ID", "mode"] + list(stability_outputs.columns[:-2])].to_csv(f"{sample_name}.profile_stability.tsv", sep = "\t", index = False)
+
 
     # divide
     mut_probability = mutation_matrix.divide( contextmut_depth )
@@ -171,7 +245,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                         output_f = f'{sample_name}.profile.pdf')
 
         # plot the profile as a percentage of SBS mutations seen in our sequenced panel
-        plot_profile(dict(zip(mutation_matrix.index, mutation_matrix[sample_name])),
+        plot_profile(dict(zip(mutation_matrix_proportions.index, mutation_matrix_proportions[sample_name])),
                         title=f'{sample_name} ({round(total_mutations)} muts)',
                         output_f = f'{sample_name}.profile.percentage.pdf')
 

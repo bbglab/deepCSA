@@ -1,5 +1,5 @@
 process SIGPROFILER_MATRIXGENERATOR {
-    tag "${task.ext.prefix}"
+    tag "samples"
     label 'process_single'
 
     container 'docker.io/ferriolcalvet/sigprofilermatrixgenerator:1.3.5'
@@ -8,11 +8,11 @@ process SIGPROFILER_MATRIXGENERATOR {
     path (vcf)
 
     output:
-    path("input_mutations/output/plots/*"), optional : true, emit: output_plots
-    path("input_mutations/output/ID/*")   , optional : true, emit: matrices_ID
-    path("input_mutations/output/DBS/*")  , optional : true, emit: matrices_DBS
-    path("input_mutations/output/SBS/*")  , optional : true, emit: matrices_SBS
-    path("input_mutations/output/TSB/*")  , optional : true, emit: transcription_bias
+    path("**plots/*"), optional : true, emit: output_plots
+    path("**ID/*")   , optional : true, emit: matrices_ID
+    path("**DBS/*")  , optional : true, emit: matrices_DBS
+    path("**SBS/*")  , optional : true, emit: matrices_SBS
+    path("**TSB/*")  , optional : true, emit: transcription_bias
     path "versions.yml"                                    , topic: versions
 
 
@@ -29,9 +29,11 @@ process SIGPROFILER_MATRIXGENERATOR {
                 ${genome} \\
                 input_mutations/ \\
                 ${args}
+            
+    mv input_mutations/output/ ${prefix}_output/
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
         SigProfilerMatrixGenerator: 1.3.5
     END_VERSIONS
     """
@@ -40,7 +42,6 @@ process SIGPROFILER_MATRIXGENERATOR {
     """
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
         SigProfilerMatrixGenerator: 1.3.5
     END_VERSIONS
     """

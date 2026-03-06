@@ -5,6 +5,14 @@ import pandas as pd
 import json
 
 
+# identify samples without mutations
+def remove_zero_mutation_samples(matrix):
+    zero_col = matrix.columns[matrix.sum(axis=0) == 0]
+    if len(zero_col) > 0:
+        print(f"Excluding samples without mutations: {list(zero_col)}")
+        matrix = matrix.drop(columns=zero_col)
+    return matrix
+
 def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_profile):
     """
     Concatenate signature profile matrices for samples and groups.
@@ -41,8 +49,11 @@ def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_pro
 
     # Save the groups matrix if it exists
     if groups_matrix is not None and groups_matrix.shape[0] > 0:
+        groups_matrix = remove_zero_mutation_samples(groups_matrix)
+
         groups_matrix.reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
-        groups_matrix.round().astype(int).reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
+        rounded_groups_matrix = remove_zero_mutation_samples(groups_matrix.round().astype(int))
+        rounded_groups_matrix.reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
 
         # HDP
         groups_matrix = groups_matrix.transpose()
@@ -55,8 +66,11 @@ def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_pro
 
     # Save the samples matrix if it exists
     if samples_only_matrix is not None and samples_only_matrix.shape[0] > 0:
+        samples_only_matrix = remove_zero_mutation_samples(samples_only_matrix)
+
         samples_only_matrix.reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
-        samples_only_matrix.round().astype(int).reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
+        rounded_samples_only_matrix = remove_zero_mutation_samples(samples_only_matrix.round().astype(int))
+        rounded_samples_only_matrix.reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
 
         # HDP
         samples_only_matrix = samples_only_matrix.transpose()

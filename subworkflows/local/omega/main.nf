@@ -1,10 +1,7 @@
-include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
 include { SUBSET_MAF                as SUBSETOMEGAMULTI         } from '../../../modules/local/subsetmaf/main'
 
-
-
-include { TABIX_BGZIPTABIX_QUERY    as QUERYPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYPANEL               } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
@@ -17,10 +14,10 @@ include { PLOT_OMEGASYN_QC          as EVALOMEGAGLOCESTIMATION  } from '../../..
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
-include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } from '../../../modules/local/bbgtools/omega/mutabilities/main'
-include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
-include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC  } from '../../../modules/local/bbgtools/sitecomparison/main'
-include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI  } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC    } from '../../../modules/local/bbgtools/omega/mutabilities/main'
+include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC               } from '../../../modules/local/plot/omega/main'
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -45,12 +42,10 @@ workflow OMEGA_ANALYSIS{
     all_gloc_results        = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
-    QUERYMUTATIONS(mutations, bedfile)
-
     QUERYPANEL(panel_captured_rich, bedfile)
 
-    SUBSETOMEGA(QUERYMUTATIONS.out.subset)
-    SUBSETOMEGAMULTI(QUERYMUTATIONS.out.subset)
+    SUBSETOMEGA(mutations)
+    SUBSETOMEGAMULTI(mutations)
 
     SUBSETOMEGA.out.mutations
     .join( depth )
@@ -81,7 +76,7 @@ workflow OMEGA_ANALYSIS{
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
 
     if (params.omega_plot){
-        QUERYMUTATIONS.out.subset
+        mutations
         .join(ESTIMATOR.out.results)
         .set{mutations_n_omega}
 
@@ -136,7 +131,7 @@ workflow OMEGA_ANALYSIS{
         EVALOMEGAGLOCESTIMATION(all_syn_muts, all_syn_muts_gloc, grouping_defs)
 
         if (params.omega_plot){
-            QUERYMUTATIONS.out.subset
+            mutations
             .join(ESTIMATORGLOBALLOC.out.results)
             .set{mutations_n_omegagloloc}
 
