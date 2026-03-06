@@ -11,13 +11,13 @@ $$
 To get an estimation of the expected mutation density you can use this formula even if it is with some approximate values:
 
 $$
-\text{expected mutation density (muts/bp)} = \text{mutation rate (mutations} \times \text{genome} \times \text{year)} \times \text{time (year)}
+\text{expected mutation density (muts/bp)} = \text{mutation rate (mutations} \times \text{bp} \times \text{year)} \times \text{time (year)}
 $$
 
 For the mutation rate this could be a possible formula; but you may also rely on previously published data.
 
 $$
-\text{mutation rate (} \frac{\text{mutations}}{\text{bp * year}} \text{)}  = \frac{\text{observed mutations}}{ \text{genome} \times \text{age (years)} }
+\text{mutation rate (} \frac{\text{mutations}}{\text{bp * year}} \text{)}  = \frac{\text{observed mutations}}{ \text{genome size} \times \text{age (year)} }
 $$
 
 In this example, we are assuming that the units of the mutation rate are mutations x genome x year, but this could be in any other units
