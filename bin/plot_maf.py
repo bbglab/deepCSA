@@ -11,6 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from utils_filter import filter_maf
 from read_utils import custom_na_values
+from utils_plot import snv_color
 
 
 def subset_mutation_dataframe(mutations_file, json_filters):
@@ -165,7 +166,10 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
             if stacked:
                 gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index().pivot(
                     columns=hue_group, index=x_axis_group, values="number_mutations")
-                gp_df.plot(kind='bar', stacked=True, ax=ax)
+                if hue_group == "MUTTYPE":
+                    gp_df.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                else:
+                    gp_df.plot(kind='bar', stacked=True, ax=ax)
             else:
                 gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index()
                 gp_df = gp_df.fillna("FALSE")
