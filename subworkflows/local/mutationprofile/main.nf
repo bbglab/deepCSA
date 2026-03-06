@@ -47,7 +47,7 @@ workflow MUTATIONAL_PROFILE {
     .concat(COMPUTEPROFILE.out.wgs_sigprofiler)
     .set{ sigprofiler_wgs }
 
-    compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1] }.collect().map { files -> [ [id:'all_profiles'], files ] }
+    compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1] }.collect().map { files -> [ [id:'all_samples'], files ] }
     CONCATPROFILES(compile_all_profiles, all_groups)
 
     emit:

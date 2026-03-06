@@ -417,13 +417,14 @@ workflow DEEPCSA{
             OMEGA(MUT_PREPROCESSING.out.mutations_all_samples,
                     all_samples_indv_annotated_depths,
                     MUTPROFILEALL.out.compiled_profiles,
+                    MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed.first(),
                     ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
                     custom_groups_table,
                     SYNMUTDENSITY.out.mutdensity.first(),
                     CREATEPANELS.out.panel_annotated_rich,
                     "",
-                    grouping_definitions,
+                    TABLE2GROUP.out.json_allgroups,
                     ENRICHPANELS.out.exons_json_subgenic
                     )
             positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
