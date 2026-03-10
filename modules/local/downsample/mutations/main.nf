@@ -1,7 +1,7 @@
 process DOWNSAMPLE_MUTATIONS {
-    // this should be left as false since it is not deterministic
+    // this could be left as false since it is not deterministic
     // mutations should be downsampled differently in different runs
-    cache false
+    // cache false
 
     tag "$meta.id"
     label 'process_high'

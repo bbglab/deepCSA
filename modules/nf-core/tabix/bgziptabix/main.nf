@@ -1,5 +1,6 @@
 process TABIX_BGZIPTABIX {
-    cache false
+    // // this could be left as false to reduce the size of the work directory
+    // cache false
 
     tag "$meta.id"
     label 'process_single'
