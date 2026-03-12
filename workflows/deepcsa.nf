@@ -122,7 +122,7 @@ include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow DEEPCSA{
+workflow DEEPCSA {
 
     // // Input channel definitions
     features_table  = channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
@@ -557,13 +557,12 @@ workflow DEEPCSA{
             )
 
          --> external arg 
-
         
         SIGPROMATRIXGENERATOR.out.matrix_ID83
         .map{ it -> [ [id:"all_samples"], "indels", it] }
         .set{ indels_matrix }
         SIGPROFILERASSIGNMENTINDELS(indels_matrix, cosmic_indel_ref)
-
+    }
 
         // Signature Analysis
         if (params.profileall){
