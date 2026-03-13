@@ -122,7 +122,7 @@ include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow DEEPCSA{
+workflow DEEPCSA {
 
     // // Input channel definitions
     features_table  = channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
