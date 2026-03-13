@@ -729,6 +729,15 @@
                     "fa_icon": "far fa-file-code",
                     "default": "COSMIC_v3.4_SBS_GRCh38.txt"
                 },
+                "indel_ref_signatures": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "description": "Path to file containing the reference indel (ID) signatures to use in SigProfilerAssignment.",
+                    "help_text": "You can obtain it from COSMIC website. Note that for ID signatures the GRCh37 genome version is used.",
+                    "fa_icon": "far fa-file-code",
+                    "default": "COSMIC_v3.4_ID_GRCh37.txt"
+                },
                 "wgs_trinuc_counts": {
                     "type": "string",
                     "format": "file-path",
