@@ -54,7 +54,7 @@ workflow CREATE_PANELS {
     POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
 
     if (params.customize_annotation) {
-        custom_annotation_tsv = file(params.custom_annotation_tsv)
+        custom_annotation_tsv = file(params.custom_annotation_tsv, checkIfExists: true)
 
         // Update specific regions based on user preferences
         CUSTOMPROCESSING(POSTPROCESSVEPPANEL.out.compact_panel_annotation, custom_annotation_tsv)

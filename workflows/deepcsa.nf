@@ -164,7 +164,7 @@ workflow DEEPCSA {
     // otherwise I am using the input csv as a dummy value channel
     custom_groups_table = params.custom_groups_file
                                 ? channel.fromPath( params.custom_groups_file, checkIfExists: true).first()
-                                : channel.fromPath(params.input)
+                                : channel.fromPath( params.input )
 
     // if the user wants to use custom BED file for computing the depths, import the BED file
     // otherwise I am using the input csv as a dummy value channel

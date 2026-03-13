@@ -223,6 +223,7 @@
             "type": "object",
             "fa_icon": "fas fa-dna",
             "description": "Definition of subgenic regions in genes.",
+            "required": ["domains_file"],
             "properties": {
                 "create_subgenic_regions": {
                     "type": "boolean",
