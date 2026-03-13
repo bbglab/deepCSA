@@ -171,9 +171,15 @@ workflow DEEPCSA{
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutdensity      = (params.mutationdensity || params.omega)
 
+    // def maf_input = params.input_maf ? channel.fromPath( params.input_maf, checkIfExists: true).first() : channel.empty()
+
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    if (params.input_maf & params.use_custom_depths ) {
-        INPUTMAF2VCF ( file(params.input_maf) )
+    if ( params.input_maf && params.use_custom_depths ) {
+        channel.fromPath( params.input_maf, checkIfExists: true)
+        .map{ it -> [[id:'input'], it] }
+        .first()
+        .set { maf_input }
+        INPUTMAF2VCF( maf_input )
         INPUTMAF2VCF.out.vcf_files
             .flatten()
             .map { vcf -> 
