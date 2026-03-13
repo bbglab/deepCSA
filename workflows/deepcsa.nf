@@ -112,6 +112,7 @@ include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../m
 
 include { MAF_2_VCF                     as MAF2VCF                  } from '../modules/local/maf2vcf/main'
 include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR    } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
+include { SIGPROFILERASSIGNMENT_COSMIC_FIT      as SIGPROFILERASSIGNMENTINDELS    } from '../modules/local/signatures/sigprofiler/assignment/cosmic_fit/main'
 
 include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
 
@@ -121,7 +122,7 @@ include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow DEEPCSA{
+workflow DEEPCSA {
 
     // // Input channel definitions
     features_table  = channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
@@ -132,6 +133,11 @@ workflow DEEPCSA{
     cosmic_ref      = params.cosmic_ref_signatures
                             ? channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first()
                             : channel.empty()
+    cosmic_indel_ref   = params.indel_ref_signatures
+                            ? channel.fromPath( params.indel_ref_signatures, checkIfExists: true).first()
+                            : channel.empty()
+
+
     datasets3d      = params.datasets3d
                             ? channel.fromPath( params.datasets3d, checkIfExists: true).first()
                             : channel.empty()
@@ -547,8 +553,16 @@ workflow DEEPCSA{
         vcf_files = MAF2VCF.out.vcf_files.flatten().collect()
 
         SIGPROMATRIXGENERATOR(
-            vcf_files,
-            )
+            vcf_files)
+
+         // --> external arg 
+        
+        SIGPROMATRIXGENERATOR.out.matrix_ID83
+        .map{ it -> [ [id:"all_samples"], "indels", it] }
+        .set{ indels_matrix }
+        
+        SIGPROFILERASSIGNMENTINDELS(indels_matrix, cosmic_indel_ref)
+    }
 
         // Signature Analysis
         if (params.profileall){

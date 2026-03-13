@@ -16,11 +16,13 @@ process SIGPROFILERASSIGNMENT_COSMIC_FIT {
 
 
     script:
-    def name = "${meta.id}.${type}"
     def assembly = task.ext.genome_assembly ?: "GRCh38"
-    
+    def context_type = task.ext.context_type ?: "96" // "96", "288", "1536", "DINUC", and "ID"
+    def name = "${meta.id}.${type}.${context_type}"
+
     // FIXME: the definition of subgroups to exclude seems not to work in the new CLI SigProfilerAssignment
     // def exclude_signature_subgroups = params.exclude_subgroups ? "--exclude_signature_subgroups \"${params.exclude_subgroups}\"" : ""
+    // The default input format is "matrix".
     """
     mkdir -p spa_volume
     export SIGPROFILERMATRIXGENERATOR_VOLUME='./spa_volume'
@@ -28,11 +30,12 @@ process SIGPROFILERASSIGNMENT_COSMIC_FIT {
     export SIGPROFILERASSIGNMENT_VOLUME='./spa_volume'
 
     SigProfilerAssignment cosmic_fit \\
-            ${matrix} \\
+            ${matrix} \\    
             output_${name} \\
             --signature_database ${reference_signatures} \\
             --genome_build ${assembly} \\
             --cpu ${task.cpus} \\
+            --context_type ${context_type} \\
             --volume spa_volume
 
     cp output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
