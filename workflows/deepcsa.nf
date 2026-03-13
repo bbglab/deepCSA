@@ -552,17 +552,13 @@ workflow DEEPCSA {
         MAF2VCF(maf2vcf_inputs)
         vcf_files = MAF2VCF.out.vcf_files.flatten().collect()
 
-        SIGPROMATRIXGENERATOR(
-            vcf_files)
+        SIGPROMATRIXGENERATOR(vcf_files)
 
-         // --> external arg 
-        
         SIGPROMATRIXGENERATOR.out.matrix_ID83
         .map{ it -> [ [id:"all_samples"], "indels", it] }
         .set{ indels_matrix }
         
         SIGPROFILERASSIGNMENTINDELS(indels_matrix, cosmic_indel_ref)
-    }
 
         // Signature Analysis
         if (params.profileall){

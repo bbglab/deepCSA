@@ -8,13 +8,13 @@ process SIGPROFILER_MATRIXGENERATOR {
     path (vcf)
 
     output:
-    path("**plots/*"), optional : true, emit: output_plots
-    path("**ID/*ID83*"), optional : true, emit: matrix_ID83
-    path("**ID/*")   , optional : true, emit: matrices_ID
-    path("**DBS/*")  , optional : true, emit: matrices_DBS
-    path("**SBS/*")  , optional : true, emit: matrices_SBS
-    path("**TSB/*")  , optional : true, emit: transcription_bias
-    path "versions.yml"                                    , topic: versions
+    path("**plots/*")   , optional : true, emit: output_plots
+    path("**ID/*ID83*") , optional : true, emit: matrix_ID83
+    path("**ID/*")      , optional : true, emit: matrices_ID
+    path("**DBS/*")     , optional : true, emit: matrices_DBS
+    path("**SBS/*")     , optional : true, emit: matrices_SBS
+    path("**TSB/*")     , optional : true, emit: transcription_bias
+    path "versions.yml"                  , topic: versions
 
 
     script:
