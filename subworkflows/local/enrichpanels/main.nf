@@ -22,10 +22,6 @@ workflow ENRICHPANELS {
 
     domains_file
 
-    all_bedfile
-    nonprot_bedfile
-    prot_bedfile
-    synonymous_bedfile
     exons_bedfile
 
     main:

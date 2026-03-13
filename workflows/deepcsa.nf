@@ -97,6 +97,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+include { MAF_2_VCF                     as INPUTMAF2VCF             } from '../modules/local/maf2vcf/main'
 include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../modules/local/table2groups/main'
 include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
 include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
@@ -171,14 +172,28 @@ workflow DEEPCSA{
     def run_mutdensity      = (params.mutationdensity || params.omega)
 
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    INPUT_CHECK( file(params.input), !params.use_custom_depths )
+    if (params.input_maf & params.use_custom_depths ) {
+        INPUTMAF2VCF ( file(params.input_maf) )
+        INPUTMAF2VCF.out.vcf_files
+            .flatten()
+            .map { vcf -> 
+                def meta = [:]
+                meta.id = vcf.baseName
+                return [ meta, vcf ]
+            }
+            .set { sample_vcfs }
+        sample_inputs_ch = sample_vcfs
+    } else {
+        INPUT_CHECK( file(params.input), !params.use_custom_depths )
+        sample_inputs_ch = INPUT_CHECK.out.sample_inputs
+    }
 
     // Separate samples and VCFs
-    INPUT_CHECK.out.sample_inputs
+    sample_inputs_ch
     .map{ it -> [ "id" : it[0].id ]}
     .set{ meta_samples_alone }
 
-    INPUT_CHECK.out.sample_inputs
+    sample_inputs_ch
     .map{ it -> [it[0], it[1]]}
     .set{ meta_vcfs_alone }
 
@@ -196,7 +211,7 @@ workflow DEEPCSA{
 
     // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(INPUT_CHECK.out.sample_inputs, custom_bed_file)
+    DEPTHANALYSIS(sample_inputs_ch, custom_bed_file)
 
     // Panels annotation
     CREATEPANELS(DEPTHANALYSIS.out.depths, wgs_trinucs)
@@ -245,10 +260,6 @@ workflow DEEPCSA{
                  CREATEPANELS.out.synonymous_consensus_panel, 
                  CREATEPANELS.out.exons_consensus_panel, 
                  CREATEPANELS.out.domains_panel_bed, // domains_file
-                 CREATEPANELS.out.all_consensus_bed,
-                 CREATEPANELS.out.nonprot_consensus_bed,
-                 CREATEPANELS.out.prot_consensus_bed,
-                 CREATEPANELS.out.synonymous_consensus_bed,
                  CREATEPANELS.out.exons_consensus_bed)
 
 

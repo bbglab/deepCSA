@@ -28,6 +28,17 @@
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
+                },
+                "input_maf": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "default": null,
+                    "pattern": "^\\S+\\.maf$",
+                    "description": "Path to MAF file containing mutation data. PROVIDING THIS PARAMETER WILL OVERWRITE THE input.csv DATA.",
+                    "help_text": "Path to MAF file containing mutation data.",
+                    "fa_icon": "fas fa-file-medical"
                 }
             }
         },
@@ -635,12 +646,6 @@
                     "description": "Comma-separated list of genes to focus the analysis of depths per group",
                     "fa_icon": "fas fa-book",
                     "help_text": ""
-                },
-                "create_sample_panels": {
-                    "type": "boolean",
-                    "description": "Do you want to generate the sample panels?",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Do you want to generate the sample panels?"
                 },
                 "germline_threshold": {
                     "type": "number",
