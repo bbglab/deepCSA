@@ -31,7 +31,7 @@ def save_all_matrices(matrix, type_of_profile, group_meaning):
     samples_only_matrix.to_csv(f"{group_meaning}_matrix.{type_of_profile}.hdp.tsv", sep = '\t', header = True, index = True, quoting=1)
 
     # MSA
-    mutation_matrix = samples_only_matrix_init.copy()
+    mutation_matrix = samples_only_matrix_init.reset_index().copy()
     mutation_matrix["Type"] = mutation_matrix["CONTEXT_MUT"].apply(lambda x: x[2:-2])
     mutation_matrix["SubType"] = mutation_matrix["CONTEXT_MUT"].apply(lambda x: x[0] + x[2] + x[-1] )
     mutation_matrix = mutation_matrix.drop(columns = ["CONTEXT_MUT"])
