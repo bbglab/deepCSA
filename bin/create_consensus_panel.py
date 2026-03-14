@@ -11,6 +11,9 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
     compact_annot_panel_df = pl.read_csv(compact_annot_panel_path, separator="\t")
     depths_df = pl.read_csv(depths_path, separator="\t")
 
+    # Drop CONTEXT column if it exists
+    depths_df = depths_df.drop("CONTEXT", strict=False)
+
     # Ensure numeric columns are int
     depths_df = depths_df.with_columns({
                     col: pl.col(col).cast(pl.Int64) for col in depths_df.columns[1:]

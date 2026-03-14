@@ -43,6 +43,8 @@ def build_vcf_like_dataframe(mutations_dataframe, samplee):
     Build a VCF-like dataframe from the mutations dataframe.
     input needs to have:
         ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH']
+        can optionally have:
+            ['FILTER', 'INFO'] and ['ALT_DEPTH_AM', 'DEPTH_AM']
     output needs to have:
         ['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']
     """
@@ -58,10 +60,16 @@ def build_vcf_like_dataframe(mutations_dataframe, samplee):
         print(f"WARNING: INFO column is missing from the mutations dataframe. Setting it to 'SAMPLE={samplee};'")
         mutations_dataframe["INFO"] = f"SAMPLE={samplee};"
 
+    if 'ALT_DEPTH_AM' not in mutations_dataframe.columns or 'DEPTH_AM' not in mutations_dataframe.columns:
+        print("WARNING: Optional columns: ALT_DEPTH_AM and DEPTH_AM are missing from the mutations dataframe.")
+        print("         These are being initialized as its duplex values.")
+        mutations_dataframe['ALT_DEPTH_AM'] = mutations_dataframe['ALT_DEPTH']
+        mutations_dataframe['DEPTH_AM'] = mutations_dataframe['DEPTH']
+
     # Create a new dataframe with the required columns
-    vcf_like_df = mutations_dataframe[['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'DEPTH', 'ALT_DEPTH']].copy()
+    vcf_like_df = mutations_dataframe[['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'DEPTH', 'ALT_DEPTH', 'ALT_DEPTH_AM', 'DEPTH_AM']].copy()    
     vcf_like_df["FORMAT"] = "GT:DP:VD:AD:AF:RD:ALD:CDP:CAD:NDP:CDPAM:CADAM:NDPAM"
-    vcf_like_df["SAMPLE"] = vcf_like_df[['DEPTH', 'ALT_DEPTH']].apply(
+    vcf_like_df["SAMPLE"] = vcf_like_df[['DEPTH', 'ALT_DEPTH', 'ALT_DEPTH_AM', 'DEPTH_AM']].apply(
         lambda x: "{GT}:{DP}:{VD}:{AD}:{AF}:{RD}:{ALD}:{CDP}:{CAD}:{NDP}:{CDPAM}:{CADAM}:{NDPAM}".format(
             GT="0/1",
             DP=x['DEPTH'],
@@ -73,8 +81,8 @@ def build_vcf_like_dataframe(mutations_dataframe, samplee):
             CDP=x['DEPTH'],
             CAD=f"{x['DEPTH'] - x['ALT_DEPTH']},{x['ALT_DEPTH']}",
             NDP="0",
-            CDPAM=x['DEPTH'],
-            CADAM=f"{x['DEPTH'] - x['ALT_DEPTH']},{x['ALT_DEPTH']}",
+            CDPAM=x['DEPTH_AM'],
+            CADAM=f"{x['DEPTH_AM'] - x['ALT_DEPTH_AM']},{x['ALT_DEPTH_AM']}",
             NDPAM="0" 
         ),
         axis=1

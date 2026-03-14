@@ -13,6 +13,35 @@ def remove_zero_mutation_samples(matrix):
         matrix = matrix.drop(columns=zero_col)
     return matrix
 
+
+def save_all_matrices(matrix, type_of_profile, group_meaning):
+    samples_only_matrix_init = remove_zero_mutation_samples(matrix)
+
+    # SigProfilerTools
+    samples_only_matrix = samples_only_matrix_init.copy()
+    samples_only_matrix.reset_index().to_csv(f"{group_meaning}_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
+    rounded_samples_only_matrix = remove_zero_mutation_samples(samples_only_matrix.round().astype(int))
+    rounded_samples_only_matrix.reset_index().to_csv(f"{group_meaning}_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
+
+    # HDP
+    samples_only_matrix = samples_only_matrix_init.transpose()
+    samples_only_matrix.index.name = None
+    hdp_sorted_contexts = sorted(samples_only_matrix.columns, key = lambda x : x[0] + x[2] + x[-1] + x[1:])
+    samples_only_matrix = samples_only_matrix[hdp_sorted_contexts]
+    samples_only_matrix.to_csv(f"{group_meaning}_matrix.{type_of_profile}.hdp.tsv", sep = '\t', header = True, index = True, quoting=1)
+
+    # MSA
+    mutation_matrix = samples_only_matrix_init.copy()
+    mutation_matrix["Type"] = mutation_matrix["CONTEXT_MUT"].apply(lambda x: x[2:-2])
+    mutation_matrix["SubType"] = mutation_matrix["CONTEXT_MUT"].apply(lambda x: x[0] + x[2] + x[-1] )
+    mutation_matrix = mutation_matrix.drop(columns = ["CONTEXT_MUT"])
+    mutation_matrix = mutation_matrix[
+            ["Type", "SubType"] + [col for col in mutation_matrix.columns if col not in ["Type", "SubType"]]
+        ].sort_values(by = ["Type", "SubType"])
+
+    mutation_matrix.to_csv(f"{group_meaning}_matrix.{type_of_profile}.msa.csv", sep = ',', index = False)
+
+
 def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_profile):
     """
     Concatenate signature profile matrices for samples and groups.
@@ -47,39 +76,15 @@ def concat_sigprot_matrices(filename_of_matrices, samples_json_file, type_of_pro
                     # Ensure the concatenation preserves the original order of the 96 channels
                     groups_matrix = pd.concat((groups_matrix, sample_data), axis=1)
 
+
     # Save the groups matrix if it exists
     if groups_matrix is not None and groups_matrix.shape[0] > 0:
-        groups_matrix = remove_zero_mutation_samples(groups_matrix)
-
-        groups_matrix.reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
-        rounded_groups_matrix = remove_zero_mutation_samples(groups_matrix.round().astype(int))
-        rounded_groups_matrix.reset_index().to_csv(f"groups_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
-
-        # HDP
-        groups_matrix = groups_matrix.transpose()
-        groups_matrix.index.name = None
-        hdp_sorted_contexts = sorted(groups_matrix.columns, key = lambda x : x[0] + x[2] + x[-1] + x[1:])
-        groups_matrix = groups_matrix[hdp_sorted_contexts]
-
-        groups_matrix.to_csv(f"groups_matrix.{type_of_profile}.hdp.tsv", sep = '\t', header = True, index = True, quoting=1)
+        save_all_matrices(groups_matrix, type_of_profile, 'groups')
 
 
     # Save the samples matrix if it exists
     if samples_only_matrix is not None and samples_only_matrix.shape[0] > 0:
-        samples_only_matrix = remove_zero_mutation_samples(samples_only_matrix)
-
-        samples_only_matrix.reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.tsv", sep='\t', header=True, index=False)
-        rounded_samples_only_matrix = remove_zero_mutation_samples(samples_only_matrix.round().astype(int))
-        rounded_samples_only_matrix.reset_index().to_csv(f"samples_matrix.{type_of_profile}.sp.round.tsv", sep='\t', header=True, index=False)
-
-        # HDP
-        samples_only_matrix = samples_only_matrix.transpose()
-        samples_only_matrix.index.name = None
-        hdp_sorted_contexts = sorted(samples_only_matrix.columns, key = lambda x : x[0] + x[2] + x[-1] + x[1:])
-        samples_only_matrix = samples_only_matrix[hdp_sorted_contexts]
-
-        # remove the index column name and change the order of the columns
-        samples_only_matrix.to_csv(f"samples_matrix.{type_of_profile}.hdp.tsv", sep = '\t', header = True, index = True, quoting=1)
+        save_all_matrices(samples_only_matrix, type_of_profile, 'samples')
 
 
 @click.command()

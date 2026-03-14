@@ -55,6 +55,10 @@ def preprocess(annotation_file: str, depths_file: str) -> tuple[pl.DataFrame, li
     """
     LOG.info("Preprocessing annotation and depths files...")
     _depths = pl.read_csv(depths_file, separator="\t")
+
+    # Drop CONTEXT column if it exists
+    _depths = _depths.drop("CONTEXT", strict=False)
+
     _annots = pl.read_csv(annotation_file, separator="\t")
 
     annot_depth = _depths.join(_annots, on=["CHROM", "POS"], how='left').fill_null(pl.lit('-'))
