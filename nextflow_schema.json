@@ -36,8 +36,8 @@
                     "mimetype": "text/plain",
                     "default": null,
                     "pattern": "^\\S+\\.maf$",
-                    "description": "Path to MAF file containing mutation data. PROVIDING THIS PARAMETER WILL OVERWRITE THE input.csv DATA.",
-                    "help_text": "Path to MAF file containing mutation data.",
+                    "description": "Path to a MAF file containing mutation data to use as pipeline input. When provided, the pipeline converts the MAF into per-sample VCFs instead of reading per-sample VCFs from `input.csv`. Requires `--use_custom_depths true` (and a matching `--custom_depths_table`) because BAM-based depth computation is not performed in this mode.",
+                    "help_text": "Provide an absolute or relative path to a MAF file (tab-separated, `.maf` extension). The file must contain at minimum the columns required by `deepcsa_maf2samplevcfs.py` (see docs/usage.md). This parameter only takes effect when `--use_custom_depths true` is also set; otherwise the pipeline falls back to reading `--input` (input.csv). The `--input` parameter is still required for other pipeline metadata even when `--input_maf` is used.",
                     "fa_icon": "fas fa-file-medical"
                 }
             }

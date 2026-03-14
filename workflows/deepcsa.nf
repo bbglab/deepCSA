@@ -171,7 +171,12 @@ workflow DEEPCSA {
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutdensity      = (params.mutationdensity || params.omega)
 
-    // def maf_input = params.input_maf ? channel.fromPath( params.input_maf, checkIfExists: true).first() : channel.empty()
+    // Validate input_maf usage: it requires use_custom_depths to be enabled
+    if ( params.input_maf && !params.use_custom_depths ) {
+        error "ERROR: '--input_maf' requires '--use_custom_depths true' and a matching '--custom_depths_table'. " +
+              "BAM-based depth computation is not supported when providing mutations via a MAF file. " +
+              "Please set '--use_custom_depths true' and provide '--custom_depths_table <path>'."
+    }
 
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     if ( params.input_maf && params.use_custom_depths ) {
