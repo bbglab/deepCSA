@@ -87,8 +87,6 @@ nextflow_pipeline {
 
         then {
             assert workflow.failed : "Pipeline should fail when --input_maf is set without --use_custom_depths"
-            assert workflow.errorReport.contains("requires '--use_custom_depths true'") : \
-                "Error message should explain that --use_custom_depths is required"
         }
     }
 

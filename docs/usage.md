@@ -395,20 +395,22 @@ In addition to the standard per-sample VCF input described above, deepCSA suppor
 ### When to use this mode
 
 - You have a cohort-level MAF/TSV file with mutations already called for multiple samples and want to run the downstream deepCSA analysis (mutational profiles, signatures, positive selection, etc.) without preparing one VCF per sample manually.
-- You already have a precomputed depths table for your cohort (e.g. produced by a previous deepCSA run).
+- You already have a precomputed depths table for your cohort (e.g. produced by a previous deepCSA run) or have the information to generate it.
 
 ### Requirements
 
-`--input_maf` **must** be used together with `--use_custom_depths true` and a valid `--custom_depths_table`, because BAM-based depth computation is not performed in this mode. The standard `--input` (samplesheet CSV) is still required to supply sample metadata used by other pipeline steps.
+`--input_maf` **must** be used together with `--use_custom_depths true` and a valid `--custom_depths_table`, because BAM-based depth computation is not performed in this mode.
+
+The standard `--input` (samplesheet CSV) is still required to supply sample metadata used by other pipeline steps.
 
 ### MAF file format
 
 The MAF file must be tab-separated with a `.maf` extension. The mandatory columns depend on the origin of the file:
 
-| Origin | Mandatory columns |
-|---|---|
-| deepCSA output | `CHROM`, `POS`, `REF`, `ALT`, `FILTER`, `INFO`, `FORMAT`, `SAMPLE`, `SAMPLE_ID` |
-| External / non-deepCSA | `CHROM`, `POS`, `REF`, `ALT`, `DEPTH`, `ALT_DEPTH`, `SAMPLE_ID` |
+| Origin | Mandatory columns | Optional columns |
+|---|---|---|
+| deepCSA output | `CHROM`, `POS`, `REF`, `ALT`, `FILTER`, `INFO`, `FORMAT`, `SAMPLE`, `SAMPLE_ID` | - |
+| External / non-deepCSA | `CHROM`, `POS`, `REF`, `ALT`, `DEPTH`, `ALT_DEPTH`, `SAMPLE_ID` | `DEPTH_AM`, `ALT_DEPTH_AM` |
 
 The `SAMPLE_ID` column (or the column specified with `--sample-name-column`) identifies individual samples; the pipeline generates one VCF file per unique value in that column.
 
@@ -436,9 +438,8 @@ params {
 
 ### What happens under the hood
 
-1. The MAF file is passed to `deepcsa_maf2samplevcfs.py` (see `assets/useful_scripts/deepcsa_maf2samplevcfs.py`), which converts the cohort-level file into individual per-sample VCFs compatible with the deepCSA input format.
-2. The per-sample VCFs are published under `<outdir>/input_vcfs/`.
+1. The MAF file is passed to `deepcsa_maf2samplevcfs.py`, which converts the cohort-level file into individual per-sample VCFs compatible with the deepCSA input format.
+2. The per-sample VCFs are published under `<outdir>/processing_files/input_vcfs/`.
 3. The rest of the pipeline proceeds identically to a standard run using per-sample VCFs.
 
 > **Note:** If `--input_maf` is provided without `--use_custom_depths true`, the pipeline will stop immediately with an error message rather than silently ignoring the MAF file.
-
