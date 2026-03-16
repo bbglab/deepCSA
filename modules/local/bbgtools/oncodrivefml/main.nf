@@ -2,23 +2,19 @@ process ONCODRIVEFML {
     tag "$meta.id"
     label 'process_high'
 
-    // // conda "YOUR-TOOL-HERE"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
-    //     'biocontainers/YOUR-TOOL-HERE' }"
     container 'docker.io/ferriolcalvet/oncodrivefml:latest'
 
     input:
     tuple val(meta) , path(mutations), path(mutabilities), path(mutabilities_ind)
     tuple val(meta2), path (bed_file)
     tuple path(cadd_scores_file), path(cadd_scores_index)
-    val(mode)
+    val (mode)
 
     output:
+    tuple val(meta), path("${meta.id}.${mode}/")         , emit: folder
     tuple val(meta), path("**.tsv.gz")  , emit: tsv
     tuple val(meta), path("**.png")     , emit: png
     tuple val(meta), path("**.html")    , emit: html
-    tuple val(meta), path("${meta.id}.${mode}/")         , emit: folder
     path "versions.yml"                 , topic: versions
 
 
