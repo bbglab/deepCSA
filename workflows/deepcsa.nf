@@ -246,7 +246,12 @@ workflow DEEPCSA {
 
     positive_selection_results = somatic_mutations
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, MUT_PREPROCESSING.out.mask_matrix)
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths,
+                    CREATEPANELS.out.all_panel,
+                    TABLE2GROUP.out.json_allgroups,
+                    MUT_PREPROCESSING.out.mask_matrix,
+                    file(params.input)
+                    )
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
 
     // if (params.downsample && params.downsample_proportion < 1) {
