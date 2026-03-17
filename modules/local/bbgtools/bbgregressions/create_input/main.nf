@@ -6,7 +6,7 @@ process CREATE_INPUT {
     container "docker.io/rblancomi/bbgregressions:dev"
 
     input:
-    path config  // TODO: figure out a way of selecting specific elements and samples
+    path config
     path data
 
     output:
