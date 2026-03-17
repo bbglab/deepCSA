@@ -11,13 +11,14 @@ from utils_plot import plot_profile
 from read_utils import custom_na_values
 
 def bayesian_update(observed_counts, prior_profile, limit=200):
-    
-    N = np.sum(observed_counts)
-    
+
+    N = np.sum(observed_counts).item()
+
     if N >= limit:
         return observed_counts / N
     else:
-        posterior_profile = (N - limit) * prior_profile + observed_counts
+        prior_profile = prior_profile.set_index("CONTEXT_MUT")
+        posterior_profile = ((limit - N) * prior_profile).values + observed_counts
         posterior_profile /= np.sum(posterior_profile)
         return posterior_profile
 

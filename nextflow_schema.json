@@ -580,6 +580,11 @@
                     "type": "boolean",
                     "description": "Do you want to run the profile for intron mutations only?",
                     "fa_icon": "fas fa-book"
+                },
+                "profile_smoothing": {
+                    "type": "boolean",
+                    "description": "Do you want to apply smoothing to the mutational profile when having low numbers of mutations?",
+                    "fa_icon": "fas fa-book"
                 }
             }
         },

@@ -7,8 +7,9 @@ process COMPUTE_PROFILE {
     label 'deepcsa_core'
 
     input:
-    tuple val(meta), path(matrix), path(trinucleotide)
+    tuple val(meta) , path(matrix), path(trinucleotide)
     path( wgs_trinucleotides )
+    tuple val(meta2), path( cohort_profile , stageAs: 'global_mutprofile.tsv')
 
     output:
     tuple val(meta), path("*.profile.tsv")                                  , emit: profile
@@ -28,12 +29,14 @@ process COMPUTE_PROFILE {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     def wgs_trinuc = wgs_trinucleotides ? "--wgs --wgs_trinucleotide_counts ${wgs_trinucleotides}" : ""
+    def smoothing_args = task.ext.smoothing ? "--smoothed --prior_profile ${cohort_profile}" : ""
     """
     mut_profile.py profile \\
                     --sample_name ${prefix} \\
                     --mutation_matrix ${matrix} \\
                     --trinucleotide_counts ${trinucleotide} \\
                     ${wgs_trinuc} \\
+                    ${smoothing_args} \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
