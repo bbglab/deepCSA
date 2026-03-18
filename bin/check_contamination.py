@@ -376,7 +376,7 @@ def data_loading(maf_path, somatic_maf_path):
 
 def contamination_detection_in_snps(maf):
 
-    snp_positions_maf = maf[maf["gnomAD_SNP"]][
+    snp_positions_maf = maf[maf["FILTER.gnomAD_SNP"]][
         ["SAMPLE_ID", "MUT_ID", "VAF"]
         ].reset_index(drop = True)
     
