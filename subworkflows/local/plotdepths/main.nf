@@ -1,8 +1,8 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETDEPTHS     } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYDEPTHS     } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { PLOT_DEPTHS               as DEPTHSSUMMARY    } from '../../../modules/local/plot/depths_summary/main'
 
-include { CREATECUSTOMBEDFILE       as ONCODRIVEFMLBED  } from '../../../modules/local/createpanels/custombedfile/main'
+include { CREATECUSTOMBEDFILE       as CUSTOMBEDFILE    } from '../../../modules/local/createpanels/custombedfile/main'
 
 
 workflow PLOT_DEPTHS {
@@ -15,15 +15,17 @@ workflow PLOT_DEPTHS {
     main:
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETDEPTHS(depth, bedfile)
+    QUERYDEPTHS(depth, bedfile)
 
-    ONCODRIVEFMLBED(panel)
+    CUSTOMBEDFILE(panel)
 
-    DEPTHSSUMMARY(SUBSETDEPTHS.out.subset, ONCODRIVEFMLBED.out.bed)    
+    DEPTHSSUMMARY(QUERYDEPTHS.out.subset, CUSTOMBEDFILE.out.bed)    
 
 
     emit:
-    plots           = DEPTHSSUMMARY.out.plots
-    average_depth   = DEPTHSSUMMARY.out.average_per_sample
+    plots                       = DEPTHSSUMMARY.out.plots
+    average_depth_sample        = DEPTHSSUMMARY.out.average_per_sample
+    average_depth_gene          = DEPTHSSUMMARY.out.average_per_gene
+    average_depth_gene_sample   = DEPTHSSUMMARY.out.average_per_gene_sample
 
 }

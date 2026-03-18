@@ -3,7 +3,7 @@ process DOWNSAMPLE_DEPTHS {
     tag "$meta.id"
     label 'process_high'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta), path(depths_file)

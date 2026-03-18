@@ -16,6 +16,7 @@
 - [Definition of structural parameters](#definition-of-structural-parameters)
 - [Additional customizable parameters](#additional-customizable-parameters)
 - [Custom mutation calls](#custom-mutation-calls)
+- [MAF file as input (alternative input mode)](#maf-file-as-input-alternative-input-mode)
 
 ## Introduction
 
@@ -115,9 +116,9 @@ params {
     site_comparison_grouping    = 'all'
     omega_plot                  = true
 
-    omega_withingene            = true
-    omega_autodomains           = true
-    omega_autoexons             = true
+    create_subgenic_regions     = true
+    autodomains                 = true
+    autoexons                   = true
 
     mutated_cells_vaf           = true
     mutepi_genes_to_recode      = null
@@ -172,9 +173,9 @@ params {
     site_comparison_grouping    = 'all'
     omega_plot                  = true
 
-    omega_withingene            = true
-    omega_autodomains           = true
-    omega_autoexons             = true
+    create_subgenic_regions     = true
+    autodomains                 = true
+    autoexons                   = true
 
     regressions                 = true
     // additional regression parameters, see nextflow_schema.json for more info
@@ -259,7 +260,7 @@ params {
 
 
     // definition of specific regions within genes with specific interest on computing dN/dS
-    omega_subgenic_bedfile      = null
+    subgenic_bedfile      = null
 
     // define a file of mutations that should not be trusted
     //  and you want to remove from all the analysis
@@ -274,7 +275,7 @@ These files identify sites overlapping common SNPs and noisy or variable genomic
 - Nanoseq SNP: Common SNP positions that should be excluded from analysis
 - Nanoseq Noise: Regions with high noise or variability
 
-Both files are available for GRCh37 and GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
+Both files are available for GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
 
 ## Additional customizable parameters
 
@@ -387,3 +388,58 @@ params {
 }
 ```
 
+## MAF file as input (alternative input mode)
+
+In addition to the standard per-sample VCF input described above, deepCSA supports providing all mutations from an entire cohort in a single **MAF file** via the `--input_maf` parameter.
+
+### When to use this mode
+
+- You have a cohort-level MAF/TSV file with mutations already called for multiple samples and want to run the downstream deepCSA analysis (mutational profiles, signatures, positive selection, etc.) without preparing one VCF per sample manually.
+- You already have a precomputed depths table for your cohort (e.g. produced by a previous deepCSA run) or have the information to generate it.
+
+### Requirements
+
+`--input_maf` **must** be used together with `--use_custom_depths true` and a valid `--custom_depths_table`, because BAM-based depth computation is not performed in this mode.
+
+The standard `--input` (samplesheet CSV) is still required to supply sample metadata used by other pipeline steps.
+
+### MAF file format
+
+The MAF file must be tab-separated with a `.maf` extension. The mandatory columns depend on the origin of the file:
+
+| Origin | Mandatory columns | Optional columns |
+|---|---|---|
+| deepCSA output | `CHROM`, `POS`, `REF`, `ALT`, `FILTER`, `INFO`, `FORMAT`, `SAMPLE`, `SAMPLE_ID` | - |
+| External / non-deepCSA | `CHROM`, `POS`, `REF`, `ALT`, `DEPTH`, `ALT_DEPTH`, `SAMPLE_ID` | `DEPTH_AM`, `ALT_DEPTH_AM` |
+
+The `SAMPLE_ID` column (or the column specified with `--sample-name-column`) identifies individual samples; the pipeline generates one VCF file per unique value in that column.
+
+### Running the pipeline with `--input_maf`
+
+```bash
+nextflow run bbglab/deepCSA \
+    --input        samplesheet.csv \
+    --outdir       results/ \
+    --input_maf    cohort_mutations.maf \
+    --use_custom_depths    true \
+    --custom_depths_table  precomputed_depths.tsv \
+    -profile <DESIRED_PROFILE>
+```
+
+```console
+params {
+    input                = "samplesheet.csv"
+    outdir               = "results/"
+    input_maf            = "cohort_mutations.maf"
+    use_custom_depths    = true
+    custom_depths_table  = "precomputed_depths.tsv"
+}
+```
+
+### What happens under the hood
+
+1. The MAF file is passed to `deepcsa_maf2samplevcfs.py`, which converts the cohort-level file into individual per-sample VCFs compatible with the deepCSA input format.
+2. The per-sample VCFs are published under `<outdir>/processing_files/input_vcfs/`.
+3. The rest of the pipeline proceeds identically to a standard run using per-sample VCFs.
+
+> **Note:** If `--input_maf` is provided without `--use_custom_depths true`, the pipeline will stop immediately with an error message rather than silently ignoring the MAF file.

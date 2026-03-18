@@ -10,7 +10,8 @@ snv_color = {
     'C>T' : '#e32926',
     'T>A' : '#cac9c9',
     'T>C' : '#a1ce63',
-    'T>G' : '#ebc6c4'
+    'T>G' : '#ebc6c4',
+    '-' : 'orange'
 }
 
 def plot_profile(frequencies, title='Mutational profile',

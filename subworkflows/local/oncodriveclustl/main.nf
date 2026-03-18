@@ -1,6 +1,6 @@
 include { CREATECUSTOMBEDFILE    as ONCODRIVECLUSTLBED     } from '../../../modules/local/createpanels/custombedfile/main'
 
-include { SUBSET_MAF             as SUBSETONCODRIVECLUSTL } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF             as SUBSETONCODRIVECLUSTL  } from '../../../modules/local/subsetmaf/main'
 
 include { ONCODRIVECLUSTL                                  } from '../../../modules/local/bbgtools/oncodriveclustl/main'
 // include { ONCODRIVECLUSTL           as ONCODRIVECLUSTLSNVS    } from '../../../modules/local/bbgtools/oncodriveclustl/main'

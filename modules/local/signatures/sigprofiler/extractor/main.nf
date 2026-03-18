@@ -23,8 +23,9 @@ process SIGPROFILEREXTRACTOR {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def assembly = task.ext.assembly ?: "GRCh38"
+    def prefix = task.ext.prefix ?: ""
+    prefix = "${meta.id}${prefix}"
+    def assembly = task.ext.genome_assembly ?: "GRCh38"
     // python -c "from SigProfilerAssignment import Analyzer as Analyze; Analyze.cosmic_fit('${matrix}', 'output', input_type='matrix', context_type='96',
     //                    collapse_to_SBS96=True, cosmic_version=3.4, exome=False,
     //                    genome_build="GRCh38", signature_database='${reference_signatures}',
@@ -46,7 +47,6 @@ process SIGPROFILEREXTRACTOR {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.pdf

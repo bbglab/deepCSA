@@ -142,7 +142,7 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
     added_regions_df = added_regions_df.drop_duplicates(subset = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID',
                                                                     'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
                                                         keep = 'first')
-    added_regions_df.to_csv('added_regions.tsv',
+    added_regions_df.to_csv('added_regions.tsv' if simple else 'added_regions.rich.tsv',
                                 header = True,
                                 index = False,
                                 sep = "\t")

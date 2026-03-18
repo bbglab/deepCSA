@@ -75,13 +75,13 @@ def compute_mutabilities(sample_name, depths_file, mut_profile_file, regions_bed
                                                         keep='first').drop("GENE", axis = 1)
     print("Mutabilities computed")
 
-    sample_mutability_info_store.to_csv(out_mutability,
+    sample_mutability_info_store.to_csv(f"{out_mutability}.relative_mutability_per_site.tsv",
                                             sep = "\t",
                                             header = False,
                                             index = False)
     print("mutability 1 stored")
 
-    sample_mutability_info.to_csv(f"{out_mutability}.with_gene",
+    sample_mutability_info.to_csv(f"{out_mutability}.relative_mutability_per_site.with_gene.tsv",
                                             sep = "\t",
                                             header = True,
                                             index = False)
@@ -181,7 +181,7 @@ def adjust_mutabilities(sample_name, mutation_matrix_file, mutability_info, out_
 @click.option('--depths', type=click.Path(exists=True), help='Input depths file')
 @click.option('--profile', type=click.Path(exists=True), help='Input mutational profile dataframe file.')
 @click.option('--bedfile', type=click.Path(exists=True), help='BED file of the regions.')
-@click.option('--out_mutability', type=click.Path(), help='Output mutability file.')
+@click.option('--out_mutability', type=click.Path(), help='Prefix for the output mutability files.')
 @click.option('--adjust_local_density', is_flag=True, help='Generate an additional file with the mutabilities adjusted by the local mutation density of each gene.')
 
 
@@ -191,7 +191,7 @@ def main(sample_name, mutation_matrix, depths, profile, bedfile, out_mutability,
     mutabilities_with_gene = compute_mutabilities(sample_name, depths, profile, bedfile, out_mutability)
     click.echo("Mutabilities computed.")
     if adjust_local_density:
-        adjust_mutabilities(sample_name, mutation_matrix, mutabilities_with_gene, f"{out_mutability}.adjusted")
+        adjust_mutabilities(sample_name, mutation_matrix, mutabilities_with_gene, f"{out_mutability}.relative_mutability_per_site.adjusted.tsv")
 
 if __name__ == '__main__':
     main()

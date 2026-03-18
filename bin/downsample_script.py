@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 
-# Perform uniform sampling with replacement from a pool of 0s and 1s
+# Perform uniform sampling without replacement from a pool of 0s and 1s
 def uniform_sampling(row):
     ref_depth = row['orig_DEPTH'] - row['ALT_DEPTH']
     pool = [1] * row['ALT_DEPTH'] + [0] * ref_depth

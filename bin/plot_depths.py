@@ -50,7 +50,7 @@ def load_depths_and_panel(sample_name, depth_file, panel_bed6_file):
 
     # Load BED file with probes info
     bed6_probes_df = pd.read_csv(panel_bed6_file, sep="\t", header=0).reset_index()
-    bed6_probes_df["EXON"] = bed6_probes_df["ELEMENT"] + "_" + bed6_probes_df["index"].astype(str)
+    bed6_probes_df["EXON"] = bed6_probes_df["ELEMENT"].astype(str) + "_" + bed6_probes_df["index"].astype(str)
     bed6_probes_df = bed6_probes_df[["CHROMOSOME", "START", "END", "ELEMENT", "EXON"]]
     bed6_probes_df.columns = ["CHROM", "START", "END", "GENE", "EXON"]
     bed6_probes_df["CHROM"] = 'chr' + bed6_probes_df["CHROM"].astype(str)
@@ -63,7 +63,8 @@ def load_depths_and_panel(sample_name, depth_file, panel_bed6_file):
     bed6_probes_df = bed6_probes_df.dropna().reset_index(drop = True)
 
     # compute mean depth per gene
-    bed6_probesByGene_df = bed6_probes_df.groupby(["GENE", "SAMPLE_ID"]).agg({"EXON_SEQ" : 'sum', "EXON_SIZE" : 'sum'}).reset_index()
+    bed6_probesByGene_df = bed6_probes_df.groupby(["GENE", "SAMPLE_ID"]).agg({"EXON_SEQ" : 'sum',
+                                                                              "EXON_SIZE" : 'sum'}).reset_index()
     bed6_probesByGene_df["MEAN_GENE_DEPTH"] = bed6_probesByGene_df["EXON_SEQ"] / bed6_probesByGene_df["EXON_SIZE"]
     bed6_probesByGene_df_to_store = bed6_probesByGene_df.copy()
     bed6_probesByGene_df_to_store.columns = ["GENE", "SAMPLE_ID", "GENE_SEQ", "GENE_SIZE", "MEAN_GENE_DEPTH"]

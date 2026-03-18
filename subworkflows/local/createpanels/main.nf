@@ -1,34 +1,25 @@
-include { SITESFROMPOSITIONS                                            } from '../../../modules/local/sitesfrompositions/main'
-include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL             } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
+include { SITESFROMPOSITIONS                                                        } from '../../../modules/local/sitesfrompositions/main'
+include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL                         } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
 
 include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/panel/main'
 include { SORT_MERGED_PANEL              as SORTPANELCOMPACT             } from '../../../modules/local/sortpanel/main'
 include { SORT_MERGED_PANEL              as SORTPANELRICH                } from '../../../modules/local/sortpanel/main'
 
-include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING             } from '../../../modules/local/process_annotation/panelcustom/main'
-include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH         } from '../../../modules/local/process_annotation/panelcustom/main'
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING                         } from '../../../modules/local/process_annotation/panelcustom/main'
+include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH                     } from '../../../modules/local/process_annotation/panelcustom/main'
 
-include { DOMAIN_ANNOTATION             as DOMAINANNOTATION             } from '../../../modules/local/process_annotation/domain/main'
+include { DOMAIN_ANNOTATION             as DOMAINANNOTATION                         } from '../../../modules/local/process_annotation/domain/main'
 
+include { CREATECAPTUREDPANELS                                                      } from '../../../modules/local/createpanels/captured/main'
 
-include { CREATECAPTUREDPANELS                                          } from '../../../modules/local/createpanels/captured/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL                        } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT                 } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT              } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS                      } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS                    } from '../../../modules/local/createpanels/consensus/main'
+include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS                 } from '../../../modules/local/createpanels/consensus/main'
 
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSALL                  } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSPROTAFFECT           } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSNONPROTAFFECT        } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSEXONS                } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSINTRONS              } from '../../../modules/local/createpanels/sample/main'
-include { CREATESAMPLEPANELS as  CREATESAMPLEPANELSSYNONYMOUS           } from '../../../modules/local/createpanels/sample/main'
-
-
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSALL            } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSPROTAFFECT     } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSNONPROTAFFECT  } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSEXONS          } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSINTRONS        } from '../../../modules/local/createpanels/consensus/main'
-include { CREATECONSENSUSPANELS as  CREATECONSENSUSPANELSSYNONYMOUS     } from '../../../modules/local/createpanels/consensus/main'
-
-
+include { COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS as  COMPAREPANELPROPORTIONS      } from '../../../modules/local/createpanels/compare/main'
 
 def restructurePanel(panel) {
         // return panel.map{ it -> [[id: it[0].name.tokenize('.')[0..1].join('.')], it[1]] }
@@ -36,21 +27,15 @@ def restructurePanel(panel) {
         return panel.map { it -> [[id: it.name.tokenize('.')[1]], it] }
     }
 
-
-def restructureSamplePanel(panel) {
-        // return panel.map{ it -> [[id: it[0].name.tokenize('.')[0..1].join('.')], it[1]] }
-        // return panel.map { it -> [[id: it.name.tokenize('.')[0..1].join('.')], it] }
-        return panel.map { it -> [[id: it.name.tokenize('.')[0]], it] }
-    }
-
-
-
 workflow CREATE_PANELS {
 
     take:
     depths
+    wgs_trinucleotides
 
     main:
+
+
 
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
@@ -97,7 +82,7 @@ workflow CREATE_PANELS {
     merged_rich = SORTPANELRICH.out.sorted
 
     if (params.customize_annotation) {
-        custom_annotation_tsv = file(params.custom_annotation_tsv)
+        custom_annotation_tsv = file(params.custom_annotation_tsv, checkIfExists: true)
 
         // Update specific regions based on user preferences
         CUSTOMPROCESSING(merged_compact, custom_annotation_tsv)
@@ -133,17 +118,6 @@ workflow CREATE_PANELS {
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous).set{synonymous_panel}
     restructurePanel(CREATECAPTUREDPANELS.out.captured_panel_synonymous_bed).set{synonymous_bed}
 
-    if (params.create_sample_panels){
-        // Create sample-specific panels: all modalities
-        CREATESAMPLEPANELSALL(all_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSPROTAFFECT(prot_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSNONPROTAFFECT(nonprot_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSEXONS(exons_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSINTRONS(introns_panel, depths, params.sample_panel_min_depth)
-        CREATESAMPLEPANELSSYNONYMOUS(synonymous_panel, depths, params.sample_panel_min_depth)
-    }
-
-
     // Create consensus panel: all modalities
     CREATECONSENSUSPANELSALL(all_panel, depths)
     CREATECONSENSUSPANELSPROTAFFECT(prot_panel, depths)
@@ -152,8 +126,22 @@ workflow CREATE_PANELS {
     CREATECONSENSUSPANELSINTRONS(introns_panel, depths)
     CREATECONSENSUSPANELSSYNONYMOUS(synonymous_panel, depths)
 
+    // Compare trinucleotide proportions in the panels to WGS background - QC plots
+    channel.empty()
+    .concat(CREATECONSENSUSPANELSALL.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSNONPROTAFFECT.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSEXONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSINTRONS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .concat(CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.map{ it -> it[1]}.flatten())
+    .collect()
+    .set{ all_consensus_panels }
+
+    COMPAREPANELPROPORTIONS(all_consensus_panels, wgs_trinucleotides)
+
+
     emit:
-    full_panel_annotated        = VCFANNOTATEPANEL.out.tab
+    full_panel_annotated        = VCFANNOTATEPANEL.out.tab.first()
     all_panel                   = all_panel.first()
     all_bed                     = all_bed.first()
     prot_panel                  = prot_panel.first()
@@ -181,23 +169,12 @@ workflow CREATE_PANELS {
     synonymous_consensus_panel  = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel.first()
     synonymous_consensus_bed    = CREATECONSENSUSPANELSSYNONYMOUS.out.consensus_panel_bed.first()
 
-    panel_annotated_rich        = rich_annotated
-    added_custom_regions        = added_regions
-    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed
-    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv
 
-    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation
-    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation
+    panel_annotated_rich        = rich_annotated.first()
+    added_custom_regions        = added_regions.first()
+    domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
+    domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
 
-    // all_sample_panel        = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel.flatten())
-    // all_sample_bed          = restructureSamplePanel(CREATESAMPLEPANELSALL.out.sample_specific_panel_bed.flatten())
-    // prot_sample_panel       = restructureSamplePanel(CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel.flatten())
-    // prot_sample_bed         = restructureSamplePanel(CREATESAMPLEPANELSPROTAFFECT.out.sample_specific_panel_bed.flatten())
-    // nonprot_sample_panel    = restructureSamplePanel(CREATESAMPLEPANELSNONPROTAFFECT.out.sample_specific_panel.flatten())
-    // nonprot_sample_bed      = restructureSamplePanel(CREATESAMPLEPANELSNONPROTAFFECT.out.sample_specific_panel_bed.flatten())
-    // exons_sample_panel      = restructureSamplePanel(CREATESAMPLEPANELSEXONS.out.sample_specific_panel.flatten())
-    // exons_sample_bed        = restructureSamplePanel(CREATESAMPLEPANELSEXONS.out.sample_specific_panel_bed.flatten())
-    // introns_sample_panel    = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel.flatten())
-    // introns_sample_bed      = restructureSamplePanel(CREATESAMPLEPANELSINTRONS.out.sample_specific_panel_bed.flatten())
-
+    postprocessed_panel         = merged_compact.first()
+    postprocessed_panel_rich    = merged_rich.first()
 }

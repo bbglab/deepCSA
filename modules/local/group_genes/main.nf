@@ -1,7 +1,7 @@
 process GROUP_GENES {
     tag "groups"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta), path(mutations_table)

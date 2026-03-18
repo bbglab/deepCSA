@@ -3,6 +3,7 @@
 
 include { PLOT_SELECTION_METRICS            as PLOTSELECTION                    } from '../../../modules/local/plot/selection_metrics/main'
 include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/saturation/main'
+include { PLOT_SATURATION_PROPORTIONS       as PLOTSATURATIONPROPORTIONS        } from '../../../modules/local/plot/saturation/proportions/main'
 include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/interindividual_variability/main'
 
 
@@ -11,12 +12,14 @@ workflow PLOTTING_SUMMARY {
 
     take:
     positive_selection_results_ready
+    all_mutations
     all_mutdensities
     site_comparison
     all_samples_depth
     samples
     all_groups
     panel
+    expanded_panel
     full_panel_rich
     seqinfo_df
     domain_df
@@ -27,8 +30,8 @@ workflow PLOTTING_SUMMARY {
     main:
 
     pdb_tool_df   = params.annotations3d
-                            ? Channel.fromPath( "${params.annotations3d}/pdb_tool_df.tsv", checkIfExists: true).first()
-                            : Channel.empty()
+                            ? channel.fromPath( "${params.annotations3d}/pdb_tool_df.tsv", checkIfExists: true).first()
+                            : channel.empty()
 
     // think if we want to include this here
     // PLOTNEEDLES(muts_all_samples, sequence_information_df)
@@ -36,16 +39,27 @@ workflow PLOTTING_SUMMARY {
 
     if ( params.plot_only_allsamples ) {
         // plotting only for the entire cohort group
-        Channel.of([ [ id: "all_samples" ] ])
+        channel.of([ [ id: "all_samples" ] ])
         .join( positive_selection_results_ready )
         .set{ groups_results }
+
+        channel.of([ [ id: "all_samples" ] ])
+        .join( all_mutations )
+        .set{ groups_mutations }
+
     } else {
         // plotting for all groups
         positive_selection_results_ready
         .map { mut -> tuple(mut[0].id, mut) }
         .join(groups_channel)
-        .map { it[1] }
+        .map { it -> it[1] }
         .set { groups_results }
+
+        all_mutations
+        .map { mut -> tuple(mut[0].id, mut) }
+        .join(groups_channel)
+        .map { it -> it[1] }
+        .set { groups_mutations }
     }
 
     groups_results
@@ -58,6 +72,9 @@ workflow PLOTTING_SUMMARY {
     // plot selection per domain at cohort level
 
     PLOTSATURATION(groups_results_sites, all_samples_depth, panel, seqinfo_df, pdb_tool_df, domain_df, exons_depths_df)
+
+
+    PLOTSATURATIONPROPORTIONS(groups_mutations, panel, full_panel_rich, expanded_panel)
     // plot gene + site selection
     // omega selection per domain in gene
     // ? plot saturation kinetics curves

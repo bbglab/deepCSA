@@ -25,7 +25,16 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
     # alternatively we could take only the MUT_ID but
     # the one of the mutations is different from
     # the one coming from the panels
-    custom_regions_df = pd.read_table(custom_regions_file)[["MUT_ID_pyr", "GENE", "IMPACT"]].drop_duplicates().reset_index(drop = True)
+    try:
+        custom_regions_df = pd.read_table(custom_regions_file)[["MUT_ID_pyr", "GENE", "IMPACT"]].drop_duplicates().reset_index(drop = True)
+
+    except :
+        print("The customized regions file is likely empty so no modification will be done to the mutation summary file")
+        mutation_summary.to_csv(customized_mutations_output,
+                                        header = True,
+                                        index = False,
+                                        sep = "\t")
+        return
 #    custom_regions_df["MUT_ID"] = custom_regions_df["MUT_ID"].str.replace("/", ">", regex = 'False').str.replace("_", ":", n = 1)
     custom_regions_df["MUT_ID_pyr"] = custom_regions_df["MUT_ID_pyr"].str.replace("/", ">", regex = 'False').str.replace("_", ":", n = 1)
 

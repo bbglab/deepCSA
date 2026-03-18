@@ -1,0 +1,38 @@
+name: "create_mask_matrix"
+description: Create position × sample mask matrix from sample-specific flagged position BED files
+keywords:
+  - masking
+  - bed
+  - matrix
+  - depths
+tools:
+  - pandas:
+      description: |
+        Pandas is a Python library providing high-performance, easy-to-use data structures
+        and data analysis tools.
+      homepage: https://pandas.pydata.org/
+      documentation: https://pandas.pydata.org/docs/
+
+input:
+  - bed_files:
+      type: file
+      description: |
+        List of sample-specific flagged position BED files (*.flagged-pos.bed).
+        Each file contains regions to be masked for a specific sample.
+      pattern: "*.flagged-pos.bed"
+
+output:
+  - mask_matrix:
+      type: file
+      description: |
+        Position × sample mask matrix (TSV, gzipped). Contains CHROM, POS columns
+        followed by one boolean column per sample indicating whether the position
+        should be masked (TRUE) or not (FALSE).
+      pattern: "*.mask.tsv.gz"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+
+authors:
+  - "@mhuertas"

@@ -1,16 +1,16 @@
 process ANNOTATE_DEPTHS {
     tag "${meta.id}"
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
-
+    label 'deepcsa_core'
+    
     input:
     tuple val(meta) , path(depths)
     tuple val(meta2), path(panel_all)
     path (json_groups)
+    path (mask_matrix)
     path (input_csv)
 
     output:
-    // tuple val(meta), path("*.depths.annotated.tsv.gz") , emit: annotated_depths
     path("*.depths.annotated.tsv.gz")                           , emit: annotated_depths
     tuple val(meta), path("all_samples_indv.depths.tsv.gz")     , emit: all_samples_depths
     path "versions.yml"                                         , topic: versions
@@ -23,8 +23,9 @@ process ANNOTATE_DEPTHS {
         --annotation ${panel_all}.contexts \\
         --depths ${depths} \\
         --json_file ${json_groups} \\
-        --input_csv ${input_csv}
-
+        --mask-matrix ${mask_matrix} \\
+        --input-csv ${input_csv}
+        
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

@@ -75,6 +75,51 @@ nextflow_pipeline {
         }
     }
 
+    test("Should fail when --input_maf is provided without --use_custom_depths") {
+        tag "input_maf_validation"
+
+        when {
+            params {
+                input             = "${projectDir}/tests/test_data/input.csv"
+                outdir            = "${projectDir}/tests_results_maf_validation"
+                input_maf         = "${projectDir}/tests/test_data/test_mutations.maf"
+                use_custom_depths = false
+                wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+            }
+        }
+
+        then {
+            assert workflow.failed : "Pipeline should fail when --input_maf is set without --use_custom_depths"
+        }
+    }
+
+    // Template for full integration test of --input_maf + --use_custom_depths.
+    // Requires a custom depths table for the test cohort. Uncomment and adapt
+    // once the appropriate test assets (MAF + depths table) are available.
+    //
+    // test("MAF input with precomputed depths") {
+    //     tag "input_maf"
+    //
+    //     when {
+    //         params {
+    //             input                = "${projectDir}/tests/test_data/input.csv"
+    //             outdir               = "${projectDir}/tests_results_maf_input"
+    //             input_maf            = "${projectDir}/tests/test_data/test_mutations.maf"
+    //             use_custom_depths    = true
+    //             custom_depths_table  = "${projectDir}/tests/test_data/precomputed_depths.tsv"
+    //             wgs_trinuc_counts    = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+    //             profileall           = true
+    //             signatures           = false
+    //         }
+    //     }
+    //
+    //     then {
+    //         assert workflow.success : "Pipeline should complete with MAF input and precomputed depths"
+    //         assert path("${params.outdir}/input_vcfs").exists() : "Per-sample VCFs should be published"
+    //         assert path("${params.outdir}/computeprofile").exists()
+    //     }
+    // }
+
 
     // // ALL THE CODE BELOW IS HERE FOR REFERENCE, TO BE ADAPTED LATER
     // // AS THE TEST DATASET IMPROVES AND WE WANT TO IMPROVE TEST COVERAGE

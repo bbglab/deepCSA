@@ -7,15 +7,13 @@ import sys
 import gc
 
 from itertools import product
-from bgreference import hg38, hg19, mm10, mm39
+from bgreference import hg38, mm39
 from utils_context import transform_context
 from utils_impacts import *
 from read_utils import custom_na_values
 
 assembly_name2function = {
     "hg38": hg38,
-    "hg19": hg19,
-    "mm10": mm10,
     "mm39": mm39
 }
 
@@ -212,7 +210,7 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
 
 @click.command()
 @click.option('--vep_output_file', type=click.Path(exists=True), required=True, help='Path to the VEP output file.')
-@click.option('--assembly', type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), default='hg38', help='Genome assembly.')
+@click.option('--assembly', type=click.Choice(['hg38','mm39']), default='hg38', help='Genome assembly.')
 @click.option('--output_file', type=click.Path(), required=True, help='Path to the output annotated file (prefix without .tsv).')
 @click.option('--only_canonical', is_flag=True, default=False, help='Use only canonical transcripts.')
 @click.option('--chunk-size', type=int, default=100000, show_default=True, help='Chunk size for streamed reading of VEP output.')
