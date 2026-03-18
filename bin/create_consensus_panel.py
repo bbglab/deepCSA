@@ -84,11 +84,6 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
         )
         failure_counts_filtered.write_csv(f"failing_consensus.{version}.tsv", separator="\t")
         print(f"DEBUG: Created failing_consensus.{version}.tsv with {failure_counts_filtered.height} samples")
-    else:
-        # Create empty file with header for consistency
-        empty_df = pl.DataFrame({"SAMPLE_ID": [], "FAILING_COUNT": []}, schema={"SAMPLE_ID": pl.Utf8, "FAILING_COUNT": pl.Int64})
-        empty_df.write_csv(f"failing_consensus.{version}.tsv", separator="\t")
-        print(f"DEBUG: No failures detected - created empty failing_consensus.{version}.tsv")
 
 
 @click.command()

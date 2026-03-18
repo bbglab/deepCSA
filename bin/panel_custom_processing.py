@@ -29,6 +29,11 @@ def load_chr_data_chunked(filepath, chrom, chunksize=1_000_000):
     Returns:
         pd.DataFrame: Filtered DataFrame for the chromosome.
     """
+    if chunksize <= 0:
+        # Read entire file at once (no chunking)
+        df = pd.read_csv(filepath, sep="\t", na_values=custom_na_values, dtype={'CHROM': str})
+        return df[df["CHROM"] == chrom]
+
     reader = pd.read_csv(filepath, sep="\t", na_values=custom_na_values, chunksize=chunksize, dtype={'CHROM': str})
     chr_data = []
     for chunk in reader:
@@ -64,10 +69,21 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
     added_regions_df = pd.DataFrame()
     current_chr = ""
     chr_data = pd.DataFrame()
+    write_header = True
 
     for _, row in custom_regions_df.iterrows():
         try:
             if row["CHROM"] != current_chr:
+                # Write previous chromosome data before loading the next one
+                if not chr_data.empty:
+                    chr_data = chr_data.drop_duplicates(
+                        subset=['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
+                        keep='first'
+                    )
+                    chr_data.to_csv(customized_output_annotation_file, header=write_header, index=False, sep="\t",
+                                    mode='a' if not write_header else 'w')
+                    write_header = False
+
                 current_chr = row["CHROM"]
                 chr_data = load_chr_data_chunked(VEP_output_file, current_chr, chunksize=chr_chunk_size)
 
@@ -132,11 +148,14 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
         except Exception as e:
             print(f"Error processing row {row}: {e}")
 
-    chr_data = chr_data.drop_duplicates(
-        subset=['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
-        keep='first'
-    )
-    chr_data.to_csv(customized_output_annotation_file, header=True, index=False, sep="\t")
+    # Write the last chromosome
+    if not chr_data.empty:
+        chr_data = chr_data.drop_duplicates(
+            subset=['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
+            keep='first'
+        )
+        chr_data.to_csv(customized_output_annotation_file, header=write_header, index=False, sep="\t",
+                        mode='a' if not write_header else 'w')
 
 
     added_regions_df = added_regions_df.drop_duplicates(subset = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID',
