@@ -596,13 +596,6 @@
                     "fa_icon": "fas fa-cut",
                     "help_text": "When set to a positive integer, splits the sites file into chunks for parallel processing through VEP annotation. Set to 0 to disable chunking (process as single file). Recommended values: 100000-500000 for large datasets."
                 },
-                "panel_postprocessing_chunk_size": {
-                    "type": "integer",
-                    "description": "Internal chunk size for VEP postprocessing memory management",
-                    "default": 100000,
-                    "fa_icon": "fas fa-memory",
-                    "help_text": "Controls how the panel_postprocessing_annotation.py script processes data internally. Higher values use more memory but may be faster. Not related to file-level chunking."
-                },
                 "panel_custom_processing_chunk_size": {
                     "type": "integer",
                     "description": "Internal chromosome chunk size for custom annotation processing",
