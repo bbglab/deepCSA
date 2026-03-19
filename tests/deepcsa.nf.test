@@ -70,10 +70,73 @@ nextflow_pipeline {
 
             // Sort data lines for deterministic snapshot comparison
             def sortedContent = [expectedHeader] + dataLines.sort()
-            
+
             // Snapshot both files
             assert snapshot(path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")).match("mutational_profile")
             assert snapshot(sortedContent.join('\n')).match("omega_results")
+        }
+    }
+
+    test("Mutation density test run") {
+        tag "mutdensity"
+
+        when {
+            params {
+                input = "${projectDir}/tests/test_data/input.csv"
+                outdir = "${projectDir}/tests_results_mutdensity"
+                wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                plot_depths = true
+                plot_mutation_specific_qc = false
+                profileall  = true
+                mutationdensity = true
+                signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete without errors"
+
+            // Mutation density outputs should exist
+            assert path("${params.outdir}/mutdensity").exists() : "Mutation density directory should exist"
+            assert path("${params.outdir}/mutdensity/all_mutdensities.tsv").exists() : "Consolidated mutdensities file should exist"
+
+            // Mutational profile should also exist (profileall=true)
+            assert path("${params.outdir}/mutational_profile").exists()
+
+            // Analyses not requested should NOT exist
+            assert !path("${params.outdir}/selection/omega").exists()
+            assert !path("${params.outdir}/oncodrivefml").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()
+
+            // Validate all_mutdensities.tsv structure and content
+            def mutdensFile = path("${params.outdir}/mutdensity/all_mutdensities.tsv")
+            def lines = mutdensFile.readLines()
+
+            // Check header contains expected columns
+            def header = lines.first()
+            def expectedColumns = ["SAMPLE_ID", "GENE", "REGIONS", "MUTTYPES", "DEPTH",
+                                   "N_MUTS", "N_MUTATED", "MUTDENSITY_MB", "MUTDENSITY_MB_ADJUSTED",
+                                   "MUTREADSDENSITY_MB", "MUTREADSDENSITY_MB_ADJUSTED"]
+            expectedColumns.each { col ->
+                assert header.contains(col) : "Header should contain column ${col}"
+            }
+
+            // Filter out empty lines and duplicate headers from collectFile
+            def dataLines = lines.findAll { it && it != header }
+            assert dataLines.size() > 0 : "Mutation density file should contain data rows"
+
+            // Verify all 4 region types are present (all, protein_affecting, non_protein_affecting, synonymous)
+            def allContent = lines.join('\n')
+            def expectedRegions = ["all", "protein_affecting", "non_protein_affecting", "synonymous"]
+            expectedRegions.each { region ->
+                assert allContent.contains(region) : "Mutation density should include REGIONS=${region}"
+            }
+
+            // Sort data lines for deterministic snapshot comparison
+            def sortedContent = [header] + dataLines.sort()
+            assert snapshot(sortedContent.join('\n')).match("mutdensity_results")
         }
     }
 
