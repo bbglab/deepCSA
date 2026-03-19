@@ -310,6 +310,11 @@
                     "description": "Do you want to plot the depths within each gene?",
                     "fa_icon": "fas fa-book"
                 },
+                "plot_mutation_specific_qc": {
+                    "type": "boolean",
+                    "description": "Do you want to generate mutation-specific QC plots (VAF vs depth)?",
+                    "fa_icon": "fas fa-book"
+                },
                 "oncodrivefml": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrivefml?",
