@@ -70,6 +70,8 @@ def preprocess(annotation_file: str, depths_file: str, input_csv: str) -> tuple[
     else:
         bam2sample_dict = dict(zip(_input["sample"], _input["sample"]))
 
+    # Drop CONTEXT column if it exists
+    _depths = _depths.drop("CONTEXT", strict=False)
     annot_depth = _depths.join(_annots, on=["CHROM", "POS"], how='left').fill_null(pl.lit('-'))
 
     sample_columns = [col for col in annot_depth.columns if col not in COLS]
