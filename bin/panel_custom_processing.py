@@ -3,10 +3,9 @@
 
 
 import click
-import pandas as pd
-import numpy as np
+import polars as pl
 
-from read_utils import custom_na_values
+from read_utils import custom_na_values_list
 muttype_conversion_map = {
                 'G/A': 'C/T',
                 'G/C': 'C/G',
@@ -17,35 +16,8 @@ muttype_conversion_map = {
             }
 
 
-def load_chr_data_chunked(filepath, chrom, chunksize=1_000_000):
-    """
-    Loads data for a specific chromosome from a large VEP output file in chunks.
-
-    Args:
-        filepath (str): Path to the VEP output file.
-        chrom (str): Chromosome to filter.
-        chunksize (int): Number of rows per chunk.
-
-    Returns:
-        pd.DataFrame: Filtered DataFrame for the chromosome.
-    """
-    if chunksize <= 0:
-        # Read entire file at once (no chunking)
-        df = pd.read_csv(filepath, sep="\t", na_values=custom_na_values, dtype={'CHROM': str})
-        return df[df["CHROM"] == chrom]
-
-    reader = pd.read_csv(filepath, sep="\t", na_values=custom_na_values, chunksize=chunksize, dtype={'CHROM': str})
-    chr_data = []
-    for chunk in reader:
-        filtered = chunk[chunk["CHROM"] == chrom]
-        if not filtered.empty:
-            chr_data.append(filtered)
-    return pd.concat(chr_data) if chr_data else pd.DataFrame()
-
-
 def customize_panel_regions(VEP_output_file, custom_regions_file, customized_output_annotation_file,
-                            simple = True,
-                            chr_chunk_size = 1_000_000
+                            simple = True
                             ):
     """
     Modifies annotations in a VEP output file based on custom genomic regions.
@@ -65,106 +37,156 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
     # simple = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID'          , 'GENE', 'IMPACT'                                              , 'CONTEXT_MUT', 'CONTEXT']
     # rich   = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'GENE', 'IMPACT', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']
 
-    custom_regions_df = pd.read_table(custom_regions_file)
-    added_regions_df = pd.DataFrame()
-    current_chr = ""
-    chr_data = pd.DataFrame()
+    # Read entire file once, partition by chromosome
+    all_possible_sites = pl.read_csv(VEP_output_file, separator="\t",
+                                        null_values=custom_na_values_list,
+                                        schema_overrides={"CHROM": pl.Utf8}
+                                    ).with_row_index("__idx")
+    print("all possible sites loaded")
+
+    # Get chromosome order before partitioning
+    all_chroms = all_possible_sites["CHROM"].unique(maintain_order=True).to_list()
+
+    # Partition by chromosome and release the full dataframe
+    chrom_partitions = {
+        df["CHROM"][0]: df
+        for df in all_possible_sites.partition_by("CHROM", maintain_order=True)
+    }
+    del all_possible_sites
+
+    custom_regions_df = pl.read_csv(custom_regions_file, separator="\t",
+                                        schema_overrides={"CHROM": pl.Utf8})
+
+    # Group custom regions by chromosome
+    custom_by_chrom = {}
+    for row in custom_regions_df.iter_rows(named=True):
+        custom_by_chrom.setdefault(row["CHROM"], []).append(row)
+
+    added_regions_list = []
     write_header = True
 
-    for _, row in custom_regions_df.iterrows():
-        try:
-            if row["CHROM"] != current_chr:
-                # Write previous chromosome data before loading the next one
-                if not chr_data.empty:
-                    chr_data = chr_data.drop_duplicates(
-                        subset=['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
-                        keep='first'
+    for chrom in all_chroms:
+        chr_data = chrom_partitions.pop(chrom)
+        print(f"Processing chromosome: {chrom} ({chr_data.height} rows)")
+
+        chr_updates = []
+
+        if chrom in custom_by_chrom:
+            for row in custom_by_chrom[chrom]:
+                try:
+                    # Find start and end indices
+                    idx_start = chr_data.filter(pl.col("POS") == row["START"])["__idx"][0]
+                    from_start = chr_data.filter(pl.col("__idx") >= idx_start)
+                    idx_end = from_start.filter(pl.col("POS") == row["END"])["__idx"][-1]
+
+                    # Extract hotspot data and modify gene names
+                    hotspot_data = chr_data.filter(
+                        (pl.col("__idx") >= idx_start) & (pl.col("__idx") <= idx_end)
+                    ).drop("IMPACT").with_columns(
+                        pl.lit(row["NAME"]).alias("GENE")
                     )
-                    chr_data.to_csv(customized_output_annotation_file, header=write_header, index=False, sep="\t",
-                                    mode='a' if not write_header else 'w')
-                    write_header = False
 
-                current_chr = row["CHROM"]
-                chr_data = load_chr_data_chunked(VEP_output_file, current_chr, chunksize=chr_chunk_size)
+                    # Split the string into individual entries
+                    entries = row["IMPACTFUL"].split(',')
 
-                print("Updating chromosome to:", current_chr)
+                    # Create a DataFrame
+                    impactful_df = pl.DataFrame({
+                        "MUT_ID_pyr": entries,
+                        "IMPACT": [row["IMPACT"]] * len(entries)
+                    })
 
-            # Get start and end indices
-            ind_start = np.where(chr_data["POS"] == row["START"])[0][0]
-            ind_end = np.where(chr_data.iloc[ind_start:,:]["POS"] == row["END"])[0][-1]
-            # gene = chr_data.iloc[ind_start]["GENE"]
+                    all_pos_len = hotspot_data.height
 
-            ind_end += ind_start
+                    # convert MUT_ID to C>N and T>N only
+                    pyr_expr = pl.col("MUT_ID")
+                    for old, new in muttype_conversion_map.items():
+                        pyr_expr = pyr_expr.str.replace(old, new, literal=True)
+                    hotspot_data = hotspot_data.with_columns(pyr_expr.alias("MUT_ID_pyr"))
 
-            upd_start = ind_start
-            upd_end = ind_end
+                    hotspot_data = hotspot_data.join(impactful_df,
+                                                        on = "MUT_ID_pyr",
+                                                        how = "full",
+                                                        suffix = "_imp"
+                                                        )
+                    # Coalesce MUT_ID_pyr from both sides of the full join
+                    if "MUT_ID_pyr_imp" in hotspot_data.columns:
+                        hotspot_data = hotspot_data.with_columns(
+                            pl.coalesce(["MUT_ID_pyr", "MUT_ID_pyr_imp"]).alias("MUT_ID_pyr")
+                        ).drop("MUT_ID_pyr_imp")
 
-            # Extract hotspot data and modify gene names
-            hotspot_data = chr_data.iloc[upd_start: upd_end + 1, :].copy().drop("IMPACT", axis = 'columns')
-            hotspot_data["index_col"] = hotspot_data.index
-            original_df_start = hotspot_data.index[0]
-            original_df_end = hotspot_data.index[-1]
-            hotspot_data["GENE"] = row["NAME"]
+                    all_pos_len_after = hotspot_data.height
 
-            # Split the string into individual entries
-            entries = row["IMPACTFUL"].split(',')
+                    # TODO add an error raise
+                    if all_pos_len != all_pos_len_after:
+                        print("Some of the mutations provided are not in the desired region")
+                        print(hotspot_data.filter(pl.col("POS").is_null())["MUT_ID_pyr"])
+                        hotspot_data = hotspot_data.filter(pl.col("POS").is_not_null())
+                        hotspot_data = hotspot_data.with_columns(pl.col("POS").cast(pl.Int64))
 
-            # Create a DataFrame
-            impactful_df = pd.DataFrame(entries, columns = ["MUT_ID_pyr"])
-            impactful_df["IMPACT"] = row["IMPACT"]
+                    hotspot_data = hotspot_data.with_columns(
+                        pl.col("IMPACT").fill_null(row["NEUTRAL"])
+                    ).sort("__idx")
 
-            all_pos_len = hotspot_data.shape[0]
+                    ## Collect updates for this chromosome
+                    if simple:
+                        chr_updates.append(hotspot_data.select(["__idx", "GENE", "IMPACT"]))
+                    else:
+                        print("Getting Feature to '-'")
+                        chr_updates.append(
+                            hotspot_data.select(["__idx", "GENE", "IMPACT"]).with_columns(
+                                pl.lit("-").alias("Feature")
+                            )
+                        )
 
-            # convert MUT_ID to C>N and T>N only
-            hotspot_data["MUT_ID_pyr"] = hotspot_data["MUT_ID"].replace(muttype_conversion_map, regex = True)
-            hotspot_data = hotspot_data.merge(impactful_df,
-                                                on = ["MUT_ID_pyr"],
-                                                how = 'outer'
-                                                )
-            all_pos_len_after = hotspot_data.shape[0]
+                    added_regions_list.append(hotspot_data)
+                    print("Small region added:", row["NAME"])
 
-            # TODO add an error raise
-            if all_pos_len != all_pos_len_after:
-                print("Some of the mutations provided are not in the desired region")
-                print(hotspot_data[hotspot_data["POS"].isna()]["MUT_ID_pyr"])
-                hotspot_data = hotspot_data[~(hotspot_data["POS"].isna())].reset_index(drop = True)
-                hotspot_data["POS"] = hotspot_data["POS"].astype(int)
+                except Exception as e:
+                    print(f"Error processing row {row}: {e}")
 
-            hotspot_data["IMPACT"] = hotspot_data["IMPACT"].fillna(row["NEUTRAL"])
-            hotspot_data = hotspot_data.sort_values(by='index_col').drop("index_col", axis = 'columns')
+        # Apply updates for this chromosome
+        if chr_updates:
+            all_updates = pl.concat(chr_updates)
+            all_updates = all_updates.unique(subset=["__idx"], keep="last")
 
-            ## Insert modified rows back into the df
-            if simple:
-                chr_data.loc[original_df_start: original_df_end, ["GENE", "IMPACT"]] = hotspot_data[["GENE", "IMPACT"]].values
-            else:
-                print("Getting Feature to '-'")
-                hotspot_data["Feature"] = '-'
-                chr_data.loc[original_df_start: original_df_end, ["GENE", "IMPACT", "Feature"]] = hotspot_data[["GENE", "IMPACT", "Feature"]].values
+            chr_data = chr_data.join(all_updates, on="__idx", how="left", suffix="_upd")
 
+            update_cols = [
+                pl.coalesce(["GENE_upd", "GENE"]).alias("GENE"),
+                pl.coalesce(["IMPACT_upd", "IMPACT"]).alias("IMPACT"),
+            ]
+            drop_cols = ["GENE_upd", "IMPACT_upd"]
 
-            added_regions_df = pd.concat((added_regions_df, hotspot_data))
-            print("Small region added:", row["NAME"])
+            if not simple and "Feature_upd" in chr_data.columns:
+                update_cols.append(pl.coalesce(["Feature_upd", "Feature"]).alias("Feature"))
+                drop_cols.append("Feature_upd")
 
-        except Exception as e:
-            print(f"Error processing row {row}: {e}")
+            chr_data = chr_data.with_columns(update_cols).drop(drop_cols)
 
-    # Write the last chromosome
-    if not chr_data.empty:
-        chr_data = chr_data.drop_duplicates(
-            subset=['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
-            keep='first'
-        )
-        chr_data.to_csv(customized_output_annotation_file, header=write_header, index=False, sep="\t",
-                        mode='a' if not write_header else 'w')
+        # Deduplicate, sort, and write this chromosome
+        chr_data = chr_data.sort("__idx").drop("__idx").unique(
+                                                    subset = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID',
+                                                                'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
+                                                    keep = 'first',
+                                                    maintain_order = True)
 
+        with open(customized_output_annotation_file, 'ab' if not write_header else 'wb') as f:
+            chr_data.write_csv(f, separator="\t", include_header=write_header)
+        write_header = False
 
-    added_regions_df = added_regions_df.drop_duplicates(subset = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID',
-                                                                    'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
-                                                        keep = 'first')
-    added_regions_df.to_csv('added_regions.tsv' if simple else 'added_regions.rich.tsv',
-                                header = True,
-                                index = False,
-                                sep = "\t")
+    # Write added regions
+    if added_regions_list:
+        added_regions_df = pl.concat(added_regions_list, how="diagonal")
+        cols_to_drop = [c for c in ["__idx"] if c in added_regions_df.columns]
+        if cols_to_drop:
+            added_regions_df = added_regions_df.drop(cols_to_drop)
+        added_regions_df = added_regions_df.unique(
+                                                subset = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID',
+                                                            'GENE', 'CONTEXT_MUT', 'CONTEXT', 'IMPACT'],
+                                                keep = 'first',
+                                                maintain_order = True)
+        added_regions_df.write_csv('added_regions.tsv' if simple else 'added_regions.rich.tsv',
+                                    separator="\t")
 
 
 
@@ -173,10 +195,8 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
 @click.option('--custom-regions-file', required=True, type=click.Path(exists=True), help='Input custom regions file (TSV)')
 @click.option('--customized-output-annotation-file', required=True, type=click.Path(), help='Output annotation file (TSV)')
 @click.option('--simple', is_flag=True, help='Use simple annotation')
-@click.option('--chr-chunk-size', type=int, default=1000000, show_default=True, help='Chunk size for per-chromosome loading')
-def main(vep_output_file, custom_regions_file, customized_output_annotation_file, simple, chr_chunk_size):
-    customize_panel_regions(vep_output_file, custom_regions_file, customized_output_annotation_file, simple, chr_chunk_size)
+def main(vep_output_file, custom_regions_file, customized_output_annotation_file, simple):
+    customize_panel_regions(vep_output_file, custom_regions_file, customized_output_annotation_file, simple)
 
 if __name__ == '__main__':
     main()
-
