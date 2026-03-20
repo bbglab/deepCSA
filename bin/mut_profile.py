@@ -229,17 +229,6 @@ def compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts_
     # normalize
     mut_probability = mut_probability / mut_probability.sum()
 
-    # if there is any channel with 0 probability we need to add a pseudocount
-    if not all(mut_probability[sample_name].values > 0):
-        # find the minimum value greater than 0
-        min_value_non_zero = mut_probability[mut_probability > 0].min()
-        # print(min_value_non_zero)
-
-        # add a dynamic pseudocount of one third of the minimum number greater than 0
-        mut_probability = mut_probability + (min_value_non_zero / 3)
-
-    mut_probability = mut_probability / mut_probability.sum()
-
 
     # reindex to ensure the right order
     mut_probability = mut_probability.reindex(contexts_formatted)
@@ -299,7 +288,11 @@ def compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts_
 
             upd_mutation_matrix_wgs["CONTEXT"] = upd_mutation_matrix_wgs["CONTEXT_MUT"].apply( lambda x : x[:3])
             profile_trinuc_merge = upd_mutation_matrix_wgs.merge(ref_trinuc32, on = "CONTEXT")
-            profile_trinuc_merge["MUT_PROBABILITY"] = profile_trinuc_merge[sample_name] / profile_trinuc_merge["COUNT"]
+
+            # relative mutability per trinucleotide change in the panel after smoothing
+            profile_trinuc_merge["RELATIVE_MUTABILITY_PER_CHANNEL"] = profile_trinuc_merge[sample_name] / profile_trinuc_merge["COUNT"]
+            profile_trinuc_merge["RELATIVE_MUTABILITY_PER_CHANNEL"] = profile_trinuc_merge["RELATIVE_MUTABILITY_PER_CHANNEL"] / profile_trinuc_merge["RELATIVE_MUTABILITY_PER_CHANNEL"].sum()
+
             profile_n_sample_trinuc = profile_trinuc_merge.merge(trinucleotide_counts.reset_index(), on = "CONTEXT", suffixes = ("", "_PANEL"))
             profile_n_sample_trinuc["MUTS_PANEL"] = profile_n_sample_trinuc[sample_name] * profile_n_sample_trinuc[f"{sample_name}_PANEL"]
             profile_n_sample_trinuc["MUTS_PANEL_FINAL"] = profile_n_sample_trinuc["MUTS_PANEL"] / profile_n_sample_trinuc["MUTS_PANEL"].sum() * total_mutations
