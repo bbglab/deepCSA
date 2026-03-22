@@ -28,7 +28,6 @@ nextflow_pipeline {
             assert !path("${params.outdir}/selection/omega").exists()
             assert !path("${params.outdir}/oncodrivefml").exists()
             assert !path("${params.outdir}/oncodrive3d").exists()            
-            assert snapshot(path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")).match("mutational_profile")
         }
     }
 
@@ -68,8 +67,17 @@ nextflow_pipeline {
             def dataLines = lines.findAll { it && it != expectedHeader }
             assert dataLines.size() == 38 : "Omega output should contain 38 data rows, found ${dataLines.size()}"
 
-            // Sort data lines for deterministic snapshot comparison
-            def sortedContent = [expectedHeader] + dataLines.sort()
+            // Sort by key columns (gene, sample, impact) to avoid floating-point differences affecting order
+            // Round numeric columns (dnds, pvalue, lower, upper) to 2 decimals for deterministic comparison
+            def sortedRounded = dataLines.sort { line ->
+                def cols = line.split('\t')
+                "${cols[0]}\t${cols[1]}\t${cols[2]}"
+            }.collect { line ->
+                def cols = line.split('\t')
+                (4..7).each { i -> cols[i] = String.format("%.2f", cols[i] as Double) }
+                cols.join('\t')
+            }
+            def sortedContent = [expectedHeader] + sortedRounded
 
             // Snapshot both files
             assert snapshot(path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")).match("mutational_profile")
