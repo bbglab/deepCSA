@@ -10,7 +10,7 @@ nextflow_pipeline {
         when {
             params {
                 input = "${projectDir}/tests/test_data/input.csv"
-                outdir = "${projectDir}/tests_results_normal"
+                outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_normal"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 plot_depths = true
                 profileall  = true
@@ -35,7 +35,7 @@ nextflow_pipeline {
         when {
             params {
                 input = "${projectDir}/tests/test_data/input.csv"
-                outdir = "${projectDir}/tests_results_omega"
+                outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_omega"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 plot_depths = true
                 profileall  = true
@@ -78,7 +78,7 @@ nextflow_pipeline {
         when {
             params {
                 input             = "${projectDir}/tests/test_data/input.csv"
-                outdir            = "${projectDir}/tests_results_maf_validation"
+                outdir            = "${params.outdir}/tests_results_maf_validation"
                 input_maf         = "${projectDir}/tests/test_data/test_mutations.maf"
                 use_custom_depths = false
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
@@ -100,7 +100,7 @@ nextflow_pipeline {
     //     when {
     //         params {
     //             input                = "${projectDir}/tests/test_data/input.csv"
-    //             outdir               = "${projectDir}/tests_results_maf_input"
+    //             outdir               = "${params.outdir}/tests_results_maf_input"
     //             input_maf            = "${projectDir}/tests/test_data/test_mutations.maf"
     //             use_custom_depths    = true
     //             custom_depths_table  = "${projectDir}/tests/test_data/precomputed_depths.tsv"
