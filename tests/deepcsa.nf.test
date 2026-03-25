@@ -20,12 +20,18 @@ nextflow_pipeline {
 
         then {
             assert workflow.success : "Pipeline should complete without errors"
+            // Check output directory structure
             assert path("${params.outdir}/computeprofile").exists()
+            // Check that directories that should not exist in minimal features run, in fact do not exist.
             assert !path("${params.outdir}/mutdensity").exists()
             assert !path("${params.outdir}/omega").exists()
             assert !path("${params.outdir}/oncodrivefml").exists()
-            assert !path("${params.outdir}/oncodrive3d").exists()            
-            assert snapshot(path("${params.outdir}/computeprofile/all_samples.all.profile.tsv")).match()
+            assert !path("${params.outdir}/oncodrive3d").exists()  
+
+            // Snapshot of stable output          
+            assert snapshot(
+                path("${params.outdir}/computeprofile/all_samples.all.profile.tsv")
+            ).match()
         }
     }
 
