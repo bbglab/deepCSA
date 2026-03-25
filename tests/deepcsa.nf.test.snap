@@ -1,22 +1,12 @@
 {
     "Minimal features test run": {
         "content": [
-            "all_samples.all.profile.tsv:md5,a28a686e91eb80237c693c8e560c325b"
+            "all_samples.all.profile.tsv:md5,930fb91884bc7eeaa5bf7767086b4360"
         ],
+        "timestamp": "2026-03-25T17:53:51.629467742",
         "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "25.04.6"
-        },
-        "timestamp": "2025-11-12T14:58:52.8566078"
-    },
-    "Omega analysis test run": {
-        "content": [
-            "all_samples.all.profile.tsv:md5,a28a686e91eb80237c693c8e560c325b"
-        ],
-        "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "25.04.6"
-        },
-        "timestamp": "2025-11-13T17:21:34.607662647"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

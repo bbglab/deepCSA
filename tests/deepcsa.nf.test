@@ -21,7 +21,7 @@ nextflow_pipeline {
         then {
             assert workflow.success : "Pipeline should complete without errors"
             // Check output directory structure
-            assert path("${params.outdir}/computeprofile").exists()
+            assert path("${params.outdir}/mutational_profile").exists()
             // Check that directories that should not exist in minimal features run, in fact do not exist.
             assert !path("${params.outdir}/mutdensity").exists()
             assert !path("${params.outdir}/omega").exists()
@@ -30,7 +30,7 @@ nextflow_pipeline {
 
             // Snapshot of stable output          
             assert snapshot(
-                path("${params.outdir}/computeprofile/all_samples.all.profile.tsv")
+                path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")
             ).match()
         }
     }
@@ -53,7 +53,7 @@ nextflow_pipeline {
 
         then {
             assert workflow.success : "Pipeline should complete without errors"
-            assert path("${params.outdir}/computeprofile").exists()
+            assert path("${params.outdir}/mutational_profile").exists()
             assert path("${params.outdir}/omega").exists() : "Omega directory should exist"
             assert path("${params.outdir}/omega/all_omegas.tsv").exists() : "Omega results file should exist"
             assert !path("${params.outdir}/oncodrivefml").exists()
