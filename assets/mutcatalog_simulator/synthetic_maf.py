@@ -76,6 +76,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
     samples = config['samples']
     omegas = config['omegas']
     genes = config['genes']
+    csqn_types = config['csqn_types']
     depth_corrections = config['depth_corrections']
     n_replicates = config['n_replicates']
     
@@ -85,11 +86,16 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
 
     # --- loop across grid params ---
     compiled_output_depths_table = []
-    for sample, omega, depth_correction in product(samples, omegas, depth_corrections):
+    for sample, omega, csqn_type, depth_correction in product(samples, omegas, csqn_types, depth_corrections):
         
         # --- omega dict ---
 
-        omega_dict = {'missense': omega, 'nonsense': omega}
+        if csqn_type == 'nonsynonymous':
+            omega_dict = {'missense': omega, 'nonsense': omega}
+        elif csqn_type == 'missense':
+            omega_dict = {'missense': omega}
+        elif csqn_type == 'nonsense':
+            omega_dict = {'nonsense': omega}
 
         # --- mutabilities per site ---
 
@@ -104,7 +110,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
         cleaned_possible_muts = cleaned_possible_muts_init.merge(depths_per_position, on=['CHROM', 'POS'], how ='left')
         cleaned_possible_muts["DEPTH"] = (cleaned_possible_muts["DEPTH"] * depth_correction // 1).astype(int)
 
-        experiment_name = f"{sample}_{sci_no_dots(omega)}_{sci_no_dots(depth_correction)}"
+        experiment_name = f"{sample}_{sci_no_dots(omega)}_{sci_no_dots(depth_correction)}_{csqn_type}"
         print(f"Simulating samples for {experiment_name}...")
 
         counts, simulated_maf = poisson_simulate(
