@@ -123,7 +123,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
 
         # Generate output depths table
         base = cleaned_possible_muts.loc[cleaned_possible_muts["GENE"].isin(genes),["CHROM", "POS", "DEPTH"]].drop_duplicates().reset_index(drop=True)
-        rep_cols = [ f"{experiment_name}_{i:02d}" for i in range(n_replicates) ]
+        rep_cols = [ f"{experiment_name}_{i:03d}" for i in range(n_replicates) ]
         output_depths_table = base.assign( **{c: base["DEPTH"] for c in rep_cols} ).drop(columns="DEPTH")
         output_depths_table.to_csv( f"{output_dir}/{experiment_name}_depths.tsv", sep="\t", header = True,index=False)
         compiled_output_depths_table.append(output_depths_table.iloc[:,2:])
@@ -132,7 +132,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
         for i, s in tqdm.tqdm(enumerate(counts)):
             simulated_maf['ALT_DEPTH'] = s
             df = simulated_maf[simulated_maf['ALT_DEPTH'] > 0].copy()
-            generated_sample_name = f"{experiment_name}_{i:02d}"
+            generated_sample_name = f"{experiment_name}_{i:03d}"
             df['SAMPLE_ID'] = generated_sample_name
             df.to_csv(
                 f"{output_dir}/{generated_sample_name}.tsv",

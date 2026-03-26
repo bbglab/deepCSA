@@ -32,18 +32,3 @@ for file in $(ls ${OUTPUT_DIR}/maf/*.tsv | grep -v '_depths.tsv'); do
     fi
 
 done
-
-wait
-
-# generate the deepCSA input files
-ls ${OUTPUT_DIR}/vcf/*_??.vcf | xargs -n 1 basename | rev | cut -d '.' -f2- | rev > ${OUTPUT_DIR}/vcf/sample_names.txt
-
-echo "sample,vcf,bam" > ${OUTPUT_DIR}/vcf/deepCSA_input.csv
-ls ${OUTPUT_DIR}/vcf/*_??.vcf | xargs -n 1 realpath > ${OUTPUT_DIR}/vcf/vcf_paths.txt
-paste -d , ${OUTPUT_DIR}/vcf/sample_names.txt ${OUTPUT_DIR}/vcf/vcf_paths.txt >> ${OUTPUT_DIR}/vcf/deepCSA_input.csv
-
-echo "SAMPLE_ID,original_sample,omega,depth_correction,impact,replicate" > ${OUTPUT_DIR}/vcf/deepCSA_input_metadata.csv
-paste -d , <(cat ${OUTPUT_DIR}/vcf/sample_names.txt) <(cat ${OUTPUT_DIR}/vcf/sample_names.txt | rev | sed 's/_/,/; s/_/,/; s/_/,/' | rev) >> ${OUTPUT_DIR}/vcf/deepCSA_input_metadata.csv
-
-rm ${OUTPUT_DIR}/vcf/sample_names.txt
-rm ${OUTPUT_DIR}/vcf/vcf_paths.txt
