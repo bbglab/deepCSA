@@ -23,7 +23,7 @@ process PLOT_SATURATION {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    mkdir ${prefix}.plots
+    mkdir -p ${prefix}.plots/domains
     plot_gene_saturation.py \\
                     --sample_name ${prefix} \\
                     --outdir ${prefix}.plots \\

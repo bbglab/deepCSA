@@ -18,7 +18,7 @@ process PLOT_SELECTION_METRICS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    mkdir ${prefix}.plots
+    mkdir -p ${prefix}.plots/side_figures
     plot_selectionsideplots.py \\
                     --sample_name ${prefix} \\
                     --outdir ${prefix}.plots

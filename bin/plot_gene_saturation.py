@@ -1251,10 +1251,10 @@ def plotting_wrapper(maf, exons_depth, o3d_df, exon_selection,
         # and the formatting of domain selection can be done only once
         df, gene_color_dict = format_domain_selection(domain_selection, xshift=0.22)
         df = df.copy()[:60]
-        plot_all_domain_selection(df, gene_color_dict, figsize=(16,6), save=True, filename=f"{output_directory}/domain_selection.missense_truncating.png")
+        plot_all_domain_selection(df, gene_color_dict, figsize=(16,6), save=True, filename=f"{output_directory}/domains/domain_selection.missense_truncating.pdf")
         for impact in ["missense", "truncating"]:
             df, gene_color_dict = format_domain_selection(domain_selection[domain_selection["impact"] == impact], sort_by=impact, xshift=0)[:60]
-            plot_all_domain_selection(df, gene_color_dict, figsize=(14,6), save=True, filename=f"{output_directory}/domain_selection.{impact}.png")
+            plot_all_domain_selection(df, gene_color_dict, figsize=(14,6), save=True, filename=f"{output_directory}/domains/domain_selection.{impact}.pdf")
 
     except Exception as e:
         print(f"Plots for domain selection at cohort level did not work.")
@@ -1363,7 +1363,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
         thr_selection=0.00001,
         default_track_order=False,
         save=True,
-        filename=f"{output_dir}/{gene}.saturation_all.png"
+        filename=f"{output_dir}/{gene}.saturation_all.pdf"
         )
 
 
@@ -1380,7 +1380,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
             title=f"{gene}\nDomain selection",
             legend2_coord=(0.75, 1),
             save=True,
-            filename=f"{output_dir}/{gene}.domain_selection.png"
+            filename=f"{output_dir}/{gene}.domain_selection.pdf"
             )
     else:
         print("Not plotting domains, no omega value for domains")
@@ -1390,7 +1390,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
         gene_mut_cnsq_count, plot_pars["colors"],
         title=f"{gene}",
         save=True,
-        filename=f"{output_dir}/{gene}.normal.stacked_horizontal.png"
+        filename=f"{output_dir}/{gene}.normal.stacked_horizontal.pdf"
         )
 
 
