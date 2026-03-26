@@ -1,4 +1,4 @@
-sample,vcf,bam
-P19_0001_BDO_01,/data/bbg/datasets/pipelines/deepCSA/test_datasets/bladder/mutacions_vcf/P19_0001_BDO_01.med.filtered.vcf,/data/bbg/nobackup2/prominent/bladder/2025-03-20_deepUMIcaller/sortbamduplexconsmed/P19_0001_BDO_01.sorted.bam
-P19_0001_BTR_01,/data/bbg/datasets/pipelines/deepCSA/test_datasets/bladder/mutacions_vcf/P19_0001_BTR_01.med.filtered.vcf,/data/bbg/nobackup2/prominent/bladder/2025-03-20_deepUMIcaller/sortbamduplexconsmed/P19_0001_BTR_01.sorted.bam
-P19_0002_BDO_01,/data/bbg/datasets/pipelines/deepCSA/test_datasets/bladder/mutacions_vcf/P19_0002_BDO_01.med.filtered.vcf,/data/bbg/nobackup2/prominent/bladder/2025-03-20_deepUMIcaller/sortbamduplexconsmed/P19_0002_BDO_01.sorted.bam
+sample,vcf
+P19_0002_BDO_01,path/to/P19_0002_BDO_01.vcf
+P19_0002_BTR_01,path/to/P19_0002_BTR_01.vcf
+P19_0003_BDO_01,path/to/P19_0003_BDO_01.vcf

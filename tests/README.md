@@ -153,11 +153,15 @@ The parameters you will need to provide are:
 | `singularity.cacheDir` / `singularity.libraryDir` | Singularity image cache |
 
 #### 4. `tests/test_data/input.csv` — input data paths
-This file lists per-sample VCF and BAM paths. Update the paths in each row to point to the location of the test dataset on your cluster:
+This file lists per-sample MAF paths. Update the paths in each row to point to the location of the test dataset on your cluster:
 ```csv
-sample,vcf,bam
-P19_0001_BDO_01,/path/to/test_datasets/vcfs/P19_0001_BDO_01.duplex.filtered.vcf,/path/to/test_datasets/bams/P19_0001_BDO_01.sorted.bam
+sample,maf
+P19_0001_BDO_01,/path/to/test_datasets/vcfs/P19_0001_BDO_01.maf
 ...
+```
+In the same direction, update the depths file path in `tests/nextflow.config`:
+```groovy
+custom_depths_table        = "path/to/all_samples_indv.depths.tsv.gz"
 ```
 
 ### Adding a New Test

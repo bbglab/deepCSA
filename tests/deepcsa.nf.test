@@ -56,7 +56,7 @@ nextflow_pipeline {
         
         when {
             params {
-                // Input: VCF and BAM file per sample
+                // Input: Sample name metadata for the pipeline
                 input = "${projectDir}/tests/test_data/input.csv"
                 outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_normal"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
@@ -112,6 +112,7 @@ nextflow_pipeline {
         
         when {
             params {
+                // Input: Sample name metadata for the pipeline
                 input = "${projectDir}/tests/test_data/input.csv"
                 outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_omega"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
