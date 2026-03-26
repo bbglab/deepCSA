@@ -26,7 +26,7 @@ process FILTERDEPTHS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        awk: \$(awk --version 2>&1 | head -1)
+        awk: "\$(awk --version 2>&1 | head -1)"
     END_VERSIONS
     """
 
@@ -38,7 +38,7 @@ process FILTERDEPTHS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        awk: \$(awk --version 2>&1 | head -1)
+        awk: "\$(awk --version 2>&1 | head -1)"
     END_VERSIONS
     """
 }
