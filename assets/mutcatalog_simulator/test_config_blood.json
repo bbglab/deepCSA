@@ -1,0 +1,38 @@
+{
+    "samples": [
+        "all_samples"
+    ],
+    "omegas": [
+        5e-1,
+        75e-2,
+        1,
+        2.5,
+        5,
+        10
+    ],
+    "genes": [
+        "JAK2", 
+        "EGFR", 
+        "DICER1", 
+        "KIT", 
+        "RGS7", 
+        "ARHGAP35",
+        "FAT1", 
+        "TERT", 
+        "TP63", 
+        "TCF7L2", 
+        "NSD1", 
+        "CDH1", 
+        "STAG2",
+        "TP53",
+        "DNMT3A"
+    ],
+    "csqn_types": [
+        "missense",
+        "nonsense"
+    ],
+    "depth_corrections": [
+        4e-2
+    ],
+    "n_replicates": 500
+}

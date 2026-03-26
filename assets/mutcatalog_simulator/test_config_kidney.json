@@ -1,0 +1,26 @@
+{
+    "samples": [
+        "all_samples"
+    ],
+    "omegas": [
+        5e-1,
+        1,
+        2,
+        3,
+        4,
+        5,
+        10
+    ],
+    "genes": [
+        "STAG2",
+        "TP53",
+        "PTEN",
+        "PBRM1",
+        "KMT2A",
+        "VHL"
+    ],
+    "depth_corrections": [
+        1e-2
+    ],
+    "n_replicates": 25
+}

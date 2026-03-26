@@ -1,10 +1,10 @@
 #!/bin/bash
 
-MUTCATALOG_SIMULATOR_HOME="/home/fcalvet/projects/deepCSA/assets/mutcatalog_simulator"
+MUTCATALOG_SIMULATOR_HOME="/home/fmuinos/deepCSA/assets/mutcatalog_simulator"
 
-DEEPCSA_RUN_DIR="/data/bbg/nobackup/bladder_ts/results/2025-12-19_deepCSA_updated_run"
-RUN_CONFIG="${MUTCATALOG_SIMULATOR_HOME}/test_config.json"
-OUTPUT_DIR="${DEEPCSA_RUN_DIR}/fake_mutations_poisson"
+DEEPCSA_RUN_DIR="/data/bbg/nobackup/prominent/kidney/deepCSA/LCMs/exploration/2026-02-11_all"
+RUN_CONFIG="${MUTCATALOG_SIMULATOR_HOME}/test_config_kidney.json"
+OUTPUT_DIR="${DEEPCSA_RUN_DIR}/fake_mutations_poisson_kidney"
 
 mkdir -p ${OUTPUT_DIR}/maf
 mkdir -p ${OUTPUT_DIR}/vcf
