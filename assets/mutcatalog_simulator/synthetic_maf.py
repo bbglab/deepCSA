@@ -81,7 +81,7 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
     
     # --- prepare all possible mutation sites ---
 
-    cleaned_possible_muts_init = pd.read_table(f"{deepcsa_run_dir}/createpanels/consensuspanels/consensus.exons_splice_sites.tsv")
+    cleaned_possible_muts_init = pd.read_table(f"{deepcsa_run_dir}/regions/consensuspanels/consensus.exons_splice_sites.tsv")
 
     # --- loop across grid params ---
     compiled_output_depths_table = []
@@ -93,12 +93,12 @@ def synthetic_maf(deepcsa_run_dir, run_config, output_dir):
 
         # --- mutabilities per site ---
 
-        fn = f"{deepcsa_run_dir}/absolutemutabilitiesgloballoc/mutabilities_per_site.{sample}.global_loc.tsv.gz"
+        fn = f"{deepcsa_run_dir}/processing_files/absolutemutabilitiesgloballoc/mutabilities_per_site.{sample}.global_loc.tsv.gz"
         sample_mutability = pd.read_table(fn)
         sample_mutability.rename(columns={sample: 'expected_ALT_DEPTH'}, inplace=True)
 
         # --- DEPTH column ---
-        fn = f"{deepcsa_run_dir}/annotatedepths/{sample}.depths.annotated.tsv.gz"
+        fn = f"{deepcsa_run_dir}/depths/individual/{sample}.depths.annotated.tsv.gz"
         depths_per_position = pd.read_csv(fn, sep = "\t", usecols = ['CHROM', 'POS', sample])
         depths_per_position = depths_per_position.rename(columns={sample: 'DEPTH'})
         cleaned_possible_muts = cleaned_possible_muts_init.merge(depths_per_position, on=['CHROM', 'POS'], how ='left')
