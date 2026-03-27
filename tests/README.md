@@ -9,15 +9,15 @@ This directory contains reproducible tests for the DEEPCSA Nextflow pipeline usi
 - Container engine: Singularity
 - Snapshot store: `tests/deepcsa.nf.test.snap`
 - Test spec: `tests/deepcsa.nf.test`
-- nf-test work directory: configured in `nf-test.config` (default: `/path/to/nf-tests-workdir`)
-- Test output directory: configured in `tests/nextflow.config` (default: `/path/to/nf-tests-outputs`)
+- nf-test work directory: configured in `nf-test.config` (IRB default: `/scratch/bbg/work/deepCSA/nf-tests` — customize for your environment)  
+- Test output directory: configured in `tests/nextflow.config` (IRB default: `/scratch/bbg/work/deepCSA/nf-tests-outputs` — customize for your environment)  
 
 ### Structure
 - `nf-test.config`: nf-test root configuration (work dir, profile, ignored paths)
 - `tests/deepcsa.nf.test`: nf-test suite with three active test cases
-  - "Minimal features test run" (tag: `normal`)
-  - "Omega analysis test run" (tag: `omega`)
-  - "Should fail when --input_maf is provided without --use_custom_depths" (tag: `input_maf_validation`)
+  - "TEST 1. Basic functionality - MAF-based processing" (tag: `normal`)  
+  - "TEST 2.Omega analysis test run" (tag: `omega`)
+  - "TEST 3. Should fail when --input_maf is provided without --use_custom_depths" (tag: `input_maf_validation`)
 - `tests/deepcsa.nf.test.snap`: Snapshot file managed by nf-test
 - `tests/nextflow.config`: Test-specific Nextflow config (SLURM, Singularity, cluster paths, param overrides)
 - `tests/test_data/`: Input dataset used by the tests (points to cluster paths; adapt `tests/test_data/input.csv` for your environment — see [Configuring for usercase](#configuring-for-usercase))
@@ -58,17 +58,17 @@ nf-test test tests/deepcsa.nf.test --tag omega --update-snapshot
 ### Current Assertions per Test
 - `normal` (Minimal features):
   - Pipeline succeeds
-  - `computeprofile/` output directory exists
+  - `mutational_profile/` output directory exists
   - `mutdensity/`, `omega/`, `oncodrivefml/`, `oncodrive3d/` directories do **not** exist
-  - Snapshot of `computeprofile/all_samples.all.profile.tsv` (MD5)
+  - Snapshot of `mutational_profile/all_samples.all.profile.tsv` (MD5)
 
 - `omega` (Omega analysis):
   - Pipeline succeeds
-  - `computeprofile/` and `omega/` directories exist
+  - `mutational_profile/` and `omega/` directories exist
   - `omega/all_omegas.tsv` exists
   - `oncodrivefml/`, `oncodrive3d/` directories do **not** exist
-  - Structural checks on `all_omegas.tsv`: header contains `gene`, `sample`, `dnds`; line count == 59
-  - Snapshot of `computeprofile/all_samples.all.profile.tsv` (MD5)
+  - Structural checks on `all_omegas.tsv`: header contains `gene`, `sample`, `dnds`; all rows contain same columns, all samples are present.
+  - Snapshot of `mutational_profile/all_samples.all.profile.tsv` (MD5)
 
 - `input_maf_validation` (Parameter validation):
   - Pipeline **fails** when `--input_maf` is set without `--use_custom_depths = true`
@@ -153,7 +153,7 @@ The parameters you will need to provide are:
 | `singularity.cacheDir` / `singularity.libraryDir` | Singularity image cache |
 
 #### 4. `tests/test_data/input.csv` — input data paths
-This file lists per-sample MAF paths. Update the paths in each row to point to the location of the test dataset on your cluster:
+This file lists per-sample VCF paths. The paths need to be added for the pipelie to work but the file used is the MAF file for all samples, added via `tests/nextflow.config`:
 ```csv
 sample,maf
 P19_0001_BDO_01,/path/to/test_datasets/vcfs/P19_0001_BDO_01.maf
@@ -161,7 +161,8 @@ P19_0001_BDO_01,/path/to/test_datasets/vcfs/P19_0001_BDO_01.maf
 ```
 In the same direction, update the depths file path in `tests/nextflow.config`:
 ```groovy
-custom_depths_table        = "path/to/all_samples_indv.depths.tsv.gz"
+custom_depths_table         = "path/to/all_samples_indv.depths.tsv.gz"
+input_maf                   = "path/to/all_samples.maf"
 ```
 
 ### Adding a New Test
@@ -181,4 +182,4 @@ custom_depths_table        = "path/to/all_samples_indv.depths.tsv.gz"
 ### Versions
 The snapshot records tool versions under `meta`. Example (as of writing):
 - nf-test: 0.9.5
-- Nextflow: 25.04.6
+- Nextflow: 25.10.4

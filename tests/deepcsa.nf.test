@@ -33,7 +33,7 @@ nextflow_pipeline {
     ========================================================================================
     Purpose: Validates core pipeline functionality with default parameters
     
-    Input: VCF and BAM files.
+    Input: MAF file and depth table for all samples.
     Parameters: 
         - plot_depths = true (enables depth plotting)
         - profileall  = true (enables mutational profile generation)
@@ -51,7 +51,7 @@ nextflow_pipeline {
     */
 
 
-    test("TEST 1. Basic functionality - standard processing") {
+    test("TEST 1. Basic functionality - MAF-based processing") {
         tag "normal"
         
         when {
@@ -107,7 +107,7 @@ nextflow_pipeline {
     
     ========================================================================================
     */
-    test("Omega analysis test run") {
+    test("TEST 2.Omega analysis test run") {
         tag "omega"
         
         when {
@@ -185,7 +185,7 @@ nextflow_pipeline {
     
     ========================================================================================
     */
-    test("Should fail when --input_maf is provided without --use_custom_depths") {
+    test("TEST 3. Should fail when --input_maf is provided without --use_custom_depths") {
         tag "input_maf_validation"
 
         when {
