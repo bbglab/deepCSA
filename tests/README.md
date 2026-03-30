@@ -20,7 +20,7 @@ This directory contains reproducible tests for the DEEPCSA Nextflow pipeline usi
   - "TEST 3. Should fail when --input_maf is provided without --use_custom_depths" (tag: `input_maf_validation`)
 - `tests/deepcsa.nf.test.snap`: Snapshot file managed by nf-test
 - `tests/nextflow.config`: Test-specific Nextflow config (SLURM, Singularity, cluster paths, param overrides)
-- `tests/test_data/`: Input dataset used by the tests (points to cluster paths; adapt `tests/test_data/input.csv` for your environment — see [Configuring for usercase](#configuring-for-usercase))
+- `tests/test_data/`: Local committed input files used by the tests (`input.csv`, `test_mutations.maf`). The MAF and depths files for the main tests are fetched at runtime directly from [bbglab/DeepClone_protocol](https://github.com/bbglab/DeepClone_protocol) — no download step required.
 
 ### Running Tests
 
@@ -152,18 +152,24 @@ The parameters you will need to provide are:
 | `datasets3d` / `annotations3d` | Oncodrive3D datasets |
 | `singularity.cacheDir` / `singularity.libraryDir` | Singularity image cache |
 
-#### 4. `tests/test_data/input.csv` — input data paths
-This file lists per-sample VCF paths. The paths need to be added for the pipelie to work but the file used is the MAF file for all samples, added via `tests/nextflow.config`:
-```csv
-sample,maf
-P19_0001_BDO_01,/path/to/test_datasets/vcfs/P19_0001_BDO_01.maf
-...
-```
-In the same direction, update the depths file path in `tests/nextflow.config`:
+#### 4. Test data — no download required
+The MAF file and precomputed depths table are fetched **at runtime** directly from [bbglab/DeepClone_protocol](https://github.com/bbglab/DeepClone_protocol). Following the same convention used by nf-core pipelines (e.g. [nf-core/fastquorum](https://github.com/nf-core/fastquorum)), the remote URLs are set directly in the test params blocks inside `tests/deepcsa.nf.test`:
+
+> ⚠️ **Requirement:** The `bbglab/DeepClone_protocol` repository must be **publicly accessible** for Nextflow to fetch the files at runtime. If the repository is private, the pipeline will fail with a "No such file or directory" error for the remote URLs.
+
 ```groovy
-custom_depths_table         = "path/to/all_samples_indv.depths.tsv.gz"
-input_maf                   = "path/to/all_samples.maf"
+input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
+use_custom_depths   = true
+custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
 ```
+
+Because nf-schema 2.x validates `file-path` params for local existence, `tests/nextflow.config` includes:
+```groovy
+validation {
+    ignoreParams = ['input_maf', 'custom_depths_table']
+}
+```
+This tells nf-schema to skip the file-existence check for these two params when running tests, allowing HTTP URLs to pass through to Nextflow's native remote file handling. No manual path editing or pre-download is required.
 
 ### Adding a New Test
 1. Duplicate a `test("...")` block in `tests/deepcsa.nf.test`.

@@ -60,6 +60,10 @@ nextflow_pipeline {
                 input = "${projectDir}/tests/test_data/input.csv"
                 outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_normal"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                // Test data fetched directly from the DeepClone_protocol repository
+                input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
+                use_custom_depths   = true
+                custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
                 plot_depths = true
                 profileall  = true
                 signatures = false
@@ -116,6 +120,10 @@ nextflow_pipeline {
                 input = "${projectDir}/tests/test_data/input.csv"
                 outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_omega"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                // Test data fetched directly from the DeepClone_protocol repository
+                input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
+                use_custom_depths   = true
+                custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
                 plot_depths = true
                 profileall  = true
                 signatures = false
