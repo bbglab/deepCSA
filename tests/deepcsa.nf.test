@@ -58,7 +58,7 @@ nextflow_pipeline {
             params {
                 // Input: Sample name metadata for the pipeline
                 input = "${projectDir}/tests/test_data/input.csv"
-                outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_normal"
+                outdir = "$outputDir"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 // Test data fetched directly from the DeepClone_protocol repository
                 input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
@@ -73,16 +73,16 @@ nextflow_pipeline {
         then {
             assert workflow.success : "Pipeline should complete without errors"
             // Check output directory structure
-            assert path("${params.outdir}/mutational_profile").exists()
+            assert path("${outputDir}/mutational_profile").exists()
             // Check that directories that should not exist in minimal features run, in fact do not exist.
-            assert !path("${params.outdir}/mutdensity").exists()
-            assert !path("${params.outdir}/omega").exists()
-            assert !path("${params.outdir}/oncodrivefml").exists()
-            assert !path("${params.outdir}/oncodrive3d").exists()  
+            assert !path("${outputDir}/mutdensity").exists()
+            assert !path("${outputDir}/omega").exists()
+            assert !path("${outputDir}/oncodrivefml").exists()
+            assert !path("${outputDir}/oncodrive3d").exists()  
 
             // Snapshot of stable output          
             assert snapshot(
-                path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")
+                path("${outputDir}/mutational_profile/all_samples.all.profile.tsv")
             ).match()
         }
     }
@@ -118,7 +118,7 @@ nextflow_pipeline {
             params {
                 // Input: Sample name metadata for the pipeline
                 input = "${projectDir}/tests/test_data/input.csv"
-                outdir = "/scratch/bbg/work/deepCSA/nf-tests-outputs/tests_results_omega"
+                outdir = "$outputDir"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 // Test data fetched directly from the DeepClone_protocol repository
                 input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
@@ -135,14 +135,14 @@ nextflow_pipeline {
         then {
             assert workflow.success : "Pipeline should complete without errors"
             // Validate that all folders are created
-            assert path("${params.outdir}/mutational_profile").exists()
-            assert path("${params.outdir}/selection/omega").exists() : "Omega directory should exist"
-            assert path("${params.outdir}/selection/omega/all_omegas.tsv").exists() : "Omega results file should exist"
-            assert !path("${params.outdir}/selection/oncodrivefml").exists()
-            assert !path("${params.outdir}/selection/oncodrive3d").exists()
+            assert path("${outputDir}/mutational_profile").exists()
+            assert path("${outputDir}/selection/omega").exists() : "Omega directory should exist"
+            assert path("${outputDir}/selection/omega/all_omegas.tsv").exists() : "Omega results file should exist"
+            assert !path("${outputDir}/selection/oncodrivefml").exists()
+            assert !path("${outputDir}/selection/oncodrive3d").exists()
             
             // Validate omega output structure
-            def omegaFile = path("${params.outdir}/selection/omega/all_omegas.tsv")
+            def omegaFile = path("${outputDir}/selection/omega/all_omegas.tsv")
             
             def lines = omegaFile.readLines()
             def header = lines[0].split('\t')
@@ -166,7 +166,7 @@ nextflow_pipeline {
 
             // Only snapshot the profile file - omega has non-deterministic floating point values
             assert snapshot(
-                path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")
+                path("${outputDir}/mutational_profile/all_samples.all.profile.tsv")
             ).match()
 
             //TODO Include omega output snapshot when stable
@@ -199,7 +199,7 @@ nextflow_pipeline {
         when {
             params {
                 input             = "${projectDir}/tests/test_data/input.csv"
-                outdir            = "${params.outdir}/tests_results_maf_validation"
+                outdir            = "$outputDir"
                 input_maf         = "${projectDir}/tests/test_data/test_mutations.maf"
                 use_custom_depths = false
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"

@@ -9,8 +9,8 @@ This directory contains reproducible tests for the DEEPCSA Nextflow pipeline usi
 - Container engine: Singularity
 - Snapshot store: `tests/deepcsa.nf.test.snap`
 - Test spec: `tests/deepcsa.nf.test`
-- nf-test work directory: configured in `nf-test.config` (IRB default: `/scratch/bbg/work/deepCSA/nf-tests` — customize for your environment)  
-- Test output directory: configured in `tests/nextflow.config` (IRB default: `/scratch/bbg/work/deepCSA/nf-tests-outputs` — customize for your environment)  
+- nf-test work directory: set via `NFT_TEST_WORKDIR` env var (default: `.nf-test/` in the repo root)
+- Test output directory: managed automatically by nf-test per-test via `$outputDir` (derived from `workDir`; no manual configuration needed)
 
 ### Structure
 - `nf-test.config`: nf-test root configuration (work dir, profile, ignored paths)
@@ -76,16 +76,11 @@ nf-test test tests/deepcsa.nf.test --tag omega --update-snapshot
 Note on non-deterministic outputs: omega metrics contain floating-point values that can vary slightly across runs/environments. For now, we assert file structure and line count. When needed, we will switch to content checks with numeric tolerance (e.g., rounding selected columns before comparison) to keep tests robust while validating semantics.
 
 ### Cleaning Outputs
-Test outputs go to the directory set in `params.outdir` inside `tests/nextflow.config`. If you want a clean run:
+Test outputs and nf-test working files are both stored under `workDir` (`NFT_TEST_WORKDIR`, or `.nf-test/` by default). To wipe everything:
 ```bash
-rm -rf /path/to/nf-tests-outputs/tests_results_normal
-rm -rf /path/to/nf-tests-outputs/tests_results_omega
+rm -rf "${NFT_TEST_WORKDIR:-.nf-test}"
 ```
-
-nf-test working files (Nextflow work dirs, logs) are under the path set as `workDir` in `nf-test.config`. These can be deleted safely between runs:
-```bash
-rm -rf /path/to/nf-tests-workdir
-```
+Individual test output directories live inside that path under `tests/<TEST_ID>/`.
 
 ### Debugging Failures
 When a process fails under nf-test, the output includes a work directory like:
@@ -114,25 +109,23 @@ cat <workDir>/tests/<TEST_ID>/meta/nextflow.log
 
 The tests are set up for the IRB cluster but can be adapted to any SLURM environment. There are four things to change:
 
-#### 1. `nf-test.config` — work directory
-Change `workDir` to a scratch or fast-storage path on your cluster:
-```groovy
-workDir "/path/to/nf-tests-workdir"
+#### 1. Work directory — `NFT_TEST_WORKDIR`
+Set the `NFT_TEST_WORKDIR` environment variable to a scratch or fast-storage path on your cluster before running tests:
+```bash
+export NFT_TEST_WORKDIR="/scratch/your_site/nf-tests"
 ```
+If the variable is not set, nf-test defaults to `.nf-test/` in the repo root (already covered by `.gitignore`). No file editing required.
 
-#### 2. `tests/nextflow.config` — executor and output directory
-Update the SLURM queue and the test output path:
+#### 2. `tests/nextflow.config` — executor and queue
+Update the SLURM queue in `tests/nextflow.config`:
 ```groovy
 process {
     executor = 'slurm'
     queue    = 'your_queue_name'   // replace with your cluster's queue
     ...
 }
-params {
-    outdir = "/path/to/nf-tests-outputs"
-    ...
-}
 ```
+Test output directories are managed automatically by nf-test via `$outputDir` and do not need to be configured manually.
 
 #### 3. `tests/nextflow.config` — reference file paths
 The file includes `../conf/general_files_IRB.config`, which supplies all cluster-specific reference paths (genome FASTA, VEP cache, CADD scores, Singularity container cache, etc.). Either:
