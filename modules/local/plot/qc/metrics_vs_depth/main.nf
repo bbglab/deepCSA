@@ -14,8 +14,8 @@ process PLOT_METRICS_VS_DEPTH_QC {
     path (all_omegas_globalloc)
 
     output:
-    path("${group_name}.metrics_depth_qc/**.pdf"), optional: true    , emit: plots
-    path("${group_name}.metrics_depth_qc/**.tsv"), optional: true    , emit: tables
+    path("${group_name}.metrics_depth_qc/*.pdf"), optional: true    , emit: plots
+    path("${group_name}.metrics_depth_qc/*.tsv"), optional: true    , emit: tables
     path "versions.yml"                          , topic: versions
 
     script:
