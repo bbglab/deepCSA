@@ -14,13 +14,13 @@ process PLOT_METRICS_VS_DEPTH_QC {
     path (all_omegas_globalloc)
 
     output:
-    path("**.pdf")                               , optional: true    , emit: plots
-    path("**.tsv")                               , optional: true    , emit: tables
+    path("${group_name}.metrics_depth_qc/**.pdf"), optional: true    , emit: plots
+    path("${group_name}.metrics_depth_qc/**.tsv"), optional: true    , emit: tables
     path "versions.yml"                          , topic: versions
 
     script:
-    def adjusted_arg = all_adjusted_mutdensities.name != "input" ? "--adjusted-mutdensity-file ${all_adjusted_mutdensities}" : ""
-    def omega_arg = all_omegas_globalloc.name != "input" ? "--omegas-file ${all_omegas_globalloc}" : ""
+    def adjusted_arg = all_adjusted_mutdensities.name != "placeholder_no_file.tsv" ? "--adjusted-mutdensity-file ${all_adjusted_mutdensities}" : ""
+    def omega_arg = all_omegas_globalloc.name != "placeholder_no_file.tsv" ? "--omegas-file ${all_omegas_globalloc}" : ""
     """
     mkdir ${group_name}.metrics_depth_qc
     metrics_vs_depth_qc.py \\

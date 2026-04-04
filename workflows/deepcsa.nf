@@ -157,9 +157,9 @@ workflow DEEPCSA {
 
     site_comparison_results         = channel.empty()
     all_compiled_omegas             = channel.empty()
-    all_compiled_omegasgloballoc    = channel.value(file(params.input, checkIfExists: true))
+    all_compiled_omegasgloballoc    = channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
     all_mutdensities_file           = channel.empty()
-    all_adjusted_mutdensities_file  = channel.value(file(params.input, checkIfExists: true))
+    all_adjusted_mutdensities_file  = channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
     all_compiled_stabilities        = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
