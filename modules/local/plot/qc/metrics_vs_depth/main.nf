@@ -19,8 +19,8 @@ process PLOT_METRICS_VS_DEPTH_QC {
     path "versions.yml"                          , topic: versions
 
     script:
-    def adjusted_arg = all_adjusted_mutdensities.name != "dummy_file.tsv" ? "--adjusted-mutdensity-file ${all_adjusted_mutdensities}" : ""
-    def omega_arg = all_omegas_globalloc.name != "dummy_file.tsv" ? "--omegas-file ${all_omegas_globalloc}" : ""
+    def adjusted_arg = all_adjusted_mutdensities.name != "input" ? "--adjusted-mutdensity-file ${all_adjusted_mutdensities}" : ""
+    def omega_arg = all_omegas_globalloc.name != "input" ? "--omegas-file ${all_omegas_globalloc}" : ""
     """
     mkdir ${group_name}.metrics_depth_qc
     metrics_vs_depth_qc.py \\

@@ -48,6 +48,8 @@ workflow PLOTTING_QC {
 
     PLOTMETRICSVSDEPTHQC(
         all_mutdensities,
+        // average_depth_gene_sample channel emits tuples [meta, depth_per_gene_per_sample.tsv];
+        // pass only the file path to the plotting module.
         average_depth_gene_sample.map { it[1] },
         groups_definition,
         group_name,
