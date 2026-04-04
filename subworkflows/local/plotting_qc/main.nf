@@ -32,12 +32,6 @@ workflow PLOTTING_QC {
     // .join( all_mutations )
     // .set{ mutations }
     PLOTMUTATIONSPECIFIC(all_mutations)
-    
-
-    // pdb_tool_df   = params.annotations3d
-    //                         ? channel.fromPath( "${params.annotations3d}/pdb_tool_df.tsv", checkIfExists: true).first()
-                            // : channel.empty()
-
 
     // plotting only for the entire cohort group
     // channel.of([ [ id: "all_samples" ] ])
@@ -50,9 +44,9 @@ workflow PLOTTING_QC {
         all_mutdensities,
         // average_depth_gene_sample channel emits tuples [meta, depth_per_gene_per_sample.tsv];
         // pass only the file path to the plotting module.
-        average_depth_gene_sample.map { it[1] },
+        average_depth_gene_sample.map { it -> it[1] },
         groups_definition,
-        group_name,
+        'all_samples', // group_name, // only activate all samples while developing; eventually will want to loop over all groups
         all_adjusted_mutdensities,
         all_omegas_globalloc
     )
@@ -68,9 +62,9 @@ workflow PLOTTING_QC {
     APPLYOMEGAQC(all_omegas, PLOTMUTDENSITYQC.out.compiled_flagged.collect())
 
     emit:
-    mutdensity_plots    = PLOTMUTDENSITYQC.out.plots
-    metrics_vs_depth_plots = PLOTMETRICSVSDEPTHQC.out.plots
+    mutdensity_plots        = PLOTMUTDENSITYQC.out.plots
+    metrics_vs_depth_plots  = PLOTMETRICSVSDEPTHQC.out.plots
     metrics_vs_depth_tables = PLOTMETRICSVSDEPTHQC.out.tables
-    flagged_omegas      = APPLYOMEGAQC.out.all_omegas_annotated
+    flagged_omegas          = APPLYOMEGAQC.out.all_omegas_annotated
 
 }

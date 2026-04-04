@@ -9,16 +9,17 @@ process PLOT_METRICS_VS_DEPTH_QC {
     path (all_mutdensities)
     path (depth_gene_sample)
     path (groups_json)
-    val (group_name)
-    path (all_adjusted_mutdensities)
-    path (all_omegas_globalloc)
+    val  (group_name)
+    path (all_adjusted_mutdensities, stageAs: 'adjusted_mutdensities.tsv')
+    path (all_omegas_globalloc, stageAs: 'omega_gloc.tsv')
 
     output:
     path("${group_name}.metrics_depth_qc/*.pdf"), optional: true    , emit: plots
     path("${group_name}.metrics_depth_qc/*.tsv"), optional: true    , emit: tables
-    path "versions.yml"                          , topic: versions
+    path "versions.yml"                         , topic: versions
 
     script:
+    // FIXME: define these two arguments from the modules.config and based on the pipeline parameters (which options are turned on, not based on the filenames...
     def adjusted_arg = all_adjusted_mutdensities.name != "placeholder_no_file.tsv" ? "--adjusted-mutdensity-file ${all_adjusted_mutdensities}" : ""
     def omega_arg = all_omegas_globalloc.name != "placeholder_no_file.tsv" ? "--omegas-file ${all_omegas_globalloc}" : ""
     """

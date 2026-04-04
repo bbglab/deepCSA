@@ -51,7 +51,10 @@ def load_mutdensity(mutdensity_file, samples, metric_name):
     if not required.issubset(set(mut.columns)):
         raise ValueError(f"Mutdensity file {mutdensity_file} must contain {sorted(required)}")
 
-    mut = mut[(mut["SAMPLE_ID"].astype(str).isin(samples)) & (mut["GENE"] != "ALL_GENES")].copy()
+    mut = mut[(mut["SAMPLE_ID"].astype(str).isin(samples))
+              & (mut["GENE"] != "ALL_GENES")
+              & (mut["MUTTYPES"] == "SNV")
+              ].copy()
     mut["SAMPLE_ID"] = mut["SAMPLE_ID"].astype(str)
     mut["GENE"] = mut["GENE"].astype(str)
     mut["metric_value"] = pd.to_numeric(mut["MUTDENSITY_MB"], errors="coerce")
@@ -65,7 +68,7 @@ def load_omegas(omegas_file, samples):
     omega = pd.read_csv(omegas_file, sep="\t", header=0)
     sample_col = _find_column(omega.columns, ["sample", "SAMPLE_ID"])
     gene_col = _find_column(omega.columns, ["gene", "GENE"])
-    dnds_col = _find_column(omega.columns, ["dnds", "omega"])
+    dnds_col = "dnds"
     if sample_col is None or gene_col is None or dnds_col is None:
         raise ValueError(f"Omega file {omegas_file} must contain sample, gene and dnds/omega columns")
 
@@ -78,10 +81,10 @@ def load_omegas(omegas_file, samples):
     return omega[["SAMPLE_ID", "GENE", "metric_name", "metric_value"]]
 
 
-def summarize_effect(df):
+def summarize_effect_by_gene(df):
     rows = []
     work = df.dropna(subset=["MEAN_GENE_DEPTH", "metric_value"]).copy()
-    all_groups = [("all_samples", work)] + [(s, g) for s, g in work.groupby("SAMPLE_ID")]
+    all_groups = [("all_samples", work)] + [(s, g) for s, g in work.groupby("GENE")]
     for group_name, gdf in all_groups:
         n = len(gdf)
         if n < 3:
@@ -137,9 +140,9 @@ def summarize_missingness(depth_df, merged_df):
     return by_gene.sort_values(["missing_fraction", "n_missing_metric"], ascending=[False, False]).reset_index(drop=True)
 
 
-def plot_scatter_per_sample(df, group_name, metric_name, output_pdf):
-    samples = sorted(df["SAMPLE_ID"].dropna().unique().tolist())
-    if not samples:
+def plot_scatter_per_gene(df, group_name, metric_name, output_pdf):
+    genes = sorted(df["GENE"].dropna().unique().tolist())
+    if not genes:
         return
 
     sns.set_style("whitegrid")
@@ -147,15 +150,15 @@ def plot_scatter_per_sample(df, group_name, metric_name, output_pdf):
     ncols = 4
     nrows = 3
     with PdfPages(output_pdf) as pdf:
-        for start in range(0, len(samples), per_page):
-            page_samples = samples[start : start + per_page]
+        for start in range(0, len(genes), per_page):
+            page_genes = genes[start : start + per_page]
             fig, axes = plt.subplots(nrows, ncols, figsize=(18, 12), sharex=False, sharey=False)
             axes = axes.flatten()
-            for i, sample in enumerate(page_samples):
+            for i, gene in enumerate(page_genes):
                 ax = axes[i]
-                sdf = df[df["SAMPLE_ID"] == sample].dropna(subset=["MEAN_GENE_DEPTH", "metric_value"])
+                sdf = df[df["GENE"] == gene].dropna(subset=["MEAN_GENE_DEPTH", "metric_value"])
                 if sdf.empty:
-                    ax.set_title(f"{sample} (no data)")
+                    ax.set_title(f"{gene} (no data)")
                     continue
                 sns.scatterplot(
                     data=sdf,
@@ -175,14 +178,14 @@ def plot_scatter_per_sample(df, group_name, metric_name, output_pdf):
                         line_kws={"color": "darkred", "linewidth": 1.2},
                         ax=ax,
                     )
-                ax.set_title(f"{sample} (n={len(sdf)})", fontsize=9)
+                ax.set_title(f"{gene} (n={len(sdf)})", fontsize=9)
                 ax.set_xlabel("MEAN_GENE_DEPTH")
                 ax.set_ylabel(metric_name)
 
-            for j in range(len(page_samples), len(axes)):
+            for j in range(len(page_genes), len(axes)):
                 axes[j].axis("off")
 
-            fig.suptitle(f"{group_name} | {metric_name} vs depth (per sample)", fontsize=14)
+            fig.suptitle(f"{group_name} | {metric_name} vs depth (per gene)", fontsize=14)
             fig.tight_layout(rect=[0, 0, 1, 0.97])
             pdf.savefig(fig)
             plt.close(fig)
@@ -229,7 +232,7 @@ def main(
     for metric_name, mdf in metrics_df.groupby("metric_name"):
         merged = depth_df.merge(mdf, on=["SAMPLE_ID", "GENE"], how="left")
         merged["metric_name"] = metric_name
-        summary_effect = summarize_effect(merged)
+        summary_effect = summarize_effect_by_gene(merged)
         summary_effect.insert(0, "metric_name", metric_name)
         summary_effect.to_csv(outdir / f"{group_name}.{metric_name}.depth_effect_summary.tsv", sep="\t", index=False)
 
@@ -237,11 +240,11 @@ def main(
         missingness.insert(0, "metric_name", metric_name)
         missingness.to_csv(outdir / f"{group_name}.{metric_name}.depth_missingness_by_gene.tsv", sep="\t", index=False)
 
-        plot_scatter_per_sample(
+        plot_scatter_per_gene(
             merged,
             group_name=group_name,
             metric_name=metric_name,
-            output_pdf=outdir / f"{group_name}.{metric_name}.depth_scatter_per_sample.pdf",
+            output_pdf=outdir / f"{group_name}.{metric_name}.depth_scatter_per_gene.pdf",
         )
 
         status_rows.append(
