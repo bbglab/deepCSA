@@ -40,6 +40,7 @@ process PLOT_METRICS_VS_DEPTH_QC {
 
     stub:
     """
+    mkdir -p ${group_name}.metrics_depth_qc
     touch ${group_name}.metrics_depth_qc/${group_name}.mutdensity.depth_scatter_per_sample.pdf
     touch ${group_name}.metrics_depth_qc/${group_name}.mutdensity.depth_effect_summary.tsv
     touch ${group_name}.metrics_depth_qc/${group_name}.metrics_vs_depth_qc.status.tsv
