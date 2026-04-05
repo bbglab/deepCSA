@@ -6,8 +6,8 @@ import pandas as pd
 import click
 
 metric2filename = {"mutdensity": "all_mutdensities.tsv",
-                "omega": "all_omegas.tsv",
-                "omegagloballoc": "all_omegas_global_loc.tsv"}
+                    "omega": "all_omegas.tsv",
+                    "omegagloballoc": "all_omegas_global_loc.tsv"}
 
 @click.command()
 @click.option('--config_file', type=click.Path(exists=True), required=True,
@@ -93,11 +93,14 @@ def main(config_file: str,
         omega_res = pd.read_csv(omega_res_file, sep = "\t")
         omega_res = omega_res.loc[(omega_res["flagged"] == False)
                                 & (omega_res["pvalue"] < 0.05)
-                                & (omega_res["sample"] == "all_samples")]
-        omega_res = omega_res.sort_values(by = "dnds", ascending = False)
-        omega_res = omega_res.head(10)
+                                & (omega_res["sample"] == "all_samples")
+                                & (omega_res["impact"].isin(["truncating", "missense"]))
+                                ]
+        # selecting the
+        omega_res_genes = omega_res.sort_values(by = "dnds", ascending = False).drop_duplicates(subset = "gene")["gene"].head(10)
+        omega_res = omega_res[omega_res["gene"].isin(omega_res_genes)].reset_index(drop = True)
         if metric == "mutdensity":
-            genes = list(omega_res["gene"].unique())
+            genes = list(omega_res["gene"].unique()) + ['ALL_GENES']
         else:
             omega_res["gene_impact"] = omega_res.apply(lambda row: f"{row['gene']}_{row['impact']}",
                                                         axis = 1)
