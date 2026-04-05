@@ -35,7 +35,7 @@ LOG = logging.getLogger("merge_annotation_depths")
 COLS = ["CHROM", "POS", "CONTEXT"]
 
 # Functions
-def preprocess(annotation_file: str, depths_file: str) -> tuple[pl.DataFrame, list]:
+def preprocess(annotation_file: str, depths_file: str, input_csv: str) -> tuple[pl.DataFrame, list]:
     """
     Merge annotation and depth files.
 
@@ -45,6 +45,8 @@ def preprocess(annotation_file: str, depths_file: str) -> tuple[pl.DataFrame, li
         Path to the annotation file.
     depths_file : str
         Path to the depths file.
+    input_csv : str
+        Path to the input CSV file.
 
     Returns
     -------
@@ -56,13 +58,23 @@ def preprocess(annotation_file: str, depths_file: str) -> tuple[pl.DataFrame, li
     LOG.info("Preprocessing annotation and depths files...")
     _depths = pl.read_csv(depths_file, separator="\t")
     _annots = pl.read_csv(annotation_file, separator="\t")
+    _input = pl.read_csv(input_csv, separator=",", infer_schema_length=0)
 
+    if "bam" in _input.columns:
+        bam2sample_dict = dict(
+            _input.select(
+                pl.col("bam").str.split("/").list.last(),
+                pl.col("sample")
+            ).rows()
+        )
+    else:
+        bam2sample_dict = dict(zip(_input["sample"], _input["sample"]))
+
+    # Drop CONTEXT column if it exists
+    _depths = _depths.drop("CONTEXT", strict=False)
     annot_depth = _depths.join(_annots, on=["CHROM", "POS"], how='left').fill_null(pl.lit('-'))
 
     sample_columns = [col for col in annot_depth.columns if col not in COLS]
-
-    # Dict to remove the .*.bam suffix if there is one
-    rename_map = {col: col.split('.')[0] if "bam" in col else col for col in sample_columns}
 
     # Ensure all columns but CHROM and CONTEXT are numeric
     annot_depth = annot_depth.with_columns([
@@ -70,10 +82,10 @@ def preprocess(annotation_file: str, depths_file: str) -> tuple[pl.DataFrame, li
         for col in annot_depth.columns
     ])
 
-    LOG.info("Samples: %s", list(rename_map.values()))  # List of samples without the .*.bam suffix
+    LOG.info("Samples: %s", list(bam2sample_dict.values()))  # List of samples without the .*.bam suffix
 
     # Place COLS=[CHROM, POS, CONTEXT] columns at the beginning then the rest of the columns
-    return annot_depth.select(COLS + sample_columns).rename(rename_map), list(rename_map.values())
+    return annot_depth.select(COLS + sample_columns).rename(bam2sample_dict), list(bam2sample_dict.values())
 
 def apply_mask_matrix(annotated_depths: pl.DataFrame, mask_matrix_file: str) -> pl.DataFrame:
     """
@@ -181,13 +193,14 @@ def output_annotate_dephts(annotated_depths: pl.DataFrame, json_f: str, samples:
 @click.command()
 @click.option('--annotation', type=click.Path(exists=True), help='Input annotation file')
 @click.option('--depths', type=click.Path(exists=True), help='Input depths file')
+@click.option('--input-csv', type=click.Path(exists=True), help='Input CSV file')
 @click.option('--json_file', type=click.Path(exists=True), help='JSON groups file')
 @click.option('--mask-matrix', type=click.Path(exists=True), help='Position per sample mask matrix file (1=keep, 0=mask)')
-def main(annotation, depths, json_file, mask_matrix):
+def main(annotation, depths, input_csv, json_file, mask_matrix):
     LOG.info("Annotating depths file...")
 
     # Preprocess annotation and depths files
-    annotated_depths, samples  = preprocess(annotation, depths)
+    annotated_depths, samples  = preprocess(annotation, depths, input_csv)
 
     # Apply position masking
     annotated_depths = apply_mask_matrix(annotated_depths, mask_matrix)

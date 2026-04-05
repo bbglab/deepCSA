@@ -7,6 +7,7 @@ include { COMPUTE_MATRIX            as COMPUTEMATRIX            } from '../../..
 include { COMPUTE_TRINUCLEOTIDE     as COMPUTETRINUC            } from '../../../modules/local/compute_trinucleotide/main'
 
 include { COMPUTE_PROFILE           as COMPUTEPROFILE           } from '../../../modules/local/compute_profile/main'
+include { COMPUTE_PROFILE           as COMPUTEPROFILECOHORT     } from '../../../modules/local/compute_profile/main'
 include { CONCAT_PROFILES           as CONCATPROFILES           } from '../../../modules/local/concatprofiles/main'
 
 
@@ -40,7 +41,19 @@ workflow MUTATIONAL_PROFILE {
     .join(COMPUTETRINUC.out.trinucleotides)
     .set{ matrix_n_trinucleotide }
 
-    COMPUTEPROFILE(matrix_n_trinucleotide, wgs_trinuc)
+    dummy_file = wgs_trinuc.map{ it -> [ [ id: "dummy_file" ], it ]  }
+
+    if (params.profile_smoothing) {
+        matrix_n_trinucleotide
+        .join( channel.of([ [ id: "all_samples" ] ]) )
+        .set{ matrix_n_trinucleotide_all }
+
+        COMPUTEPROFILECOHORT(matrix_n_trinucleotide_all, wgs_trinuc, dummy_file)
+        cohort_profile = COMPUTEPROFILECOHORT.out.wgs_proportions.first()
+    } else {
+        cohort_profile = dummy_file
+    }
+    COMPUTEPROFILE(matrix_n_trinucleotide, wgs_trinuc, cohort_profile)
 
     sigprofiler_empty = channel.of([])
     sigprofiler_empty
@@ -50,10 +63,14 @@ workflow MUTATIONAL_PROFILE {
     compile_all_profiles = COMPUTEPROFILE.out.profile.map{ it -> it[1] }.collect().map { files -> [ [id:'all_profiles'], files ] }
     CONCATPROFILES(compile_all_profiles, all_groups)
 
+    compile_stabilities = COMPUTEPROFILE.out.profile_stability.map{ it -> it[1] }.collect().map { files -> [ [id:'all_stabilities'], files ] }
+
+
     emit:
-    profile         = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
-    matrix_sigprof  = sigprofiler_matrix
-    trinucleotides  = COMPUTETRINUC.out.trinucleotides
-    wgs_sigprofiler = sigprofiler_wgs
-    compiled_profiles = CONCATPROFILES.out.compiled_profiles
+    profile             = COMPUTEPROFILE.out.profile            // channel: [ val(meta), file(profile) ]
+    matrix_sigprof      = sigprofiler_matrix
+    trinucleotides      = COMPUTETRINUC.out.trinucleotides
+    wgs_sigprofiler     = sigprofiler_wgs
+    compiled_profiles   = CONCATPROFILES.out.compiled_profiles
+    profile_stabilities = compile_stabilities
 }

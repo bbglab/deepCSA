@@ -4,11 +4,9 @@
 import click
 import pandas as pd
 
-from bgreference import hg38, hg19, mm10, mm39
+from bgreference import hg38, mm39
 
 assembly_name2function = {"hg38": hg38,
-                            "hg19": hg19,
-                            "mm10": mm10,
                             "mm39": mm39
                             }
 
@@ -49,7 +47,6 @@ def generate_all_sites_4VEP(input_positions, genome, output_file_with_sites):
 
 @click.command()
 @click.option('--input-positions', required=True, type=click.Path(exists=True), help='Input positions file (TSV)')
-#@click.option('--genome-assembly', required=True, type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), help='Genome assembly (hg38, hg19, mm10, mm39)')
 @click.option('--genome-assembly', required=True, type=click.Choice(['hg38', 'mm39']), help='Genome assembly (hg38, mm39)')
 @click.option('--output-file-with-sites', required=True, type=click.Path(), help='Output file for sites (TSV)')
 def main(input_positions, genome_assembly, output_file_with_sites):

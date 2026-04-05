@@ -1,4 +1,4 @@
-process SIGPROFILERASSIGNMENT {
+process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
     tag "$meta.id"
     label 'process_medium'
 
@@ -6,7 +6,8 @@ process SIGPROFILERASSIGNMENT {
 
     input:
     tuple val(meta), val(type), path(matrix)
-    path(reference_signatures)
+    tuple val(meta2), path (extracted_signatures)
+    path (reference_signatures)
 
     output:
     tuple val(meta), path("**.pdf")                                         , emit: plots
@@ -16,8 +17,9 @@ process SIGPROFILERASSIGNMENT {
 
 
     script:
+    def args = task.ext.args ?: ''
     def name = "${meta.id}.${type}"
-    def assembly = task.ext.assembly ?: "GRCh38"
+    def assembly = task.ext.genome_assembly ?: "GRCh38"
     
     // FIXME: the definition of subgroups to exclude seems not to work in the new CLI SigProfilerAssignment
     // def exclude_signature_subgroups = params.exclude_subgroups ? "--exclude_signature_subgroups \"${params.exclude_subgroups}\"" : ""
@@ -27,20 +29,21 @@ process SIGPROFILERASSIGNMENT {
     export SIGPROFILERPLOTTING_VOLUME='./spa_volume'
     export SIGPROFILERASSIGNMENT_VOLUME='./spa_volume'
 
-    SigProfilerAssignment cosmic_fit \\
+    SigProfilerAssignment decompose_fit \\
             ${matrix} \\
-            output_${name} \\
-            --signatures ${reference_signatures} \\
+            signature_decomposition_${name} \\
+            --signatures ${extracted_signatures} \\
+            --signature_database ${reference_signatures} \\
             --genome_build ${assembly} \\
             --cpu ${task.cpus} \\
-            --volume spa_volume
+            --volume spa_volume \\
+            ${args}
 
-    mv output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt output_${name}/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
+    cp signature_decomposition_${name}/Decompose_Solution/Activities/Decomposed_MutationType_Probabilities.txt signature_decomposition_${name}/Decompose_Solution/Activities/Decomposed_MutationType_Probabilities.${name}.txt;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-        SigProfilerAssignment : 0.1.1
+        SigProfilerAssignment : 1.1.3
     END_VERSIONS
     """
 
@@ -49,11 +52,12 @@ process SIGPROFILERASSIGNMENT {
     prefix = "${meta.id}${prefix}"
     """
     touch ${prefix}.pdf
+    touch ${prefix}.txt
+    touch Decomposed_MutationType_Probabilities.${prefix}.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-        SigProfilerAssignment : 0.1.1
+        SigProfilerAssignment : 1.1.3
     END_VERSIONS
     """
 }

@@ -96,9 +96,12 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+include { MAF_2_VCF                     as INPUTMAF2VCF             } from '../modules/local/maf2vcf/main'
 include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../modules/local/table2groups/main'
 include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
 include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
+
+include { TABIX_BGZIPTABIX_QUERY        as QUERYMUTATIONSEXONS      } from '../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { ANALYZE_DEPTHS_GROUPS         as ANALYZEDEPTHSGROUPS      } from '../modules/local/analyzedepths/main'
 
@@ -109,6 +112,7 @@ include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../m
 
 include { MAF_2_VCF                     as MAF2VCF                  } from '../modules/local/maf2vcf/main'
 include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR    } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
+include { SIGPROFILERASSIGNMENT_COSMIC_FIT      as SIGPROFILERASSIGNMENTINDELS    } from '../modules/local/signatures/sigprofiler/assignment/cosmic_fit/main'
 
 include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
 
@@ -118,7 +122,7 @@ include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow DEEPCSA{
+workflow DEEPCSA {
 
     // // Input channel definitions
     features_table  = channel.fromPath( params.features_table ?: params.input, checkIfExists: true)
@@ -129,6 +133,11 @@ workflow DEEPCSA{
     cosmic_ref      = params.cosmic_ref_signatures
                             ? channel.fromPath( params.cosmic_ref_signatures, checkIfExists: true).first()
                             : channel.empty()
+    cosmic_indel_ref   = params.indel_ref_signatures
+                            ? channel.fromPath( params.indel_ref_signatures, checkIfExists: true).first()
+                            : channel.empty()
+
+
     datasets3d      = params.datasets3d
                             ? channel.fromPath( params.datasets3d, checkIfExists: true).first()
                             : channel.empty()
@@ -149,13 +158,13 @@ workflow DEEPCSA{
     all_compiled_omegas             = channel.empty()
     all_compiled_omegasgloballoc    = channel.empty()
     all_mutdensities_file           = channel.empty()
-
+    all_compiled_stabilities        = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
     custom_groups_table = params.custom_groups_file
                                 ? channel.fromPath( params.custom_groups_file, checkIfExists: true).first()
-                                : channel.fromPath(params.input)
+                                : channel.fromPath( params.input )
 
     // if the user wants to use custom BED file for computing the depths, import the BED file
     // otherwise I am using the input csv as a dummy value channel
@@ -167,15 +176,40 @@ workflow DEEPCSA{
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutdensity      = (params.mutationdensity || params.omega)
 
+    // Validate input_maf usage: it requires use_custom_depths to be enabled
+    if ( params.input_maf && !params.use_custom_depths ) {
+        error "ERROR: '--input_maf' requires '--use_custom_depths true' and a matching '--custom_depths_table'. " +
+              "BAM-based depth computation is not supported when providing mutations via a MAF file. " +
+              "Please set '--use_custom_depths true' and provide '--custom_depths_table <path>'."
+    }
+
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    INPUT_CHECK( file(params.input), !params.use_custom_depths )
+    if ( params.input_maf && params.use_custom_depths ) {
+        channel.fromPath( params.input_maf, checkIfExists: true)
+        .map{ it -> [[id:'input'], it] }
+        .first()
+        .set { maf_input }
+        INPUTMAF2VCF( maf_input )
+        INPUTMAF2VCF.out.vcf_files
+            .flatten()
+            .map { vcf -> 
+                def meta = [:]
+                meta.id = vcf.baseName
+                return [ meta, vcf ]
+            }
+            .set { sample_vcfs }
+        sample_inputs_ch = sample_vcfs
+    } else {
+        INPUT_CHECK( file(params.input), !params.use_custom_depths )
+        sample_inputs_ch = INPUT_CHECK.out.sample_inputs
+    }
 
     // Separate samples and VCFs
-    INPUT_CHECK.out.sample_inputs
+    sample_inputs_ch
     .map{ it -> [ "id" : it[0].id ]}
     .set{ meta_samples_alone }
 
-    INPUT_CHECK.out.sample_inputs
+    sample_inputs_ch
     .map{ it -> [it[0], it[1]]}
     .set{ meta_vcfs_alone }
 
@@ -193,7 +227,7 @@ workflow DEEPCSA{
 
     // Depths and panel creation should be a single subworkflow
     // Depth analysis: compute and plots
-    DEPTHANALYSIS(INPUT_CHECK.out.sample_inputs, custom_bed_file)
+    DEPTHANALYSIS(sample_inputs_ch, custom_bed_file)
 
     // Panels annotation
     CREATEPANELS(DEPTHANALYSIS.out.depths, wgs_trinucs)
@@ -212,7 +246,12 @@ workflow DEEPCSA{
 
     positive_selection_results = somatic_mutations
 
-    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths, CREATEPANELS.out.all_panel, TABLE2GROUP.out.json_allgroups, MUT_PREPROCESSING.out.mask_matrix)
+    ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths,
+                    CREATEPANELS.out.all_panel,
+                    TABLE2GROUP.out.json_allgroups,
+                    MUT_PREPROCESSING.out.mask_matrix,
+                    file(params.input)
+                    )
     ANNOTATEDEPTHS.out.annotated_depths.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ annotated_depths_full }
 
     // if (params.downsample && params.downsample_proportion < 1) {
@@ -243,10 +282,6 @@ workflow DEEPCSA{
                  CREATEPANELS.out.synonymous_consensus_panel,
                  CREATEPANELS.out.exons_consensus_panel,
                  CREATEPANELS.out.domains_panel_bed, // domains_file
-                 CREATEPANELS.out.all_consensus_bed,
-                 CREATEPANELS.out.nonprot_consensus_bed,
-                 CREATEPANELS.out.prot_consensus_bed,
-                 CREATEPANELS.out.synonymous_consensus_bed,
                  CREATEPANELS.out.exons_consensus_bed)
 
 
@@ -289,11 +324,19 @@ workflow DEEPCSA{
 
     }
 
+    // Intersect BED of all sites with somatic mutations to keep only those mutations in the exons consensus panel
+    QUERYMUTATIONSEXONS(somatic_mutations, CREATEPANELS.out.exons_consensus_bed)
+    mutations_in_exons = QUERYMUTATIONSEXONS.out.subset
+
 
     // Mutational profile
     if ( params.profileall || run_mutabilities || params.omega ){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.concat(MUTPROFILEALL.out.profile_stabilities.map{ it -> it[1] })
         if (run_mutdensity){
+            
+            // TODO explore if we could use the ALL consensus panel instead of the exons one
+            //      I am suggesting this since we are already distinguishing per consequence type within the script
             MUTDENSITYADJUSTED(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, CREATEPANELS.out.exons_consensus_panel, MUTPROFILEALL.out.profile, wgs_trinucs)
 
             // Concatenate all outputs into a single file
@@ -308,31 +351,33 @@ workflow DEEPCSA{
     }
     if (params.profilenonprot){
         MUTPROFILENONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.concat(MUTPROFILENONPROT.out.profile_stabilities.map{ it -> it[1] })
     }
     if (params.profileexons){
         MUTPROFILEEXONS(somatic_mutations, DEPTHSEXONSCONS.out.subset, CREATEPANELS.out.exons_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.concat(MUTPROFILEEXONS.out.profile_stabilities.map{ it -> it[1] })
     }
     if (params.profileintrons){
         DEPTHSINTRONSCONS(annotated_depths, CREATEPANELS.out.introns_consensus_bed)
         MUTPROFILEINTRONS(somatic_mutations, DEPTHSINTRONSCONS.out.subset, CREATEPANELS.out.introns_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
+        all_compiled_stabilities = all_compiled_stabilities.concat(MUTPROFILEINTRONS.out.profile_stabilities.map{ it -> it[1] })
     }
+    all_compiled_stabilities.flatten().collectFile(name: "all_profile_stabilities.tsv", storeDir:"${params.outdir}/mutational_profile", skip: 1, keepHeader: true)
 
 
     if (run_mutabilities) {
         if (params.profileall){
-            MUTABILITYALL(somatic_mutations,
+            MUTABILITYALL(mutations_in_exons,
                             annotated_depths,
                             MUTPROFILEALL.out.profile,
-                            CREATEPANELS.out.exons_consensus_panel,
-                            CREATEPANELS.out.exons_consensus_bed
+                            CREATEPANELS.out.exons_consensus_panel
                             )
         }
         if (params.profilenonprot){
-            MUTABILITYNONPROT(somatic_mutations,
+            MUTABILITYNONPROT(mutations_in_exons,
                                 annotated_depths,
                                 MUTPROFILENONPROT.out.profile,
-                                CREATEPANELS.out.exons_consensus_panel,
-                                CREATEPANELS.out.exons_consensus_bed
+                                CREATEPANELS.out.exons_consensus_panel
                                 )
         }
     }
@@ -363,7 +408,7 @@ workflow DEEPCSA{
         oncodrivefml_regressions_files = channel.empty()
         if (params.profileall){
             mode = "all"
-            ONCODRIVEFMLALL(somatic_mutations, MUTABILITYALL.out.mutability,
+            ONCODRIVEFMLALL(mutations_in_exons, MUTABILITYALL.out.mutability,
                                 CREATEPANELS.out.exons_consensus_panel,
                                 cadd_scores, mode
                             )
@@ -371,7 +416,7 @@ workflow DEEPCSA{
         }
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
             mode = "non_prot_aff"
-            ONCODRIVEFMLNONPROT(somatic_mutations, MUTABILITYNONPROT.out.mutability,
+            ONCODRIVEFMLNONPROT(mutations_in_exons, MUTABILITYNONPROT.out.mutability,
                                     CREATEPANELS.out.exons_consensus_panel,
                                     cadd_scores, mode
                                 )
@@ -381,7 +426,7 @@ workflow DEEPCSA{
     if (params.oncodrive3d){
         if (params.profileall){
             // Oncodrive3D
-            ONCODRIVE3D(somatic_mutations, MUTABILITYALL.out.mutability, CREATEPANELS.out.exons_consensus_bed,
+            ONCODRIVE3D(mutations_in_exons, MUTABILITYALL.out.mutability,
                         datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
             positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results, remainder: true)
             positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results_pos, remainder: true)
@@ -391,9 +436,8 @@ workflow DEEPCSA{
 
     // if (params.expected_mutated_cells & params.dnds){
     if (params.dnds){
-        DNDS(somatic_mutations,
+        DNDS(mutations_in_exons,
                     DEPTHSEXONSCONS.out.subset,
-                    CREATEPANELS.out.exons_consensus_bed,
                     CREATEPANELS.out.exons_consensus_panel
                     )
     }
@@ -404,7 +448,7 @@ workflow DEEPCSA{
 
         // Omega
         if (params.profileall){
-            OMEGA(somatic_mutations,
+            OMEGA(mutations_in_exons,
                     DEPTHSEXONSCONS.out.subset,
                     MUTPROFILEALL.out.profile,
                     CREATEPANELS.out.exons_consensus_bed.first(),
@@ -434,7 +478,7 @@ workflow DEEPCSA{
 
             if (params.omega_multi){
                 // Omega multi
-                OMEGAMULTI(somatic_mutations,
+                OMEGAMULTI(mutations_in_exons,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILEALL.out.profile,
                             CREATEPANELS.out.exons_consensus_bed.first(),
@@ -457,7 +501,7 @@ workflow DEEPCSA{
             }
         }
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
-            OMEGANONPROT(somatic_mutations,
+            OMEGANONPROT(mutations_in_exons,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed.first(),
@@ -471,7 +515,7 @@ workflow DEEPCSA{
                             )
 
             if (params.omega_multi){
-                OMEGANONPROTMULTI(somatic_mutations,
+                OMEGANONPROTMULTI(mutations_in_exons,
                                     DEPTHSEXONSCONS.out.subset,
                                     MUTPROFILENONPROT.out.profile,
                                     CREATEPANELS.out.exons_consensus_bed.first(),
@@ -519,9 +563,13 @@ workflow DEEPCSA{
         MAF2VCF(maf2vcf_inputs)
         vcf_files = MAF2VCF.out.vcf_files.flatten().collect()
 
-        SIGPROMATRIXGENERATOR(
-            vcf_files,
-            )
+        SIGPROMATRIXGENERATOR(vcf_files)
+
+        SIGPROMATRIXGENERATOR.out.matrix_ID83
+        .map{ it -> [ [id:"all_samples"], "indels", it] }
+        .set{ indels_matrix }
+        
+        SIGPROFILERASSIGNMENTINDELS(indels_matrix, cosmic_indel_ref)
 
         // Signature Analysis
         if (params.profileall){
@@ -560,7 +608,7 @@ workflow DEEPCSA{
                 // DNA2PROTEINMAPPING.out.depths_exons_positions
                 )
 
-    if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels) {
+    if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels || run_mutdensity) {
         if (params.omega){
             positive_selection_results = positive_selection_results.combine(PLOTTINGQC.out.flagged_omegas)
         }

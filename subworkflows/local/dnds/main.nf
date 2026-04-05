@@ -1,5 +1,3 @@
-include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-
 include { SUBSET_MAF                as SUBSET_DNDS              } from '../../../modules/local/subsetmaf/main'
 
 include { PREPROCESS_DNDS           as PREPROCESSDEPTHS         } from '../../../modules/local/dnds/preprocess/main'
@@ -10,7 +8,6 @@ workflow DNDS {
     take:
     mutations
     depth
-    bedfile
     panel
 
     main:
@@ -18,10 +15,7 @@ workflow DNDS {
     covariates = params.dnds_covariates ? channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : channel.empty()
     ref_trans = params.dnds_ref_transcripts ? channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : channel.empty()
 
-
-    QUERYMUTATIONS(mutations, bedfile)
-
-    SUBSET_DNDS(QUERYMUTATIONS.out.subset)
+    SUBSET_DNDS(mutations)
 
     PREPROCESSDEPTHS(depth, panel)
 

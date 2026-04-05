@@ -130,7 +130,14 @@ def main(table_filename, depth_gene_sample, depth_sample, unique_identifier, sep
 
     # Finally flatten and get unique items
     # This nested loop goes through each sub-list and each item within it
-    groups_of_interest = list(set(item for sublist in raw_groups for item in sublist))
+    groups_of_interest = []
+    for sublist in raw_groups:
+        if type(sublist) == list:
+            for item in sublist:
+                groups_of_interest.append(item)
+        else:
+            groups_of_interest.append(sublist)
+    groups_of_interest = list(set(groups_of_interest))
 
 
     print(f"Processing data for the groups of interest: {groups_of_interest}")
