@@ -40,7 +40,7 @@ def customize_panel_regions(VEP_output_file, custom_regions_file, customized_out
     # Read entire file once, partition by chromosome
     all_possible_sites = pl.read_csv(VEP_output_file, separator="\t",
                                         null_values=custom_na_values_list,
-                                        schema_overrides={"CHROM": pl.Utf8}
+                                        schema_overrides={"CHROM": pl.Utf8, "Protein_position": pl.Utf8}
                                     ).with_row_index("__idx")
     print("all possible sites loaded")
 
