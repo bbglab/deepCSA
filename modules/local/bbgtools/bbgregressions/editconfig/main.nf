@@ -13,7 +13,7 @@ process EDITCONFIG {
     path groups
 
     output:
-    path ("config.yaml")        , emit:  config
+    path ("config_*.yaml")        , emit:  config
     path "versions.yml"                 , topic: versions
 
     script:
