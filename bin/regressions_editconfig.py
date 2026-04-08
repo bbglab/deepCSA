@@ -59,7 +59,7 @@ def main(config_file: str,
                     config_upd["metrics"][config_metric] = config["metrics"][config_metric]
                     # file must correspond the name in the pipeline
                     config_upd["metrics"][config_metric]["file"] = metric2filename[metric]
-                    with open(f'config_{mode}_{metric}.yaml', 'w') as f:
+                    with open('config.yaml', 'w') as f:
                         yaml.dump(config_upd, f, default_flow_style = False)
                     break
 
@@ -69,7 +69,7 @@ def main(config_file: str,
                         config_upd["metrics"][config_metric] = config["metrics"][config_metric]
                         # file must correspond the name in the pipeline
                         config_upd["metrics"][config_metric]["file"] = metric2filename[metric]
-                        with open(f'config_{mode}_{metric}.yaml', 'w') as f:
+                        with open('config.yaml', 'w') as f:
                             yaml.dump(config_upd, f, default_flow_style = False)
                         break
 
@@ -81,7 +81,7 @@ def main(config_file: str,
                         config_upd["metrics"][config_metric] = config["metrics"][config_metric]
                         # file must correspond the name in the pipeline
                         config_upd["metrics"][config_metric]["file"] = metric2filename[metric]
-                        with open(f'config_{mode}_{metric}.yaml', 'w') as f:
+                        with open('config.yaml', 'w') as f:
                             yaml.dump(config_upd, f, default_flow_style = False)
                         break
 
@@ -114,7 +114,7 @@ def main(config_file: str,
         samples = groups["all_samples"]
         config["general"]["samples"] = samples
 
-        with open(f'config_{mode}_{metric}.yaml', 'w') as f:
+        with open('config.yaml', 'w') as f:
             yaml.dump(config, f, default_flow_style = False)
 
 if __name__ == '__main__':
