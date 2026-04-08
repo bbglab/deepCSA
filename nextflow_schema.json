@@ -313,7 +313,9 @@
                 "plot_mutation_specific_qc": {
                     "type": "boolean",
                     "description": "Do you want to generate mutation-specific QC plots (VAF vs depth)?",
-                    "fa_icon": "fas fa-book"
+                    "fa_icon": "fas fa-book",
+                    "hidden": true,
+                    "default": true
                 },
                 "oncodrivefml": {
                     "type": "boolean",
@@ -597,7 +599,7 @@
                 "panel_sites_chunk_size": {
                     "type": "integer",
                     "description": "Number of sites per chunk for parallel VEP annotation (0 = no chunking)",
-                    "default": 0,
+                    "default": 1000000,
                     "fa_icon": "fas fa-cut",
                     "help_text": "When set to a positive integer, splits the sites file into chunks for parallel processing through VEP annotation. Set to 0 to disable chunking (process as single file). Recommended values: 100000-500000 for large datasets."
                 }
