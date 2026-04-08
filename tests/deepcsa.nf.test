@@ -58,7 +58,7 @@ nextflow_pipeline {
             params {
                 // Input: Sample name metadata for the pipeline
                 input = "${projectDir}/tests/test_data/input.csv"
-                outdir = "$outputDir"
+                outdir = "$outputDir" // nf-test built-in: unique temp dir per test run
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 // Test data fetched directly from the DeepClone_protocol repository
                 input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
@@ -111,7 +111,7 @@ nextflow_pipeline {
     
     ========================================================================================
     */
-    test("TEST 2.Omega analysis test run") {
+    test("TEST 2. Omega analysis test run") {
         tag "omega"
         
         when {

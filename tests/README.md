@@ -54,6 +54,7 @@ nf-test test tests/deepcsa.nf.test --tag omega --update-snapshot
 ```
 
 > ⚠️ Always run snapshot regeneration from the cluster (not locally). Snapshots encode MD5 hashes of pipeline outputs — the pipeline must complete successfully before updating them. After updating, review the new hashes in `tests/deepcsa.nf.test.snap` and commit the file.
+> ⚠️ The tests are using **default parameters for the pipeline**. If the default parameters are modified, it is important to run snapshot regeneration.
 
 ### Current Assertions per Test
 - `normal` (Minimal features):
