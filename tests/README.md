@@ -9,7 +9,7 @@ This directory contains reproducible tests for the DEEPCSA Nextflow pipeline usi
 - Container engine: Singularity
 - Snapshot store: `tests/deepcsa.nf.test.snap`
 - Test spec: `tests/deepcsa.nf.test`
-- nf-test work directory: set via `NFT_TEST_WORKDIR` env var (default: `.nf-test/` in the repo root)
+- nf-test work directory: set via `DEEPCSA_TEST_WORKDIR` env var (default: `.nf-test/` in the repo root)
 - Test output directory: managed automatically by nf-test per-test via `$outputDir` (derived from `workDir`; no manual configuration needed)
 
 ### Structure
@@ -43,7 +43,7 @@ The `tests/nextflow.config` is loaded automatically via `nf-test.config`. It han
 ### Snapshots
 Snapshots are stored in `tests/deepcsa.nf.test.snap` and encode expected outputs for deterministic comparison.
 
-- Update snapshots after intentional output changes:
+- Update snapshots after intentional output or parameter changes:
 ```bash
 nf-test test tests/deepcsa.nf.test --update-snapshot
 ```
@@ -76,9 +76,9 @@ nf-test test tests/deepcsa.nf.test --tag omega --update-snapshot
 Note on non-deterministic outputs: omega metrics contain floating-point values that can vary slightly across runs/environments. For now, we assert file structure and line count. When needed, we will switch to content checks with numeric tolerance (e.g., rounding selected columns before comparison) to keep tests robust while validating semantics.
 
 ### Cleaning Outputs
-Test outputs and nf-test working files are both stored under `workDir` (`NFT_TEST_WORKDIR`, or `.nf-test/` by default). To wipe everything:
+Test outputs and nf-test working files are both stored under `workDir` (`DEEPCSA_TEST_WORKDIR`, or `.nf-test/` by default). To wipe everything:
 ```bash
-rm -rf "${NFT_TEST_WORKDIR:-.nf-test}"
+rm -rf "${DEEPCSA_TEST_WORKDIR:-.nf-test}"
 ```
 Individual test output directories live inside that path under `tests/<TEST_ID>/`.
 
@@ -109,10 +109,10 @@ cat <workDir>/tests/<TEST_ID>/meta/nextflow.log
 
 The tests are set up for the IRB cluster but can be adapted to any SLURM environment. There are four things to change:
 
-#### 1. Work directory — `NFT_TEST_WORKDIR`
-Set the `NFT_TEST_WORKDIR` environment variable to a scratch or fast-storage path on your cluster before running tests:
+#### 1. Work directory — `DEEPCSA_TEST_WORKDIR`
+Set the `DEEPCSA_TEST_WORKDIR` environment variable to a scratch or fast-storage path on your cluster before running tests:
 ```bash
-export NFT_TEST_WORKDIR="/scratch/your_site/nf-tests"
+export DEEPCSA_TEST_WORKDIR="/scratch/your_site/nf-tests"
 ```
 If the variable is not set, nf-test defaults to `.nf-test/` in the repo root (already covered by `.gitignore`). No file editing required.
 
