@@ -447,7 +447,7 @@
                     "format": "file-path",
                     "mimetype": "text/plain",
                     "fa_icon": "far fa-file-code",
-                    "description": "If bbg_mode is custom, add here your own configuration file for bbgregressions",
+                    "description": "If bbgr_mode is custom, add here your own configuration file for bbgregressions",
                     "help_text": "Path to your custom bbgregressions configuration file. Only used when bbgr_mode is set to custom"
                 },
                 "bbgr_mutdensity": {

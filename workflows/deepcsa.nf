@@ -405,7 +405,6 @@ workflow DEEPCSA {
 
     // OncodriveFML
     if (params.oncodrivefml){
-        oncodrivefml_regressions_files = channel.empty()
         if (params.profileall){
             mode = "all"
             ONCODRIVEFMLALL(mutations_in_exons, MUTABILITYALL.out.mutability,

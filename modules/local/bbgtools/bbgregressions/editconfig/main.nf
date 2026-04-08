@@ -3,7 +3,7 @@ process EDITCONFIG {
     tag "regressions"
     label 'process_low'
 
-    container "docker.io/rblancomi/bbgregressions:dev"
+    label "bbgregressions"
 
     input:
     path config
@@ -14,7 +14,7 @@ process EDITCONFIG {
 
     output:
     path ("config.yaml")        , emit:  config
-    path "versions.yml"                 , topic: versions
+    path "versions.yml"         , topic: versions
 
     script:
     """
@@ -23,7 +23,7 @@ process EDITCONFIG {
                         --mode ${mode} \\
                         --metric ${metric} \\
                         --omega_res_file ${omega_res} \\
-                        --groups_file ${groups} \\
+                        --groups_file ${groups}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

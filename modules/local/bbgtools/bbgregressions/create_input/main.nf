@@ -3,7 +3,7 @@ process CREATE_INPUT {
     tag "regressions"
     label 'process_single'
 
-    container "docker.io/rblancomi/bbgregressions:dev"
+    label "bbgregressions"
 
     input:
     path config
