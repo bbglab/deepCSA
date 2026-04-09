@@ -1,29 +1,19 @@
 {
-    "Minimal features test run": {
+    "TEST 2. Omega analysis test run": {
         "content": [
-            "all_samples.all.profile.tsv:md5,930fb91884bc7eeaa5bf7767086b4360"
+            "all_samples.all.profile.tsv:md5,347c786848dbab840f61f36f1e051f05"
         ],
-        "timestamp": "2026-03-25T17:53:51.629467742",
+        "timestamp": "2026-04-09T09:53:31.390601733",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
         }
     },
-    "Omega analysis test run": {
+    "TEST 1. Basic functionality - MAF-based processing": {
         "content": [
             "all_samples.all.profile.tsv:md5,347c786848dbab840f61f36f1e051f05"
         ],
-        "timestamp": "2026-03-27T10:00:27.36976196",
-        "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "25.10.4"
-        }
-    },
-    "TEST 1. Basic functionality - standard processing": {
-        "content": [
-            "all_samples.all.profile.tsv:md5,347c786848dbab840f61f36f1e051f05"
-        ],
-        "timestamp": "2026-03-26T16:30:42.158741981",
+        "timestamp": "2026-04-09T09:41:14.087331014",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
