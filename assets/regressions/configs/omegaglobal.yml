@@ -1,0 +1,31 @@
+general:
+  correct_pvals: true
+  elements: null
+  handle_na: ignore
+  model: linear
+  multi: true
+  output_dir: ./
+  predictor_random_effect: null
+  predictors: null
+  predictors_file: null
+  predictors_intercept_0: null
+  predictors_multi_force: null
+  sample_column: null
+  samples: null
+  significance_threshold: 0.2
+metrics:
+  metric_1:
+    elements_total_by: included
+    file: all_omegas_global_loc.tsv
+    global_loc: true
+    impact:
+    - missense
+    - truncating
+    - nonsynonymous_splice
+    metric_name: omega
+    multi: false
+    samples_total_by: included
+    significance_threshold: 1
+plot:
+  predictors_colors: null
+  predictors_names: null

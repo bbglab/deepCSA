@@ -94,7 +94,7 @@ def remove_deepcsa_filters(old_filt, filters_to_removee):
     """
     Remove deepCSA filters from the FILTER field of the VCF file.
     """    
-    filter_result = sorted([ x for x in old_filt.split(";") if x not in filters_to_removee ])
+    filter_result = sorted([ x for x in str(old_filt).split(";") if x not in filters_to_removee ])
     return ";".join(filter_result) if filter_result != [] else "PASS"
 
 
