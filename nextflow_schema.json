@@ -310,6 +310,13 @@
                     "description": "Do you want to plot the depths within each gene?",
                     "fa_icon": "fas fa-book"
                 },
+                "plot_mutation_specific_qc": {
+                    "type": "boolean",
+                    "description": "Do you want to generate mutation-specific QC plots (VAF vs depth)?",
+                    "fa_icon": "fas fa-book",
+                    "hidden": true,
+                    "default": true
+                },
                 "oncodrivefml": {
                     "type": "boolean",
                     "description": "Do you want to run oncodrivefml?",
@@ -524,6 +531,21 @@
                     "type": "boolean",
                     "description": "Do you want to apply smoothing to the mutational profile when having low numbers of mutations?",
                     "fa_icon": "fas fa-book"
+                }
+            }
+        },
+        "parallel_processing_parameters": {
+            "title": "Parallel processing and chunking options",
+            "type": "object",
+            "fa_icon": "fas fa-tasks",
+            "description": "Parameters to control parallel processing, chunking, and memory management during panel creation and annotation.",
+            "properties": {
+                "panel_sites_chunk_size": {
+                    "type": "integer",
+                    "description": "Number of sites per chunk for parallel VEP annotation (0 = no chunking)",
+                    "default": 1000000,
+                    "fa_icon": "fas fa-cut",
+                    "help_text": "When set to a positive integer, splits the sites file into chunks for parallel processing through VEP annotation. Set to 0 to disable chunking (process as single file). Recommended values: 100000-500000 for large datasets."
                 }
             }
         },
@@ -1079,6 +1101,9 @@
         },
         {
             "$ref": "#/$defs/profile_computation_config"
+        },
+        {
+            "$ref": "#/$defs/parallel_processing_parameters"
         },
         {
             "$ref": "#/$defs/filtering_parameters"

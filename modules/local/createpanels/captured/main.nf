@@ -1,11 +1,11 @@
 process CREATECAPTUREDPANELS {
     tag "$meta.id"
-    label 'process_single'
-    label 'process_medium_high_memory'
 
-    container "community.wave.seqera.io/library/bedtools_pybedtools_pandas_pip_pruned:78080da05d53636d"
-
-
+    conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://bbglab/deepcsa_bed:latest' :
+        'bbglab/deepcsa_bed:latest' }"
+        
     input:
     tuple val(meta), path(compact_captured_panel_annotation)
 
@@ -36,7 +36,8 @@ process CREATECAPTUREDPANELS {
         bedtools merge \\
             -i <(
                 tail -n +2 \$captured_panel | \\
-                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | uniq
+                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | \\
+                sort -k1,1 -k2,2n | uniq
             ) > \${captured_panel%.tsv}.bed;
     done
 

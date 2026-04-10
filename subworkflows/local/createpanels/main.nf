@@ -1,7 +1,9 @@
 include { SITESFROMPOSITIONS                                                        } from '../../../modules/local/sitesfrompositions/main'
 include { VCF_ANNOTATE_ENSEMBLVEP       as VCFANNOTATEPANEL                         } from '../../../subworkflows/nf-core/vcf_annotate_ensemblvep_panel/main'
 
-include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL                      } from '../../../modules/local/process_annotation/panel/main'
+include { POSTPROCESS_VEP_ANNOTATION    as POSTPROCESSVEPPANEL          } from '../../../modules/local/process_annotation/panel/main'
+include { SORT_MERGED_PANEL              as SORTPANELCOMPACT             } from '../../../modules/local/sortpanel/main'
+include { SORT_MERGED_PANEL              as SORTPANELRICH                } from '../../../modules/local/sortpanel/main'
 
 include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSING                         } from '../../../modules/local/process_annotation/panelcustom/main'
 include { CUSTOM_ANNOTATION_PROCESSING  as CUSTOMPROCESSINGRICH                     } from '../../../modules/local/process_annotation/panelcustom/main'
@@ -38,10 +40,16 @@ workflow CREATE_PANELS {
     // Create all possible sites and mutations per site of the captured panel
     SITESFROMPOSITIONS(depths)
 
-    // Create a tuple for VEP annotation (mandatory)
-    SITESFROMPOSITIONS.out.annotated_panel_reg.map{ it -> [[ id : "captured_panel"],  it[1]] }.set{ sites_annotation }
+    // Flatten chunks and create tuples for VEP annotation
+    SITESFROMPOSITIONS.out.annotated_panel_reg
+        .transpose()
+        .map{ _meta, chunk -> 
+            def chunk_id = chunk.name.tokenize('.').find{ token -> token.startsWith('chunk') }
+            [[ id : "captured_panel_${chunk_id}"], chunk] 
+        }
+        .set{ sites_annotation }
 
-    // Annotate all possible mutations in the captured panel
+    // Annotate all possible mutations in the captured panel (per chunk)
     VCFANNOTATEPANEL(sites_annotation,
                     params.fasta,
                     params.vep_genome,
@@ -50,24 +58,44 @@ workflow CREATE_PANELS {
                     params.vep_cache,
                     [])
 
-    // Postprocess annotations to get one annotation per mutation
+    // Postprocess annotations to get one annotation per mutation (per chunk)
     POSTPROCESSVEPPANEL(VCFANNOTATEPANEL.out.tab)
+
+    // Collect and merge all chunks using collectFile
+    POSTPROCESSVEPPANEL.out.compact_panel_annotation
+        .map{ it -> it[1] }
+        .collectFile(name: 'captured_panel.vep.annotation.tsv', keepHeader: true, skip: 1)
+        .map{ file -> [[ id : "captured_panel"], file] }
+        .set{ merged_compact_unsorted }
+
+    POSTPROCESSVEPPANEL.out.rich_panel_annotation
+        .map{ it -> it[1] }
+        .collectFile(name: 'captured_panel.vep.annotation.rich.tsv', keepHeader: true, skip: 1)
+        .map{ file -> [[ id : "captured_panel"], file] }
+        .set{ merged_rich_unsorted }
+
+    // Sort merged panels to ensure genomic order
+    SORTPANELCOMPACT(merged_compact_unsorted)
+    SORTPANELRICH(merged_rich_unsorted)
+
+    merged_compact = SORTPANELCOMPACT.out.sorted
+    merged_rich = SORTPANELRICH.out.sorted
 
     if (params.customize_annotation) {
         custom_annotation_tsv = file(params.custom_annotation_tsv, checkIfExists: true)
 
         // Update specific regions based on user preferences
-        CUSTOMPROCESSING(POSTPROCESSVEPPANEL.out.compact_panel_annotation, custom_annotation_tsv)
+        CUSTOMPROCESSING(merged_compact, custom_annotation_tsv)
         complete_annotated_panel = CUSTOMPROCESSING.out.custom_panel_annotation
 
-        CUSTOMPROCESSINGRICH(POSTPROCESSVEPPANEL.out.rich_panel_annotation, custom_annotation_tsv)
+        CUSTOMPROCESSINGRICH(merged_rich, custom_annotation_tsv)
         rich_annotated = CUSTOMPROCESSINGRICH.out.custom_panel_annotation
 
         added_regions = CUSTOMPROCESSINGRICH.out.added_regions
 
     } else {
-        complete_annotated_panel = POSTPROCESSVEPPANEL.out.compact_panel_annotation
-        rich_annotated = POSTPROCESSVEPPANEL.out.rich_panel_annotation
+        complete_annotated_panel = merged_compact
+        rich_annotated = merged_rich
         added_regions = channel.empty()
     }
 
@@ -147,6 +175,6 @@ workflow CREATE_PANELS {
     domains_panel_bed           = DOMAINANNOTATION.out.domains_bed.first()
     domains_in_panel            = DOMAINANNOTATION.out.domains_tsv.first()
 
-    postprocessed_panel         = POSTPROCESSVEPPANEL.out.compact_panel_annotation.first()
-    postprocessed_panel_rich    = POSTPROCESSVEPPANEL.out.rich_panel_annotation.first()
+    postprocessed_panel         = merged_compact.first()
+    postprocessed_panel_rich    = merged_rich.first()
 }
