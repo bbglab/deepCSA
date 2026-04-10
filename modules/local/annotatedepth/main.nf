@@ -1,7 +1,5 @@
 process ANNOTATE_DEPTHS {
     tag "${meta.id}"
-    label 'process_low'
-    label 'time_low'
 
     label 'deepcsa_core'
     

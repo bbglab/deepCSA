@@ -2,10 +2,6 @@ process CUSTOM_ANNOTATION_PROCESSING {
 
     tag "${meta.id}"
 
-    label 'cpu_low'
-    label 'time_low'
-    label 'process_high_memory'
-
     label 'deepcsa_core'
 
     input:

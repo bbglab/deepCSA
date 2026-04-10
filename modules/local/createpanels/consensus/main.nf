@@ -1,6 +1,5 @@
 process CREATECONSENSUSPANELS {
     tag "$meta.id"
-    label 'process_single'
 
     conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
     container 'docker://bbglab/deepcsa_bed:latest'

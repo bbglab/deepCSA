@@ -53,6 +53,9 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
     #####
     # Filter failing columns only for rows that pass the compliance threshold
     compliance_df_passing = compliance_df.filter(passing_rows)
+    
+    print(f"DEBUG: Total positions passing compliance threshold: {compliance_df_passing.height}")
+    print(f"DEBUG: Number of samples: {compliance_df_passing.width}")
 
     # Invert all boolean values (True → False, False → True)
     failing_mask = pl.DataFrame([
@@ -70,6 +73,7 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
                     "Failed": True
                 })
 
+    print(f"DEBUG: Total failing entries found: {len(failing_columns_counts)}")
 
     if failing_columns_counts:
         failing_columns_counts_df = pl.DataFrame(failing_columns_counts)
@@ -79,6 +83,7 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
             .rename({"count": "FAILING_COUNT"})
         )
         failure_counts_filtered.write_csv(f"failing_consensus.{version}.tsv", separator="\t")
+        print(f"DEBUG: Created failing_consensus.{version}.tsv with {failure_counts_filtered.height} samples")
 
 
 @click.command()
