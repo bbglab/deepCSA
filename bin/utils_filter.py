@@ -143,7 +143,7 @@ def extract_flagged_regions_bed(maf_df: pd.DataFrame, name: str, FILTERS: list[s
         Output coordinates are 0-based with half-open intervals [start, end).
     """
     # List of filter columns you want to check for
-    filter_columns = [f"FILTER.{f}" for f in FILTERS if f in ','.join(list(maf_df.columns))]
+    filter_columns = [f"FILTER.{f}" for f in FILTERS if f"FILTER.{f}" in maf_df.columns]
 
     maf_df_filters = maf_df[maf_df[filter_columns].any(axis=1)] if filter_columns else pd.DataFrame()
 

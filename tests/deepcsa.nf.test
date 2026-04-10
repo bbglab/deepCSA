@@ -31,6 +31,40 @@ nextflow_pipeline {
         }
     }
 
+    test("MAF-based minimal features test run") {
+        tag "normal_maf"
+
+        when {
+            params {
+                input               = "${projectDir}/tests/test_data/input_maf.csv"
+                outdir              = "$outputDir"
+                wgs_trinuc_counts   = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
+                use_custom_depths   = true
+                custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
+                plot_depths = true
+                plot_mutation_specific_qc = false
+                profileall  = true
+                signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete without errors"
+            assert path("${params.outdir}/mutational_profile").exists()
+            assert !path("${params.outdir}/mutdensity").exists()
+            assert !path("${params.outdir}/selection/omega").exists()
+            assert !path("${params.outdir}/oncodrivefml").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()
+
+            assert snapshot(
+                path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")
+            ).match()
+        }
+    }
+
     test("Omega analysis test run") {
         tag "omega"
         
@@ -82,6 +116,64 @@ nextflow_pipeline {
             // Snapshot both files
             assert snapshot(path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")).match("mutational_profile")
             assert snapshot(sortedContent.join('\n')).match("omega_results")
+        }
+    }
+
+    test("MAF-based omega analysis test run") {
+        tag "omega_maf"
+
+        when {
+            params {
+                input               = "${projectDir}/tests/test_data/input_maf.csv"
+                outdir              = "$outputDir"
+                wgs_trinuc_counts   = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
+                use_custom_depths   = true
+                custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
+                plot_depths = true
+                plot_mutation_specific_qc = false
+                profileall  = true
+                signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
+                omega = true
+                omega_plot = true
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete without errors"
+            assert path("${params.outdir}/mutational_profile").exists()
+            assert path("${params.outdir}/selection/omega").exists() : "Omega directory should exist"
+            assert path("${params.outdir}/selection/omega/all_omegas.tsv").exists() : "Omega results file should exist"
+            assert !path("${params.outdir}/selection/oncodrivefml").exists()
+            assert !path("${params.outdir}/selection/oncodrive3d").exists()
+
+            // Validate omega output structure
+            def omegaFile = path("${params.outdir}/selection/omega/all_omegas.tsv")
+            def lines = omegaFile.readLines()
+            def header = lines[0].split('\t')
+
+            // Schema validation
+            assert header.contains("gene")   : "Omega output should contain 'gene' column"
+            assert header.contains("sample") : "Omega output should contain 'sample' column"
+            assert header.contains("dnds")   : "Omega output should contain 'dnds' column"
+            assert lines.size() > 1          : "Omega output should have at least one data row"
+
+            // Structural integrity: every row must have the same number of columns
+            lines.tail().eachWithIndex { line, i ->
+                assert line.split('\t', -1).size() == header.size() : "Row ${i+1} has wrong column count"
+            }
+
+            // Sample completeness: all input samples must appear in the output
+            def sampleIdx = header.findIndexOf { it == "sample" }
+            def foundSamples = lines.tail().collect { it.split('\t')[sampleIdx] }.toSet()
+            def expectedSamples = ["P19_0002_BDO_01", "P19_0002_BTR_01", "P19_0003_BDO_01"].toSet()
+            assert expectedSamples.every { it in foundSamples } : "Missing samples in omega output: ${expectedSamples - foundSamples}"
+
+            assert snapshot(
+                path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")
+            ).match()
         }
     }
 
@@ -148,7 +240,7 @@ nextflow_pipeline {
         }
     }
 
-    test("Should fail when --input_maf is provided without --use_custom_depths") {
+    test("MAF input validation - fails when --input_maf is provided without --use_custom_depths") {
         tag "input_maf_validation"
 
         when {
