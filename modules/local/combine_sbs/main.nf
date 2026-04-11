@@ -1,7 +1,6 @@
 process SIGNATURES_PROBABILITIES {
 
     tag "${meta.id}"
-    label 'process_low'
 
     label 'deepcsa_core'
 

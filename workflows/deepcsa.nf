@@ -66,7 +66,6 @@ include { PLOTTING_SUMMARY          as PLOTTINGSUMMARY      } from '../subworkfl
 include { PLOTTING_QC               as PLOTTINGQC           } from '../subworkflows/local/plotting_qc/main'
 
 include { REGRESSIONS               as REGRESSIONSMUTDENSITY       } from '../subworkflows/local/regressions/main'
-include { REGRESSIONS               as REGRESSIONSONCODRIVEFML     } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGA            } from '../subworkflows/local/regressions/main'
 include { REGRESSIONS               as REGRESSIONSOMEGAGLOB        } from '../subworkflows/local/regressions/main'
 
@@ -245,6 +244,7 @@ workflow DEEPCSA {
                         )
     somatic_mutations = MUT_PREPROCESSING.out.somatic_mafs
 
+
     positive_selection_results = somatic_mutations
 
     ANNOTATEDEPTHS(DEPTHANALYSIS.out.depths,
@@ -277,11 +277,11 @@ workflow DEEPCSA {
     // Enrich regions in consensus panels
     ENRICHPANELS(MUT_PREPROCESSING.out.mutations_all_samples,
                  ANNOTATEDEPTHS.out.all_samples_depths,
-                 CREATEPANELS.out.all_consensus_panel, 
-                 CREATEPANELS.out.nonprot_consensus_panel, 
-                 CREATEPANELS.out.prot_consensus_panel, 
-                 CREATEPANELS.out.synonymous_consensus_panel, 
-                 CREATEPANELS.out.exons_consensus_panel, 
+                 CREATEPANELS.out.all_consensus_panel,
+                 CREATEPANELS.out.nonprot_consensus_panel,
+                 CREATEPANELS.out.prot_consensus_panel,
+                 CREATEPANELS.out.synonymous_consensus_panel,
+                 CREATEPANELS.out.exons_consensus_panel,
                  CREATEPANELS.out.domains_panel_bed, // domains_file
                  CREATEPANELS.out.exons_consensus_bed)
 
@@ -406,7 +406,6 @@ workflow DEEPCSA {
 
     // OncodriveFML
     if (params.oncodrivefml){
-        oncodrivefml_regressions_files = channel.empty()
         if (params.profileall){
             mode = "all"
             ONCODRIVEFMLALL(mutations_in_exons, MUTABILITYALL.out.mutability,
@@ -414,10 +413,6 @@ workflow DEEPCSA {
                                 cadd_scores, mode
                             )
             positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
-
-            if (params.regressions){
-                oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLALL.out.results_snvs_folder.map{ it -> it[1] })
-            }
         }
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
             mode = "non_prot_aff"
@@ -425,9 +420,6 @@ workflow DEEPCSA {
                                     CREATEPANELS.out.exons_consensus_panel,
                                     cadd_scores, mode
                                 )
-            if (params.regressions){
-                oncodrivefml_regressions_files = oncodrivefml_regressions_files.mix(ONCODRIVEFMLNONPROT.out.results_snvs_folder.map{ it -> it[1] })
-            }
         }
     }
 
@@ -482,7 +474,7 @@ workflow DEEPCSA {
                 omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
                 omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGA.out.results_global.map{ it -> it[1] })
             }
-            
+
 
             if (params.omega_multi){
                 // Omega multi
@@ -521,10 +513,6 @@ workflow DEEPCSA {
                             grouping_definitions,
                             ENRICHPANELS.out.exons_json_subgenic
                             )
-            if (params.regressions){
-                omega_regressions_files = omega_regressions_files.mix(OMEGANONPROT.out.results.map{ it -> it[1] })
-                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGANONPROT.out.results_global.map{ it -> it[1] })
-            }
 
             if (params.omega_multi){
                 OMEGANONPROTMULTI(mutations_in_exons,
@@ -539,11 +527,6 @@ workflow DEEPCSA {
                                     grouping_definitions,
                                     ENRICHPANELS.out.exons_json_subgenic
                                     )
-
-                if (params.regressions){
-                    omega_regressions_files = omega_regressions_files.mix(OMEGANONPROTMULTI.out.results.map{ it -> it[1] })
-                    omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGANONPROTMULTI.out.results_global.map{ it -> it[1] })
-                }
             }
 
         }
@@ -636,7 +619,7 @@ workflow DEEPCSA {
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         somatic_mutations,
                         all_mutdensities_file.first(),
-                        
+
                         site_comparison_results,
                         ANNOTATEDEPTHS.out.all_samples_depths.first(),
                         TABLE2GROUP.out.json_samples.first(),
@@ -657,22 +640,47 @@ workflow DEEPCSA {
     // Regressions
     if (params.regressions){
 
-        if (params.mutationdensity && params.mutdensity_regressions){
-            REGRESSIONSMUTDENSITY("mutdensity", all_mutdensities_file, params.mutdensity_regressions)
+        // Determine config file based on mode
+        def config_file = params.bbgr_mode == 'default' ? null : params.bbgr_custom_config
+
+        if (params.mutationdensity && params.bbgr_mutdensity){
+            metric = "mutdensity"
+            REGRESSIONSMUTDENSITY(
+                config_file ?: params.bbgr_mutdensity_config,
+                all_mutdensities_file.first(),
+                params.bbgr_metadata,
+                params.bbgr_mode,
+                metric,
+                PLOTTINGQC.out.flagged_omegas.first(),
+                TABLE2GROUP.out.json_allgroups.first()
+            )
         }
 
-        if (params.oncodrivefml && params.oncodrivefml_regressions){
-            REGRESSIONSONCODRIVEFML("oncodrivefml", oncodrivefml_regressions_files.toList(), params.oncodrivefml_regressions)
+        if (params.omega && params.bbgr_omega){
+            metric = "omega"
+            REGRESSIONSOMEGA(
+                config_file ?: params.bbgr_omega_config,
+                OMEGA.out.all_compiled.first(),
+                params.bbgr_metadata,
+                params.bbgr_mode,
+                metric,
+                PLOTTINGQC.out.flagged_omegas.first(),
+                TABLE2GROUP.out.json_allgroups.first()
+            )
         }
 
-        if (params.omega && params.omega_regressions){
-            REGRESSIONSOMEGA("omega", omega_regressions_files.toList(), params.omega_regressions)
+        if (params.omega_globalloc && params.bbgr_omegagloballoc){
+            metric = "omegagloballoc"
+            REGRESSIONSOMEGAGLOB(
+                config_file ?: params.bbgr_omegagloballoc_config,
+                OMEGA.out.all_globalloc_compiled.first(),
+                params.bbgr_metadata,
+                params.bbgr_mode,
+                metric,
+                PLOTTINGQC.out.flagged_omegas.first(),
+                TABLE2GROUP.out.json_allgroups.first()
+            )
         }
-
-        if (params.omega_globalloc && params.omega_regressions){
-            REGRESSIONSOMEGAGLOB("omegagloballoc", omega_regressions_files_gloc.toList(), params.omega_regressions)
-        }
-
     }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (

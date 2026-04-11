@@ -13,19 +13,55 @@ nextflow_pipeline {
                 outdir = "${projectDir}/tests_results_normal"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 plot_depths = true
+                plot_mutation_specific_qc = false
                 profileall  = true
                 signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
             }
         }
 
         then {
             assert workflow.success : "Pipeline should complete without errors"
-            assert path("${params.outdir}/computeprofile").exists()
+            assert path("${params.outdir}/mutational_profile").exists()
             assert !path("${params.outdir}/mutdensity").exists()
-            assert !path("${params.outdir}/omega").exists()
+            assert !path("${params.outdir}/selection/omega").exists()
             assert !path("${params.outdir}/oncodrivefml").exists()
             assert !path("${params.outdir}/oncodrive3d").exists()            
-            assert snapshot(path("${params.outdir}/computeprofile/all_samples.all.profile.tsv")).match()
+        }
+    }
+
+    test("MAF-based minimal features test run") {
+        tag "normal_maf"
+
+        when {
+            params {
+                input               = "${projectDir}/tests/test_data/input_maf.csv"
+                outdir              = "$outputDir"
+                wgs_trinuc_counts   = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
+                use_custom_depths   = true
+                custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
+                plot_depths = true
+                plot_mutation_specific_qc = false
+                profileall  = true
+                signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete without errors"
+            assert path("${params.outdir}/mutational_profile").exists()
+            assert !path("${params.outdir}/mutdensity").exists()
+            assert !path("${params.outdir}/selection/omega").exists()
+            assert !path("${params.outdir}/oncodrivefml").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()
+
+            assert snapshot(
+                path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")
+            ).match()
         }
     }
 
@@ -38,8 +74,11 @@ nextflow_pipeline {
                 outdir = "${projectDir}/tests_results_omega"
                 wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
                 plot_depths = true
+                plot_mutation_specific_qc = false
                 profileall  = true
                 signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
                 omega = true
                 omega_plot = true
             }
@@ -47,33 +86,161 @@ nextflow_pipeline {
 
         then {
             assert workflow.success : "Pipeline should complete without errors"
-            assert path("${params.outdir}/computeprofile").exists()
-            assert path("${params.outdir}/omega").exists() : "Omega directory should exist"
-            assert path("${params.outdir}/omega/all_omegas.tsv").exists() : "Omega results file should exist"
-            assert path("${params.outdir}/qc/metrics_vs_depth").exists() : "Depth-vs-metrics QC directory should exist"
+            assert path("${params.outdir}/mutational_profile").exists()
+            assert path("${params.outdir}/selection/omega").exists() : "Omega directory should exist"
+            assert path("${params.outdir}/selection/omega/all_omegas.tsv").exists() : "Omega results file should exist"
             assert !path("${params.outdir}/oncodrivefml").exists()
             assert !path("${params.outdir}/oncodrive3d").exists()
             
             // Validate omega output structure
-            def omegaFile = path("${params.outdir}/omega/all_omegas.tsv")
+            def omegaFile = path("${params.outdir}/selection/omega/all_omegas.tsv")
             def lines = omegaFile.readLines()
-            assert lines.size() == 59 : "Omega output should contain data rows"
-            
-            def header = lines[0].split('\t')
-            assert header.contains("gene") : "Omega output should contain 'gene' column"
-            assert header.contains("sample") : "Omega output should contain 'sample' column"
-            assert header.contains("dnds") : "Omega output should contain 'dnds' column"
-            
-            // Only snapshot the profile file - omega has non-deterministic floating point values
-            assert snapshot(
-                path("${params.outdir}/computeprofile/all_samples.all.profile.tsv")
-            ).match()
 
-            //TODO Include omega output snapshot when stable
+            // Filter out empty lines and the header (collectFile keepHeader is non-deterministic)
+            def expectedHeader = "gene\tsample\timpact\tmutations\tdnds\tpvalue\tlower\tupper"
+            def dataLines = lines.findAll { it && it != expectedHeader }
+            assert dataLines.size() == 38 : "Omega output should contain 38 data rows, found ${dataLines.size()}"
+
+            // Sort by key columns (gene, sample, impact) to avoid floating-point differences affecting order
+            // Round numeric columns (dnds, pvalue, lower, upper) to 2 decimals for deterministic comparison
+            def sortedRounded = dataLines.sort { line ->
+                def cols = line.split('\t')
+                "${cols[0]}\t${cols[1]}\t${cols[2]}"
+            }.collect { line ->
+                def cols = line.split('\t')
+                (4..7).each { i -> cols[i] = String.format("%.2f", cols[i] as Double) }
+                cols.join('\t')
+            }
+            def sortedContent = [expectedHeader] + sortedRounded
+
+            // Snapshot both files
+            assert snapshot(path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")).match("mutational_profile")
+            assert snapshot(sortedContent.join('\n')).match("omega_results")
         }
     }
 
-    test("Should fail when --input_maf is provided without --use_custom_depths") {
+    test("MAF-based omega analysis test run") {
+        tag "omega_maf"
+
+        when {
+            params {
+                input               = "${projectDir}/tests/test_data/input_maf.csv"
+                outdir              = "$outputDir"
+                wgs_trinuc_counts   = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
+                use_custom_depths   = true
+                custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
+                plot_depths = true
+                plot_mutation_specific_qc = false
+                profileall  = true
+                signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
+                omega = true
+                omega_plot = true
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete without errors"
+            assert path("${params.outdir}/mutational_profile").exists()
+            assert path("${params.outdir}/selection/omega").exists() : "Omega directory should exist"
+            assert path("${params.outdir}/selection/omega/all_omegas.tsv").exists() : "Omega results file should exist"
+            assert !path("${params.outdir}/selection/oncodrivefml").exists()
+            assert !path("${params.outdir}/selection/oncodrive3d").exists()
+
+            // Validate omega output structure
+            def omegaFile = path("${params.outdir}/selection/omega/all_omegas.tsv")
+            def lines = omegaFile.readLines()
+            def header = lines[0].split('\t')
+
+            // Schema validation
+            assert header.contains("gene")   : "Omega output should contain 'gene' column"
+            assert header.contains("sample") : "Omega output should contain 'sample' column"
+            assert header.contains("dnds")   : "Omega output should contain 'dnds' column"
+            assert lines.size() > 1          : "Omega output should have at least one data row"
+
+            // Structural integrity: every row must have the same number of columns
+            lines.tail().eachWithIndex { line, i ->
+                assert line.split('\t', -1).size() == header.size() : "Row ${i+1} has wrong column count"
+            }
+
+            // Sample completeness: all input samples must appear in the output
+            def sampleIdx = header.findIndexOf { it == "sample" }
+            def foundSamples = lines.tail().collect { it.split('\t')[sampleIdx] }.toSet()
+            def expectedSamples = ["P19_0002_BDO_01", "P19_0002_BTR_01", "P19_0003_BDO_01"].toSet()
+            assert expectedSamples.every { it in foundSamples } : "Missing samples in omega output: ${expectedSamples - foundSamples}"
+
+            assert snapshot(
+                path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")
+            ).match()
+        }
+    }
+
+    test("Mutation density test run") {
+        tag "mutdensity"
+
+        when {
+            params {
+                input = "${projectDir}/tests/test_data/input.csv"
+                outdir = "${projectDir}/tests_results_mutdensity"
+                wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                plot_depths = true
+                plot_mutation_specific_qc = false
+                profileall  = true
+                mutationdensity = true
+                signatures = false
+                cosmic_ref_signatures = null
+                indel_ref_signatures = null
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete without errors"
+
+            // Mutation density outputs should exist
+            assert path("${params.outdir}/mutdensity").exists() : "Mutation density directory should exist"
+            assert path("${params.outdir}/mutdensity/all_mutdensities.tsv").exists() : "Consolidated mutdensities file should exist"
+
+            // Mutational profile should also exist (profileall=true)
+            assert path("${params.outdir}/mutational_profile").exists()
+
+            // Analyses not requested should NOT exist
+            assert !path("${params.outdir}/selection/omega").exists()
+            assert !path("${params.outdir}/oncodrivefml").exists()
+            assert !path("${params.outdir}/oncodrive3d").exists()
+
+            // Validate all_mutdensities.tsv structure and content
+            def mutdensFile = path("${params.outdir}/mutdensity/all_mutdensities.tsv")
+            def lines = mutdensFile.readLines()
+
+            // Check header contains expected columns
+            def header = lines.first()
+            def expectedColumns = ["SAMPLE_ID", "GENE", "REGIONS", "MUTTYPES", "DEPTH",
+                                   "N_MUTS", "N_MUTATED", "MUTDENSITY_MB", "MUTDENSITY_MB_ADJUSTED",
+                                   "MUTREADSDENSITY_MB", "MUTREADSDENSITY_MB_ADJUSTED"]
+            expectedColumns.each { col ->
+                assert header.contains(col) : "Header should contain column ${col}"
+            }
+
+            // Filter out empty lines and duplicate headers from collectFile
+            def dataLines = lines.findAll { it && it != header }
+            assert dataLines.size() > 0 : "Mutation density file should contain data rows"
+
+            // Verify all 4 region types are present (all, protein_affecting, non_protein_affecting, synonymous)
+            def allContent = lines.join('\n')
+            def expectedRegions = ["all", "protein_affecting", "non_protein_affecting", "synonymous"]
+            expectedRegions.each { region ->
+                assert allContent.contains(region) : "Mutation density should include REGIONS=${region}"
+            }
+
+            // Sort data lines for deterministic snapshot comparison
+            def sortedContent = [header] + dataLines.sort()
+            assert snapshot(sortedContent.join('\n')).match("mutdensity_results")
+        }
+    }
+
+    test("MAF input validation - fails when --input_maf is provided without --use_custom_depths") {
         tag "input_maf_validation"
 
         when {
@@ -114,7 +281,7 @@ nextflow_pipeline {
     //     then {
     //         assert workflow.success : "Pipeline should complete with MAF input and precomputed depths"
     //         assert path("${params.outdir}/input_vcfs").exists() : "Per-sample VCFs should be published"
-    //         assert path("${params.outdir}/computeprofile").exists()
+    //         assert path("${params.outdir}/mutational_profile").exists()
     //     }
     // }
 
