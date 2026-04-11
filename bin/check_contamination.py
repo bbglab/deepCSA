@@ -405,6 +405,16 @@ def contamination_detection_in_snps(maf):
     sample_SNP_mutation_freq_df = sample_SNP_mutation_freq_df.sort_values(by = "prop_somatic_SNPs", ascending = False)
     sample_SNP_mutation_freq_df.to_csv("sample_SNP_mutation_freq.tsv", header = True, sep = '\t', index = False)
 
+    plt.figure(figsize=(6, 3))
+    sns.violinplot(data=sample_SNP_mutation_freq_df, x="prop_somatic_SNPs",
+                fill= False, color="lightgray", inner=None)
+    sns.swarmplot(data=sample_SNP_mutation_freq_df, x="prop_somatic_SNPs", color="black", size=3)
+
+    plt.title("Proportion of all SNPs across samples\ndetected as somatic")
+    plt.xlabel("Proportion of somatic SNPs per sample")
+    plt.ylabel("Density")
+    plt.savefig("sample_SNP_mutation_freq.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
 
 
 @click.command()

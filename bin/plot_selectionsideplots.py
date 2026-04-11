@@ -709,9 +709,6 @@ def get_all_data(sample, outdir,
         print("Warning: No figure was generated due to missing data or tracks.")
 
 
-
-
-
 @click.command()
 @click.option('--sample_name', type=str, help='Name of the sample being processed.')
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
@@ -719,7 +716,7 @@ def get_all_data(sample, outdir,
 def main(sample_name, outdir, include_indels):
     click.echo("Plotting omega results...")
     try:
-        generate_all_side_figures(sample_name, outdir)
+        generate_all_side_figures(sample_name, f"{outdir}/side_figures")
         # By default, exclude indels unless --include_indels is set
         tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml")
         if include_indels:

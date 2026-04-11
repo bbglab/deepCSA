@@ -1,7 +1,6 @@
 process PLOT_NEEDLES {
 
     tag "$meta.id"
-    label 'process_low'
 
     label 'deepcsa_core'
 

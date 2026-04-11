@@ -13,3 +13,5 @@ ste_notes.txt
 assets/HDP_files*
 scratch/
 scratchhhh/
+tests/test_data/all_samples.somatic.mutations.maf
+tests/test_data/all_samples_indv.depths.tsv.gz

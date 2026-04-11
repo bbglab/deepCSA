@@ -13,6 +13,9 @@ process PLOT_MUTATION_SPECIFIC {
     path("**.tsv")      , optional : true,  emit: tables
     path "versions.yml" , topic: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"

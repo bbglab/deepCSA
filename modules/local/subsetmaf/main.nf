@@ -1,7 +1,6 @@
 process SUBSET_MAF {
 
     tag "$meta.id"
-    label 'process_low'
 
     label 'deepcsa_core'
 

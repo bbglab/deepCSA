@@ -1,8 +1,7 @@
 process WRITE_MAFS {
 
     tag "${meta.id}"
-    label 'process_high_memory'
-
+    
     label 'deepcsa_core'
 
     input:
