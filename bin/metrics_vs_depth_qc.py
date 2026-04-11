@@ -169,16 +169,25 @@ def plot_scatter_per_gene(df, group_name, metric_name, output_pdf):
                     linewidth=0,
                     ax=ax,
                 )
+                title = f"{gene} (n={len(sdf)})"
                 if len(sdf) >= 3:
+                    lr = linregress(sdf["MEAN_GENE_DEPTH"], sdf["metric_value"])
+                    title += f" | slope={lr.slope:.2e}, p={lr.pvalue:.2e}"
+                    line_color = "darkred" if lr.pvalue < 0.05 else "darkgrey"
                     sns.regplot(
                         data=sdf,
                         x="MEAN_GENE_DEPTH",
                         y="metric_value",
                         scatter=False,
-                        line_kws={"color": "darkred", "linewidth": 1.2},
+                        line_kws={"color": line_color, "linewidth": 1.2},
                         ax=ax,
                     )
-                ax.set_title(f"{gene} (n={len(sdf)})", fontsize=9)
+                
+                y_min, y_max = sdf["metric_value"].min(), sdf["metric_value"].max()
+                val_range = y_max - y_min if y_max > y_min else (abs(y_max) * 0.1 if y_max != 0 else 1.0)
+                ax.set_ylim(bottom=-0.05 * val_range if y_min >= 0 else y_min - 0.05 * val_range)
+
+                ax.set_title(title, fontsize=9)
                 ax.set_xlabel("MEAN_GENE_DEPTH")
                 ax.set_ylabel(metric_name)
 
