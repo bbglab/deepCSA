@@ -29,6 +29,7 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
                                 "SNVs" : ({"MUTTYPES": 'SNV', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
                                 "SNVs protein-affecting" : ({"MUTTYPES": 'SNV', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
                                 "SNVs non-protein-affecting" : ({"MUTTYPES": 'SNV', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB'),
+                                "SNVs synonymous" : ({"MUTTYPES": 'SNV', "REGIONS": 'synonymous'}, 'MUTDENSITY_MB'),
                                 "INDELs" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
                                 "INDELs protein-affecting" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
                                 "INDELs non-protein-affecting" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB')
@@ -37,7 +38,7 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
     """
     Take a DataFrame and create mutation density heatmaps, storing all plots in a single PDF file.
     Allows control over figure size and sample/gene ordering.
-    SAMPLE_ID       GENE    REGIONS MUTTYPES        DEPTH   N_MUTS  N_MUTATED       MUTDENSITY_MB   MUTDENSITY_MB_ADJUSTED MUTREADSRATE_MB  MUTREADSRATE_MB_ADJUSTED
+    SAMPLE_ID       GENE    REGIONS MUTTYPES        DEPTH   N_MUTS  N_MUTATED       MUTDENSITY_MB   MUTDENSITY_MB_ADJUSTED MUTREADSDENSITY_MB  MUTREADSDENSITY_MB_ADJUSTED
     """
     data = data[data["SAMPLE_ID"].isin(samples_list)].reset_index(drop = True)
 
@@ -70,6 +71,9 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
             pdf.savefig()
             plt.close()
 
+            if heatmap_data.shape[0] < 2 or heatmap_data.shape[1] < 2:
+                print(f"Skipping clustermap for {title} due to insufficient data.")
+                continue
             # Clustermap
             g = sns.clustermap(heatmap_data, cmap='viridis', figsize=(max(10, 0.1*len(samples_list)), max(8, 0.05*len(genes_list))))
             plt.suptitle(f"{title} - Clustermap")

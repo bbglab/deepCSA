@@ -55,7 +55,7 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
     trinucleotide_counts_df = pd.read_csv(trinucleotide_counts_file, sep='\t')
 
     genes = panel_df['GENE'].unique()
-    consequences = broadimpact_grouping_dict_with_synonymous.keys()
+    consequences = list(broadimpact_grouping_dict_with_synonymous.keys())
 
     res = pd.DataFrame(index=genes, columns=consequences)
 

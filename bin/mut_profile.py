@@ -10,6 +10,17 @@ from utils import contexts_formatted, contexts_formatted_sigprofiler
 from utils_plot import plot_profile
 from read_utils import custom_na_values
 
+def bayesian_update(observed_counts, prior_profile, limit=200):
+
+    N = np.sum(observed_counts).item()
+
+    if N >= limit:
+        return observed_counts
+    else:
+        prior_profile = prior_profile.set_index("CONTEXT_MUT")
+        posterior_matrix = ((limit - N) * prior_profile).values + observed_counts
+        return posterior_matrix
+
 
 def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method, pseudocount,
                             sigprofiler, per_sample):
@@ -98,26 +109,97 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method
                                             sep = "\t")
 
 
-def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_counts_file, plot,
-                                wgs = False, wgs_trinucleotide_counts = False, sigprofiler = False):
+def profile_stability(counts, denominator):
+    """
+    Compute stability score of a probability profile by
+    adding +1 to each channel individually and measuring
+    L1 (Total Variation) deviation.
+
+    Parameters
+    ----------
+    counts : array-like, shape (k,)
+        Raw integer counts per channel.
+    denominator : array-like, shape (k,)
+        Denominator for each channel (e.g., trinucleotide counts).
+
+    Returns
+    -------
+    results : dict
+        {
+            'mean_deviation': float,
+            'max_deviation': float,
+            'std_deviation': float,
+            'all_deviations': np.ndarray shape (k,)
+        }
+    """
+
+    # Convert to numpy arrays
+    counts = np.asarray(counts, dtype=float)
+    denominator = np.asarray(denominator, dtype=float)
+
+    if counts.ndim != 1:
+        raise ValueError("counts must be a 1D vector")
+    if denominator.ndim != 1:
+        raise ValueError("denominator must be a 1D vector")
+    if len(counts) != len(denominator):
+        raise ValueError("counts and denominator must have same length")
+    if np.any(denominator == 0):
+        raise ValueError("denominator contains zeros")
+
+    k = len(counts)
+
+    # ---- Baseline profile ----
+    ref_profile = counts / denominator
+    ref_profile = ref_profile / ref_profile.sum()
+    p = ref_profile
+
+    deviations = np.zeros(k)
+
+    # ---- Perturb each channel ----
+    for j in range(k):
+        perturbed = counts.copy()
+        perturbed[j] += 1
+
+        p_prime = perturbed / denominator
+        p_prime = p_prime / p_prime.sum()  # IMPORTANT: renormalize
+
+        deviations[j] = 0.5 * np.sum(np.abs(p - p_prime))
+
+    return {
+        "mean_deviation": deviations.mean(),
+        "min_deviation": deviations.min(),
+        "max_deviation": deviations.max(),
+        "std_deviation": deviations.std(),
+        "all_deviations": deviations.tolist()
+    }
+
+
+def compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts_file, plot,
+                                wgs = False, wgs_trinucleotide_counts = False, sigprofiler = False,
+                                smoothed = False, prior_profile_file = None,
+                                minimum_mutations = 200
+                                ):
     """
     Compute mutational profile from the input data
 
         Required information:
             Mutation matrix
             Trinucleotide content of the sequenced region (depth-aware or non-depth-aware)
+            
+            Minimum number of mutations to apply Bayesian smoothing (if smoothed is active)
+                This has been set to 200 after proper testing of the minimum required entropy of mutational profiles.
         Output:
             Mutational profile per sample
     """
 
     # Load your mutation matrix
-    mutation_matrix = pd.read_csv(mutation_matrix_file, sep = "\t", header = 0)
     mutation_matrix = mutation_matrix.set_index("CONTEXT_MUT")
     total_mutations = np.sum(mutation_matrix[sample_name])
-
+    
     # proportion of SBS mutations per trinucleotide in panel
-    mutation_matrix[sample_name] = mutation_matrix[sample_name] / total_mutations
-    mutation_matrix.to_csv(f"{sample_name}.proportion_mutations.tsv",
+    mutation_matrix_proportions = mutation_matrix.copy()
+    mutation_matrix_proportions[sample_name] = mutation_matrix_proportions[sample_name] / total_mutations
+    mutation_matrix_proportions.to_csv(f"{sample_name}.proportion_mutations.tsv",
                                 header = True,
                                 index = True,
                                 sep = "\t")
@@ -133,6 +215,13 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 
     contextmut_depth = pd.DataFrame({sample_name : trinuc_per_contextmuts, "CONTEXT_MUT": contexts_formatted})
     contextmut_depth = contextmut_depth.set_index("CONTEXT_MUT")
+
+    # compute profile stability and store the outputs in a file
+    stability_output_dict = profile_stability(mutation_matrix[sample_name], contextmut_depth[sample_name])
+    stability_outputs = pd.DataFrame(stability_output_dict.items()).set_index(0).T
+    stability_outputs[["SAMPLE_ID", "mode"]] = sample_name.split(".")
+    stability_outputs[["SAMPLE_ID", "mode"] + list(stability_outputs.columns[:-2])].to_csv(f"{sample_name}.profile_stability.tsv", sep = "\t", index = False)
+
 
     # divide
     mut_probability = mutation_matrix.divide( contextmut_depth )
@@ -171,7 +260,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                         output_f = f'{sample_name}.profile.pdf')
 
         # plot the profile as a percentage of SBS mutations seen in our sequenced panel
-        plot_profile(dict(zip(mutation_matrix.index, mutation_matrix[sample_name])),
+        plot_profile(dict(zip(mutation_matrix_proportions.index, mutation_matrix_proportions[sample_name])),
                         title=f'{sample_name} ({round(total_mutations)} muts)',
                         output_f = f'{sample_name}.profile.percentage.pdf')
 
@@ -197,6 +286,28 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                     header = True,
                                     index = True,
                                     sep = "\t")
+        
+        if total_mutations < minimum_mutations and smoothed:
+            print(f"Using a prior profile to smooth the profile, since the mutation count is < {minimum_mutations}")
+            prior_profile = pd.read_table(prior_profile_file)
+            
+            upd_mutation_matrix_wgs = bayesian_update(profile_trinuc_clean, prior_profile, minimum_mutations).reset_index()
+            total_mutations = max(minimum_mutations, total_mutations)
+
+            # we have updated the mutation counts at the WGS level, we should now revert this update
+            # for the specific sample's trinucleotide content and depth
+
+            upd_mutation_matrix_wgs["CONTEXT"] = upd_mutation_matrix_wgs["CONTEXT_MUT"].apply( lambda x : x[:3])
+            profile_trinuc_merge = upd_mutation_matrix_wgs.merge(ref_trinuc32, on = "CONTEXT")
+            profile_trinuc_merge["MUT_PROBABILITY"] = profile_trinuc_merge[sample_name] / profile_trinuc_merge["COUNT"]
+            profile_n_sample_trinuc = profile_trinuc_merge.merge(trinucleotide_counts.reset_index(), on = "CONTEXT", suffixes = ("", "_PANEL"))
+            profile_n_sample_trinuc["MUTS_PANEL"] = profile_n_sample_trinuc[sample_name] * profile_n_sample_trinuc[f"{sample_name}_PANEL"]
+            profile_n_sample_trinuc["MUTS_PANEL_FINAL"] = profile_n_sample_trinuc["MUTS_PANEL"] / profile_n_sample_trinuc["MUTS_PANEL"].sum() * total_mutations
+            smoothed_mutation_matrix_panel_counts = profile_n_sample_trinuc[["CONTEXT_MUT", "MUTS_PANEL_FINAL"]]
+
+            return smoothed_mutation_matrix_panel_counts.rename({"MUTS_PANEL_FINAL": sample_name}, axis = 1)
+        else:
+            print(f"No need to smooth the profile, the mutation count is already >= {minimum_mutations}")
 
         profile_trinuc_clean_proportion = profile_trinuc_clean.copy()
         profile_trinuc_clean_proportion[sample_name] = profile_trinuc_clean_proportion[sample_name] / profile_trinuc_clean_proportion[sample_name].sum()
@@ -204,7 +315,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                                 header = True,
                                                 index = True,
                                                 sep = "\t")
-
+        
 
         # plot the profile as a percentage of SBS mutations seen after sequencing one WGS
         # if mutations were occuring with the same probabilities as they occur in our sequenced panel
@@ -221,7 +332,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                             index = False,
                                             sep = "\t")
 
-
+        return None
 
 
 
@@ -239,12 +350,14 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 @click.option('--wgs', is_flag=True, help='Store matrix of mutation counts at WGS level')
 @click.option('--wgs_trinucleotide_counts', type=click.Path(exists=True), help='Trinucleotide counts file of the WGS (for profile mode if WGS active)')
+@click.option('--smoothed', is_flag=True, help='Apply Bayesian smoothing to the mutation counts using a prior profile')
+@click.option('--prior_profile', type=click.Path(exists=True), help='Prior profile file to use for Bayesian smoothing (required if --smoothed is set)')
 
 
 @click.option('--sigprofiler', is_flag=True, help='Store the index column using the SigProfiler format')
 
 def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, per_sample, mutation_matrix,
-            trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts):
+            trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, smoothed, prior_profile):
 
     if mode == 'matrix':
         click.echo(f"Running in matrix mode...")
@@ -254,7 +367,11 @@ def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, pe
 
     elif mode == 'profile':
         click.echo(f"Running in profile mode...")
-        compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, sigprofiler)
+        mutation_matrix_loaded = pd.read_csv(mutation_matrix, sep = "\t", header = 0)
+        smoothed_mutation_matrix = compute_mutation_profile(sample_name, mutation_matrix_loaded, trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, sigprofiler, smoothed, prior_profile)
+        if smoothed_mutation_matrix is not None:
+            compute_mutation_profile(sample_name, smoothed_mutation_matrix, trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, sigprofiler)
+
         click.echo("Profile computation completed.")
 
     else:

@@ -4,7 +4,7 @@ import sys
 import click
 import pandas as pd
 
-from bgreference import hg38, hg19, mm10, mm39
+from bgreference import hg38, mm39
 
 from utils import vartype
 from utils_context import transform_context
@@ -12,8 +12,6 @@ from utils_impacts import *
 from read_utils import custom_na_values
 
 assembly_name2function = {"hg38": hg38,
-                            "hg19": hg19,
-                            "mm10": mm10,
                             "mm39": mm39}
 
 
@@ -245,7 +243,7 @@ def vep2summarizedannotation(VEP_output_file, all_possible_sites_annotated_file,
 @click.command()
 @click.argument('vep_output_file', type=click.Path(exists=True))
 @click.argument('all_possible_sites_annotated_file', type=click.Path())
-@click.option('--assembly-name', default='hg38', show_default=True, type=click.Choice(['hg38', 'hg19', 'mm10', 'mm39']), help='Reference genome assembly name')
+@click.option('--assembly-name', default='hg38', show_default=True, type=click.Choice(['hg38', 'mm39']), help='Reference genome assembly name')
 @click.option('--all-underscore', is_flag=True, default=False, show_default=True, help='Whether to use _ to separate all parts of MUT_ID (default: False)')
 @click.option('--hotspots-annotation-file', default=None, type=click.Path(exists=False), help='Path to hotspots annotation file')
 @click.option('--gnomad-af-threshold', default=0.001, show_default=True, type=float, help='gnomAD allele frequency threshold')

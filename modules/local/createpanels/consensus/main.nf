@@ -1,6 +1,5 @@
 process CREATECONSENSUSPANELS {
     tag "$meta.id"
-    label 'process_single'
 
     conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
     container 'docker://bbglab/deepcsa_bed:latest'
@@ -10,9 +9,9 @@ process CREATECONSENSUSPANELS {
     tuple val(meta2), path(depths)
 
     output:
-    tuple val(meta), path("consensus*.tsv")         , emit: consensus_panel
-    tuple val(meta), path("consensus*.bed")         , emit: consensus_panel_bed
-    tuple val(meta), path("failing_consensus*.tsv") , emit: failing_consensus_panel
+    tuple val(meta), path("consensus*.tsv")                          , emit: consensus_panel
+    tuple val(meta), path("consensus*.bed")                          , emit: consensus_panel_bed
+    tuple val(meta), path("failing_consensus*.tsv") , optional : true, emit: failing_consensus_panel
     path "versions.yml"                             , topic: versions
 
 

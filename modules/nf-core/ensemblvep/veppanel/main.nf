@@ -43,10 +43,18 @@ process ENSEMBLVEP_VEP {
     def reference = fasta ? "--fasta $fasta" : ""
 
     """
+
+    # Convert input TSV to VEP format, to make vep --fork more efficient
+    awk 'BEGIN { OFS="\t" }
+    {
+     split(\$4, a, "/");
+     print \$1, \$2, ".", a[1], a[2];
+    }' ${vcf} > ${vcf}.vep
+
     # this is to ensure that we will be able to match the tab and vcf files afterwards
     # the structure of the ID is the following:
     vep \\
-        -i ${vcf} \\
+        -i ${vcf}.vep \\
         -o ${prefix}.${file_extension}.gz \\
         $args \\
         $compress_cmd \\

@@ -5,16 +5,23 @@ import pandas as pd
 
 def add_filter(old_filt, add_filt, filt_name):
     """
-    old filt is the current FILTER field value
-    add_filt is a boolean, either True or False
-    filt_name is the name that should be added in the FILTER field in case the add_filt value is True
+    Adds a filter to the FILTER field in the MAF dataframe
+
+    Parameters
+    ----------
+    old_filt : str
+        The current FILTER field value
+    add_filt : bool
+        Either True or False
+    filt_name : str
+        The name that should be added in the FILTER field in case the add_filt value is True
     """
     if add_filt:
         if old_filt == "PASS":
             return filt_name
         old_filt += ";" + filt_name
 
-    return ";".join( sorted(old_filt.split(";")) )
+    return ";".join( sorted(set(old_filt.split(";")) ))
 
 def to_int_if_possible(string):
     try:
@@ -22,68 +29,6 @@ def to_int_if_possible(string):
         return int(string)
     except ValueError:
         return None
-
-
-def filter_maf(maf_df, filter_criteria):
-    '''
-    Filter a MAF dataframe with filtering information coming from a list of tuples.
-    This can be either a dictionary transformed to list with the .items() method or by directly creating a list of tuples.
-    [('VAF', 'le 0.3'), ('VAF_AM', 'le 0.3'), ('vd_VAF', 'le 0.3'),
-    ('DEPTH', 'ge 40'), ('FILTER', 'notcontains n_rich'),
-    ('FILTER', 'notcontains cohort_n_rich_uni'), ('FILTER', 'notcontains NM20'),
-    ('FILTER', 'notcontains no_pileup_support'), ('FILTER', 'notcontains other_sample_SNP'),
-    ('FILTER', 'notcontains low_mappability')]
-    '''
-
-    # Define mappings for operators used in criteria
-    operators = {
-        'eq': lambda x, y: x == y,
-        'ne': lambda x, y: x != y,
-        'lt': lambda x, y: x < y,
-        'le': lambda x, y: x <= y,
-        'gt': lambda x, y: x > y,
-        'ge': lambda x, y: x >= y,
-        'not': lambda x, y: x != y,
-        'notcontains': lambda x, y: x.apply(lambda z : y not in z.split(";")), # (~maf_df["FILTER"].str.contains("not_in_panel"))
-        'contains': lambda x, y: x.apply(lambda z : y in z.split(";"))
-    }
-
-    # Apply filters based on criteria from the JSON file
-    for col, criterion in filter_criteria:
-
-        if isinstance(criterion, bool):
-            pref_len = maf_df.shape[0]
-            maf_df = maf_df[maf_df[col] == criterion]
-            print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
-
-        elif ' ' in criterion:
-            operator, value = criterion.split(maxsplit=1)
-
-            if len(operator) == 2 and operator in operators:
-                # 'VAF' : 'le 0.35'
-                pref_len = maf_df.shape[0]
-                maf_df = maf_df[operators[operator](maf_df[col], float(value))]
-                print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
-
-            elif operator in operators:
-                # 'FILTER' : 'notcontains n_rich',
-                pref_len = maf_df.shape[0]
-                maf_df = maf_df[operators[operator](maf_df[col], value)]
-                print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
-
-            else:
-                print(f"We have no filtering criteria defined for {col}:{criterion} filter.")
-
-
-        else:
-            # 'TYPE' : 'SNV'
-            pref_len = maf_df.shape[0]
-            maf_df = maf_df[maf_df[col] == criterion]
-            print(f"Applying {col}:{criterion} filter implied going from {pref_len} mutations to {maf_df.shape[0]} mutations.")
-
-    return maf_df
-
-
 
 def vartype(x,
             letters = ['A', 'T', 'C', 'G'],

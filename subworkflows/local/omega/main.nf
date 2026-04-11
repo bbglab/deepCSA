@@ -1,11 +1,7 @@
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETMUTATIONS          } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
 include { SUBSET_MAF                as SUBSETOMEGAMULTI         } from '../../../modules/local/subsetmaf/main'
 
-
-
-include { TABIX_BGZIPTABIX_QUERY    as SUBSETPANEL              } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
-include { EXPAND_REGIONS            as EXPANDREGIONS            } from '../../../modules/local/expand_regions/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYPANEL               } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
@@ -18,10 +14,10 @@ include { PLOT_OMEGASYN_QC          as EVALOMEGAGLOCESTIMATION  } from '../../..
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
-include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC       } from '../../../modules/local/bbgtools/omega/mutabilities/main'
-include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC       } from '../../../modules/local/plot/omega/main'
-include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC  } from '../../../modules/local/bbgtools/sitecomparison/main'
-include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI  } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC    } from '../../../modules/local/bbgtools/omega/mutabilities/main'
+include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC               } from '../../../modules/local/plot/omega/main'
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -30,56 +26,36 @@ workflow OMEGA_ANALYSIS{
     depth
     profile
     bedfile
-    panel
+    expanded_panel
     custom_gene_groups
-    domains_file
     mutationdensities
-    complete_panel
-    exons_file
+    panel_captured_rich
     suffix
     grouping_defs
+    json_subgenic
 
 
     main:
 
-    // Create a channel for the domains file if omega_autodomains is true
-    domains_ch = params.omega_autodomains ? domains_file : []  // .map{ it -> it[1]} : []
-    exons_ch = params.omega_autoexons ? exons_file.map{ it -> it[1]} : []
-
-    // Create a channel for the hotspots bedfile if provided
-    subgenic_ch = params.omega_subgenic_bedfile ? file(params.omega_subgenic_bedfile) : []
-
-
-    site_comparison_results = Channel.empty()
-    global_loc_results      = Channel.empty()
-    all_gloc_results        = Channel.empty()
+    site_comparison_results = channel.empty()
+    global_loc_results      = channel.empty()
+    all_gloc_results        = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
-    SUBSETMUTATIONS(mutations, bedfile)
+    QUERYPANEL(panel_captured_rich, bedfile)
 
-    SUBSETPANEL(complete_panel, bedfile)
-
-    SUBSETOMEGA(SUBSETMUTATIONS.out.subset)
-    SUBSETOMEGAMULTI(SUBSETMUTATIONS.out.subset)
+    SUBSETOMEGA(mutations)
+    SUBSETOMEGAMULTI(mutations)
 
     SUBSETOMEGA.out.mutations
     .join( depth )
     .join( profile )
     .set{ muts_n_depths_n_profile }
 
-    Channel.of([ [ id: "all_samples" ] ])
+    channel.of([ [ id: "all_samples" ] ])
     .join( profile ).first()
     .set{ all_samples_mut_profile }
 
-
-    if (params.omega_withingene){
-        EXPANDREGIONS(panel, domains_ch, exons_ch, subgenic_ch)
-        expanded_panel = EXPANDREGIONS.out.panel_increased.first()
-        json_hotspots = EXPANDREGIONS.out.new_regions_json.first()
-    } else {
-        expanded_panel = panel.first()
-        json_hotspots = bedfile.first()
-    }
 
     // FIXME here I am using bedfile as a dummy value channel
     PREPROCESSING( muts_n_depths_n_profile,
@@ -91,16 +67,16 @@ workflow OMEGA_ANALYSIS{
     .join( depth )
     .set{ preprocess_n_depths }
 
-    Channel.of([ [ id: "all_samples" ] ])
+    channel.of([ [ id: "all_samples" ] ])
     .join( PREPROCESSING.out.syn_muts_tsv )
     .set{ all_samples_muts }
 
-    GROUPGENES(all_samples_muts, custom_gene_groups, json_hotspots)
+    GROUPGENES(all_samples_muts, custom_gene_groups, json_subgenic)
 
     ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first())
 
     if (params.omega_plot){
-        SUBSETMUTATIONS.out.subset
+        mutations
         .join(ESTIMATOR.out.results)
         .set{mutations_n_omega}
 
@@ -116,7 +92,7 @@ workflow OMEGA_ANALYSIS{
         .set{mutations_n_mutabilities}
 
         SITECOMPARISON(mutations_n_mutabilities,
-                        SUBSETPANEL.out.subset.first())
+                        QUERYPANEL.out.subset.first())
         site_comparison_results = SITECOMPARISON.out.comparisons
 
         SUBSETOMEGAMULTI.out.mutations
@@ -124,7 +100,7 @@ workflow OMEGA_ANALYSIS{
         .set{mutations_n_mutabilities_globalloc}
 
         SITECOMPARISONMULTI(mutations_n_mutabilities_globalloc,
-                                SUBSETPANEL.out.subset.first())
+                                QUERYPANEL.out.subset.first())
         // site_comparison_results = site_comparison_results.join(SITECOMPARISONMULTI.out.comparisons, remainder: true)
 
     }
@@ -148,14 +124,14 @@ workflow OMEGA_ANALYSIS{
         global_loc_results = ESTIMATORGLOBALLOC.out.results
         
         global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
-        all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
+        all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/selection/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
 
         PREPROCESSING.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts }
         PREPROCESSINGGLOBALLOC.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts_gloc }
         EVALOMEGAGLOCESTIMATION(all_syn_muts, all_syn_muts_gloc, grouping_defs)
 
         if (params.omega_plot){
-            SUBSETMUTATIONS.out.subset
+            mutations
             .join(ESTIMATORGLOBALLOC.out.results)
             .set{mutations_n_omegagloloc}
 
@@ -171,7 +147,7 @@ workflow OMEGA_ANALYSIS{
             .set{mutations_n_mutabilities_globalloc}
 
             SITECOMPARISONGLOBALLOC(mutations_n_mutabilities_globalloc,
-                                    SUBSETPANEL.out.subset.first())
+                                    QUERYPANEL.out.subset.first())
             // site_comparison_results = site_comparison_results.join(SITECOMPARISONGLOBALLOC.out.comparisons, remainder: true)
 
 
@@ -180,13 +156,13 @@ workflow OMEGA_ANALYSIS{
             .set{mutations_n_mutabilities_globalloc}
 
             SITECOMPARISONGLOBALLOCMULTI(mutations_n_mutabilities_globalloc,
-                                            SUBSETPANEL.out.subset.first())
+                                            QUERYPANEL.out.subset.first())
             // site_comparison_results = site_comparison_results.join(SITECOMPARISONGLOBALLOCMULTI.out.comparisons, remainder: true)
         }
 
     }
 
-    site_comparison_results.map {
+    site_comparison_results.map { it -> 
         def meta = it[0]
         def all_files = it[1..-1].flatten()
         [meta, all_files]
@@ -194,7 +170,7 @@ workflow OMEGA_ANALYSIS{
 
 
     ESTIMATOR.out.results.map{ it -> it[1]}.flatten().set{ all_indv_results }
-    all_indv_results.collectFile(name: "all_omegas${suffix}.tsv", storeDir:"${params.outdir}/omega", skip: 1, keepHeader: true).set{ all_results }
+    all_indv_results.collectFile(name: "all_omegas${suffix}.tsv", storeDir:"${params.outdir}/selection/omega", skip: 1, keepHeader: true).set{ all_results }
 
 
     emit:

@@ -1,6 +1,5 @@
 process SAMPLESHEET_CHECK {
     tag "$samplesheet"
-    label 'process_single'
 
     conda "conda-forge::python=3.8.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -9,6 +8,7 @@ process SAMPLESHEET_CHECK {
 
     input:
     path samplesheet
+    val require_bams
 
     output:
     path '*.csv'       , emit: csv
@@ -16,10 +16,12 @@ process SAMPLESHEET_CHECK {
 
 
     script: // This script is bundled with the pipeline, in bbglab/deepCSA/bin/
+    def validate_bams = require_bams ? '--bam-required' : ''
     """
     check_samplesheet.py \\
         $samplesheet \\
-        samplesheet.valid.csv
+        samplesheet.valid.csv \\
+        ${validate_bams}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

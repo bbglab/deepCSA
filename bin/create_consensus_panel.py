@@ -11,6 +11,9 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
     compact_annot_panel_df = pl.read_csv(compact_annot_panel_path, separator="\t")
     depths_df = pl.read_csv(depths_path, separator="\t")
 
+    # Drop CONTEXT column if it exists
+    depths_df = depths_df.drop("CONTEXT", strict=False)
+
     # Ensure numeric columns are int
     depths_df = depths_df.with_columns({
                     col: pl.col(col).cast(pl.Int64) for col in depths_df.columns[1:]
@@ -39,6 +42,9 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
         consensus_panel = consensus_panel.filter(pl.col("GENE").is_in(gene_list))
 
     consensus_panel = consensus_panel.sort(["CHROM", "POS", "REF", "ALT"])
+
+    if consensus_panel.is_empty():
+        raise ValueError("No positions pass the consensus criteria. Adjust parameters or check input data.")
     consensus_panel.write_csv(f"consensus.{version}.tsv", separator="\t")
 
 
@@ -47,6 +53,9 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
     #####
     # Filter failing columns only for rows that pass the compliance threshold
     compliance_df_passing = compliance_df.filter(passing_rows)
+    
+    print(f"DEBUG: Total positions passing compliance threshold: {compliance_df_passing.height}")
+    print(f"DEBUG: Number of samples: {compliance_df_passing.width}")
 
     # Invert all boolean values (True → False, False → True)
     failing_mask = pl.DataFrame([
@@ -64,6 +73,7 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
                     "Failed": True
                 })
 
+    print(f"DEBUG: Total failing entries found: {len(failing_columns_counts)}")
 
     if failing_columns_counts:
         failing_columns_counts_df = pl.DataFrame(failing_columns_counts)
@@ -73,6 +83,7 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
             .rename({"count": "FAILING_COUNT"})
         )
         failure_counts_filtered.write_csv(f"failing_consensus.{version}.tsv", separator="\t")
+        print(f"DEBUG: Created failing_consensus.{version}.tsv with {failure_counts_filtered.height} samples")
 
 
 @click.command()

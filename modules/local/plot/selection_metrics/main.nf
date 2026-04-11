@@ -3,7 +3,7 @@ process PLOT_SELECTION_METRICS {
     tag "$meta.id"
     label 'process_low'
 
-    container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
+    label 'deepcsa_core'
 
     input:
     tuple val(meta), path(results_files)
@@ -18,7 +18,7 @@ process PLOT_SELECTION_METRICS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    mkdir ${prefix}.plots
+    mkdir -p ${prefix}.plots/side_figures
     plot_selectionsideplots.py \\
                     --sample_name ${prefix} \\
                     --outdir ${prefix}.plots

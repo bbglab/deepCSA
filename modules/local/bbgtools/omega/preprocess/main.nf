@@ -1,11 +1,7 @@
 process OMEGA_PREPROCESS {
     tag "$meta.id"
-    label 'cpu_single_fixed'
-    label 'time_low'
-    label 'process_high_memory'
 
-
-    container 'docker.io/ferriolcalvet/omega:20250716'
+    container 'docker.io/bbglab/omega:0.2.1'
 
     input:
     tuple val(meta) , path(mutations), path(depths), path(mutation_profile)
@@ -41,7 +37,7 @@ process OMEGA_PREPROCESS {
                         ${global_loc}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        omega: \$(omega --version | cut -d ' ' -f 3)
     END_VERSIONS
     """
 
@@ -54,20 +50,7 @@ process OMEGA_PREPROCESS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        omega: \$(omega --version | cut -d ' ' -f 3)
     END_VERSIONS
     """
 }
-
-// omega preprocessing --preprocessing-mode compute_mutabilities
-//                      --depths-file all_samples.subset_depths.tsv.gz
-//                      --mutations-file all_samples.mutations.tsv
-//                      --input-vep-postprocessed-file consensus.exons_splice_sites.tsv
-//                      --table-observed-muts mutations_per_sample_gene_impact_context.all_samples2.global_loc.gLoc.tsv
-//                      --mutabilities-table mutability_per_sample_gene_context.all_samples2.global_loc.gLoc.tsv
-//                      --synonymous-muts-table syn_muts.all_samples2.global_loc.gLoc.tsv
-//                      --mutational-profile-file all_samples.all.profile.tsv
-//                      --mutational-profile-global-file P19_0033_BTR_01.all.profile.tsv
-//                      --single-sample all_samples
-//                      --absent-synonymous infer_global_custom
-//                      --synonymous-mutrates-file mutdensities_per_gene.tsv

@@ -1,9 +1,8 @@
 include { PREPARE_INPUT                                         } from '../../../modules/local/signatures/hdp/prepareinput/main'
 include { RUN_HDP_CHAIN_SAMPLING                                } from '../../../modules/local/signatures/hdp/chainsampling/main'
 include { PROCESS_HDP_RESULTS                                   } from '../../../modules/local/signatures/hdp/process_results/main'
-include { COMPARE_SIGNATURES as COMPARESIGNATURES               } from '../../../modules/local/signatures/hdp/compare_sigs/main'
-
-
+include { COMPARE_SIGNATURES            as COMPARESIGNATURES    } from '../../../modules/local/signatures/hdp/compare_sigs/main'
+include { SIGNATURES_HDP_TO_SIGPROFILER as REFORMATSIGNATURES   } from '../../../modules/local/signatures/hdp/reformat_sigs/main'
 
 
 workflow HDP_EXTRACTION {
@@ -14,13 +13,13 @@ workflow HDP_EXTRACTION {
 
     main:
 
-    Channel.of([ [ id: "samples_matrix" ] ])
+    channel.of([ [ id: "samples_matrix" ] ])
     .join( matrix )
     .set{ samples_matrix }
 
     PREPARE_INPUT(samples_matrix)
 
-    iter_ch = Channel.of(1..15)
+    iter_ch = channel.of(1..15)
     combined_input_ch = PREPARE_INPUT.out.input_data.combine(iter_ch)
 
     RUN_HDP_CHAIN_SAMPLING(combined_input_ch)
@@ -32,9 +31,11 @@ workflow HDP_EXTRACTION {
 
     COMPARESIGNATURES(PROCESS_HDP_RESULTS.out.processed_results, reference_signatures)
 
+    REFORMATSIGNATURES(PROCESS_HDP_RESULTS.out.signatures)
 
-    // emit:
-    // plots               = SIGPROFILERASSIGNMENT.out.plots       // channel: [ val(meta), file(depths) ]
-    // // plots_extraction    = MSIGHDP.out.plots                     // channel: [ val(meta), file(depths) ]
+
+    emit:
+    signatures      = REFORMATSIGNATURES.out.signatures_for_sp     // channel: [ val(meta), file(depths) ]
+    // plots_extraction    = MSIGHDP.out.plots                  // channel: [ val(meta), file(depths) ]
     // mutation_probs      = signature_probs_samples
 }

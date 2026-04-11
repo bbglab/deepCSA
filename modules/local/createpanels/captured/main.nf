@@ -1,14 +1,11 @@
 process CREATECAPTUREDPANELS {
     tag "$meta.id"
-    label 'process_single'
-    label 'process_medium_high_memory'
 
-    conda "bioconda::pybedtools=0.9.1--py38he0f268d_0"
+    conda "python=3.10.17 bioconda::pybedtools=0.12.0 conda-forge::polars=1.30.0 conda-forge::click=8.2.1 conda-forge::gcc_linux-64=15.1.0 conda-forge::gxx_linux-64=15.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-            'https://depot.galaxyproject.org/singularity/pybedtools:0.9.1--py38he0f268d_0' :
-            'biocontainers/pybedtools:0.9.1--py38he0f268d_0' }"
-
-
+        'docker://bbglab/deepcsa_bed:latest' :
+        'bbglab/deepcsa_bed:latest' }"
+        
     input:
     tuple val(meta), path(compact_captured_panel_annotation)
 
@@ -33,13 +30,14 @@ process CREATECAPTUREDPANELS {
     prefix = "${meta.id}${prefix}"
     """
     create_panel_versions.py \\
-                    ${compact_captured_panel_annotation} \\
-                    ${prefix};
+        --compact-annot-panel-path ${compact_captured_panel_annotation} \\
+        --output ${prefix};
     for captured_panel in \$(ls -l *.tsv | grep -v '^l' | awk '{print \$NF}'); do
         bedtools merge \\
             -i <(
                 tail -n +2 \$captured_panel | \\
-                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | uniq
+                awk -F'\\t' '{print \$1, \$2-1, \$2}' OFS='\\t' | \\
+                sort -k1,1 -k2,2n | uniq
             ) > \${captured_panel%.tsv}.bed;
     done
 
