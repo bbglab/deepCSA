@@ -63,22 +63,46 @@ def load_mutdensity(mutdensity_file, samples, metric_name):
         mut["metric_name"] = mut["metric_name"] + "." + mut["REGIONS"].fillna("unknown").astype(str)
     return mut[["SAMPLE_ID", "GENE", "metric_name", "metric_value"]]
 
+def load_adjmutdensity(mutdensity_file, samples, metric_name):
+    mut = pd.read_csv(mutdensity_file, sep="\t", header=0)
+    required = {"SAMPLE", "GENE", "synonymous", "missense", "nonsense", "essential_splice", "truncating", "nonsynonymous_splice", "all_impacts"}
+    if not required.issubset(set(mut.columns)):
+        raise ValueError(f"Mutdensity file {mutdensity_file} must contain {sorted(required)}")
+
+    mut = mut[(mut["SAMPLE"].astype(str).isin(samples))].copy()
+    mut["SAMPLE_ID"] = mut["SAMPLE"].astype(str)
+    mut["GENE"] = mut["GENE"].astype(str)
+
+    mut_dfs = []
+    for impact in ["synonymous", "missense", "nonsense", "essential_splice", "truncating", "nonsynonymous_splice", "all_impacts"]:
+        subset_mut = mut[["SAMPLE_ID", "GENE", impact]].copy()
+        subset_mut["metric_value"] = subset_mut[impact]
+        subset_mut["metric_name"] = f"{impact}_density"
+        mut_dfs.append(subset_mut[["SAMPLE_ID", "GENE", "metric_name", "metric_value"]])
+
+    return mut_dfs
+
 
 def load_omegas(omegas_file, samples):
     omega = pd.read_csv(omegas_file, sep="\t", header=0)
-    sample_col = _find_column(omega.columns, ["sample", "SAMPLE_ID"])
-    gene_col = _find_column(omega.columns, ["gene", "GENE"])
+    sample_col = "sample"
+    gene_col = "gene"
     dnds_col = "dnds"
     if sample_col is None or gene_col is None or dnds_col is None:
         raise ValueError(f"Omega file {omegas_file} must contain sample, gene and dnds/omega columns")
 
+    omegas_dfs = []
     omega = omega.rename(columns={sample_col: "SAMPLE_ID", gene_col: "GENE", dnds_col: "metric_value"})
-    omega["SAMPLE_ID"] = omega["SAMPLE_ID"].astype(str)
-    omega["GENE"] = omega["GENE"].astype(str).str.split("--").str[0]
-    omega = omega[omega["SAMPLE_ID"].isin(samples)].copy()
-    omega["metric_value"] = pd.to_numeric(omega["metric_value"], errors="coerce")
-    omega["metric_name"] = "omega_globalloc"
-    return omega[["SAMPLE_ID", "GENE", "metric_name", "metric_value"]]
+    for impact in ["missense", "truncating"]:
+        subset_omega = omega[omega["impact"] == impact].copy()
+        subset_omega["SAMPLE_ID"] = subset_omega["SAMPLE_ID"].astype(str)
+        subset_omega["GENE"] = subset_omega["GENE"].astype(str).str.split("--").str[0]
+        subset_omega = subset_omega[subset_omega["SAMPLE_ID"].isin(samples)].copy()
+        subset_omega["metric_value"] = pd.to_numeric(subset_omega["metric_value"], errors="coerce")
+        subset_omega["metric_name"] = f"omega_gloc_{impact}"
+        omegas_dfs.append(subset_omega[["SAMPLE_ID", "GENE", "metric_name", "metric_value"]])
+
+    return omegas_dfs
 
 
 def summarize_effect_by_gene(df):
@@ -115,13 +139,13 @@ def summarize_effect_by_gene(df):
 
 def summarize_missingness(depth_df, merged_df):
     m = depth_df.merge(
-        merged_df[["SAMPLE_ID", "GENE", "metric_value"]],
+        merged_df[["SAMPLE_ID", "GENE", "metric_name", "metric_value"]],
         on=["SAMPLE_ID", "GENE"],
         how="left",
     )
     m["is_missing_metric"] = m["metric_value"].isna()
     by_gene = (
-        m.groupby("GENE")
+        m.groupby(by = ["GENE", "metric_name"])
         .apply(
             lambda g: pd.Series(
                 {
@@ -147,12 +171,12 @@ def plot_scatter_per_gene(df, group_name, metric_name, output_pdf):
 
     sns.set_style("whitegrid")
     per_page = 12
-    ncols = 4
-    nrows = 3
+    ncols = 3
+    nrows = 4
     with PdfPages(output_pdf) as pdf:
         for start in range(0, len(genes), per_page):
             page_genes = genes[start : start + per_page]
-            fig, axes = plt.subplots(nrows, ncols, figsize=(18, 12), sharex=False, sharey=False)
+            fig, axes = plt.subplots(nrows, ncols, figsize=(12, 16), sharex=False, sharey=False)
             axes = axes.flatten()
             for i, gene in enumerate(page_genes):
                 ax = axes[i]
@@ -226,27 +250,30 @@ def main(
     metric_frames = [load_mutdensity(mutdensity_file, samples, "mutdensity")]
     if adjusted_mutdensity_file:
         try:
-            metric_frames.append(load_mutdensity(adjusted_mutdensity_file, samples, "adjusted_mutdensity"))
+            metric_frames.extend(load_adjmutdensity(adjusted_mutdensity_file, samples, "adjusted_mutdensity"))
         except Exception as e:
             print(f"Warning: skipping adjusted mutdensity file {adjusted_mutdensity_file}: {e}")
     if omegas_file:
         try:
-            metric_frames.append(load_omegas(omegas_file, samples))
+            metric_frames.extend(load_omegas(omegas_file, samples))
         except Exception as e:
             print(f"Warning: skipping omegas file {omegas_file}: {e}")
 
     metrics_df = pd.concat(metric_frames, ignore_index=True)
 
     status_rows = []
-    for metric_name, mdf in metrics_df.groupby("metric_name"):
-        merged = depth_df.merge(mdf, on=["SAMPLE_ID", "GENE"], how="left")
+    for metric_name in metrics_df["metric_name"].unique():
+        print(f"Processing metric '{metric_name}'...")
+        
+        metric_specific_df = metrics_df[metrics_df["metric_name"] == metric_name].copy()
+        merged = depth_df.merge(metric_specific_df, on=["SAMPLE_ID", "GENE"], how="left")
         merged["metric_name"] = metric_name
+
         summary_effect = summarize_effect_by_gene(merged)
         summary_effect.insert(0, "metric_name", metric_name)
         summary_effect.to_csv(outdir / f"{group_name}.{metric_name}.depth_effect_summary.tsv", sep="\t", index=False)
 
         missingness = summarize_missingness(depth_df, merged)
-        missingness.insert(0, "metric_name", metric_name)
         missingness.to_csv(outdir / f"{group_name}.{metric_name}.depth_missingness_by_gene.tsv", sep="\t", index=False)
 
         plot_scatter_per_gene(
@@ -261,7 +288,7 @@ def main(
                 "group_name": group_name,
                 "metric_name": metric_name,
                 "n_depth_rows": int(len(depth_df)),
-                "n_metric_rows": int(len(mdf)),
+                "n_metric_rows": int(len(metric_specific_df)),
                 "n_merged_nonmissing": int(merged["metric_value"].notna().sum()),
             }
         )

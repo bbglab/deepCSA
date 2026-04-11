@@ -19,9 +19,8 @@ process PLOT_METRICS_VS_DEPTH_QC {
     path "versions.yml"                         , topic: versions
 
     script:
-    // FIXME: define these two arguments from the modules.config and based on the pipeline parameters (which options are turned on, not based on the filenames...
-    def adjusted_arg = all_adjusted_mutdensities.name != "placeholder_no_file.tsv" ? "--adjusted-mutdensity-file ${all_adjusted_mutdensities}" : ""
-    def omega_arg = all_omegas_globalloc.name != "placeholder_no_file.tsv" ? "--omegas-file ${all_omegas_globalloc}" : ""
+    def adjusted_arg = task.ext.all_adjusted_mutdensities ? "--adjusted-mutdensity-file ${all_adjusted_mutdensities}" : ""
+    def omega_arg = task.ext.all_omegas_globalloc ? "--omegas-file ${all_omegas_globalloc}" : ""
     """
     mkdir ${group_name}.metrics_depth_qc
     metrics_vs_depth_qc.py \\
