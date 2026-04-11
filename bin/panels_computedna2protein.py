@@ -516,11 +516,15 @@ def plot_coverage_per_gene(depths_df: pd.DataFrame) -> None:
         DataFrame containing depth and coverage information for DNA, protein and exon positions.
         In this case, it will be the "exons_depth" created in `get_dna2prot_depth` function.
     """
-    coverage = depths_df.drop_duplicates(subset=['GENE', 'DNA_POS', 'COVERED'])
-    coverage_summary = coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
-
+    column_to_subset = {'DNA': 'DNA_POS',
+                        'Protein': 'PROT_POS',
+                        'Exon': 'EXON_ID'
+                        }
+    coverage = depths_df.drop_duplicates(subset=['GENE', 'COVERED', 'DNA_POS'])
     for prefix in ["DNA", "Protein", "Exon"]:
         LOG.info(f"Plotting coverage for {prefix}...")
+        coverage_element = coverage.drop_duplicates(subset=['GENE', 'COVERED', column_to_subset[prefix]])
+        coverage_summary = coverage_element.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
         plot_single_coverage(coverage_summary, prefix)
 
 

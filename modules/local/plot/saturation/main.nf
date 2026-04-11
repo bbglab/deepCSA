@@ -15,7 +15,8 @@ process PLOT_SATURATION {
     tuple val(meta4), path (exons_depths_df)
 
     output:
-    tuple val(meta), path("**.png"), optional : true    ,  emit: plots
+    tuple val(meta), path("**.pdf"), optional : true    ,  emit: plots
+    tuple val(meta), path("**.png"), optional : true    ,  emit: plots_png
     path "versions.yml"                                 , topic: versions
 
 
@@ -23,7 +24,7 @@ process PLOT_SATURATION {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    mkdir ${prefix}.plots
+    mkdir -p ${prefix}.plots/domains
     plot_gene_saturation.py \\
                     --sample_name ${prefix} \\
                     --outdir ${prefix}.plots \\

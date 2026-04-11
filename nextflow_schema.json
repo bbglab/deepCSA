@@ -498,6 +498,27 @@
                     "mimetype": "text/plain",
                     "description": "Column names in your metadata table corresponding to the predictors you want to test, separated by commas",
                     "fa_icon": "far fa-list"
+                },
+                "bbgr_mutdensity_config": {
+                    "title": "Mutdensity regressions configuration file",
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Path to the configuration file for mutdensity regressions",
+                    "fa_icon": "far fa-list"
+                },
+                "bbgr_omega_config": {
+                    "title": "Omega regressions configuration file",
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Path to the configuration file for omega regressions",
+                    "fa_icon": "far fa-list"
+                },
+                "bbgr_omegagloballoc_config": {
+                    "title": "Omega globalloc regressions configuration file",
+                    "type": "string",
+                    "mimetype": "text/plain",
+                    "description": "Path to the configuration file for omega globalloc regressions",
+                    "fa_icon": "far fa-list"
                 }
             }
         },
