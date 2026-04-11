@@ -42,7 +42,9 @@ process RUN_DNDS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.out.tsv
+    touch ${prefix}.cv.tsv
+    touch ${prefix}.loc.tsv
+    touch ${prefix}.globaldnds.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

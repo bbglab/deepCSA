@@ -61,7 +61,7 @@ process QUERY_BIOMART {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.out.tsv
+    touch cds_biomart.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -72,10 +72,3 @@ process QUERY_BIOMART {
 
 // FIXME: right now the ensembl archive version of biomart is hardcoded
 // we should define some map and make sure that it is updated accordingly
-// curl -o result.txt \
-//         --data @query.xml \
-//         'https://jan2024.archive.ensembl.org/biomart/martservice'
-// QUERY=$(cat query.xml)^C
-// biomart_cds_query_encoded=$(python -c "from urllib.parse import quote_plus; query ='''${QUERY}'''; print(quote_plus(query.replace('\\n', '')))")^C
-// curl -L -s "https://www.ensembl.org/biomart/martservice?query=${biomart_cds_query_encoded}" > cdssss_known.txt^C
-// /data/bbg/nobackup2/work/deepCSA/tests/2026-04-04/e8/5f7c8467d042e74ed361b4c97a6c16

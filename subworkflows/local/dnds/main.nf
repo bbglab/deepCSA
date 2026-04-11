@@ -34,7 +34,6 @@ workflow DNDS {
     FILTERBIOMART(QUERYBIOMART.out.complete_biomart, panel_bedfile)
 
     BUILDREFCDS(FILTERBIOMART.out.filtered_biomart, fasta)
-    // BUILDREFCDS.out.ref_cds
 
     DNDSRUN(mutations_n_depth, BUILDREFCDS.out.ref_cds, covariates)
 

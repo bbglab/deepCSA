@@ -34,7 +34,8 @@ process FILTER_BIOMART {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.out.tsv
+    touch custom_filtered_biomart.tsv  
+    touch splice_sites.tsv 
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

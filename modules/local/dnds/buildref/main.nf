@@ -15,7 +15,7 @@ process BUILD_REFCDS {
 
     output:
     tuple val(meta), path("RefCDS_custom.rda") , emit: ref_cds
-    path "versions.yml"                        , emit: versions
+    path "versions.yml"                        , topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,7 +28,7 @@ process BUILD_REFCDS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R     :
+        R     : 4.4.2
         dNdScv: 0.1.0
     END_VERSIONS
     """
@@ -41,41 +41,8 @@ process BUILD_REFCDS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R     :
+        R     : 4.4.2
         dNdScv: 0.1.0
     END_VERSIONS
     """
 }
-
-// "--referencetranscripts"
-// default="/workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda",
-// --covariates
-//     "/workspace/projects/prominent/analysis/dNdScv/data/reference_files/covariates_hg19_hg38_epigenome_pcawg.rda",
-//             help="Human GRCh38 covariates file [default= %default]", metavar="character"),
-// --genelist"), type="character",
-//             default=NULL,
-//             help="Gene list file [default= %default]", metavar="character"),
-// --genedepth"), type="character",
-//             default=NULL,
-//             help="Gene depth file (2 columns: GENE\tAVG_DEPTH) [default= %default]", metavar="character"),
-// --snvsonly"), type="logical",
-//             default=FALSE,
-//             help="Only use SNVs for the analysis [default= %default]", metavar="logical")
-
-// process runRScript {
-//     input:
-//     path 'input.txt'
-
-//     output:
-//     path 'output.txt'
-
-//     script:
-//     """
-//     #!/usr/bin/env Rscript
-
-//     # Your R code here
-//     data <- read.table("input.txt")
-//     # Process data
-//     write.table(processed_data, "output.txt")
-//     """
-// }
