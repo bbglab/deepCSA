@@ -52,7 +52,7 @@ nextflow_pipeline {
 
 
     test("TEST 1. Basic functionality - MAF-based processing") {
-        tag "normal"
+        tag "input_maf"
         
         when {
             params {
@@ -76,9 +76,44 @@ nextflow_pipeline {
             assert path("${outputDir}/mutational_profile").exists()
             // Check that directories that should not exist in minimal features run, in fact do not exist.
             assert !path("${outputDir}/mutdensity").exists()
-            assert !path("${outputDir}/omega").exists()
-            assert !path("${outputDir}/oncodrivefml").exists()
-            assert !path("${outputDir}/oncodrive3d").exists()  
+            assert !path("${outputDir}/selection/omega").exists()
+            assert !path("${outputDir}/selection/oncodrivefml").exists()
+            assert !path("${outputDir}/selection/oncodrive3d").exists()  
+
+            // Snapshot of stable output          
+            assert snapshot(
+                path("${outputDir}/mutational_profile/all_samples.all.profile.tsv")
+            ).match()
+        }
+    }
+
+
+    test("TEST 1b. Basic functionality - VCF-based processing with depths information") {
+        tag "input_vcf_with_depths"
+        
+        when {
+            params {
+                // Input: Sample name metadata for the pipeline
+                input = "${projectDir}/tests/test_data/input_no_bam.csv"
+                outdir = "$outputDir" // nf-test built-in: unique temp dir per test run
+                wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+
+                // Test data fetched directly from the DeepClone_protocol repository
+                use_custom_depths   = true
+                custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
+                profileall          = true
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete without errors"
+            // Check output directory structure
+            assert path("${outputDir}/mutational_profile").exists()
+            // Check that directories that should not exist in minimal features run, in fact do not exist.
+            assert !path("${outputDir}/mutdensity").exists()
+            assert !path("${outputDir}/selection/omega").exists()
+            assert !path("${outputDir}/selection/oncodrivefml").exists()
+            assert !path("${outputDir}/selection/oncodrive3d").exists()  
 
             // Snapshot of stable output          
             assert snapshot(
@@ -98,7 +133,7 @@ nextflow_pipeline {
         - omega = true (enables omega analysis)
         - omega_plot = true (enables omega plot generation)
         - plot_depths = true (enables depth plotting, should work with omega enabled)
-        - profileall = true (enables mutational profile generation, should work with omega enabled
+        - profileall = true (enables mutational profile generation, should work with omega enabled)
 
     Expected Behavior:
         - Executes omega analysis and generates expected output files in the omega directory
@@ -124,11 +159,8 @@ nextflow_pipeline {
                 input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
                 use_custom_depths   = true
                 custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
-                plot_depths = true
-                profileall  = true
-                signatures = false
-                omega = true
-                omega_plot = true
+                profileall          = true
+                omega               = true
             }
         }
 
@@ -143,7 +175,7 @@ nextflow_pipeline {
             
             // Validate omega output structure
             def omegaFile = path("${outputDir}/selection/omega/all_omegas.tsv")
-            
+
             def lines = omegaFile.readLines()
             def header = lines[0].split('\t')
 
@@ -164,12 +196,58 @@ nextflow_pipeline {
             def expectedSamples = ["P19_0002_BDO_01", "P19_0002_BTR_01", "P19_0003_BDO_01"].toSet()
             assert expectedSamples.every { it in foundSamples } : "Missing samples in omega output: ${expectedSamples - foundSamples}"
 
-            // Only snapshot the profile file - omega has non-deterministic floating point values
-            assert snapshot(
-                path("${outputDir}/mutational_profile/all_samples.all.profile.tsv")
-            ).match()
+            // Validate specific gene/impact combinations (RBM10 or ALL_GENES with missense/truncating)
+            def geneIdx = header.findIndexOf { it == "gene" }
+            def impactIdx = header.findIndexOf { it == "impact" }
+
+            def filteredRows = lines.tail().findAll { line ->
+                def cols = line.split('\t')
+                def gene = cols[geneIdx]
+                def impact = cols[impactIdx]
+                (gene == "RBM10" || gene == "ALL_GENES") && (impact == "missense" || impact == "truncating")
+            }
+
+            assert filteredRows.size() > 0 : "Should find rows for RBM10 or ALL_GENES with missense/truncating impacts"
+
+            // Validate that these rows have expected properties
+            filteredRows.each { line ->
+                def cols = line.split('\t')
+                def gene = cols[geneIdx]
+                def impact = cols[impactIdx]
+                def dnds = cols[header.findIndexOf { it == "dnds" }] as Double
+                
+                assert gene in ["RBM10", "ALL_GENES"] : "Gene should be RBM10 or ALL_GENES, found: ${gene}"
+                assert impact in ["missense", "truncating"] : "Impact should be missense or truncating, found: ${impact}"
+                assert dnds >= 0 : "dN/dS should be non-negative for ${gene} ${impact}"
+            }
+
+            // // Optional: snapshot the filtered rows for regression testing
+            // def filteredContent = [header.join('\t')] + filteredRows
+            // assert snapshot(filteredContent.join('\n')).match("rbm10_all_genes_filtered")
 
             //TODO Include omega output snapshot when stable
+
+            // Filter out empty lines and the header (collectFile keepHeader is non-deterministic)
+            def expectedHeader = "gene\tsample\timpact\tmutations\tdnds\tpvalue\tlower\tupper"
+            def dataLines = lines.findAll { it && it != expectedHeader }
+            assert dataLines.size() == 252 : "Omega output should contain 252 data rows, found ${dataLines.size()}"
+
+            // Sort by key columns (gene, sample, impact) to avoid floating-point differences affecting order
+            // Round numeric columns (dnds, pvalue, lower, upper) to 2 decimals for deterministic comparison
+            def sortedRounded = filteredRows.sort { line ->
+                def cols = line.split('\t')
+                "${cols[0]}\t${cols[1]}\t${cols[2]}"
+            }.collect { line ->
+                def cols = line.split('\t')
+                (4..7).each { i -> cols[i] = String.format("%.2f", cols[i] as Double) }
+                cols.join('\t')
+            }
+            def sortedContent = [expectedHeader] + sortedRounded
+
+            // Snapshot both files
+            assert snapshot(path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")).match("mutational_profile")
+            assert snapshot(sortedContent.join('\n')).match("omega_results")
+
         }
     }
 
@@ -194,7 +272,7 @@ nextflow_pipeline {
     ========================================================================================
     */
     test("TEST 3. Should fail when --input_maf is provided without --use_custom_depths") {
-        tag "input_maf_validation"
+        tag "input_maf_nodepths_validation"
 
         when {
             params {
@@ -208,6 +286,43 @@ nextflow_pipeline {
 
         then {
             assert workflow.failed : "Pipeline should fail when --input_maf is set without --use_custom_depths"
+        }
+    }
+
+
+    test("TEST 4. Should fail when --input is provided without BAM files and --use_custom_depths is not activated") {
+        tag "input_csvnobam_nodepths_validation"
+
+        when {
+            params {
+                input             = "${projectDir}/tests/test_data/input_no_bam.csv"
+                outdir            = "$outputDir"
+                input_maf         = "${projectDir}/tests/test_data/test_mutations.maf"
+                use_custom_depths = false
+                wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+            }
+        }
+
+        then {
+            assert workflow.failed : "Pipeline should fail when --input is set without BAM files and --use_custom_depths is not activated"
+        }
+    }
+
+    test("TEST 5. Should fail when --input is provided without BAM files and --use_custom_depths is activated but no file provided") {
+        tag "input_csv_no_bam_no_depthsfile_validation"
+
+        when {
+            params {
+                input             = "${projectDir}/tests/test_data/input_no_bam.csv"
+                outdir            = "$outputDir"
+                input_maf         = "${projectDir}/tests/test_data/test_mutations.maf"
+                use_custom_depths = true
+                wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+            }
+        }
+
+        then {
+            assert workflow.failed : "Pipeline should fail when --input is set without BAM files and --use_custom_depths is activated but no file provided"
         }
     }
 
