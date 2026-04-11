@@ -5,24 +5,20 @@ process QUERY_BIOMART {
     label 'time_low'
     label 'process_high_memory'
 
-
-    label 'deepcsa_core'
+    container 'docker.io/ferriolcalvet/querybiomart:latest'
 
     input:
     tuple val(meta) , path(panel)
-    tuple val(meta2), path(bedfile)
 
     output:
-    tuple val(meta), path("custom_filtered_biomart.tsv"), emit: filtered_biomart
-    tuple val(meta), path("splice_sites.tsv")           , emit: splice_sites
-    path "versions.yml"                                 , emit: versions
-
-    when:
-    task.ext.when == null || task.ext.when
+    tuple val(meta), path("cds_biomart.txt"), emit: complete_biomart
+    path "versions.yml"                                 , topic: versions
 
     script:
     """
-    cut -f 6 ${panel} | tail -n +2 | sort -u | awk '\$1!="-"' | tr -s '\\n' ',' > genes_list.txt
+    cut -f 6 ${panel} | tail -n +2 | sort -u | awk '\$1!="-"' | tr -s '\\n' ',' | sed 's/,\$//' > genes_list.txt
+
+    GENES=\$(cat genes_list.txt)
 
     cat > biomartQuery.txt << EOF
     <?xml version="1.0" encoding="UTF-8"?>
@@ -50,21 +46,16 @@ process QUERY_BIOMART {
     </Query>
     EOF
 
-    wget -O result.txt \
-        --post-file=query.xml \
-        'https://jan2024.archive.ensembl.org/biomart/martservice'
 
-    dNdScv_panel_prep.py --bed ${bedfile} \\
-                        --genes result.txt \\
-                        --output custom_filtered_biomart.tsv \\
-                        --verbose \
-                        -s splice_sites.tsv
+    biomart_query.R --biomartquery biomartQuery.txt \\
+                            --outputfile cds_biomart.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         Ensembl BioMart: v111
     END_VERSIONS
     """
+
 
     stub:
     def args = task.ext.args ?: ''
@@ -78,3 +69,13 @@ process QUERY_BIOMART {
     END_VERSIONS
     """
 }
+
+// FIXME: right now the ensembl archive version of biomart is hardcoded
+// we should define some map and make sure that it is updated accordingly
+// curl -o result.txt \
+//         --data @query.xml \
+//         'https://jan2024.archive.ensembl.org/biomart/martservice'
+// QUERY=$(cat query.xml)^C
+// biomart_cds_query_encoded=$(python -c "from urllib.parse import quote_plus; query ='''${QUERY}'''; print(quote_plus(query.replace('\\n', '')))")^C
+// curl -L -s "https://www.ensembl.org/biomart/martservice?query=${biomart_cds_query_encoded}" > cdssss_known.txt^C
+// /data/bbg/nobackup2/work/deepCSA/tests/2026-04-04/e8/5f7c8467d042e74ed361b4c97a6c16

@@ -506,7 +506,7 @@ class TranscriptBuilder:
                     "GENE_ID": gene.gene_id,
                     "SYMBOL": gene.symbol,
                     "PROTEIN_ID": gene.protein_id,
-                    "CHR": gene.chrom,
+                    "CHR": "chr" + gene.chrom,
                     "START": frag.start,
                     "END": frag.end,
                     "CDS_START": new_cds_start,
@@ -624,7 +624,7 @@ class SpliceClassifier:
             boundary_desc_donor = f"{prev_frag.end}|{next_frag.start}"
             for pos in donor_positions:
                 records.append({
-                    "CHR": gene.chrom,
+                    "CHR": "chr" + gene.chrom,
                     "POSITION": pos,
                     "GENE_SYMBOL": gene.symbol,
                     "GENE_ID": gene.gene_id,
@@ -634,7 +634,7 @@ class SpliceClassifier:
                 })
             for pos in acceptor_positions:
                 records.append({
-                    "CHR": gene.chrom,
+                    "CHR": "chr" + gene.chrom,
                     "POSITION": pos,
                     "GENE_SYMBOL": gene.symbol,
                     "GENE_ID": gene.gene_id,
