@@ -10,6 +10,7 @@ workflow HDP_EXTRACTION {
     take:
     matrix
     reference_signatures
+    features_groups
 
     main:
 
@@ -17,7 +18,7 @@ workflow HDP_EXTRACTION {
     .join( matrix )
     .set{ samples_matrix }
 
-    PREPARE_INPUT(samples_matrix)
+    PREPARE_INPUT(samples_matrix, features_groups)
 
     iter_ch = channel.of(1..15)
     combined_input_ch = PREPARE_INPUT.out.input_data.combine(iter_ch)

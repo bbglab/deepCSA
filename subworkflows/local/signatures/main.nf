@@ -10,6 +10,7 @@ workflow SIGNATURES {
     matrix_wgs
     reference_signatures
     samples
+    features_groups
 
     main:
     // actual code
@@ -37,7 +38,7 @@ workflow SIGNATURES {
     SIGPROBS(all_sigs_probs)
     SIGPROBS.out.signature_probs.flatten().map{ it -> [ [id : it.name.tokenize('.')[0]] , it]  }.set{ signature_probs_samples }
 
-    HDPEXTRACTION(named_matrices_wgs_hdp, reference_signatures)
+    HDPEXTRACTION(named_matrices_wgs_hdp, reference_signatures, features_groups)
 
     HDPREASSIGNMENT(named_matrices_wgs_sp, HDPEXTRACTION.out.signatures.first(), reference_signatures)
 
