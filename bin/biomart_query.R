@@ -7,7 +7,7 @@
 library(optparse)
 library(GenomicRanges)
 library(dplyr)
-library(httr)
+library(biomaRt)
 library(utils)
 
 
@@ -25,39 +25,29 @@ opt = parse_args(opt_parser);
 genes <- readLines(opt$genelist)
 genes <- unlist(strsplit(genes, ","))
 
-# Define the BioMart endpoint (archived Ensembl January 2024 version)
-biomart_url <- "http://jan2024.archive.ensembl.org/biomart/martservice"
+# Define the BioMart ensembl connection (archived Ensembl January 2024 version)
+ensembl <- useEnsembl(
+  biomart = "genes", 
+  dataset = "hsapiens_gene_ensembl", 
+  version = 111 # Ensembl 111 corresponds to January 2024
+)
 
-# Function to build query for a batch of genes
-build_query <- function(gene_batch) {
-  gene_string <- paste0(gene_batch, collapse = ",")
-  query <- paste0(
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<!DOCTYPE Query>',
-    '<Query  virtualSchemaName = "default" formatter = "TSV" header = "1" uniqueRows = "0" count = "" datasetConfigVersion = "0.6" >',
-    '<Dataset name = "hsapiens_gene_ensembl" interface = "default" >',
-    '<Filter name = "chromosome_name" value = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y"/>',
-    '<Filter name = "biotype" value = "protein_coding"/>',
-    '<Filter name = "external_gene_name" value = "', gene_string, '"/>',
-    '<Filter name = "mane_select" excluded = "0"/>',
-    '<Attribute name = "ensembl_gene_id" />',
-    '<Attribute name = "external_gene_name" />',
-    '<Attribute name = "ensembl_peptide_id" />',
-    '<Attribute name = "chromosome_name" />',
-    '<Attribute name = "genomic_coding_start" />',
-    '<Attribute name = "genomic_coding_end" />',
-    '<Attribute name = "cds_start" />',
-    '<Attribute name = "cds_end" />',
-    '<Attribute name = "cds_length" />',
-    '<Attribute name = "strand" />',
-    '<Attribute name = "ensembl_transcript_id" />',
-    '<Attribute name = "exon_chrom_start" />',
-    '<Attribute name = "exon_chrom_end" />',
-    '</Dataset>',
-    '</Query>'
-  )
-  return(query)
-}
+# Define query attributes
+attributes <- c(
+  "ensembl_gene_id",
+  "external_gene_name",
+  "ensembl_peptide_id",
+  "chromosome_name",
+  "genomic_coding_start",
+  "genomic_coding_end",
+  "cds_start",
+  "cds_end",
+  "cds_length",
+  "strand",
+  "ensembl_transcript_id",
+  "exon_chrom_start",
+  "exon_chrom_end"
+)
 
 # Initialize output file (remove if it exists to ensure fresh start)
 if (file.exists(opt$outputfile)) {
@@ -71,23 +61,54 @@ has_written_data <- FALSE
 
 for (i in seq_along(batches)) {
   message(sprintf("Processing batch %d of %d", i, length(batches)))
-  batch_query <- build_query(batches[[i]])
-  encoded_query <- URLencode(batch_query)
   
-  response <- GET(paste0(biomart_url, "?query=", encoded_query))
-  
-  if (response$status_code != 200) {
-    stop("Error: Failed to retrieve data from BioMart for batch ", i, ". Status code: ", response$status_code)
+  # Add a 10 second delay between queries (except for the first batch) to avoid overloading the server
+  if (i > 1) {
+    Sys.sleep(10)
   }
   
-  biomart_output <- content(response, type = "text", encoding = "UTF-8")
+  # Fetch data with biomaRt, retrying up to 3 times on failure
+  batch_data <- NULL
+  success <- FALSE
+  attempts <- 0
+  max_attempts <- 3
   
-  # Check if response is empty (BioMart sometimes returns empty responses for small valid queries)
-  if (nchar(trimws(biomart_output)) > 0) {
-    batch_data <- read.delim(textConnection(biomart_output), header = TRUE, sep = "\t")
+  while (!success && attempts < max_attempts) {
+    attempts <- attempts + 1
     
+    batch_data <- tryCatch({
+      getBM(
+        attributes = attributes,
+        filters = c("chromosome_name", "biotype", "external_gene_name", "transcript_mane_select"),
+        values = list(
+          c(as.character(1:22), "X", "Y"),
+          "protein_coding",
+          batches[[i]],
+          TRUE
+        ),
+        mart = ensembl
+      )
+    }, error = function(e) {
+      message(sprintf("Attempt %d failed: %s", attempts, e$message))
+      NULL
+    })
+    
+    if (!is.null(batch_data)) {
+      success <- TRUE
+    } else {
+      if (attempts < max_attempts) {
+        message("Retrying in 10 seconds...")
+        Sys.sleep(10)
+      } else {
+        stop("Error: Failed to retrieve data from BioMart for batch ", i, " after ", max_attempts, " attempts.")
+      }
+    }
+  }
+  
+  # Check if response isn't empty
+  if (nrow(batch_data) > 0) {
     # Remove rows with empty CDS information
-    exon_file <- subset(batch_data, !is.na(Genomic.coding.start) & Genomic.coding.start != "")
+    exon_file <- subset(batch_data, !is.na(genomic_coding_start) & genomic_coding_start != "")
     
     if (nrow(exon_file) > 0) {
       if (!has_written_data) {
@@ -102,7 +123,7 @@ for (i in seq_along(batches)) {
         sep = "\t",
         quote = FALSE,
         row.names = FALSE,
-        col.names = FALSE,
+        col.names = (!file.exists(opt$outputfile)), # write header only if file is fresh
         append = TRUE
       )
     }
