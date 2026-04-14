@@ -1,4 +1,4 @@
-process FILTER_BIOMART {
+process ADAPT_PANEL_REFCDS {
 
     tag "$meta.id"
     label 'cpu_single_fixed'
@@ -26,7 +26,7 @@ process FILTER_BIOMART {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        Ensembl BioMart: v111
+        dNdScv_panel_prep : \$(dNdScv_panel_prep.py --version)
     END_VERSIONS
     """
 
@@ -39,7 +39,7 @@ process FILTER_BIOMART {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        Ensembl BioMart: v111
+        dNdScv_panel_prep : \$(dNdScv_panel_prep.py --version)
     END_VERSIONS
     """
 }
