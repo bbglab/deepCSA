@@ -29,7 +29,7 @@ genes <- unlist(strsplit(genes, ","))
 ensembl <- useEnsembl(
   biomart = "genes", 
   dataset = "hsapiens_gene_ensembl", 
-  version = 111 # Ensembl 111 corresponds to January 2024
+  host = "https://www.ensembl.org"
 )
 
 # Define query attributes

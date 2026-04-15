@@ -5,7 +5,7 @@ process QUERY_BIOMART {
     label 'time_low'
     label 'process_high_memory'
 
-    container 'docker.io/ferriolcalvet/querybiomart:latest'
+    container 'docker.io/ferriolcalvet/querybiomart:0.2.0'
 
     input:
     tuple val(meta) , path(panel)
