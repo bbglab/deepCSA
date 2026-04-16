@@ -54,8 +54,8 @@ if (file.exists(opt$outputfile)) {
   file.remove(opt$outputfile)
 }
 
-# Process genes in batches of 300
-batch_size <- 300
+# Process genes in batches of 150
+batch_size <- 150
 batches <- split(genes, ceiling(seq_along(genes)/batch_size))
 has_written_data <- FALSE
 
