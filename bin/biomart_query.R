@@ -79,7 +79,7 @@ for (i in seq_along(batches)) {
     batch_data <- tryCatch({
       getBM(
         attributes = attributes,
-        filters = c("chromosome_name", "biotype", "external_gene_name", "transcript_mane_select"),
+        filters = c("chromosome_name", "biotype", "external_gene_name", "transcript_is_canonical"),
         values = list(
           c(as.character(1:22), "X", "Y"),
           "protein_coding",
