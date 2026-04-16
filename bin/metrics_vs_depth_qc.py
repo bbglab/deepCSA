@@ -94,9 +94,10 @@ def load_omegas(omegas_file, samples):
     omegas_dfs = []
     omega = omega.rename(columns={sample_col: "SAMPLE_ID", gene_col: "GENE", dnds_col: "metric_value"})
     for impact in ["missense", "truncating"]:
-        subset_omega = omega[omega["impact"] == impact].copy()
+        subset_omega = omega[(omega["impact"] == impact)
+                             & ~(omega["GENE"].astype(str).str.contains("--"))
+                             ].copy()
         subset_omega["SAMPLE_ID"] = subset_omega["SAMPLE_ID"].astype(str)
-        subset_omega["GENE"] = subset_omega["GENE"].astype(str).str.split("--").str[0]
         subset_omega = subset_omega[subset_omega["SAMPLE_ID"].isin(samples)].copy()
         subset_omega["metric_value"] = pd.to_numeric(subset_omega["metric_value"], errors="coerce")
         subset_omega["metric_name"] = f"omega_gloc_{impact}"
