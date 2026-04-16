@@ -123,7 +123,7 @@ for (i in seq_along(batches)) {
         sep = "\t",
         quote = FALSE,
         row.names = FALSE,
-        col.names = (!file.exists(opt$outputfile)), # write header only if file is fresh
+        col.names = FALSE,
         append = TRUE
       )
     }
