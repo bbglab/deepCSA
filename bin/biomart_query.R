@@ -54,17 +54,17 @@ if (file.exists(opt$outputfile)) {
   file.remove(opt$outputfile)
 }
 
-# Process genes in batches of 150
-batch_size <- 150
+# Process genes in batches of 250
+batch_size <- 250
 batches <- split(genes, ceiling(seq_along(genes)/batch_size))
 has_written_data <- FALSE
 
 for (i in seq_along(batches)) {
   message(sprintf("Processing batch %d of %d", i, length(batches)))
   
-  # Add a 10 second delay between queries (except for the first batch) to avoid overloading the server
+  # Add a 30 second delay between queries (except for the first batch) to avoid overloading the server
   if (i > 1) {
-    Sys.sleep(10)
+    Sys.sleep(30)
   }
   
   # Fetch data with biomaRt, retrying up to 3 times on failure
@@ -97,8 +97,8 @@ for (i in seq_along(batches)) {
       success <- TRUE
     } else {
       if (attempts < max_attempts) {
-        message("Retrying in 10 seconds...")
-        Sys.sleep(10)
+        message("Retrying in 30 seconds...")
+        Sys.sleep(30)
       } else {
         stop("Error: Failed to retrieve data from BioMart for batch ", i, " after ", max_attempts, " attempts.")
       }
