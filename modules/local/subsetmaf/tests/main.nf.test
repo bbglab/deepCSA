@@ -1,0 +1,32 @@
+nextflow_process {
+    name "Test SUBSET_MAF process"
+    script "modules/local/subsetmaf/main.nf"
+    process "SUBSET_MAF"
+
+    test("Should run with somatic-like filtering and emit expected subset") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/germline_somatic/all_samples.filtered.tsv.gz")
+                )
+                """
+            }
+        }
+
+        then {
+            config {
+                process {
+                    withName: 'SUBSET_MAF' {
+                        ext.output_prefix = '.somatic'
+                        ext.output_fmt = '"header": true'
+                        ext.filters = '"FILTER" : ["notcontains gnomAD_SNP", "notcontains nanoseq_snp"], "VAF": "le 0.3", "vd_VAF": "le 0.3", "VAF_AM": "le 0.3"'
+                    }
+                }
+            }
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

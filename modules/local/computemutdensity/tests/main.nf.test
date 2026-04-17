@@ -1,0 +1,28 @@
+nextflow_process {
+    name "Test MUTATION_DENSITY process"
+    script "modules/local/computemutdensity/main.nf"
+    process "MUTATION_DENSITY"
+
+    test("Should run and reproduce expected all-panel mutation densities") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/clean_somatic/all_samples.somatic.mutations.tsv"),
+                    file("${projectDir}/test_data/modules/add_tests/depths/individual/all_samples.depths.annotated.tsv.gz")
+                )
+                input[1] = tuple(
+                    [id: 'all'],
+                    file("${projectDir}/test_data/modules/add_tests/regions/expandedregions/consensus.all_with_subgenic.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}
