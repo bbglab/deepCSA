@@ -1,0 +1,50 @@
+nextflow_process {
+    name "Test SELECT_MUTDENSITIES process"
+    script "modules/local/select_mutdensity/main.nf"
+    process "SELECT_MUTDENSITIES"
+
+    test("Should run in mutations mode and match expected output") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutdensity/individual_vals/all_samples.synonymous.mutdensities.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert path("all_samples.gene_mutdensities.tsv").readLines() == path("${projectDir}/test_data/modules/add_tests/processing_files/synmutdensity/all_samples.gene_mutdensities.tsv").readLines()
+            assert process.out.versions.size() == 1
+        }
+    }
+
+    test("Should run in mutated_reads mode and match expected output") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutdensity/individual_vals/all_samples.synonymous.mutdensities.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            config {
+                process {
+                    withName: 'SELECT_MUTDENSITIES' {
+                        ext.mode = 'mutated_reads'
+                    }
+                }
+            }
+            assert process.success
+            assert path("all_samples.gene_mutdensities.tsv").readLines() == path("${projectDir}/test_data/modules/add_tests/processing_files/synmutreadsdensity/all_samples.gene_mutdensities.tsv").readLines()
+            assert process.out.versions.size() == 1
+        }
+    }
+}

@@ -31,14 +31,53 @@ Run the whole suite:
 nf-test test tests/deepcsa.nf.test
 ```
 
+Run full reference-coverage nf-test (all major features enabled):
+```bash
+nf-test test tests/deepcsa.reference_coverage.nf.test
+```
+
 Run a single test by tag:
 ```bash
 nf-test test tests/deepcsa.nf.test --tag normal
 nf-test test tests/deepcsa.nf.test --tag omega
 nf-test test tests/deepcsa.nf.test --tag input_maf_validation
+nf-test test tests/deepcsa.reference_coverage.nf.test --tag reference_coverage
 ```
 
 The `tests/nextflow.config` is loaded automatically via `nf-test.config`. It handles SLURM submission, Singularity, and all cluster-specific paths — no extra flags needed.
+
+### Fast unit tests (Python)
+In addition to `nf-test`, the repository now includes fast Python unit tests under `tests/unit/`:
+
+- `test_bin_scripts_unit.py`: unit-level checks for key Python helpers (`check_samplesheet.py`, `features_1table2groups.py`, `merge_cohort.py`).
+- `test_reference_run_step_coverage.py`: parses a real execution trace and checks that every executed process family is mapped to a test category with output evidence.
+
+Run them with:
+```bash
+python -m unittest discover -s tests/unit -p "test_*.py"
+```
+
+By default, the reference-run coverage test looks for:
+`scratchhhh/2026-04-17_add_tests`
+
+You can override that path with:
+```bash
+export DEEPCSA_REFERENCE_RUN_DIR="/path/to/reference_run"
+python -m unittest tests.unit.test_reference_run_step_coverage
+```
+
+### Module-level nf-tests
+Additional process-level nf-tests were added in local modules used by the reference run:
+
+- [modules/local/table2groups/tests/main.nf.test](modules/local/table2groups/tests/main.nf.test)
+- [modules/local/filterdepths/tests/main.nf.test](modules/local/filterdepths/tests/main.nf.test)
+- [modules/local/sitesfrompositions/tests/main.nf.test](modules/local/sitesfrompositions/tests/main.nf.test)
+- [modules/local/expand_regions/tests/main.nf.test](modules/local/expand_regions/tests/main.nf.test)
+
+Run all module nf-tests:
+```bash
+nf-test test modules/local/**/tests/main.nf.test
+```
 
 ### Snapshots
 Snapshots are stored in `tests/deepcsa.nf.test.snap` and encode expected outputs for deterministic comparison.

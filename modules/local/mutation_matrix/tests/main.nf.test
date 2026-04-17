@@ -1,0 +1,23 @@
+nextflow_process {
+    name "Test COMPUTE_MATRIX process"
+    script "modules/local/mutation_matrix/main.nf"
+    process "COMPUTE_MATRIX"
+
+    test("Should run and reproduce expected mutation matrix") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples.all'],
+                    file("${projectDir}/test_data/modules/all_samples.all.mutations4matrix.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

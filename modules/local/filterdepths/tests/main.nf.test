@@ -1,0 +1,25 @@
+nextflow_process {
+    name "Test FILTERDEPTHS process"
+    script "modules/local/filterdepths/main.nf"
+    process "FILTERDEPTHS"
+
+    test("Should run and preserve depths when no minimum depth is set") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/depths/all_samples_indv.depths.tsv.gz")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.depths.size() == 1
+            assert path("all_samples.depths.tsv.gz").toFile().bytes == path("${projectDir}/test_data/modules/add_tests/depths/all_samples_indv.depths.tsv.gz").toFile().bytes
+            assert process.out.versions.size() == 1
+        }
+    }
+}

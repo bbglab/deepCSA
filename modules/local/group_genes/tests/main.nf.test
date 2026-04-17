@@ -1,0 +1,29 @@
+nextflow_process {
+    name "Test GROUP_GENES process"
+    script "modules/local/group_genes/main.nf"
+    process "GROUP_GENES"
+
+    test("Should run and reproduce expected genes-to-groups JSON") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/selection/omega/preprocessing/syn_muts.all_samples.tsv")
+                )
+                input[1] = file("${projectDir}/tests/test_data/input_no_bam.csv")
+                input[2] = tuple(
+                    [id: 'subgenic_hotspots'],
+                    file("${projectDir}/test_data/modules/add_tests/regions/expandedregions/subgenic_names.json")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert path("genes2group_out.json").readLines() == path("${projectDir}/test_data/modules/add_tests/group_definition/genes/genes2group_out.json").readLines()
+            assert process.out.versions.size() == 1
+        }
+    }
+}

@@ -1,0 +1,25 @@
+nextflow_process {
+    name "Test SITESFROMPOSITIONS process"
+    script "modules/local/sitesfrompositions/main.nf"
+    process "SITESFROMPOSITIONS"
+
+    test("Should run and reproduce expected panel sites chunk") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/depths/all_samples_indv.depths.tsv.gz")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.annotated_panel_reg.size() == 1
+            assert path("captured_positions.sites4VEP.chunk0.tsv").readLines() == path("${projectDir}/test_data/modules/add_tests/processing_files/sitesfrompositions/captured_positions.sites4VEP.chunk0.tsv").readLines()
+            assert process.out.versions.size() == 1
+        }
+    }
+}

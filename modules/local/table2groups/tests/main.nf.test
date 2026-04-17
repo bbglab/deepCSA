@@ -1,0 +1,23 @@
+nextflow_process {
+    name "Test TABLE_2_GROUP process"
+    script "modules/local/table2groups/main.nf"
+    process "TABLE_2_GROUP"
+
+    test("Should run and reproduce expected grouping JSON outputs") {
+        when {
+            process {
+                """
+                input[0] = file("${projectDir}/tests/test_data/input_no_bam.csv")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert path("samples.json").readLines() == path("${projectDir}/test_data/modules/add_tests/group_definition/samples/samples.json").readLines()
+            assert path("groups.json").readLines() == path("${projectDir}/test_data/modules/add_tests/group_definition/samples/groups.json").readLines()
+            assert path("all_groups.json").readLines() == path("${projectDir}/test_data/modules/add_tests/group_definition/samples/all_groups.json").readLines()
+            assert process.out.versions.size() == 1
+        }
+    }
+}

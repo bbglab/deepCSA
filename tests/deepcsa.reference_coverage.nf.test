@@ -1,0 +1,215 @@
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    TEST SUITE: deepCSA reference-run coverage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Purpose:
+    - Run a full-feature configuration through nf-test
+    - Assert that all process families seen in the April 17, 2026 reference run are executed
+    - Validate key output folders are produced
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+nextflow_pipeline {
+    name "Test DEEPCSA reference-run coverage"
+    script "main.nf"
+    config "./nextflow.config"
+
+    test("Reference run: full feature process coverage") {
+        tag "reference_coverage"
+
+        when {
+            params {
+                input = "${projectDir}/tests/test_data/input_no_bam.csv"
+                outdir = "$outputDir"
+
+                // Inputs available in repository or reachable URLs
+                wgs_trinuc_counts = "${projectDir}/assets/trinucleotide_counts/trinuc_counts.homo_sapiens.tsv"
+                use_custom_depths = true
+                custom_depths_table = "https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz"
+
+                // Match reference feature set as closely as possible
+                customize_annotation = true
+                custom_annotation_tsv = "/data/bbg/datasets/transfer/ferriol_deepcsa/custom_regions/TERT_regions.tsv"
+                hotspots_annotation = true
+                hotspots_definition_file = "/data/bbg/datasets/transfer/ferriol_deepcsa/hotspots/all_intogen_v2024.header.tsv"
+
+                create_subgenic_regions = true
+                autodomains = true
+                autoexons = true
+
+                mutationdensity = true
+                profileall = true
+                signatures = true
+                omega = true
+                omega_multi = true
+                omega_plot = true
+                omega_globalloc = true
+                omega_mutabilities = true
+                oncodrivefml = true
+                oncodrive3d = true
+                o3d_raw_vep = true
+                o3d_plot = true
+                indels = true
+                dnds = true
+                regressions = true
+                plot_only_allsamples = true
+                plot_depths = false
+
+                selected_genes = "KMT2D,ARID1A,KDM6A,RBM10,EP300,STAG2,CREBBP,NOTCH2,CDKN1A,KMT2C,TP53,RB1"
+                filter_criteria = [
+                    "notcontains NM20",
+                    "notcontains nanoseq_noise",
+                    "notcontains p8",
+                    "notcontains n_rich",
+                    "notcontains cohort_n_rich_threshold",
+                    "notcontains cohort_n_rich",
+                    "notcontains no_pileup_support",
+                    "notcontains low_mappability",
+                    "notcontains not_covered"
+                ]
+                filter_criteria_somatic = [
+                    "notcontains gnomAD_SNP",
+                    "notcontains nanoseq_snp"
+                ]
+            }
+        }
+
+        then {
+            assert workflow.success : "Pipeline should complete successfully with reference coverage settings"
+
+            // Key output roots
+            assert path("${outputDir}/mutational_profile").exists()
+            assert path("${outputDir}/mutdensity").exists()
+            assert path("${outputDir}/mutdensity_adjusted").exists()
+            assert path("${outputDir}/selection").exists()
+            assert path("${outputDir}/plots").exists()
+            assert path("${outputDir}/signatures").exists()
+            assert path("${outputDir}/regions").exists()
+            assert path("${outputDir}/qc").exists()
+
+            def expectedFamilies = [
+                "ABSOLUTEMUTABILITIES",
+                "ABSOLUTEMUTABILITIESGLOBALLOC",
+                "ANNOTATEDEPTHS",
+                "APPLYOMEGAQC",
+                "CLEANMUTATIONS",
+                "COMPAREPANELPROPORTIONS",
+                "COMPARESIGNATURES",
+                "COMPUTEMATRIX",
+                "COMPUTEPROFILE",
+                "COMPUTETRINUC",
+                "CONCATPROFILES",
+                "CREATECAPTUREDPANELS",
+                "CREATECONSENSUSPANELSALL",
+                "CREATECONSENSUSPANELSEXONS",
+                "CREATECONSENSUSPANELSINTRONS",
+                "CREATECONSENSUSPANELSNONPROTAFFECT",
+                "CREATECONSENSUSPANELSPROTAFFECT",
+                "CREATECONSENSUSPANELSSYNONYMOUS",
+                "CREATEMASKMATRIX",
+                "CUSTOMANNOTATION",
+                "CUSTOMBEDFILE",
+                "CUSTOMPROCESSING",
+                "CUSTOMPROCESSINGRICH",
+                "CUSTOM_DUMPSOFTWAREVERSIONS",
+                "DEPTHSALLCONS",
+                "DEPTHSEXONSCONS",
+                "DEPTHSNONPROTCONS",
+                "DEPTHSPROTCONS",
+                "DEPTHSSUMMARY",
+                "DEPTHSSYNONYMOUSCONS",
+                "DNA2PROTEINMAPPING",
+                "DNDSRUN",
+                "DOMAINANNOTATION",
+                "ENSEMBLVEP_VEP",
+                "ESTIMATOR",
+                "ESTIMATORGLOBALLOC",
+                "EVALOMEGAGLOCESTIMATION",
+                "EXPANDREGIONSALL",
+                "EXPANDREGIONSEXONS",
+                "EXPANDREGIONSNONPROT",
+                "EXPANDREGIONSPROT",
+                "EXPANDREGIONSSYNONYMOUS",
+                "FILTERBATCH",
+                "FILTERDEPTHS",
+                "FILTEREXONS",
+                "FILTERNANOSEQNOISE",
+                "FILTERNANOSEQSNP",
+                "FILTERPANEL",
+                "GROUPGENES",
+                "HDPREASSIGNMENT",
+                "INDELS",
+                "MAF2VCF",
+                "MATRIXCONCATWGS",
+                "MERGEBATCH",
+                "MULTIQC",
+                "MUTABILITY_BGZIPTABIX",
+                "MUTDENSITY",
+                "MUTDENSITYADJ",
+                "MUTS2SIGS",
+                "ONCODRIVE3D_PLOT",
+                "ONCODRIVE3D_PREPROCESSING",
+                "ONCODRIVE3D_RUN",
+                "ONCODRIVEFMLBED",
+                "ONCODRIVEFMLSNVS",
+                "PLOTINTERINDIVIDUALVARIABILITY",
+                "PLOTMAF",
+                "PLOTMUTATIONSPECIFIC",
+                "PLOTMUTDENSITYQC",
+                "PLOTNEEDLES",
+                "PLOTOMEGA",
+                "PLOTOMEGAGLOBALLOC",
+                "PLOTSATURATION",
+                "PLOTSATURATIONPROPORTIONS",
+                "PLOTSELECTION",
+                "PLOTSOMATICMAF",
+                "POSTPROCESSVEPPANEL",
+                "PREPARE_INPUT",
+                "PREPROCESSDEPTHS",
+                "PREPROCESSING",
+                "PREPROCESSINGGLOBALLOC",
+                "PROCESS_HDP_RESULTS",
+                "QUERYDEPTHS",
+                "QUERYMUTATIONS",
+                "QUERYMUTATIONSEXONS",
+                "QUERYPANEL",
+                "REFORMATSIGNATURES",
+                "RELATIVEMUTABILITY",
+                "RUN_HDP_CHAIN_SAMPLING",
+                "SAMPLESHEET_CHECK",
+                "SIGPROBS",
+                "SIGPROFILERASSIGNMENT",
+                "SIGPROFILERASSIGNMENTINDELS",
+                "SIGPROMATRIXGENERATOR",
+                "SITECOMPARISON",
+                "SITECOMPARISONGLOBALLOC",
+                "SITECOMPARISONGLOBALLOCMULTI",
+                "SITECOMPARISONMULTI",
+                "SITESFROMPOSITIONS",
+                "SOMATICMUTATIONS",
+                "SORTPANELCOMPACT",
+                "SORTPANELRICH",
+                "SUBSETINDELS",
+                "SUBSETMUTABILITY",
+                "SUBSETMUTDENSITY",
+                "SUBSETMUTDENSITYADJUSTED",
+                "SUBSETMUTPROFILE",
+                "SUBSETOMEGA",
+                "SUBSETOMEGAMULTI",
+                "SUBSETONCODRIVE3D",
+                "SUBSETONCODRIVEFML",
+                "SUBSET_DNDS",
+                "SUMANNOTATION",
+                "SYNMUTDENSITY",
+                "SYNMUTREADSDENSITY",
+                "TABLE2GROUP",
+                "VCF2MAF",
+                "WRITEMAF"
+            ]
+
+            expectedFamilies.each { fam ->
+                assert workflow.trace.succeeded(fam).size() > 0 : "Expected process family not executed: ${fam}"
+            }
+        }
+    }
+}

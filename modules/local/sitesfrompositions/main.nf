@@ -39,7 +39,7 @@ process SITESFROMPOSITIONS {
 
     stub:
     """
-    touch captured_positions.sites4VEP.tsv;
+    touch captured_positions.sites4VEP.chunk0.tsv;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -1,0 +1,34 @@
+nextflow_process {
+    name "Test MAF_2_VCF process"
+    script "modules/local/maf2vcf/main.nf"
+    process "MAF_2_VCF"
+
+    test("Should run and reproduce expected per-sample VCF files") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/clean_somatic/all_samples.somatic.mutations.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            config {
+                process {
+                    withName: 'MAF_2_VCF' {
+                        ext.args = '--output-dir . --maf-from-deepcsa --sample-name-column SAMPLE_ID'
+                    }
+                }
+            }
+
+            assert process.success
+            assert path("P19_0002_BDO_01.vcf").readLines() == path("${projectDir}/test_data/modules/add_tests/signatures/sigprofilermatrixgenerator/vcfs/P19_0002_BDO_01.vcf").readLines()
+            assert path("P19_0002_BTR_01.vcf").readLines() == path("${projectDir}/test_data/modules/add_tests/signatures/sigprofilermatrixgenerator/vcfs/P19_0002_BTR_01.vcf").readLines()
+            assert path("P19_0003_BDO_01.vcf").readLines() == path("${projectDir}/test_data/modules/add_tests/signatures/sigprofilermatrixgenerator/vcfs/P19_0003_BDO_01.vcf").readLines()
+            assert process.out.versions.size() == 1
+        }
+    }
+}

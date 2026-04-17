@@ -1,0 +1,25 @@
+nextflow_process {
+    name "Test CREATE_MASK_MATRIX process"
+    script "modules/local/createmaskmatrix/main.nf"
+    process "CREATE_MASK_MATRIX"
+
+    test("Should run and reproduce expected mask matrix") {
+        when {
+            process {
+                """
+                input[0] = [
+                    file("${projectDir}/test_data/modules/add_tests/processing_files/flagged_positions/P19_0002_BDO_01.flagged-pos.bed"),
+                    file("${projectDir}/test_data/modules/add_tests/processing_files/flagged_positions/P19_0002_BTR_01.flagged-pos.bed"),
+                    file("${projectDir}/test_data/modules/add_tests/processing_files/flagged_positions/P19_0003_BDO_01.flagged-pos.bed")
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert path("flagged_positions.mask.tsv.gz").toFile().bytes == path("${projectDir}/test_data/modules/add_tests/processing_files/createmaskmatrix/flagged_positions.mask.tsv.gz").toFile().bytes
+            assert process.out.versions.size() == 1
+        }
+    }
+}
