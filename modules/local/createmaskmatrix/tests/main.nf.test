@@ -18,8 +18,7 @@ nextflow_process {
 
         then {
             assert process.success
-            assert path("flagged_positions.mask.tsv.gz").toFile().bytes == path("${projectDir}/test_data/modules/add_tests/processing_files/createmaskmatrix/flagged_positions.mask.tsv.gz").toFile().bytes
-            assert process.out.versions.size() == 1
+            assert snapshot(process.out).match()
         }
     }
 }

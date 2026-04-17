@@ -1,0 +1,32 @@
+{
+    "Should run in mutations mode and match expected output": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.gene_mutdensities.tsv:md5,1dafddf07a5ffc3eb42a1a8ef288a5e2"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,174f34cafb43f495182368a89e789531"
+                ],
+                "mutdensity": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.gene_mutdensities.tsv:md5,1dafddf07a5ffc3eb42a1a8ef288a5e2"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-04-17T15:22:18.714204194"
+    }
+}

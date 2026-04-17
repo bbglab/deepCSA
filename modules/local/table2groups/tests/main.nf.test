@@ -14,10 +14,8 @@ nextflow_process {
 
         then {
             assert process.success
-            assert path("samples.json").readLines() == path("${projectDir}/test_data/modules/add_tests/group_definition/samples/samples.json").readLines()
-            assert path("groups.json").readLines() == path("${projectDir}/test_data/modules/add_tests/group_definition/samples/groups.json").readLines()
-            assert path("all_groups.json").readLines() == path("${projectDir}/test_data/modules/add_tests/group_definition/samples/all_groups.json").readLines()
-            assert process.out.versions.size() == 1
+            assert snapshot(process.out).match()
         }
     }
 }
+// TODO add tests with grouping scenario

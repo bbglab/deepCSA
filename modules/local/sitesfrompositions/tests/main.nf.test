@@ -17,9 +17,7 @@ nextflow_process {
 
         then {
             assert process.success
-            assert process.out.annotated_panel_reg.size() == 1
-            assert path("captured_positions.sites4VEP.chunk0.tsv").readLines() == path("${projectDir}/test_data/modules/add_tests/processing_files/sitesfrompositions/captured_positions.sites4VEP.chunk0.tsv").readLines()
-            assert process.out.versions.size() == 1
+            assert snapshot(process.out).match()
         }
     }
 }

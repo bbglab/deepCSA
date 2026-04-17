@@ -179,7 +179,7 @@ vardict_vcf_header = '''##fileformat=VCFv4.2
 
 @click.command()
 @click.option('--mutations-file', required=True, type=click.Path(exists=True), help="Path to the mutations file (TSV format).")
-@click.option('--output-dir', required=True, type=click.Path(), help="Directory to save the output VCF files.")
+@click.option('--output-dir', default='.', type=click.Path(), help="Directory to save the output VCF files.")
 @click.option('--maf-from-deepcsa', is_flag=True, default=False, help="Flag to indicate if the MAF file is from deepCSA.")
 @click.option('--sample-name-column', default="SAMPLE_ID", type=str, help="Column name for sample names in the mutations file.")
 def main(mutations_file, output_dir, maf_from_deepcsa, sample_name_column):

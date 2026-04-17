@@ -1,0 +1,22 @@
+{
+    "Should run and reproduce expected mask matrix": {
+        "content": [
+            {
+                "0": [
+                    "flagged_positions.mask.tsv.gz:md5,b13e2262dfcea26ad9c9e82eec20b4d6"
+                ],
+                "1": [
+                    "versions.yml:md5,e0b7f59cefc12120282af86e647387c5"
+                ],
+                "mask_matrix": [
+                    "flagged_positions.mask.tsv.gz:md5,b13e2262dfcea26ad9c9e82eec20b4d6"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-04-17T15:18:53.571082262"
+    }
+}
