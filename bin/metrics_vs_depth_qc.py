@@ -170,6 +170,9 @@ def plot_scatter_per_gene(df, group_name, metric_name, output_pdf):
     if not genes:
         return
 
+    # keep only the top 200 genes
+    genes = genes[:200]
+
     sns.set_style("whitegrid")
     per_page = 12
     ncols = 3
