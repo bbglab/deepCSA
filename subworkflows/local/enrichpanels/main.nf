@@ -26,7 +26,8 @@ workflow ENRICHPANELS {
 
     main:
 
-    DNA2PROTEINMAPPING(mutations, exons_consensus_panel, all_samples_depths)
+    gff3_channel = params.gff3_file ? file(params.gff3_file, checkIfExists: true) : file(params.input, checkIfExists: true)
+    DNA2PROTEINMAPPING(mutations, exons_consensus_panel, all_samples_depths, gff3_channel)
 
     // Create a channel for the domains file if autodomains is true
     domains_ch = params.autodomains ? domains_file : []  // .map{ it -> it[1]} : []

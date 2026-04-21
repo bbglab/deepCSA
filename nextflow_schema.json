@@ -860,6 +860,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Define a place to store the Ensembl VEP cache.",
                     "default": ".vep"
+                },
+                "gff3_file": {
+                    "type": "string",
+                    "description": "Path to the GFF3 file for the genome assembly being used.",
+                    "fa_icon": "far fa-file-code",
+                    "help_text": "Path to the GFF3 file for the genome assembly being used. This is used for building the exon and domain panels. It should be compatible with the genome assembly and species being used for VEP annotation.",
+                    "default": null
                 }
             }
         },
