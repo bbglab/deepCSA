@@ -133,7 +133,7 @@ def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", geno
             if parts[2] in ["exon", "CDS"]:
                 yield line_str
 
-def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.DataFrame:
+def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int, species: str, genome: str) -> pd.DataFrame:
     """
     Transforms the yields from get_gff_to_generator into a filtered DataFrame. The reading and filtering is done with polars
     to improve efficiency.
@@ -144,6 +144,10 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.Data
         A DataFrame containing gene and transcript information.
     release : int
         The Ensembl release number to use for GFF file retrieval (default is 111).
+    species : str
+        The species for which to retrieve GFF data.
+    genome : str
+        The genome assembly for which to retrieve GFF data.
 
     Returns
     ------------
@@ -151,7 +155,7 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.Data
         A filtered DataFrame of GFF lines for the specified genes and release.
     """
     # Join the generator into a single buffer for Polars to read
-    filtered_buffer = io.StringIO("".join(get_gff_to_generator(release=release)))
+    filtered_buffer = io.StringIO("".join(get_gff_to_generator(release=release, species=species, genome=genome)))
 
     # Read generator with polars, generate transcript_id column and filter by the genes in the panel
     df = (
@@ -481,7 +485,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
 
     consensus_df = pd.read_table(consensus_file)
     depth_df = pd.read_table(depth_file)
-    gff_df = gff_to_filtered_df(gene_n_transcript_info, release=release)
+    gff_df = gff_to_filtered_df(gene_n_transcript_info, release=release, species=species, genome=genome)
 
     consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on = ["CHROM", "POS"], how = 'left')
     consensus_df = consensus_df.rename(columns={"POS" : "DNA_POS"})
