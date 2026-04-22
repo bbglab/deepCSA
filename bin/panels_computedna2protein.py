@@ -196,7 +196,7 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int, species: s
             schema_overrides={"start": pl.Int64, "end": pl.Int64, "chr": pl.Utf8, "feature": pl.Utf8, "attributes": pl.Utf8}
         )
         .with_columns([
-            pl.col("attributes").str.extract(r"transcript:(ENST\d+)", 1).alias("transcript_id")
+            pl.col("attributes").str.extract(r"transcript:(ENS[A-Z]*T\d+)", 1).alias("transcript_id")
         ])
         .filter(
             [pl.col("transcript_id").is_in(gene_n_transcript["Ens_transcript_ID"].to_list())]
@@ -311,7 +311,11 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
     final_coord_df = pd.concat(coord_df_lst) if coord_df_lst else pd.DataFrame()
     final_exons_df = pd.DataFrame(exons_coord_df_lst, columns=["ID", "Chr", "Start", "End", "Strand"])
 
-    LOG.info(f"Retrieved coordinates for {len(final_coord_df['Gene'].unique())} genes and {len(final_exons_df['ID'].unique())} exons.")
+    if final_coord_df.empty:
+        LOG.error("No CDS coordinates were retrieved for the specified genes and transcripts.")
+        exit(1)
+    else:
+        LOG.info(f"Retrieved coordinates for {len(final_coord_df['Gene'].unique())} genes and {len(final_exons_df['ID'].unique())} exons.")
     return final_coord_df, final_exons_df
 
 # Coordinate parsing and DNA-to-protein mapping functions
