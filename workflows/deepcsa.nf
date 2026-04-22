@@ -110,11 +110,11 @@ include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY       } from '../m
 
 include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../modules/local/dna2protein/main'
 
-include { MAF_2_VCF                     as MAF2VCF                  } from '../modules/local/maf2vcf/main'
-include { SIGPROFILER_MATRIXGENERATOR   as SIGPROMATRIXGENERATOR    } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
-include { SIGPROFILERASSIGNMENT_COSMIC_FIT      as SIGPROFILERASSIGNMENTINDELS    } from '../modules/local/signatures/sigprofiler/assignment/cosmic_fit/main'
+include { MAF_2_VCF                         as MAF2VCF                      } from '../modules/local/maf2vcf/main'
+include { SIGPROFILER_MATRIXGENERATOR       as SIGPROMATRIXGENERATOR        } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
+include { SIGPROFILERASSIGNMENT_COSMIC_FIT  as SIGPROFILERASSIGNMENTINDELS  } from '../modules/local/signatures/sigprofiler/assignment/cosmic_fit/main'
 
-include { MUTATIONS_2_SIGNATURES        as MUTS2SIGS                } from '../modules/local/mutations2sbs/main'
+include { MUTATIONS_2_SIGNATURES            as MUTS2SIGS                    } from '../modules/local/mutations2sbs/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,8 +156,9 @@ workflow DEEPCSA {
 
     site_comparison_results         = channel.empty()
     all_compiled_omegas             = channel.empty()
-    all_compiled_omegasgloballoc    = channel.empty()
+    all_compiled_omegasgloballoc    = channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
     all_mutdensities_file           = channel.empty()
+    all_adjusted_mutdensities_file  = channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
     all_compiled_stabilities        = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
@@ -342,7 +343,7 @@ workflow DEEPCSA {
             // Concatenate all outputs into a single file
             MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities }
-            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true)
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true).set{ all_adjusted_mutdensities_file }
 
             MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities_flat }
@@ -594,6 +595,9 @@ workflow DEEPCSA {
     PLOTTINGQC(
                 somatic_mutations,
                 all_mutdensities_file.first(),
+                all_adjusted_mutdensities_file.first(),
+                all_compiled_omegasgloballoc.first(),
+                PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample.first(),
                 all_compiled_omegas,
                 // site_comparison_results,
                 // ANNOTATEDEPTHS.out.all_samples_depths,
