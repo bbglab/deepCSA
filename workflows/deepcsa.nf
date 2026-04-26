@@ -108,8 +108,6 @@ include { ANALYZE_DEPTHS_GROUPS         as ANALYZEDEPTHSGROUPS      } from '../m
 include { SELECT_MUTDENSITIES           as SYNMUTDENSITY            } from '../modules/local/select_mutdensity/main'
 include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY       } from '../modules/local/select_mutdensity/main'
 
-include { DNA_2_PROTEIN_MAPPING         as DNA2PROTEINMAPPING       } from '../modules/local/dna2protein/main'
-
 include { MAF_2_VCF                         as MAF2VCF                      } from '../modules/local/maf2vcf/main'
 include { SIGPROFILER_MATRIXGENERATOR       as SIGPROMATRIXGENERATOR        } from '../modules/local/signatures/sigprofiler/matrixgenerator/main'
 include { SIGPROFILERASSIGNMENT_COSMIC_FIT  as SIGPROFILERASSIGNMENTINDELS  } from '../modules/local/signatures/sigprofiler/assignment/cosmic_fit/main'
