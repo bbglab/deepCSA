@@ -642,6 +642,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "vaf_distortion_threshold": {
+                    "type": "number",
+                    "description": "VAF distortion threshold used to flag VAF-distorted mutations (VAF_AM / VAF).",
+                    "default": 3,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "mutation_depth_threshold": {
                     "type": "integer",
                     "description": "Depth threshold for discarding mutations. Minimum to have a reliable estimation of the VAF.",
