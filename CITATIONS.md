@@ -10,6 +10,10 @@
 
 ## Sources of data and tools
 
+- **Ensembl VEP**
+
+  > McLaren W, Gil L, Hunt SE, et al. The Ensembl Variant Effect Predictor. Genome Biol. 2016;17:122. doi: 10.1186/s13059-016-0974-4.
+
 - Nanoseq masks
 
   > Abascal, F., Harvey, L.M.R., Mitchell, E. et al. Somatic mutation landscapes at single-molecule resolution. Nature 593, 405–410 (2021). https://doi.org/10.1038/s41586-021-03477-4
@@ -34,15 +38,51 @@
 
   > Stefano Pellegrini, Olivia Dove-Estrella, Ferran Muiños, Nuria Lopez-Bigas, Abel Gonzalez-Perez, Oncodrive3D: fast and accurate detection of structural clusters of somatic mutations under positive selection, Nucleic Acids Research, Volume 53, Issue 15, 28 August 2025, gkaf776, https://doi.org/10.1093/nar/gkaf776
 
+- **dNdScv (tool)**
+
+  > Martincorena I, Raine KM, Gerstung M, et al. Universal Patterns of Selection in Cancer and Somatic Tissues. Cell. 2017. https://doi.org/10.1016/j.cell.2017.09.042
+
+- **Omega (dN/dS)**
+
+  > Repository: https://github.com/bbglab/omega (see repository for citation details)
+
+- **OncodriveFML**
+
+  > Repository: https://github.com/bbglab/oncodrivefml (see repository for citation details)
+
+- **OncodriveCLUSTL**
+
+  > Repository: https://github.com/bbglab/oncodriveclustl (see repository for citation details)
+
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
-- Python
-- SigProfilerAssignment, MatrixGenerator
-- HDP
-- OncodriveFML
-- OncodriveCLUSTL
+- **SigProfilerAssignment / SigProfilerMatrixGenerator**
+
+  > Repository: https://github.com/AlexandrovLab/SigProfilerAssignment  
+  > Repository: https://github.com/AlexandrovLab/SigProfilerMatrixGenerator
+
+- **HDP / mSigHdp**
+
+  > Repository: https://github.com/Nik-Zainal-Group/msigHdp (see repository for citation details)
+
+- **bgreference / bgdata**
+
+  > Repository: https://github.com/bbglab/bgreference  
+  > Repository: https://github.com/bbglab/bgdata
+
+- **SAMtools**
+
+  > Li H, Handsaker B, Wysoker A, et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009;25(16):2078-9. doi: 10.1093/bioinformatics/btp352.
+
+- **BEDTools**
+
+  > Quinlan AR, Hall IM. BEDTools: a flexible suite of utilities for comparing genomic features. Bioinformatics. 2010;26(6):841-842. doi: 10.1093/bioinformatics/btq033.
+
+- **HTSlib / Tabix**
+
+  > Li H. Tabix: fast retrieval of sequence features from generic TAB-delimited files. Bioinformatics. 2011;27(5):718-719. doi: 10.1093/bioinformatics/btq671.
 
 ## Software packaging/containerisation tools
 

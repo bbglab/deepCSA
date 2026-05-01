@@ -108,6 +108,29 @@ work/
 .nextflow.log
 ```
 
+### Output directory cheat sheet
+
+| Output directory/file | Description |
+| --- | --- |
+| `sumannotation/` | Aggregated mutation annotations (one row per mutation) after VEP annotation and preprocessing. |
+| `germline_somatic/` | Mutations labeled as germline vs somatic before strict cohort filtering. |
+| `clean_somatic/` | Filtered somatic mutations used in downstream analyses. |
+| `clean_germline_somatic/` | Filtered mutations retaining germline/somatic labels. |
+| `annotatedepths/` | Depth tables per genomic position (used for depth-aware metrics). |
+| `depthssummary/` | Cohort depth summaries (TSV + PDF plots). |
+| `computeprofile/` | Mutational profiles, proportions, and `*.profile_stability.tsv` metrics. |
+| `mutrate/` | Mutation density tables (per sample/group, depth-normalized). |
+| `omega/` | dN/dS selection results using per-sample profiles. |
+| `omegagloballoc/` | dN/dS selection results using global cohort profiles. |
+| `absolutemutabilities/` | Expected mutability per site for selection analyses. |
+| `sitecomparison/` | Observed vs expected mutability comparisons per site/residue. |
+| `oncodrivefmlsnvs/` | OncodriveFML results. |
+| `oncodrive3d/` | Oncodrive3D clustering results and plots. |
+| `signatures_hdp/`, `sigprofilerassignment/`, `sigprobs/` | Mutational signature extraction/assignment outputs. |
+| `plotmaf/`, `plotneedles/`, `plotselection/`, `plotsomaticmaf/` | Standard plotting outputs for mutation and selection summaries. |
+| `qc/metrics_vs_depth/` | QC plots/tables comparing depth vs mutation density and omega. |
+| `pipeline_info/` | Pipeline metadata and software versions. |
+
 ## Input and configuration
 
 See Usage docs for extensive explanation on required inputs and format. Including documentation on parameters to run on for 4 different suggested running modes.
@@ -177,6 +200,8 @@ Optional:
 - clean_somatic
 - clean_germline_somatic
 
+**PMEAN/PSTD fields:** if the input VCF contains read-position statistics (PMN/PST from deepUMIcaller), deepCSA stores them as `PMEAN` and `PSTD` in the mutation tables. When not available, these columns are set to `-1`.
+
 ## Basic analysis
 
 ### Key role
@@ -192,6 +217,8 @@ Optional:
 - computematrix
 - computeprofile
 - mutrate
+
+`computeprofile` also emits `*.profile_stability.tsv` files, which quantify how sensitive each mutational profile is to the addition of a single mutation per channel (see [Tools](tools.md#mutational-profile-stability)).
 
 ## Intermediate outputs
 
@@ -286,6 +313,8 @@ Optional:
 - Plotting basic statistics of numbers and distribution of mutations in genes.
 
 - Optionally think on adding more plots.
+
+Plotting scope can be controlled with `plot_only_allsamples`: when `true`, only cohort-level plots are generated; when `false`, plots are also produced for each defined subgroup.
 
 ### Outputs
 
