@@ -1,0 +1,26 @@
+
+# Biomart Query
+biomart_cds_query_file="biomartQuery.MANE.txt"
+BIOMART_CDS="homo_sapiens.v111.MANE.biomart.tsv"
+
+biomart_cds_query_file="biomartQuery.canonical.txt"
+BIOMART_CDS="homo_sapiens.v111.canonical.biomart.tsv"
+
+
+biomart_url="http://jan2024.archive.ensembl.org/biomart/martservice"
+
+# Read XML query from file
+biomart_cds_query=$(cat "${biomart_cds_query_file}")
+
+# URL encode it (remove newlines first)
+biomart_cds_query_encoded=$(python3 -c "
+from urllib.parse import quote_plus
+query = '''${biomart_cds_query}'''
+print(quote_plus(query.replace('\n', '')))
+")
+
+echo "Downloading biomart..."
+
+curl -L -s "${biomart_url}?query=${biomart_cds_query_encoded}" | \
+    tail -n +2 | \
+    awk -F'\t' '($5 != "") { print $0 }' > "${BIOMART_CDS}"
