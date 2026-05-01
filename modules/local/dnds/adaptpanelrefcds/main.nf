@@ -31,8 +31,6 @@ process ADAPT_PANEL_REFCDS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch custom_filtered_biomart.tsv  
     touch splice_sites.tsv 

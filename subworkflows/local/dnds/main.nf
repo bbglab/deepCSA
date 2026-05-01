@@ -1,7 +1,6 @@
 include { SUBSET_MAF                as SUBSET_DNDS              } from '../../../modules/local/subsetmaf/main'
 
 include { PREPROCESS_DNDS           as PREPROCESSDEPTHS         } from '../../../modules/local/dnds/preprocess/main'
-include { QUERY_BIOMART             as QUERYBIOMART             } from '../../../modules/local/dnds/querybiomart/main'
 include { ADAPT_PANEL_REFCDS        as BIOMARTPANEL4REFCDS      } from '../../../modules/local/dnds/adaptpanelrefcds/main'
 include { BUILD_REFCDS              as BUILDREFCDS              } from '../../../modules/local/dnds/buildref/main'
 
@@ -20,7 +19,7 @@ workflow DNDS {
     main:
 
     covariates = params.dnds_covariates ? channel.fromPath( params.dnds_covariates, checkIfExists: true).first() : channel.empty()
-    // ref_trans = params.dnds_ref_transcripts ? channel.fromPath( params.dnds_ref_transcripts, checkIfExists: true).first() : channel.empty()
+    full_biomart_output = params.dnds_biomart_ref ? channel.fromPath( params.dnds_biomart_ref, checkIfExists: true).first() : channel.empty()
 
     SUBSET_DNDS(mutations)
 
@@ -30,8 +29,7 @@ workflow DNDS {
     .join(PREPROCESSDEPTHS.out.depths)
     .set{ mutations_n_depth }
 
-    QUERYBIOMART(panel)
-    BIOMARTPANEL4REFCDS(QUERYBIOMART.out.complete_biomart, panel_bedfile)
+    BIOMARTPANEL4REFCDS(full_biomart_output, panel_bedfile)
 
     BUILDREFCDS(BIOMARTPANEL4REFCDS.out.filtered_biomart, fasta)
 
