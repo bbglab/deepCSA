@@ -8,8 +8,8 @@ process ADAPT_PANEL_REFCDS {
     label 'deepcsa_core'
 
     input:
-    tuple val(meta) , path(biomart)
-    tuple val(meta2), path(bedfile)
+    path (biomart)
+    tuple val(meta), path(bedfile)
 
     output:
     tuple val(meta), path("custom_filtered_biomart.tsv"), emit: filtered_biomart
