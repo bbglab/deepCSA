@@ -311,7 +311,7 @@ workflow DEEPCSA {
     .set{muts_all_samples_exons}
 
     // Mutational profile
-    if ( params.profileall || run_mutabilities || params.omega || run_mutdensity){
+    if ( params.profileall || run_mutabilities || params.omega || run_mutdensity ){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
         all_compiled_stabilities = all_compiled_stabilities.concat(MUTPROFILEALL.out.profile_stabilities.map{ it -> it[1] })
         if (run_mutdensity){
@@ -337,7 +337,7 @@ workflow DEEPCSA {
 
             SYNMUTREADSDENSITY(all_samples_adj_mutdensity)
 
-            DNDSPROXY(compiled_adjusted_mutdensities, SYNMUTDENSITY.out.mutdensity.first())
+            DNDSPROXY(all_adjusted_mutdensities_file, SYNMUTDENSITY.out.mutdensity.first())
         }
     }
     if (params.profilenonprot){
