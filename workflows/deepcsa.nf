@@ -108,6 +108,8 @@ include { ANALYZE_DEPTHS_GROUPS         as ANALYZEDEPTHSGROUPS          } from '
 
 include { SELECT_MUTDENSITIES           as SYNMUTDENSITY                } from '../modules/local/select_mutdensity/main'
 include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY           } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as UPDSYNMUTDENSITY             } from '../modules/local/select_mutdensity/main'
+include { SELECT_MUTDENSITIES           as UPDSYNMUTREADSDENSITY        } from '../modules/local/select_mutdensity/main'
 include { DNDS_PROXY                    as DNDSPROXY                    } from '../modules/local/dnds_proxy/main'
 
 include { MAF_2_VCF                         as MAF2VCF                      } from '../modules/local/maf2vcf/main'
@@ -333,11 +335,11 @@ workflow DEEPCSA {
             .join( MUTDENSITYADJUSTED.out.mutdensities )
             .set{ all_samples_adj_mutdensity }
 
-            SYNMUTDENSITY(all_samples_adj_mutdensity)
+            UPDSYNMUTDENSITY(all_samples_adj_mutdensity)
 
-            SYNMUTREADSDENSITY(all_samples_adj_mutdensity)
+            // UPDSYNMUTREADSDENSITY(all_samples_adj_mutdensity)
 
-            DNDSPROXY(all_adjusted_mutdensities_file, SYNMUTDENSITY.out.mutdensity.first())
+            DNDSPROXY(all_adjusted_mutdensities_file, UPDSYNMUTDENSITY.out.mutdensity.first())
         }
     }
     if (params.profilenonprot){
@@ -371,6 +373,14 @@ workflow DEEPCSA {
         .concat(MUTDENSITYSYNONYMOUS.out.mutdensities.map{ it -> it[1]}.flatten())
         .set{ all_mutdensities }
         all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
+
+        channel.of([ [ id: "all_samples" ] ])
+        .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
+        .set{ all_samples_syn_mutdensity }
+
+        SYNMUTDENSITY(all_samples_syn_mutdensity)
+
+        SYNMUTREADSDENSITY(all_samples_syn_mutdensity)
 
     }
 

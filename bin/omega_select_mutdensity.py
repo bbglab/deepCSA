@@ -9,7 +9,8 @@ from read_utils import custom_na_values
 def select_syn_mutdensity(mutdensity_file, output_file, mode):
     """
     This function selects the synonymous mutation densities for all genes
-    from the mutation density file of all samples.
+    from the mutation density file of all samples computed in the adjusted mode.
+    Accounting for the trinucleotide mutation probabilities and sequencing depth.
     
     right now the use of mode is not implemented,
     since we only compute one type of synonymous mutation densities.
@@ -36,13 +37,42 @@ def select_syn_mutdensity(mutdensity_file, output_file, mode):
                                         sep="\t")
 
 
+def select_syn_mutdensity_old(mutdensity_file, output_file, mode):
+    """
+    From simple adjusted version
+    This function needs to be removed eventually when the use of the
+    updated adjusted mutation density is functional in omega
+    """
+
+    mutdensity_df = pd.read_csv(mutdensity_file, sep = "\t", header = 0, na_values = custom_na_values)
+
+    synonymous_mutdensities_all_samples = mutdensity_df[(mutdensity_df["MUTTYPES"] == "SNV") &
+                                                        (mutdensity_df["GENE"] != "ALL_GENES") &
+                                                        ~(mutdensity_df["GENE"].str.contains("--"))].reset_index(drop = True)
+
+    if mode == 'mutations':
+        synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'MUTDENSITY_MB_ADJUSTED']]
+    elif mode == 'mutated_reads':
+        synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'MUTREADSDENSITY_MB_ADJUSTED']]
+
+    synonymous_mutdensities_genes.columns = ["GENE", "MUTDENSITY"]
+    synonymous_mutdensities_genes.to_csv(f"{output_file}",
+                                        header=True,
+                                        index=False,
+                                        sep="\t")
+
+
+
 @click.command()
 @click.option('--mutdensities', type=click.Path(exists=True), help='Input mutation density file')
 @click.option('--output', type=click.Path(), help='Output file')
 @click.option('--mode', type=click.Choice(['mutations', 'mutated_reads']), default='mutations')
 def main(mutdensities, output, mode):
     click.echo("Selecting the gene synonymous mutation densities...")
-    select_syn_mutdensity(mutdensities, output, mode)
+    if mode == 'new':
+        select_syn_mutdensity_old(mutdensities, output, mode)
+    else:
+        select_syn_mutdensity(mutdensities, output, mode)
 
 if __name__ == '__main__':
     main()
