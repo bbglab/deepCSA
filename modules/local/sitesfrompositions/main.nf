@@ -2,23 +2,19 @@ process SITESFROMPOSITIONS {
 
     tag "${meta.id}"
 
-    label 'cpu_single'
-    label 'time_low'
-    label 'process_low_memory'
-
     label 'deepcsa_core'
-
 
     input:
     tuple val(meta), path(depths)
 
     output:
-    tuple val(meta), path("*.sites4VEP.tsv")  , emit: annotated_panel_reg
-    path  "versions.yml"                      , topic: versions
+    tuple val(meta), path("*.sites4VEP.chunk*.tsv")  , emit: annotated_panel_reg
+    path  "versions.yml"                             , topic: versions
 
 
     script:
     def assembly = task.ext.assembly ?: "hg38"
+    def chunk_size = task.ext.chunk_size ?: 0
 
     // TODO
     // see if there is a better way to filter out chromosomes
@@ -30,11 +26,11 @@ process SITESFROMPOSITIONS {
     sites_table_from_positions.py \\
         --input-positions captured_positions.tsv \\
         --genome-assembly ${assembly} \\
-        --output-file-with-sites captured_positions.sites4VEP.tmp.tsv;
+        --output-prefix captured_positions.sites4VEP \\
+        --chunk-size ${chunk_size};
 
     rm captured_positions.tsv
 
-    awk '{print "chr"\$0}' captured_positions.sites4VEP.tmp.tsv > captured_positions.sites4VEP.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

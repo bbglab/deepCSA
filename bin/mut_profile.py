@@ -10,6 +10,17 @@ from utils import contexts_formatted, contexts_formatted_sigprofiler
 from utils_plot import plot_profile
 from read_utils import custom_na_values
 
+def bayesian_update(observed_counts, prior_profile, limit=200):
+
+    N = np.sum(observed_counts).item()
+
+    if N >= limit:
+        return observed_counts
+    else:
+        prior_profile = prior_profile.set_index("CONTEXT_MUT")
+        posterior_matrix = ((limit - N) * prior_profile).values + observed_counts
+        return posterior_matrix
+
 
 def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method, pseudocount,
                             sigprofiler, per_sample):
@@ -98,7 +109,6 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method
                                             sep = "\t")
 
 
-
 def profile_stability(counts, denominator):
     """
     Compute stability score of a probability profile by
@@ -164,23 +174,28 @@ def profile_stability(counts, denominator):
     }
 
 
-def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_counts_file, plot,
-                                wgs = False, wgs_trinucleotide_counts = False, sigprofiler = False):
+def compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts_file, plot,
+                                wgs = False, wgs_trinucleotide_counts = False, sigprofiler = False,
+                                smoothed = False, prior_profile_file = None,
+                                minimum_mutations = 200
+                                ):
     """
     Compute mutational profile from the input data
 
         Required information:
             Mutation matrix
             Trinucleotide content of the sequenced region (depth-aware or non-depth-aware)
+            
+            Minimum number of mutations to apply Bayesian smoothing (if smoothed is active)
+                This has been set to 200 after proper testing of the minimum required entropy of mutational profiles.
         Output:
             Mutational profile per sample
     """
 
     # Load your mutation matrix
-    mutation_matrix = pd.read_csv(mutation_matrix_file, sep = "\t", header = 0)
     mutation_matrix = mutation_matrix.set_index("CONTEXT_MUT")
     total_mutations = np.sum(mutation_matrix[sample_name])
-
+    
     # proportion of SBS mutations per trinucleotide in panel
     mutation_matrix_proportions = mutation_matrix.copy()
     mutation_matrix_proportions[sample_name] = mutation_matrix_proportions[sample_name] / total_mutations
@@ -271,6 +286,28 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                     header = True,
                                     index = True,
                                     sep = "\t")
+        
+        if total_mutations < minimum_mutations and smoothed:
+            print(f"Using a prior profile to smooth the profile, since the mutation count is < {minimum_mutations}")
+            prior_profile = pd.read_table(prior_profile_file)
+            
+            upd_mutation_matrix_wgs = bayesian_update(profile_trinuc_clean, prior_profile, minimum_mutations).reset_index()
+            total_mutations = max(minimum_mutations, total_mutations)
+
+            # we have updated the mutation counts at the WGS level, we should now revert this update
+            # for the specific sample's trinucleotide content and depth
+
+            upd_mutation_matrix_wgs["CONTEXT"] = upd_mutation_matrix_wgs["CONTEXT_MUT"].apply( lambda x : x[:3])
+            profile_trinuc_merge = upd_mutation_matrix_wgs.merge(ref_trinuc32, on = "CONTEXT")
+            profile_trinuc_merge["MUT_PROBABILITY"] = profile_trinuc_merge[sample_name] / profile_trinuc_merge["COUNT"]
+            profile_n_sample_trinuc = profile_trinuc_merge.merge(trinucleotide_counts.reset_index(), on = "CONTEXT", suffixes = ("", "_PANEL"))
+            profile_n_sample_trinuc["MUTS_PANEL"] = profile_n_sample_trinuc[sample_name] * profile_n_sample_trinuc[f"{sample_name}_PANEL"]
+            profile_n_sample_trinuc["MUTS_PANEL_FINAL"] = profile_n_sample_trinuc["MUTS_PANEL"] / profile_n_sample_trinuc["MUTS_PANEL"].sum() * total_mutations
+            smoothed_mutation_matrix_panel_counts = profile_n_sample_trinuc[["CONTEXT_MUT", "MUTS_PANEL_FINAL"]]
+
+            return smoothed_mutation_matrix_panel_counts.rename({"MUTS_PANEL_FINAL": sample_name}, axis = 1)
+        else:
+            print(f"No need to smooth the profile, the mutation count is already >= {minimum_mutations}")
 
         profile_trinuc_clean_proportion = profile_trinuc_clean.copy()
         profile_trinuc_clean_proportion[sample_name] = profile_trinuc_clean_proportion[sample_name] / profile_trinuc_clean_proportion[sample_name].sum()
@@ -278,7 +315,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                                 header = True,
                                                 index = True,
                                                 sep = "\t")
-
+        
 
         # plot the profile as a percentage of SBS mutations seen after sequencing one WGS
         # if mutations were occuring with the same probabilities as they occur in our sequenced panel
@@ -295,7 +332,7 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
                                             index = False,
                                             sep = "\t")
 
-
+        return None
 
 
 
@@ -313,12 +350,14 @@ def compute_mutation_profile(sample_name, mutation_matrix_file, trinucleotide_co
 @click.option('--plot', is_flag=True, help='Generate plot and save as PDF')
 @click.option('--wgs', is_flag=True, help='Store matrix of mutation counts at WGS level')
 @click.option('--wgs_trinucleotide_counts', type=click.Path(exists=True), help='Trinucleotide counts file of the WGS (for profile mode if WGS active)')
+@click.option('--smoothed', is_flag=True, help='Apply Bayesian smoothing to the mutation counts using a prior profile')
+@click.option('--prior_profile', type=click.Path(exists=True), help='Prior profile file to use for Bayesian smoothing (required if --smoothed is set)')
 
 
 @click.option('--sigprofiler', is_flag=True, help='Store the index column using the SigProfiler format')
 
 def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, per_sample, mutation_matrix,
-            trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts):
+            trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, smoothed, prior_profile):
 
     if mode == 'matrix':
         click.echo(f"Running in matrix mode...")
@@ -328,7 +367,11 @@ def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, pe
 
     elif mode == 'profile':
         click.echo(f"Running in profile mode...")
-        compute_mutation_profile(sample_name, mutation_matrix, trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, sigprofiler)
+        mutation_matrix_loaded = pd.read_csv(mutation_matrix, sep = "\t", header = 0)
+        smoothed_mutation_matrix = compute_mutation_profile(sample_name, mutation_matrix_loaded, trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, sigprofiler, smoothed, prior_profile)
+        if smoothed_mutation_matrix is not None:
+            compute_mutation_profile(sample_name, smoothed_mutation_matrix, trinucleotide_counts, plot, wgs, wgs_trinucleotide_counts, sigprofiler)
+
         click.echo("Profile computation completed.")
 
     else:

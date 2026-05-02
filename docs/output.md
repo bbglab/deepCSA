@@ -293,6 +293,7 @@ Optional:
 - plotneedles
 - plotselection
 - plotsomaticmaf
+- qc/metrics_vs_depth (depth-vs-mutdensity/omega QC scatterplots and TSV summaries)
 
 ## Additional outputs
 

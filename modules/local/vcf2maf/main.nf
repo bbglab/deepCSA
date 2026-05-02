@@ -1,9 +1,6 @@
 process VCF2MAF {
     tag "$meta.id"
 
-    label 'cpu_low'
-    label 'process_high_memory'
-
     label 'deepcsa_core'
 
     input:

@@ -76,6 +76,10 @@ def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
     return returned_df
 
 
+def safe_transform_context(row, chosen_assembly):
+    if pd.isna(row["POS"]) or pd.isna(row["CHROM"]) or pd.isna(row["REF"]) or pd.isna(row["ALT"]):
+        return "UNKNOWN"
+    return transform_context(row["CHROM"], row["POS"], f'{row["REF"]}/{row["ALT"]}', chosen_assembly)
 
 
 def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = False):
@@ -126,11 +130,6 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
     # we return the dataframe with all the original columns of the VEP file
     return returned_df
 
-
-
-
-
-
 def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file,
                                     assembly = 'hg38',
                                     using_canonical = True
@@ -138,12 +137,12 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     """
     Process VEP output and summarize annotations for a panel.
     """
+    chosen_assembly = assembly_name2function[assembly]
     all_possible_sites = pd.read_csv(VEP_output_file, sep = "\t",
                                         header = None, na_values = custom_na_values)
     print("All possible sites loaded")
     all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Feature', 'Consequence', 'Protein_position',
                                    'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
-
     if using_canonical:
         annotated_variants = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
         if annotated_variants is not None:
@@ -170,12 +169,10 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
 
     # add context type to all SNVs
     # remove context from the other substitution types
-    chosen_assembly = assembly_name2function[assembly]
-    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda x: transform_context(x["CHROM"], x["POS"], f'{x["REF"]}/{x["ALT"]}', chosen_assembly) , axis = 1)
+    annotated_variants["CONTEXT_MUT"] = annotated_variants.apply(lambda row: safe_transform_context(row, chosen_assembly), axis = 1)
     print("Context added")
 
     annotated_variants["CONTEXT"] = annotated_variants["CONTEXT_MUT"].apply(lambda x: x[:3])
-
     annotated_variants_reduced = annotated_variants[['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'SYMBOL', 'Consequence_broader', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']]
     annotated_variants_reduced.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'GENE', 'IMPACT', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']
     annotated_variants_reduced = annotated_variants_reduced.sort_values(by = ['CHROM', 'POS', 'REF', 'ALT'] )

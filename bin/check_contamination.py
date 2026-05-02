@@ -41,20 +41,7 @@ def compute_shared_variants(somatic_variants, germline_variants):
 
 
 
-def contamination_detection(maf_file, somatic_maf_file):
-
-    maf_df = pd.read_table(maf_file, na_values=custom_na_values)
-    print(maf_df.shape)
-    maf_df = maf_df[~(maf_df["FILTER.not_covered"])
-                     & (maf_df["TYPE"] == 'SNV')
-                    ].reset_index()
-    print(maf_df.shape)
-
-    somatic_maf_df = pd.read_table(somatic_maf_file, na_values=custom_na_values)
-    print(somatic_maf_df.shape)
-    somatic_maf_df = somatic_maf_df[(somatic_maf_df["TYPE"] == 'SNV')]
-    print(somatic_maf_df.shape)
-
+def contamination_detection_between_samples(maf_df, somatic_maf_df):
 
     # this is if we were to consider both unique and no-unique variants
     vaf_threshold = 0.2
@@ -372,6 +359,64 @@ def contamination_detection(maf_file, somatic_maf_file):
 
 
 
+def data_loading(maf_path, somatic_maf_path):
+    maf_df = pd.read_table(maf_path, na_values=custom_na_values)
+    print(maf_df.shape)
+    maf_df = maf_df[~(maf_df["FILTER.not_covered"])
+                     & (maf_df["TYPE"] == 'SNV')
+                    ].reset_index()
+    print(maf_df.shape)
+
+    somatic_maf_df = pd.read_table(somatic_maf_path, na_values=custom_na_values)
+    print(somatic_maf_df.shape)
+    somatic_maf_df = somatic_maf_df[(somatic_maf_df["TYPE"] == 'SNV')]
+    print(somatic_maf_df.shape)
+    return maf_df, somatic_maf_df
+
+
+def contamination_detection_in_snps(maf):
+
+    snp_positions_maf = maf[maf["FILTER.gnomAD_SNP"]][
+        ["SAMPLE_ID", "MUT_ID", "VAF"]
+        ].reset_index(drop = True)
+    
+    # being very restrictive in the VAF to count the occurrences of potentially contaminated mutations
+    somatic_snp_positions_maf = snp_positions_maf[snp_positions_maf["VAF"] < 0.05].reset_index(drop = True)
+    germline_snp_positions_maf = snp_positions_maf[snp_positions_maf["VAF"] >= 0.05].reset_index(drop = True)
+
+    unique_SNP_positions = snp_positions_maf["MUT_ID"].unique()
+    number_unique_SNP_positions = len(unique_SNP_positions)
+
+    sample_SNP_mutation_freq = []
+    for sample in snp_positions_maf["SAMPLE_ID"].unique():
+        germline_count = len(germline_snp_positions_maf[germline_snp_positions_maf["SAMPLE_ID"] == sample])
+        somatic_count = len(somatic_snp_positions_maf[somatic_snp_positions_maf["SAMPLE_ID"] == sample])
+        remaining_germline = number_unique_SNP_positions-germline_count
+        sample_SNP_mutation_freq.append([sample,
+                                         germline_count,
+                                         remaining_germline,
+                                         somatic_count,
+                                         somatic_count / remaining_germline if remaining_germline > 0 else 1
+                                         ])
+    sample_SNP_mutation_freq_df = pd.DataFrame(sample_SNP_mutation_freq)
+    sample_SNP_mutation_freq_df.columns = ["SAMPLE_ID", "germline_count", "remaining_germline", "somatic_count", "prop_somatic_SNPs"]
+
+    # identify outliers in the "prop_somatic_SNPs" column
+    sample_SNP_mutation_freq_df = sample_SNP_mutation_freq_df.sort_values(by = "prop_somatic_SNPs", ascending = False)
+    sample_SNP_mutation_freq_df.to_csv("sample_SNP_mutation_freq.tsv", header = True, sep = '\t', index = False)
+
+    plt.figure(figsize=(6, 3))
+    sns.violinplot(data=sample_SNP_mutation_freq_df, x="prop_somatic_SNPs",
+                fill= False, color="lightgray", inner=None)
+    sns.swarmplot(data=sample_SNP_mutation_freq_df, x="prop_somatic_SNPs", color="black", size=3)
+
+    plt.title("Proportion of all SNPs across samples\ndetected as somatic")
+    plt.xlabel("Proportion of somatic SNPs per sample")
+    plt.ylabel("Density")
+    plt.savefig("sample_SNP_mutation_freq.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+
+
 @click.command()
 @click.option('--maf_path', type=click.Path(exists=True), required=True, help='Path to the MAF file.')
 @click.option('--somatic_maf', type=click.Path(exists=True), required=True, help='Path to the filtered somatic mutations file.')
@@ -379,7 +424,14 @@ def main(maf_path, somatic_maf):
     """
     CLI entry point for assessing contamination between samples using germline and somatic mutations.
     """
-    contamination_detection(maf_path, somatic_maf)
+    
+    maf_df, somatic_maf_df = data_loading(maf_path, somatic_maf)
+
+    print("Running contamination analysis between samples")
+    contamination_detection_between_samples(maf_df, somatic_maf_df)
+
+    print("Running general contamination analysis")
+    contamination_detection_in_snps(maf_df)
 
 
 

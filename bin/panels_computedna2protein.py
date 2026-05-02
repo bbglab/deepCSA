@@ -85,20 +85,46 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
     return gene_transcript_pairs
 
 # Generator to filter lines before they reach a dataframe
-def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", genome: str = "GRCh38"):
+def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", genome: str = "GRCh38", gff3_file: str | None = None):
     """
-    Get GFF file from ensembl FTP and filter it on the fly to keep only exon and CDS lines.
+    Get GFF file from a local path or Ensembl FTP and filter it on the fly to
+    keep only exon and CDS lines.
 
     Parameters
     ------------
     release : int
         The release number of the Ensembl GFF file to retrieve (default is 111).
+    gff3_file : str | None
+        Optional path to a local GFF3 or GFF3.GZ file. If provided, this file
+        is used instead of downloading from Ensembl.
 
     Returns
     ------------
     generator
         A generator that yields lines from the GFF file that correspond to exon and CDS features.
     """
+    if gff3_file:
+        LOG.info(f"Using local GFF3 file: {gff3_file}")
+
+        open_func = gzip.open if gff3_file.endswith(".gz") else open
+        mode = "rt"
+        try:
+            with open_func(gff3_file, mode, encoding="utf-8") as handle:
+                for line_str in handle:
+                    # Skip comments
+                    if line_str.startswith('#'):
+                        continue
+
+                    # Only "yield" lines that are exon or CDS
+                    parts = line_str.split('\t')
+                    if len(parts) > 2 and parts[2] in ["exon", "CDS"]:
+                        yield line_str
+        except OSError as e:
+            error = RuntimeError(f"Failed to read local GFF3 file: {gff3_file}")
+            LOG.error(error)
+            raise error from e
+        return
+
     url = f"https://ftp.ensembl.org/pub/release-{release}/gff3/{species}/{species.capitalize()}.{genome}.{release}.gff3.gz"
 
     # Open request
@@ -118,22 +144,22 @@ def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", geno
         LOG.error(error)
         raise error
 
-    # decompress the stream on the fly
+    # Decompress the stream on the fly
     with gzip.GzipFile(fileobj=response.raw) as gz:
         for line in gz:
             # Decode bytes to string
             line_str = line.decode('utf-8')
-            
+
             # Skip comments
             if line_str.startswith('#'):
                 continue
-            
+
             # Only "yield" lines that are exon or CDS
             parts = line_str.split('\t')
-            if parts[2] in ["exon", "CDS"]:
+            if len(parts) > 2 and parts[2] in ["exon", "CDS"]:
                 yield line_str
 
-def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.DataFrame:
+def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int, species: str, genome: str, gff3_file: str | None = None) -> pd.DataFrame:
     """
     Transforms the yields from get_gff_to_generator into a filtered DataFrame. The reading and filtering is done with polars
     to improve efficiency.
@@ -144,6 +170,13 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.Data
         A DataFrame containing gene and transcript information.
     release : int
         The Ensembl release number to use for GFF file retrieval (default is 111).
+    species : str
+        The species for which to retrieve GFF data.
+    genome : str
+        The genome assembly for which to retrieve GFF data.
+    gff3_file : str | None
+        Optional path to a local GFF3 or GFF3.GZ file. If provided, this file
+        is used instead of downloading from Ensembl.
 
     Returns
     ------------
@@ -151,7 +184,7 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.Data
         A filtered DataFrame of GFF lines for the specified genes and release.
     """
     # Join the generator into a single buffer for Polars to read
-    filtered_buffer = io.StringIO("".join(get_gff_to_generator(release=release)))
+    filtered_buffer = io.StringIO("".join(get_gff_to_generator(release=release, species=species, genome=genome, gff3_file=gff3_file)))
 
     # Read generator with polars, generate transcript_id column and filter by the genes in the panel
     df = (
@@ -163,7 +196,7 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int) -> pd.Data
             schema_overrides={"start": pl.Int64, "end": pl.Int64, "chr": pl.Utf8, "feature": pl.Utf8, "attributes": pl.Utf8}
         )
         .with_columns([
-            pl.col("attributes").str.extract(r"transcript:(ENST\d+)", 1).alias("transcript_id")
+            pl.col("attributes").str.extract(r"transcript:(ENS[A-Z]*T\d+)", 1).alias("transcript_id")
         ])
         .filter(
             [pl.col("transcript_id").is_in(gene_n_transcript["Ens_transcript_ID"].to_list())]
@@ -278,7 +311,11 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
     final_coord_df = pd.concat(coord_df_lst) if coord_df_lst else pd.DataFrame()
     final_exons_df = pd.DataFrame(exons_coord_df_lst, columns=["ID", "Chr", "Start", "End", "Strand"])
 
-    LOG.info(f"Retrieved coordinates for {len(final_coord_df['Gene'].unique())} genes and {len(final_exons_df['ID'].unique())} exons.")
+    if final_coord_df.empty:
+        LOG.error("No CDS coordinates were retrieved for the specified genes and transcripts.")
+        exit(1)
+    else:
+        LOG.info(f"Retrieved coordinates for {len(final_coord_df['Gene'].unique())} genes and {len(final_exons_df['ID'].unique())} exons.")
     return final_coord_df, final_exons_df
 
 # Coordinate parsing and DNA-to-protein mapping functions
@@ -454,7 +491,7 @@ def dna2prot_depth(gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFr
     return dna_prot_df
 
 
-def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str, release: int, species: str, genome: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str, release: int, species: str, genome: str, gff3_file: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Function to get the DNA to protein mapping for all positions in the provided list of genes,
     along with coverage and depth information for each position, and the definition of all exons of
@@ -468,6 +505,9 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
         Path to the file containing depth information for all positions in the genome.
     consensus_file : str
         Path to the consensus panel file containing DNA positions and coverage information.
+    gff3_file : str | None
+        Optional path to a local GFF3 or GFF3.GZ file. If provided, this file
+        is used instead of downloading from Ensembl.
     
     Returns
     ------------
@@ -481,7 +521,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
 
     consensus_df = pd.read_table(consensus_file)
     depth_df = pd.read_table(depth_file)
-    gff_df = gff_to_filtered_df(gene_n_transcript_info, release=release)
+    gff_df = gff_to_filtered_df(gene_n_transcript_info, release=release, species=species, genome=genome, gff3_file=gff3_file)
 
     consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on = ["CHROM", "POS"], how = 'left')
     consensus_df = consensus_df.rename(columns={"POS" : "DNA_POS"})
@@ -516,11 +556,15 @@ def plot_coverage_per_gene(depths_df: pd.DataFrame) -> None:
         DataFrame containing depth and coverage information for DNA, protein and exon positions.
         In this case, it will be the "exons_depth" created in `get_dna2prot_depth` function.
     """
-    coverage = depths_df.drop_duplicates(subset=['GENE', 'DNA_POS', 'COVERED'])
-    coverage_summary = coverage.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
-
+    column_to_subset = {'DNA': 'DNA_POS',
+                        'Protein': 'PROT_POS',
+                        'Exon': 'EXON_ID'
+                        }
+    coverage = depths_df.drop_duplicates(subset=['GENE', 'COVERED', 'DNA_POS'])
     for prefix in ["DNA", "Protein", "Exon"]:
         LOG.info(f"Plotting coverage for {prefix}...")
+        coverage_element = coverage.drop_duplicates(subset=['GENE', 'COVERED', column_to_subset[prefix]])
+        coverage_summary = coverage_element.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
         plot_single_coverage(coverage_summary, prefix)
 
 
@@ -609,11 +653,20 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
 @click.option('--ensembl-species', type=str, default="homo_sapiens", help='Ensembl species name to use for GFF file retrieval (default)')
 @click.option('--ensembl-genome', type=str, default="GRCh38", help='Ensembl genome name to use for GFF file retrieval (default)')
 @click.option('--ensembl-release', type=int, default=111, help='Ensembl release number to use for GFF file retrieval (default is 111)')
-def main(mutations_file, consensus_file, depths_file, ensembl_species, ensembl_genome, ensembl_release):
+@click.option('--gff3-file', type=click.Path(exists=True), default=None, help='Optional local GFF3(.gz) file. If provided, skips Ensembl download')
+def main(mutations_file, consensus_file, depths_file, ensembl_species, ensembl_genome, ensembl_release, gff3_file):
     # Count each mutation only ones if it appears in multiple reads
     gene_n_transcript = get_transcript_gene_from_maf(mutations_file, consensus_file)
 
-    exons_depth, exons_coord_id = get_dna2prot_depth(gene_n_transcript, depths_file, consensus_file, ensembl_release, ensembl_species, ensembl_genome)
+    exons_depth, exons_coord_id = get_dna2prot_depth(
+        gene_n_transcript,
+        depths_file,
+        consensus_file,
+        ensembl_release,
+        ensembl_species,
+        ensembl_genome,
+        gff3_file,
+    )
     LOG.info("Exons coordinates and depth computed!")
     exons_depth.to_csv("depths_per_position_exon_gene.tsv", header = True, index = False, sep = '\t')
 

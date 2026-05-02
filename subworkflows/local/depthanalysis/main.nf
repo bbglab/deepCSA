@@ -1,4 +1,5 @@
 include { COMPUTEDEPTHS } from '../../../modules/local/computedepths/main'
+include { FILTERDEPTHS  } from '../../../modules/local/filterdepths/main'
 
 
 workflow DEPTH_ANALYSIS{
@@ -10,7 +11,14 @@ workflow DEPTH_ANALYSIS{
     main:
 
     if (params.use_custom_depths) {
-        output_depths = channel.fromPath( params.custom_depths_table, checkIfExists: true).map{ path -> [ [id: "all_samples"], path ] }.first()
+        raw_depths = channel.fromPath( params.custom_depths_table, checkIfExists: true).map{ path -> [ [id: "all_samples"], path ] }.first()
+
+        if (params.use_custom_minimum_depth > 0) {
+            FILTERDEPTHS(raw_depths)
+            output_depths = FILTERDEPTHS.out.depths
+        } else {
+            output_depths = raw_depths
+        }
     } else {
         input_files
         .map{ it -> [it[0], it[2]]}

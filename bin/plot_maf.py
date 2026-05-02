@@ -11,6 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from utils_filter import filter_maf
 from read_utils import custom_na_values
+from utils_plot import snv_color
 
 
 def subset_mutation_dataframe(mutations_file, json_filters):
@@ -140,6 +141,8 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
     # Get the unique values of x_axis_group
     unique_x_values = sorted(df[x_axis_group].unique())
 
+    print(f"Unique values for {x_axis_group}: {len(unique_x_values)}")
+
     # Check if the number of unique values exceeds the maximum
     num_unique_x_values = len(unique_x_values)
     if num_unique_x_values > max_groups_per_plot:
@@ -152,12 +155,6 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
         # Iterate over the x chunks and create separate plots
         fig_list = []
         for i, x_chunk in enumerate(x_chunks):
-            # Create a new figure for each plot
-            fig, ax = plt.subplots(1, 1)
-            fig.set_size_inches(fig_width, fig_height)
-            plt.xticks(rotation=90)
-            plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
-
             # Filter the dataframe to include only the rows with x values in the current chunk
             subset_df = df[df[x_axis_group].isin(x_chunk)]
 
@@ -165,41 +162,143 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
             if stacked:
                 gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index().pivot(
                     columns=hue_group, index=x_axis_group, values="number_mutations")
-                gp_df.plot(kind='bar', stacked=True, ax=ax)
+
+                if hue_group == "MUTTYPE":
+                    gp_df = gp_df.drop("-", axis = 'columns',errors='ignore')
+                    print("Using custom colors for MUTTYPE")
+                    # Create a new figure for each plot
+                    fig, ax = plt.subplots(1, 1)
+                    fig.set_size_inches(fig_width, fig_height)
+                    plt.xticks(rotation=90)
+                    plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
+                    gp_df.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                    plt.tight_layout()
+                    fig_list.append(fig)
+                    plt.close()
+                    
+
+                    # Create a new figure for each plot
+                    fig, ax = plt.subplots(1, 1)
+                    fig.set_size_inches(fig_width, fig_height)
+                    plt.xticks(rotation=90)
+                    plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
+                    # normalize stacked bars to proportions
+                    gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
+                    gp_df_normalized.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                    plt.tight_layout()
+                    fig_list.append(fig)
+                    plt.close()
+
+                else:
+                    # Create a new figure for each plot
+                    fig, ax = plt.subplots(1, 1)
+                    fig.set_size_inches(fig_width, fig_height)
+                    plt.xticks(rotation=90)
+                    plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
+                    gp_df.plot(kind='bar', stacked=True, ax=ax)
+                    plt.tight_layout()
+                    fig_list.append(fig)
+                    plt.close()
+                
+                    # Create a new figure for each plot
+                    fig, ax = plt.subplots(1, 1)
+                    fig.set_size_inches(fig_width, fig_height)
+                    plt.xticks(rotation=90)
+                    plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
+                    # normalize stacked bars to proportions
+                    gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
+                    gp_df_normalized.plot(kind='bar', stacked=True, ax=ax)
+                    plt.tight_layout()
+                    fig_list.append(fig)
+                    plt.close()
+
             else:
+                # Create a new figure for each plot
+                fig, ax = plt.subplots(1, 1)
+                fig.set_size_inches(fig_width, fig_height)
+                plt.xticks(rotation=90)
+                plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
                 gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index()
                 gp_df = gp_df.fillna("FALSE")
                 sns.barplot(data=gp_df, x=x_axis_group, y="number_mutations", hue=hue_group, ax=ax)
                 if logy:
                     ax.set_yscale('log')
-
-            plt.tight_layout()
-            fig_list.append(fig)
-            plt.close()
+                plt.tight_layout()
+                fig_list.append(fig)
+                plt.close()
 
         return fig_list
 
     else:
-        # Plot all x values in a single plot
-        fig, ax = plt.subplots(1, 1)
-        fig.set_size_inches(fig_width, fig_height)
-        plt.xticks(rotation=90)
-        plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
-
+        fig_list = []
         if stacked:
             gp_df = df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index().pivot(
                 columns=hue_group, index=x_axis_group, values="number_mutations")
-            gp_df.plot(kind='bar', stacked=True, ax=ax)
+            if hue_group == "MUTTYPE":
+                # Plot all x values in a single plot
+                fig, ax = plt.subplots(1, 1)
+                fig.set_size_inches(fig_width, fig_height)
+                plt.xticks(rotation=90)
+                plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
+                gp_df = gp_df.drop("-", axis = 'columns',errors='ignore')
+                print("Using custom colors for MUTTYPE")
+                gp_df.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                plt.tight_layout()
+                fig_list.append(fig)
+                plt.close()
+                
+
+                # Plot all x values in a single plot
+                fig, ax = plt.subplots(1, 1)
+                fig.set_size_inches(fig_width, fig_height)
+                plt.xticks(rotation=90)
+                plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
+                # normalize stacked bars to proportions
+                gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
+                gp_df_normalized.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                plt.tight_layout()
+                fig_list.append(fig)
+                plt.close()
+            else:
+                # Plot all x values in a single plot
+                fig, ax = plt.subplots(1, 1)
+                fig.set_size_inches(fig_width, fig_height)
+                plt.xticks(rotation=90)
+                plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
+                gp_df.plot(kind='bar', stacked=True, ax=ax)
+                plt.tight_layout()
+                fig_list.append(fig)
+                plt.close()
+                
+
+                # Plot all x values in a single plot
+                fig, ax = plt.subplots(1, 1)
+                fig.set_size_inches(fig_width, fig_height)
+                plt.xticks(rotation=90)
+                plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
+                # normalize stacked bars to proportions
+                gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
+                gp_df_normalized.plot(kind='bar', stacked=True, ax=ax)
+                plt.tight_layout()
+                fig_list.append(fig)
+                plt.close()
+
         else:
+            # Plot all x values in a single plot
+            fig, ax = plt.subplots(1, 1)
+            fig.set_size_inches(fig_width, fig_height)
+            plt.xticks(rotation=90)
+            plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
             gp_df = df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index()
             gp_df = gp_df.fillna("FALSE")
             sns.barplot(data=gp_df, x=x_axis_group, y="number_mutations", hue=hue_group, ax=ax)
             if logy:
                 ax.set_yscale('log')
+            plt.tight_layout()
+            fig_list.append(fig)
+            plt.close()
 
-        plt.tight_layout()
-
-        return [fig]
+        return fig_list
 
 
 
@@ -231,6 +330,7 @@ def variable_plot_wrapper(sample_name, maf, parameters = {}):
     fig_list = []
 
     for varp in vars_to_plot:
+        print(f"Plotting {varp} for {var_to_plot}")
         fig = plot_filter_stats(maf, var_to_plot, f"{varp}")
         if type(fig) == list:
             for subfig in fig:
@@ -310,6 +410,7 @@ def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
                     main_criterion = criterion.split(' ')[0]
                     gene_or_sample = criterion.split(' ')[1]
                     cols = criterion.split(' ')[2].split(",")
+                    print(f"Plotting : {main_criterion} {gene_or_sample} {cols}")
                     fig_lisst = dict_plotname2func[main_criterion](sample_name, maf, parameters = {'variable' : gene_or_sample, 'columns_list' : cols})
                     for ff in fig_lisst: pdf.savefig(ff)
 

@@ -16,6 +16,7 @@
 - [Definition of structural parameters](#definition-of-structural-parameters)
 - [Additional customizable parameters](#additional-customizable-parameters)
 - [Custom mutation calls](#custom-mutation-calls)
+- [MAF file as input (alternative input mode)](#maf-file-as-input-alternative-input-mode)
 
 ## Introduction
 
@@ -316,10 +317,12 @@ params {
 Notes and requirements:
 
 - `use_custom_depths` (boolean): when `true`, the pipeline will use the file pointed by `custom_depths_table` instead of computing depths from BAMs.
-- `custom_depths_table` (string / file path): path to the precomputed depths table. It should be an absolute or relative path accessible from the running environment. The file may be TSV or CSV but should follow the same layout expected by deepCSA (per-position depth across samples). If `use_custom_depths=true` and the file is missing or unreadable the pipeline will fail. For each of the samples in your cohort, the column names should correspond to the full names of the BAM files that are still provided via the input.csv file.
-- Make sure that you remove the column CONTEXT from the table in case you are starting with the all_samples individual depths table that is outputted by deepCSA. CHeck out the assets/useful_scripts/downsample_depths.ipynb file for an example on how to prepare the input for this parameter.
+- `custom_depths_table` (string / file path): path to the precomputed depths table. It should be an absolute or relative path accessible from the running environment. The file may be TSV or CSV but should follow the same layout expected by deepCSA (per-position depth across samples). If `use_custom_depths=true` and the file is missing or unreadable the pipeline will fail.
+  - If your input.csv file contains only `sample` and `vcf` columns, the columns of the depths table have to be the same ones as the sample names indicated in the sample column of the input.csv file.
+  - If your input.csv file contains `sample`, vcf and bam columns, the columns of the depths table have to be the same as the name of the BAM files of each sample in the input.csv file.
+- Make sure that you remove the column CONTEXT from the table in case you are starting with the all_samples individual depths table that is outputted by deepCSA. Check out the assets/useful_scripts/downsample_depths.ipynb file for an example on how to prepare the input for this parameter.
 
-## Custom mutation calls
+## Custom mutation calls -- option 1 (building input VCFs and providing them via normal input)
 
 If you want to run deepCSA with your own mutation calls, this is also possible. Reasons behind this would be:
 
@@ -387,3 +390,59 @@ params {
 }
 ```
 
+## MAF file as input (alternative input mode)
+
+In addition to the standard per-sample VCF input described above, deepCSA supports providing all mutations from an entire cohort in a single **MAF file** via the `--input_maf` parameter.
+
+### When to use this mode
+
+- You have a cohort-level MAF/TSV file with mutations already called for multiple samples and want to run the downstream deepCSA analysis (mutational profiles, signatures, positive selection, etc.) without preparing one VCF per sample manually.
+  - Ideally this file should be generated with the same format as it is generated within deepCSA.
+- You already have a precomputed depths table for your cohort (e.g. produced by a previous deepCSA run) or have the information to generate it.
+
+### Requirements
+
+`--input_maf` **must** be used together with `--use_custom_depths true` and a valid `--custom_depths_table`, because BAM-based depth computation is not performed in this mode.
+
+The standard `--input` (samplesheet CSV) is still required to supply sample metadata used by other pipeline steps.
+
+### MAF file format
+
+The MAF file must be tab-separated with a `.maf` extension. The mandatory columns depend on the origin of the file:
+
+| Origin | Mandatory columns | Optional columns |
+|---|---|---|
+| deepCSA output | `CHROM`, `POS`, `REF`, `ALT`, `FILTER`, `INFO`, `FORMAT`, `SAMPLE`, `SAMPLE_ID` | - |
+| External / non-deepCSA | `CHROM`, `POS`, `REF`, `ALT`, `DEPTH`, `ALT_DEPTH`, `SAMPLE_ID` | `DEPTH_AM`, `ALT_DEPTH_AM` |
+
+The `SAMPLE_ID` column identifies each individual sample; internally, the pipeline will generate one VCF file per unique value in that column. The names of the samples in this table should be the same as those indicated in the `input.csv` file.
+
+### Running the pipeline with `--input_maf`
+
+```bash
+nextflow run bbglab/deepCSA \
+    --input        samplesheet.csv \
+    --outdir       results/ \
+    --input_maf    cohort_mutations.maf \
+    --use_custom_depths    true \
+    --custom_depths_table  precomputed_depths.tsv \
+    -profile <DESIRED_PROFILE>
+```
+
+```console
+params {
+    input                = "samplesheet.csv"
+    outdir               = "results/"
+    input_maf            = "cohort_mutations.maf"
+    use_custom_depths    = true
+    custom_depths_table  = "precomputed_depths.tsv"
+}
+```
+
+### What happens under the hood
+
+1. The MAF file is passed to `deepcsa_maf2samplevcfs.py`, which converts the cohort-level file into individual per-sample VCFs compatible with the deepCSA input format.
+2. The per-sample VCFs are published under `<outdir>/processing_files/input_vcfs/`.
+3. The rest of the pipeline proceeds identically to a standard run using per-sample VCFs.
+
+> **Note:** If `--input_maf` is provided without `--use_custom_depths true`, the pipeline will stop immediately with an error message rather than silently ignoring the MAF file.

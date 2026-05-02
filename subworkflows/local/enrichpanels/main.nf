@@ -22,22 +22,19 @@ workflow ENRICHPANELS {
 
     domains_file
 
-    all_bedfile
-    nonprot_bedfile
-    prot_bedfile
-    synonymous_bedfile
     exons_bedfile
 
     main:
 
-    DNA2PROTEINMAPPING(mutations, exons_consensus_panel, all_samples_depths)
+    gff3_channel = params.gff3_file ? file(params.gff3_file, checkIfExists: true) : file(params.input, checkIfExists: true)
+    DNA2PROTEINMAPPING(mutations, exons_consensus_panel, all_samples_depths, gff3_channel)
 
     // Create a channel for the domains file if autodomains is true
     domains_ch = params.autodomains ? domains_file : []  // .map{ it -> it[1]} : []
     exons_ch = params.autoexons ? DNA2PROTEINMAPPING.out.panel_exons_bed.map{ it -> it[1]}.ifEmpty([])  : []
 
     // Create a channel for the subgenic bedfile if provided
-    subgenic_ch = params.subgenic_bedfile ? file(params.subgenic_bedfile) : []
+    subgenic_ch = params.subgenic_bedfile ? file(params.subgenic_bedfile, checkIfExists: true) : []
 
     if (params.create_subgenic_regions){
         EXPANDREGIONSALL(all_consensus_panel, domains_ch, exons_ch, subgenic_ch)
