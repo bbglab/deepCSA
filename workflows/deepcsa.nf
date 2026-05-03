@@ -500,6 +500,7 @@ workflow DEEPCSA {
                 // Omega multi
                 OMEGAMULTI(muts_all_samples_exons,
                             DEPTHSEXONSCONS.out.subset,
+                            MUTPROFILEALL.out.compiled_profiles,
                             MUTPROFILEALL.out.profile,
                             CREATEPANELS.out.exons_consensus_bed.first(),
                             ENRICHPANELS.out.exons_consensus_expanded_panel.first(),

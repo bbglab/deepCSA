@@ -74,7 +74,8 @@ workflow OMEGA_ANALYSIS{
 
     GROUPGENES(all_samples_muts, custom_gene_groups, json_subgenic)
 
-    ESTIMATOR( preprocess_n_depths, expanded_panel, GROUPGENES.out.json_genes.first(), grouping_defs, "${projectDir}/assets/omega_consequences_groupings.json")
+    ESTIMATOR( preprocess_n_depths, expanded_panel,
+                    GROUPGENES.out.json_genes.first(), grouping_defs, "${projectDir}/assets/omega_consequences_groupings.json")
 
     if (params.omega_plot){
         mutations
@@ -120,7 +121,8 @@ workflow OMEGA_ANALYSIS{
 
         ESTIMATORGLOBALLOC(preprocess_globalloc_n_depths,
                             expanded_panel,
-                            GROUPGENES.out.json_genes.first())
+                            GROUPGENES.out.json_genes.first(), grouping_defs,
+                            "${projectDir}/assets/omega_consequences_groupings.json")
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results
         

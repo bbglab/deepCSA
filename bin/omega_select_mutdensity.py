@@ -70,9 +70,9 @@ def select_syn_mutdensity_old(mutdensity_file, output_file, mode):
 def main(mutdensities, output, mode):
     click.echo("Selecting the gene synonymous mutation densities...")
     if mode == 'new':
-        select_syn_mutdensity_old(mutdensities, output, mode)
-    else:
         select_syn_mutdensity(mutdensities, output, mode)
+    else:
+        select_syn_mutdensity_old(mutdensities, output, mode)
 
 if __name__ == '__main__':
     main()
