@@ -116,6 +116,12 @@
                     "description": "String in list format defining the variables that have to be used for grouping samples.",
                     "help_text": "This is required when the features_table dataset wants to be used.",
                     "fa_icon": "far fa-file-code"
+                },
+                "signatures_features": {
+                    "type": "string",
+                    "description": "String in list format defining the variables that have to be used for grouping samples for the signatures analysis.",
+                    "help_text": "This is required when the features_table dataset wants to be used and signatures analysis is set to true.",
+                    "fa_icon": "far fa-file-code"
                 }
             }
         },

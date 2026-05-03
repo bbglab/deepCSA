@@ -21,6 +21,7 @@ process PREPARE_INPUT {
     prefix = "${meta.id}${prefix}"
     def features = task.ext.features_groups ? "\'TRUE\'" : "\'FALSE\'"
     def features_groups_list = task.ext.features_groups ?: ""
+    def separator = task.ext.features_separator == 'comma' ? ',' : task.ext.features_separator  == 'tab' ? "\\t" : "\\t"
     """
     # First, create an R script
     cat <<EOF > process_data.R
@@ -33,7 +34,7 @@ process PREPARE_INPUT {
     write.table(data, file = "${prefix}.before_round.hdp.csv")
     data <- round(data)
     saveRDS(data, file = "${prefix}.hdp.rds")
-    write.table(data, file = "${prefix}.hdp.csv")
+    write.table(data, file = "${prefix}.hdp.csv", sep = ",", row.names = FALSE, quote = FALSE)
     EOF
 
     # Run the R script
@@ -44,20 +45,21 @@ process PREPARE_INPUT {
     data = data[,c(1, 1)]
     data <- data[-c(1),]
     colnames(data) <- c("sample", "individual")
-    data\\\$group = "L"
     if (${features} != 'FALSE') {
-        features_table = read.table("${features_groups_file}", header = TRUE, sep = "\\t", check.names = FALSE)
+        features_table = read.table("${features_groups_file}", header = TRUE, sep = "${separator}", check.names = FALSE)
         features_cols = trimws(unlist(strsplit("${features_groups_list}", ",")))
         features_cols = features_cols[features_cols %in% colnames(features_table)]
         if (length(features_cols) > 0) {
             categorical_features = features_table[, features_cols, drop = FALSE]
             categorical_features[] = lapply(categorical_features, as.character)
-            categorical_features\\\$sample = features_table[, 1]
+            categorical_features\\\$sample = features_table[, "${task.ext.features_unique_identifier}"]
             data = merge(data, categorical_features, by.x = "sample", by.y = "sample", all.x = TRUE)
         }
+    } else {
+        data\\\$group = "L"
     }
     saveRDS(data, file = "${prefix}.hdp.treelayer.rds")
-    write.table(data, file = "${prefix}.hdp.treelayer.csv")
+    write.table(data, file = "${prefix}.hdp.treelayer.csv", sep = ",", row.names = FALSE, quote = FALSE)
     EOFF
 
     # Run the R script
