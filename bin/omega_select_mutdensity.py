@@ -66,7 +66,7 @@ def select_syn_mutdensity_old(mutdensity_file, output_file, mode):
 @click.command()
 @click.option('--mutdensities', type=click.Path(exists=True), help='Input mutation density file')
 @click.option('--output', type=click.Path(), help='Output file')
-@click.option('--mode', type=click.Choice(['mutations', 'mutated_reads']), default='mutations')
+@click.option('--mode', type=click.Choice(['mutations', 'mutated_reads', 'new']), default='mutations')
 def main(mutdensities, output, mode):
     click.echo("Selecting the gene synonymous mutation densities...")
     if mode == 'new':

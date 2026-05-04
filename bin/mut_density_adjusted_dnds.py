@@ -35,6 +35,7 @@ def compute_dnds_proxy(mutdensity_file, cohort_syn_mutdensities_file, output_fil
     for impact in ["missense", "truncating", "nonsynonymous_splice"]:
         mutdensity_df[f"d_{impact}/d_synonymous"] = mutdensity_df[impact] / mutdensity_df["synonymous"]
         mutdensity_df[f"d_{impact}/d_cohort_synonymous"] = mutdensity_df[impact] / mutdensity_df["cohort_synonymous"]
+    mutdensity_df.iloc[:,2:] = mutdensity_df.iloc[:,2:].round(5)
 
     # summary at all_samples level
     subset_mutdensities = mutdensity_df[(mutdensity_df["SAMPLE_ID"] == 'all_samples')]
@@ -42,20 +43,6 @@ def compute_dnds_proxy(mutdensity_file, cohort_syn_mutdensities_file, output_fil
         print(subset_mutdensities.sort_values(by=f"d_{impact}/d_synonymous", ascending=False)[
             ["GENE", "SAMPLE_ID", impact, "synonymous", f"d_{impact}/d_synonymous"]
             ].head(10))
-
-
-    # # summary at sample-level
-    # subset_mutdensities = mutdensity_df[(mutdensity_df["SAMPLE_ID"] != 'all_samples')]
-    # for impact in ["missense", "truncating"]:
-    #     print(subset_mutdensities.sort_values(by=f"d_{impact}/d_synonymous", ascending=False)[
-    #         ["GENE", "SAMPLE_ID", impact, "synonymous", f"d_{impact}/d_synonymous"]
-    #         ].head(10))
-
-    # TODO implement these different modes if appropriate
-    # if mode == 'mutations':
-    #     synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'synonymous']]
-    # elif mode == 'mutated_reads':
-    #     synonymous_mutdensities_genes = synonymous_mutdensities_all_samples[['GENE', 'synonymous']]
 
     mutdensity_df.to_csv(f"{output_file}",
                             header=True,
