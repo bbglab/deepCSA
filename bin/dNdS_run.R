@@ -22,13 +22,13 @@ option_list = list(
               help="sample name/identifier of the run", metavar="character"),
   make_option(c("-i", "--inputfile"), type="character", default=NULL,
               help="mutation dataset file name", metavar="character"),
-  make_option(c("-o", "--outputfile"), type="character", default=NULL,
+  make_option(c("-o", "--outputprefix"), type="character", default="dNdScv_output",
               help="output file name [default= %default]", metavar="character"),
   make_option(c("-r", "--referencetranscripts"), type="character",
-              default="/workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda",
+              default="RefCDS.rda",
               help="Annotation reference file [default= %default]", metavar="character"),
   make_option(c("-c", "--covariates"), type="character",
-              default="/workspace/projects/prominent/analysis/dNdScv/data/reference_files/covariates_hg19_hg38_epigenome_pcawg.rda",
+              default="covariates_hg19_hg38_epigenome_pcawg.rda",
               help="Human GRCh38 covariates file [default= %default]", metavar="character"),
   make_option(c("-g", "--genelist"), type="character",
               default=NULL,
@@ -172,7 +172,7 @@ if (!is.null(dnds_genes) && nrow(dnds_genes) > 0) {
   # Write to file if dnds_genes is still valid
   if (nrow(dnds_genes) > 0) {
     write.table(dnds_genes,
-                file = opt$outputfile,
+                file = paste(opt$outputprefix, '.dNdScv.cv.tsv', sep = ''),
                 sep = "\t",
                 row.names = FALSE,
                 quote = FALSE)
@@ -185,7 +185,7 @@ if (!is.null(dnds_genes) && nrow(dnds_genes) > 0) {
   dnds_genes <- cbind(list("sample" = opt$samplename), dnds_genes)
 
   write.table(dnds_genes,
-              file = paste(opt$outputfile, 'globaldnds', sep = ''),
+              file = paste(opt$outputprefix, '.dNdScv.globaldnds.tsv', sep = ''),
               sep = "\t",
               row.names = FALSE,
               quote = FALSE)
@@ -197,7 +197,7 @@ if (!is.null(dnds_genes) && nrow(dnds_genes) > 0) {
   dnds_genes <- cbind(list("sample" = opt$samplename), dnds_genes)
 
   write.table(dnds_genes,
-              file = paste(opt$outputfile, 'loc', sep = ''),
+              file = paste(opt$outputprefix, '.dNdScv.loc.tsv', sep = ''),
               sep = "\t",
               row.names = FALSE,
               quote = FALSE)

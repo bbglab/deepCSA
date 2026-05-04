@@ -174,6 +174,7 @@ workflow DEEPCSA {
     // Initialize booleans based on user params
     def run_mutabilities    = (params.oncodrivefml || params.oncodriveclustl || params.oncodrive3d)
     def run_mutdensity      = (params.mutationdensity || params.omega)
+    def run_profile_all     = (params.profileall || run_mutabilities || run_mutdensity || params.omega)
 
     // Validate input_maf usage: it requires use_custom_depths to be enabled
     if ( params.input_maf && !params.use_custom_depths ) {
@@ -329,7 +330,7 @@ workflow DEEPCSA {
 
 
     // Mutational profile
-    if ( params.profileall || run_mutabilities || params.omega ){
+    if ( run_profile_all ){
         MUTPROFILEALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, wgs_trinucs, TABLE2GROUP.out.json_allgroups)
         all_compiled_stabilities = all_compiled_stabilities.concat(MUTPROFILEALL.out.profile_stabilities.map{ it -> it[1] })
         if (run_mutdensity){
@@ -365,13 +366,11 @@ workflow DEEPCSA {
 
 
     if (run_mutabilities) {
-        if (params.profileall){
-            MUTABILITYALL(mutations_in_exons,
-                            annotated_depths,
-                            MUTPROFILEALL.out.profile,
-                            CREATEPANELS.out.exons_consensus_panel
-                            )
-        }
+        MUTABILITYALL(mutations_in_exons,
+                        annotated_depths,
+                        MUTPROFILEALL.out.profile,
+                        CREATEPANELS.out.exons_consensus_panel
+                        )
         if (params.profilenonprot){
             MUTABILITYNONPROT(mutations_in_exons,
                                 annotated_depths,
@@ -404,39 +403,35 @@ workflow DEEPCSA {
 
     // OncodriveFML
     if (params.oncodrivefml){
-        if (params.profileall){
-            mode = "all"
-            ONCODRIVEFMLALL(mutations_in_exons, MUTABILITYALL.out.mutability,
-                                CREATEPANELS.out.exons_consensus_panel,
-                                cadd_scores, mode
-                            )
-            positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
-        }
+        ONCODRIVEFMLALL(mutations_in_exons, MUTABILITYALL.out.mutability,
+                            CREATEPANELS.out.exons_consensus_panel,
+                            cadd_scores, "all"
+                        )
+        positive_selection_results = positive_selection_results.join(ONCODRIVEFMLALL.out.results_snvs, remainder: true)
+
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
-            mode = "non_prot_aff"
             ONCODRIVEFMLNONPROT(mutations_in_exons, MUTABILITYNONPROT.out.mutability,
                                     CREATEPANELS.out.exons_consensus_panel,
-                                    cadd_scores, mode
+                                    cadd_scores, "non_prot_aff"
                                 )
         }
     }
 
     if (params.oncodrive3d){
-        if (params.profileall){
-            // Oncodrive3D
-            ONCODRIVE3D(mutations_in_exons, MUTABILITYALL.out.mutability,
-                        datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
-            positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results, remainder: true)
-            positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results_pos, remainder: true)
-
-        }
+        // Oncodrive3D
+        ONCODRIVE3D(mutations_in_exons, MUTABILITYALL.out.mutability,
+                    datasets3d, annotations3d, MUT_PREPROCESSING.out.all_raw_vep_annotation)
+        positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results, remainder: true)
+        positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results_pos, remainder: true)
     }
 
     // if (params.expected_mutated_cells & params.dnds){
     if (params.dnds){
         DNDS(mutations_in_exons,
                     DEPTHSEXONSCONS.out.subset,
-                    CREATEPANELS.out.exons_consensus_panel
+                    CREATEPANELS.out.exons_consensus_bed,
+                    CREATEPANELS.out.exons_consensus_panel,
+                    params.fasta
                     )
     }
 
@@ -445,57 +440,55 @@ workflow DEEPCSA {
         omega_regressions_files_gloc = channel.empty()
 
         // Omega
-        if (params.profileall){
-            OMEGA(mutations_in_exons,
-                    DEPTHSEXONSCONS.out.subset,
-                    MUTPROFILEALL.out.profile,
-                    CREATEPANELS.out.exons_consensus_bed.first(),
-                    ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
-                    custom_groups_table,
-                    SYNMUTDENSITY.out.mutdensity.first(),
-                    CREATEPANELS.out.panel_annotated_rich,
-                    "",
-                    grouping_definitions,
-                    ENRICHPANELS.out.exons_json_subgenic
-                    )
-            positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
-            all_compiled_omegas = OMEGA.out.all_compiled
-            if (params.omega_mutabilities){
-                site_comparison_results = OMEGA.out.site_comparison
-            }
+        OMEGA(mutations_in_exons,
+                DEPTHSEXONSCONS.out.subset,
+                MUTPROFILEALL.out.profile,
+                CREATEPANELS.out.exons_consensus_bed.first(),
+                ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
+                custom_groups_table,
+                SYNMUTDENSITY.out.mutdensity.first(),
+                CREATEPANELS.out.panel_annotated_rich,
+                "",
+                grouping_definitions,
+                ENRICHPANELS.out.exons_json_subgenic
+                )
+        positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
+        all_compiled_omegas = OMEGA.out.all_compiled
+        if (params.omega_mutabilities){
+            site_comparison_results = OMEGA.out.site_comparison
+        }
+        if (params.omega_globalloc){
+            positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
+            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
+        }
+
+        if (params.regressions){
+            omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
+            omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGA.out.results_global.map{ it -> it[1] })
+        }
+
+
+        if (params.omega_multi){
+            // Omega multi
+            OMEGAMULTI(mutations_in_exons,
+                        DEPTHSEXONSCONS.out.subset,
+                        MUTPROFILEALL.out.profile,
+                        CREATEPANELS.out.exons_consensus_bed.first(),
+                        ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
+                        custom_groups_table,
+                        SYNMUTREADSDENSITY.out.mutdensity.first(),
+                        CREATEPANELS.out.panel_annotated_rich,
+                        ".multi",
+                        grouping_definitions,
+                        ENRICHPANELS.out.exons_json_subgenic
+                        )
+            positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
             if (params.omega_globalloc){
-                positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
-                all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
+                positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
             }
-
             if (params.regressions){
-                omega_regressions_files = omega_regressions_files.mix(OMEGA.out.results.map{ it -> it[1] })
-                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGA.out.results_global.map{ it -> it[1] })
-            }
-
-
-            if (params.omega_multi){
-                // Omega multi
-                OMEGAMULTI(mutations_in_exons,
-                            DEPTHSEXONSCONS.out.subset,
-                            MUTPROFILEALL.out.profile,
-                            CREATEPANELS.out.exons_consensus_bed.first(),
-                            ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
-                            custom_groups_table,
-                            SYNMUTREADSDENSITY.out.mutdensity.first(),
-                            CREATEPANELS.out.panel_annotated_rich,
-                            ".multi",
-                            grouping_definitions,
-                            ENRICHPANELS.out.exons_json_subgenic
-                            )
-                positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
-                if (params.omega_globalloc){
-                    positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results_global, remainder: true)
-                }
-                if (params.regressions){
-                    omega_regressions_files = omega_regressions_files.mix(OMEGAMULTI.out.results.map{ it -> it[1] })
-                    omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGAMULTI.out.results_global.map{ it -> it[1] })
-                }
+                omega_regressions_files = omega_regressions_files.mix(OMEGAMULTI.out.results.map{ it -> it[1] })
+                omega_regressions_files_gloc = omega_regressions_files_gloc.mix(OMEGAMULTI.out.results_global.map{ it -> it[1] })
             }
         }
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
