@@ -222,7 +222,7 @@ params {
 
 ### cadd_scores_ind
 
-### dnds_ref_transcripts
+### dnds_biomart_ref
 
 ### dnds_covariates
 

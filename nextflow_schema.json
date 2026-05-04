@@ -783,7 +783,7 @@
                     "fa_icon": "far fa-file-code",
                     "default": "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz.tbi"
                 },
-                "dnds_ref_transcripts": {
+                "dnds_biomart_ref": {
                     "type": "string",
                     "description": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",

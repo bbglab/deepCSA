@@ -142,7 +142,7 @@ The parameters you will need to provide are:
 | `cadd_scores` / `cadd_scores_ind` | CADD scores TSV + index |
 | `cosmic_ref_signatures` | COSMIC SBS signatures file |
 | `nanoseq_snp` / `nanoseq_noise` | NanoSeq masking BED files |
-| `dnds_ref_transcripts` / `dnds_covariates` | dNdScv reference files |
+| `dnds_biomart_ref` / `dnds_covariates` | dNdScv reference files |
 | `datasets3d` / `annotations3d` | Oncodrive3D datasets |
 | `singularity.cacheDir` / `singularity.libraryDir` | Singularity image cache |
 
