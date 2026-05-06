@@ -25,7 +25,6 @@ workflow OMEGA_ANALYSIS{
     mutations
     depth
     profile
-    indv_profile
     bedfile
     expanded_panel
     custom_gene_groups
@@ -54,7 +53,7 @@ workflow OMEGA_ANALYSIS{
     .set{ muts_n_depths_n_profile }
 
     channel.of([ [ id: "all_samples" ] ])
-    .join( indv_profile ).first()
+    .join( profile ).first()
     .set{ all_samples_mut_profile }
 
 
@@ -75,7 +74,7 @@ workflow OMEGA_ANALYSIS{
     GROUPGENES(all_samples_muts, custom_gene_groups, json_subgenic)
 
     ESTIMATOR( preprocess_n_depths, expanded_panel,
-                    GROUPGENES.out.json_genes.first(), grouping_defs, "${projectDir}/assets/omega_consequences_groupings.json")
+                    GROUPGENES.out.json_genes.first(), "${projectDir}/assets/omega_consequences_groupings.json")
 
     if (params.omega_plot){
         mutations
@@ -121,7 +120,7 @@ workflow OMEGA_ANALYSIS{
 
         ESTIMATORGLOBALLOC(preprocess_globalloc_n_depths,
                             expanded_panel,
-                            GROUPGENES.out.json_genes.first(), grouping_defs,
+                            GROUPGENES.out.json_genes.first(),
                             "${projectDir}/assets/omega_consequences_groupings.json")
 
         global_loc_results = ESTIMATORGLOBALLOC.out.results

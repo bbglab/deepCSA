@@ -309,9 +309,6 @@ workflow DEEPCSA {
     QUERYMUTATIONSEXONS(somatic_mutations, CREATEPANELS.out.exons_consensus_bed)
     mutations_in_exons = QUERYMUTATIONSEXONS.out.subset
 
-    channel.of([["id": "all_samples"]])
-    .join(mutations_in_exons).first()
-    .set{muts_all_samples_exons}
 
     // Mutational profile
     if ( run_profile_all ){
@@ -461,9 +458,8 @@ workflow DEEPCSA {
         omega_regressions_files_gloc = channel.empty()
 
         // Omega
-        OMEGA(muts_all_samples_exons,
-                all_samples_indv_annotated_depths,
-                MUTPROFILEALL.out.compiled_profiles,
+        OMEGA(mutations_in_exons,
+                DEPTHSEXONSCONS.out.subset,
                 MUTPROFILEALL.out.profile,
                 CREATEPANELS.out.exons_consensus_bed.first(),
                 ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
@@ -471,7 +467,7 @@ workflow DEEPCSA {
                 SYNMUTDENSITY.out.mutdensity.first(),
                 CREATEPANELS.out.panel_annotated_rich,
                 "",
-                TABLE2GROUP.out.json_allgroups,
+                grouping_definitions,
                 ENRICHPANELS.out.exons_json_subgenic
                 )
         positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
@@ -492,9 +488,8 @@ workflow DEEPCSA {
 
         if (params.omega_multi){
               // Omega multi
-              OMEGAMULTI(muts_all_samples_exons,
+              OMEGAMULTI(mutations_in_exons,
                           DEPTHSEXONSCONS.out.subset,
-                          MUTPROFILEALL.out.compiled_profiles,
                           MUTPROFILEALL.out.profile,
                           CREATEPANELS.out.exons_consensus_bed.first(),
                           ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
@@ -515,7 +510,7 @@ workflow DEEPCSA {
               }
         }
         if (params.profilenonprot && params.positive_selection_non_protein_affecting){
-            OMEGANONPROT(muts_all_samples_exons,
+            OMEGANONPROT(mutations_in_exons,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
                             CREATEPANELS.out.exons_consensus_bed.first(),
@@ -529,7 +524,7 @@ workflow DEEPCSA {
                             )
 
             if (params.omega_multi){
-                OMEGANONPROTMULTI(muts_all_samples_exons,
+                OMEGANONPROTMULTI(mutations_in_exons,
                                     DEPTHSEXONSCONS.out.subset,
                                     MUTPROFILENONPROT.out.profile,
                                     CREATEPANELS.out.exons_consensus_bed.first(),
@@ -634,7 +629,6 @@ workflow DEEPCSA {
                         somatic_mutations,
                         all_mutdensities_file.first(),
                         all_adjusted_mutdensities_file.first(),
-                        
                         site_comparison_results,
                         ANNOTATEDEPTHS.out.all_samples_depths.first(),
                         TABLE2GROUP.out.json_samples.first(),

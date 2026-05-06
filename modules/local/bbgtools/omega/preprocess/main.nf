@@ -20,6 +20,8 @@ process OMEGA_PREPROCESS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
 
+    // TODO revise this fix
+    def sample_name = prefix.tokenize('.')[0]
     def global_loc = task.ext.global_loc ? "--absent-synonymous infer_global_custom  --mutational-profile-global-file global_mutprofile.tsv --synonymous-mutrates-file ${syn_muts_global}" : "--absent-synonymous ignore"
     prefix = task.ext.global_loc ? "${prefix}.gLoc" : "${prefix}"
     """
@@ -31,6 +33,7 @@ process OMEGA_PREPROCESS {
                         --mutabilities-table mutability_per_sample_gene_context.${prefix}.tsv \\
                         --synonymous-muts-table syn_muts.${prefix}.tsv \\
                         --mutational-profile-file ${mutation_profile} \\
+                        --single-sample ${sample_name} \\
                         ${global_loc}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

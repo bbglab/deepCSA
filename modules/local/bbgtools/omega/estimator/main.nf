@@ -11,7 +11,6 @@ process OMEGA_ESTIMATOR {
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
     tuple val(meta2), path(annotated_panel)
     path (genes_json)
-    path (samples_groups_json)
     path (impacts_json)
 
     output:
@@ -27,8 +26,12 @@ process OMEGA_ESTIMATOR {
     mkdir groups;
 
     mv ${genes_json} groups/group_genes.json
-    mv ${samples_groups_json} groups/group_samples.json
     mv ${impacts_json} groups/group_impacts.json
+    cat > groups/group_samples.json << EOF
+    {
+        "${meta.id}" : ["${meta.id}"]
+    }
+    EOF
 
     omega estimator --mutability-file ${mutabilities_table} \\
                     --observed-mutations-file ${mutations_table} \\
