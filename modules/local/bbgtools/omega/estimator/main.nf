@@ -11,6 +11,7 @@ process OMEGA_ESTIMATOR {
     tuple val(meta) , path(mutabilities_table), path(mutations_table), path(depths)
     tuple val(meta2), path(annotated_panel)
     path (genes_json)
+    path (impacts_json)
 
     output:
     tuple val(meta), path("output_*.tsv"), emit: results
@@ -22,21 +23,10 @@ process OMEGA_ESTIMATOR {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-
     mkdir groups;
 
     mv ${genes_json} groups/group_genes.json
-
-    cat > groups/group_impacts.json << EOF
-    {
-        "missense": ["missense"],
-        "nonsense": ["nonsense"],
-        "essential_splice": ["essential_splice"],
-        "truncating": ["nonsense", "essential_splice"],
-        "nonsynonymous_splice": ["missense", "nonsense", "essential_splice"]
-    }
-    EOF
-
+    mv ${impacts_json} groups/group_impacts.json
     cat > groups/group_samples.json << EOF
     {
         "${meta.id}" : ["${meta.id}"]

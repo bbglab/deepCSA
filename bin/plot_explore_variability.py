@@ -84,15 +84,13 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
 
 def adj_mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
                                 config_datasets = {
-                                    "all" : ({"MUTTYPES": 'all_types', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
-                                    "all protein-affecting" : ({"MUTTYPES": 'all_types', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "all non-protein-affecting" : ({"MUTTYPES": 'all_types', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "SNVs" : ({"MUTTYPES": 'SNV', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
-                                    "SNVs protein-affecting" : ({"MUTTYPES": 'SNV', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "SNVs non-protein-affecting" : ({"MUTTYPES": 'SNV', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "INDELs" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
-                                    "INDELs protein-affecting" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "INDELs non-protein-affecting" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB')
+                                    "synonymous" : "synonymous",
+                                    "missense" : "missense",
+                                    "nonsense" : "nonsense",
+                                    "essential_splice" : "essential_splice",
+                                    "truncating" : "truncating",
+                                    "nonsynonymous_splice" : "nonsynonymous_splice",
+                                    "all_impacts" : "all_impacts",
                                 }
                             ):
     """
@@ -105,13 +103,13 @@ def adj_mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = ''
         print("No data available for the selected samples/groups")
         return
     
-    pdf_filename = f"{outdir}/{prefix}mut_density_heatmaps.pdf"
+    pdf_filename = f"{outdir}/{prefix}_adjusted_mut_density_heatmaps.pdf"
     with PdfPages(pdf_filename) as pdf:
 
-        for title, (config, value) in config_datasets.items():
-            print("Creating heatmap for:", title, config, value)
-            filtered_data = filter_data_from_config(data, config)
-            # print(filtered_data[['GENE', 'SAMPLE_ID', value]].head())
+        for title, value in config_datasets.items():
+            print("Creating heatmap for:", title)
+            filtered_data = data[["GENE", "SAMPLE_ID", value]]
+
             # Create a pivot table for the heatmap
             heatmap_data = filtered_data.pivot_table(index='GENE', columns='SAMPLE_ID', values=value)
             heatmap_data = heatmap_data.reindex(index=genes_list, columns=samples_list)
@@ -208,7 +206,7 @@ def main(outdir, panel_regions, samples_json, all_groups_json, mutdensities, adj
         plotting_manager(outdir, genes_list, samples_list, "samples.", data_string, data_objects)
     except Exception as e:
         print("Error in the process", e)
-    
+
     try:
         plotting_manager(outdir, genes_list, groups_names, "groups.", data_string, data_objects)
     except Exception as e:
