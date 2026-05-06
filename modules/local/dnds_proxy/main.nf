@@ -34,7 +34,7 @@ process DNDS_PROXY {
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
     """
-    touch ${prefix}.gene_mutdensities.tsv
+    touch ${prefix}.gene_mutdensities_n_dnds.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
