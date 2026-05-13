@@ -14,7 +14,7 @@ process OMEGA_MULTITEST {
 
     script:
     def output_name = "${omegas.baseName}.tsv"
-    def temp_name = "${omegas.baseName}.corrected.tsv"
+    def temp_name = "${omegas.baseName}.corrected.tsv" // avoid overwriting staged input
     """
     omega_multiple_testing.py \\
         --omegas-file ${omegas} \\

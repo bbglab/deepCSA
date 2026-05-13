@@ -229,8 +229,8 @@ nextflow_pipeline {
             //TODO Include omega output snapshot when stable
 
             // Filter out empty lines and the header (collectFile keepHeader is non-deterministic)
-            def dataLines = lines.drop(1).findAll { it }
-            assert dataLines.size() == 252 : "Omega output should contain 252 data rows, found ${dataLines.size()}"
+            def dataLinesWithoutHeader = lines.drop(1).findAll { it }
+            assert dataLinesWithoutHeader.size() == 252 : "Omega output should contain 252 data rows, found ${dataLinesWithoutHeader.size()}"
 
             // Sort by key columns (gene, sample, impact) to avoid floating-point differences affecting order
             // Round numeric columns (dnds, pvalue, lower, upper) to 2 decimals for deterministic comparison
@@ -244,6 +244,7 @@ nextflow_pipeline {
                 def cols = line.split('\t')
                 "${cols[0]}\t${cols[1]}\t${cols[2]}"
             }.collect { line ->
+                // Use -1 to preserve trailing empty columns.
                 def cols = line.split('\t', -1)
                 def snapshotCols = snapshotIndices.collect { idx -> cols[idx] }
                 (4..7).each { i -> snapshotCols[i] = String.format("%.2f", snapshotCols[i] as Double) }
