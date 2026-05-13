@@ -9,11 +9,11 @@ process OMEGA_MULTITEST {
     tuple path(samples_json), path(groups_json), path(all_groups_json)
 
     output:
-    path("${omegas.baseName}.tsv")  , emit: corrected
+    path("${omegas.name}")          , emit: corrected
     path "versions.yml"            , topic: versions
 
     script:
-    def output_name = "${omegas.baseName}.tsv"
+    def output_name = "${omegas.name}"
     def temp_name = "${omegas.baseName}.corrected.tsv" // avoid overwriting staged input
     """
     omega_multiple_testing.py \\
@@ -32,7 +32,7 @@ process OMEGA_MULTITEST {
 
     stub:
     """
-    touch ${omegas.baseName}.tsv
+    touch ${omegas.name}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
