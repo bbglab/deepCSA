@@ -128,6 +128,7 @@ workflow OMEGA_ANALYSIS{
         global_loc_results = ESTIMATORGLOBALLOC.out.results
         
         global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
+        // Keep the concatenated file in the work directory; the corrected output is published below.
         all_gloc_indv_results
         .collectFile(name: "all_omegas${suffix}_global_loc.tsv", skip: 1, keepHeader: true)
         .set{ all_gloc_results_raw }
@@ -178,6 +179,7 @@ workflow OMEGA_ANALYSIS{
 
 
     ESTIMATOR.out.results.map{ it -> it[1]}.flatten().set{ all_indv_results }
+    // Keep the concatenated file in the work directory; the corrected output is published below.
     all_indv_results
     .collectFile(name: "all_omegas${suffix}.tsv", skip: 1, keepHeader: true)
     .set{ all_results_raw }

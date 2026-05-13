@@ -229,8 +229,8 @@ nextflow_pipeline {
             //TODO Include omega output snapshot when stable
 
             // Filter out empty lines and the header (collectFile keepHeader is non-deterministic)
-            def dataLinesWithoutHeader = lines.drop(1).findAll { it }
-            assert dataLinesWithoutHeader.size() == 252 : "Omega output should contain 252 data rows, found ${dataLinesWithoutHeader.size()}"
+            def dataLines = lines.drop(1).findAll { it }
+            assert dataLines.size() == 252 : "Omega output should contain 252 data rows, found ${dataLines.size()}"
 
             // Sort by key columns (gene, sample, impact) to avoid floating-point differences affecting order
             // Round numeric columns (dnds, pvalue, lower, upper) to 2 decimals for deterministic comparison
