@@ -11,6 +11,7 @@ include { PLOT_OMEGA                as PLOTOMEGA                } from '../../..
 include { SITE_COMPARISON           as SITECOMPARISON           } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { SITE_COMPARISON           as SITECOMPARISONMULTI      } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { PLOT_OMEGASYN_QC          as EVALOMEGAGLOCESTIMATION  } from '../../../modules/local/plot/qc/globalloc_synonymous/main'
+include { OMEGA_MULTITEST           as OMEGAMULTITEST           } from '../../../modules/local/omega_multipletesting/main'
 
 include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
 include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
@@ -18,6 +19,7 @@ include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC    } from '
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC               } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { OMEGA_MULTITEST           as OMEGAMULTITESTGLOBALLOC          } from '../../../modules/local/omega_multipletesting/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -126,7 +128,11 @@ workflow OMEGA_ANALYSIS{
         global_loc_results = ESTIMATORGLOBALLOC.out.results
         
         global_loc_results.map{ it -> it[1]}.flatten().set{ all_gloc_indv_results }
-        all_gloc_indv_results.collectFile(name: "all_omegas${suffix}_global_loc.tsv", storeDir:"${params.outdir}/selection/omegagloballoc", skip: 1, keepHeader: true).set{ all_gloc_results }
+        all_gloc_indv_results
+        .collectFile(name: "all_omegas${suffix}_global_loc.tsv", skip: 1, keepHeader: true)
+        .set{ all_gloc_results_raw }
+        OMEGAMULTITESTGLOBALLOC(all_gloc_results_raw, grouping_defs)
+        all_gloc_results = OMEGAMULTITESTGLOBALLOC.out.corrected
 
         PREPROCESSING.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts }
         PREPROCESSINGGLOBALLOC.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts_gloc }
@@ -172,7 +178,11 @@ workflow OMEGA_ANALYSIS{
 
 
     ESTIMATOR.out.results.map{ it -> it[1]}.flatten().set{ all_indv_results }
-    all_indv_results.collectFile(name: "all_omegas${suffix}.tsv", storeDir:"${params.outdir}/selection/omega", skip: 1, keepHeader: true).set{ all_results }
+    all_indv_results
+    .collectFile(name: "all_omegas${suffix}.tsv", skip: 1, keepHeader: true)
+    .set{ all_results_raw }
+    OMEGAMULTITEST(all_results_raw, grouping_defs)
+    all_results = OMEGAMULTITEST.out.corrected
 
 
     emit:
