@@ -68,7 +68,7 @@ nf-test test tests/deepcsa.nf.test --tag omega --update-snapshot
   - `mutational_profile/` and `omega/` directories exist
   - `omega/all_omegas.tsv` exists
   - `oncodrivefml/`, `oncodrive3d/` directories do **not** exist
-  - Structural checks on `all_omegas.tsv`: header contains `gene`, `sample`, `dnds`; all rows contain same columns, all samples are present.
+- Structural checks on `all_omegas.tsv`: header contains `gene`, `sample`, `dnds`, `pvalue_adj`; all rows contain same columns, all samples are present.
   - Snapshot of `mutational_profile/all_samples.all.profile.tsv` (MD5)
 
 - `input_maf_validation` (Parameter validation):

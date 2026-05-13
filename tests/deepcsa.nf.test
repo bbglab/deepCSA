@@ -183,6 +183,7 @@ nextflow_pipeline {
             assert header.contains("gene")   : "Omega output should contain 'gene' column"
             assert header.contains("sample") : "Omega output should contain 'sample' column"
             assert header.contains("dnds")   : "Omega output should contain 'dnds' column"
+            assert header.contains("pvalue_adj") : "Omega output should contain 'pvalue_adj' column"
             assert lines.size() > 1          : "Omega output should have at least one data row"
 
             // Structural integrity: every row must have the same number of columns
@@ -228,21 +229,27 @@ nextflow_pipeline {
             //TODO Include omega output snapshot when stable
 
             // Filter out empty lines and the header (collectFile keepHeader is non-deterministic)
-            def expectedHeader = "gene\tsample\timpact\tmutations\tdnds\tpvalue\tlower\tupper"
-            def dataLines = lines.findAll { it && it != expectedHeader }
+            def dataLines = lines.drop(1).findAll { it }
             assert dataLines.size() == 252 : "Omega output should contain 252 data rows, found ${dataLines.size()}"
 
             // Sort by key columns (gene, sample, impact) to avoid floating-point differences affecting order
             // Round numeric columns (dnds, pvalue, lower, upper) to 2 decimals for deterministic comparison
+            def snapshotColumns = ["gene", "sample", "impact", "mutations", "dnds", "pvalue", "lower", "upper"]
+            def snapshotIndices = snapshotColumns.collect { column ->
+                header.findIndexOf { it == column }
+            }
+            assert snapshotIndices.every { it >= 0 } : "Omega output should contain snapshot columns: ${snapshotColumns}"
+
             def sortedRounded = filteredRows.sort { line ->
                 def cols = line.split('\t')
                 "${cols[0]}\t${cols[1]}\t${cols[2]}"
             }.collect { line ->
-                def cols = line.split('\t')
-                (4..7).each { i -> cols[i] = String.format("%.2f", cols[i] as Double) }
-                cols.join('\t')
+                def cols = line.split('\t', -1)
+                def snapshotCols = snapshotIndices.collect { idx -> cols[idx] }
+                (4..7).each { i -> snapshotCols[i] = String.format("%.2f", snapshotCols[i] as Double) }
+                snapshotCols.join('\t')
             }
-            def sortedContent = [expectedHeader] + sortedRounded
+            def sortedContent = [snapshotColumns.join('\t')] + sortedRounded
 
             // Snapshot both files
             assert snapshot(path("${params.outdir}/mutational_profile/all_samples.all.profile.tsv")).match("mutational_profile")
