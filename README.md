@@ -22,6 +22,8 @@ sample2,sample2.filtered.vcf,sample2.sorted.bam
 
 Each row represents a single sample with a single-sample VCF containing the mutations called in that sample and the BAM file that was used for getting those variant calls. The mutations will be obtained from the VCF and the BAM file will be used for computing the sequencing depth at each position and using this for the downstream analysis.
 
+Two alternative input modes are also supported: a samplesheet with only `sample,vcf` columns combined with a precomputed depths table, or a single cohort-level MAF file passed via `--input_maf` together with a precomputed depths table. See [Input scenarios](docs/input_scenarios.md) for details.
+
 **Make sure that you do not use any '.' in your sample names, and also use text-like names for the samples, try to avoid having only numbers.** This second case should be handled properly but using string-like names will ensure consistency.
 
 **There are specific datasets that need to be prepared before running deepCSA. You can find a list of those, and instructions for downloading them in [the documentation section of the repo](docs/usage.md#mandatory-parameter-configuration).**
