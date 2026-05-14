@@ -33,7 +33,10 @@ process TABIX_BGZIPTABIX_QUERY {
             echo "mode compressed and header";
             zcat ${input} | tail -n +2 | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c ${args} > ${prefix}.tmp.${extension}.gz;
             tabix ${args2} ${prefix}.tmp.${extension}.gz;
-            cat <(zcat ${input} | head -n 1) <(tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz) | bgzip --threads ${task.cpus} -c > ${prefix}.${extension}.gz;
+            {
+                zcat ${input} | head -n 1
+                tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz
+            } | bgzip --threads ${task.cpus} -c > ${prefix}.${extension}.gz;
         elif [[ "${header}" == "pile" ]]; then
             echo "mode pileup";
             tabix ${args2} ${input};
@@ -49,7 +52,10 @@ process TABIX_BGZIPTABIX_QUERY {
             echo "mode uncompressed with header";
             tail -n +2 ${input} | sort -k1,1 -k2,2n | bgzip --threads ${task.cpus} -c ${args} > ${prefix}.tmp.${extension}.gz;
             tabix ${args2} ${prefix}.tmp.${extension}.gz;
-            cat <(head -n 1 ${input}) <(tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz) | bgzip --threads ${task.cpus} -c > ${prefix}.${extension}.gz;
+            {
+                head -n 1 ${input}
+                tabix --regions ${bedfile} ${args3} ${prefix}.tmp.${extension}.gz
+            } | bgzip --threads ${task.cpus} -c > ${prefix}.${extension}.gz;
         else
             echo "mode uncompressed without header";
             sort -k1,1 -k2,2n ${input} | bgzip --threads ${task.cpus} -c ${args} > ${prefix}.tmp.${extension}.gz;
