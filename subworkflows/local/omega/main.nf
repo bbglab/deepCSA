@@ -1,25 +1,25 @@
-include { SUBSET_MAF                as SUBSETOMEGA              } from '../../../modules/local/subsetmaf/main'
-include { SUBSET_MAF                as SUBSETOMEGAMULTI         } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETOMEGA                      } from '../../../modules/local/subsetmaf/main'
+include { SUBSET_MAF                as SUBSETOMEGAMULTI                 } from '../../../modules/local/subsetmaf/main'
 
-include { TABIX_BGZIPTABIX_QUERY    as QUERYPANEL               } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
+include { TABIX_BGZIPTABIX_QUERY    as QUERYPANEL                       } from '../../../modules/nf-core/tabix/bgziptabixquery/main'
 
-include { OMEGA_PREPROCESS          as PREPROCESSING            } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { GROUP_GENES               as GROUPGENES               } from '../../../modules/local/group_genes/main'
-include { OMEGA_ESTIMATOR           as ESTIMATOR                } from '../../../modules/local/bbgtools/omega/estimator/main'
-include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES     } from '../../../modules/local/bbgtools/omega/mutabilities/main'
-include { PLOT_OMEGA                as PLOTOMEGA                } from '../../../modules/local/plot/omega/main'
-include { SITE_COMPARISON           as SITECOMPARISON           } from '../../../modules/local/bbgtools/sitecomparison/main'
-include { SITE_COMPARISON           as SITECOMPARISONMULTI      } from '../../../modules/local/bbgtools/sitecomparison/main'
-include { PLOT_OMEGASYN_QC          as EVALOMEGAGLOCESTIMATION  } from '../../../modules/local/plot/qc/globalloc_synonymous/main'
-include { OMEGA_MULTITEST           as OMEGAMULTITEST           } from '../../../modules/local/omega_multipletesting/main'
+include { OMEGA_PREPROCESS          as PREPROCESSING                    } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { GROUP_GENES               as GROUPGENES                       } from '../../../modules/local/group_genes/main'
+include { OMEGA_ESTIMATOR           as ESTIMATOR                        } from '../../../modules/local/bbgtools/omega/estimator/main'
+include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIES             } from '../../../modules/local/bbgtools/omega/mutabilities/main'
+include { PLOT_OMEGA                as PLOTOMEGA                        } from '../../../modules/local/plot/omega/main'
+include { SITE_COMPARISON           as SITECOMPARISON                   } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { SITE_COMPARISON           as SITECOMPARISONMULTI              } from '../../../modules/local/bbgtools/sitecomparison/main'
+include { PLOT_OMEGASYN_QC          as EVALOMEGAGLOCESTIMATION          } from '../../../modules/local/plot/qc/globalloc_synonymous/main'
+include { OMEGA_MULTITEST           as OMEGAMULTIPLETEST                } from '../../../modules/local/omega_multipletesting/main'
 
-include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC   } from '../../../modules/local/bbgtools/omega/preprocess/main'
-include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC       } from '../../../modules/local/bbgtools/omega/estimator/main'
+include { OMEGA_PREPROCESS          as PREPROCESSINGGLOBALLOC           } from '../../../modules/local/bbgtools/omega/preprocess/main'
+include { OMEGA_ESTIMATOR           as ESTIMATORGLOBALLOC               } from '../../../modules/local/bbgtools/omega/estimator/main'
 include { OMEGA_MUTABILITIES        as ABSOLUTEMUTABILITIESGLOBALLOC    } from '../../../modules/local/bbgtools/omega/mutabilities/main'
 include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC               } from '../../../modules/local/plot/omega/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
-include { OMEGA_MULTITEST           as OMEGAMULTITESTGLOBALLOC          } from '../../../modules/local/omega_multipletesting/main'
+include { OMEGA_MULTITEST           as OMEGAMULTIPLETESTGLOBALLOC       } from '../../../modules/local/omega_multipletesting/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -130,8 +130,8 @@ workflow OMEGA_ANALYSIS{
         all_gloc_indv_results
         .collectFile(name: "all_omegas${suffix}_global_loc.tsv", skip: 1, keepHeader: true)
         .set{ all_gloc_results_raw }
-        OMEGAMULTITESTGLOBALLOC(all_gloc_results_raw, grouping_defs)
-        all_gloc_results = OMEGAMULTITESTGLOBALLOC.out.corrected
+        OMEGAMULTIPLETESTGLOBALLOC(all_gloc_results_raw, grouping_defs)
+        all_gloc_results = OMEGAMULTIPLETESTGLOBALLOC.out.corrected
 
         PREPROCESSING.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts }
         PREPROCESSINGGLOBALLOC.out.syn_muts_tsv.map{ it -> it[1]}.flatten().collect().set{ all_syn_muts_gloc }
@@ -181,8 +181,8 @@ workflow OMEGA_ANALYSIS{
     all_indv_results
     .collectFile(name: "all_omegas${suffix}.tsv", skip: 1, keepHeader: true)
     .set{ all_results_raw }
-    OMEGAMULTITEST(all_results_raw, grouping_defs)
-    all_results = OMEGAMULTITEST.out.corrected
+    OMEGAMULTIPLETEST(all_results_raw, grouping_defs)
+    all_results = OMEGAMULTIPLETEST.out.corrected
 
 
     emit:
