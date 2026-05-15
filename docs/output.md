@@ -245,7 +245,19 @@ Optional (subgenic / domain expansion):
 
 ### Outputs
 
-- `selection/sitecomparison/` (8 background × count combinations: `bckg_{single,multi,glocsingle,glocmulti}_count_{single,multi}/`)
+- The recommended ones to use are:
+
+  - For reporting selection at a cohort-level:
+
+  `selection/sitecomparison/bckg_single_count_single`
+
+  - For estimating selection accounting for the expansions or multiple occurrences of specific mutations:
+
+  `selection/sitecomparison/bckg_single_count_multi`
+
+  `selection/sitecomparison/bckg_multi_count_multi`
+
+- But all possible combinations are available: `selection/sitecomparison/` (8 background × count combinations: `bckg_{single,multi,glocsingle,glocmulti}_count_{single,multi}/`)
 
 ## Additional clonal structure metrics
 

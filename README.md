@@ -82,6 +82,8 @@ We are working to provide the biggest possible detail on the [usage](docs/usage.
 >
 > *these authors contributed equally and the order was decided randomly
 
+&
+
 > **DeepClone, an end-to-end protocol to study somatic mutagenesis and selection at high resolution**
 >
 > Ferriol Calvet, Morena Pinheiro-Santin, Erika Lopez, Raquel Blanco Martinez-Illescas, Núria Samper, Miguel L. Grau, Ferran Muiños, Rocío Chamorro González, Maria Andrianova, Federica Brando, Stefano Pellegrini, Marta Huertas, Elisabet Figuerola-Bou, Coohleen Coombes, Brendan F. Kohrn, Jeanne Fredrickson, Rosa Ana Risques, Nuria Lopez-Bigas, Abel Gonzalez-Perez

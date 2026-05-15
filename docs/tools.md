@@ -128,9 +128,9 @@ Instructions for regenerating the biomart TSV are in [assets/build_datasets/dnds
 
 ## dN/dS proxy
 
-When mutation density and the all-regions profile are computed, deepCSA also generates a quick **dN/dS proxy** per gene by taking the ratio of adjusted vs synonymous mutation densities. The implementation is in `mut_density_adjusted_dnds.py` and the results are published to `selection/dndsproxy/` as `*.gene_mutdensities_n_dnds.tsv`.
+When mutation density and the all-regions profile are computed, deepCSA also generates a quick **dN/dS proxy** per gene by taking the ratio of non-synonymous vs synonymous adjusted mutation densities. The implementation is in `mut_density_adjusted_dnds.py` and the results are published to `selection/dndsproxy/` as `*.gene_mutdensities_n_dnds.tsv`.
 
-This metric is intended as a fast sanity check and is independent of the R-based dNdScv run. It is gated by `run_mutdensity` (which itself is enabled by either `mutationdensity` or `omega`) combined with `profileall`.
+This metric is intended as a fast sanity check and is independent of the R-based dNdScv run and of omega, both of which provide dN/dS estimates with significance testing. It is gated by `run_mutdensity` (which itself is enabled by either `mutationdensity` or `omega`) combined with `profileall`.
 
 ## Depth-vs-metric QC
 
@@ -149,5 +149,9 @@ We provide two different strategies for signature analysis.
 - Using SigProfilerAssignment with a set of known SBS signatures
 
 - Using a Hierarchical Dirichlet Process algorithm developed by Nicola Robets and compacted by the McGranahan lab into a wrapped version.
+
+  - The outputs of the signature extraction process are then further processed downstream using SigProfilerAssignment to decompose the de novo signature and reassign mutational processes to samples.
+
+- Additionally we also output mutation count matrices that are ready to be run through [MSA](https://gitlab.com/s.senkin/MSA) which is another method for mutational signature attribution.
 
 Additionally one could run SigProfilerExtractor on the data but this needs to be done externally.
