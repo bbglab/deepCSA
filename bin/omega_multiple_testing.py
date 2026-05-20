@@ -14,17 +14,6 @@ def _load_json_keys(path: str) -> set[str]:
     return set(data.keys())
 
 
-def _find_column(df: pd.DataFrame, candidates: Iterable[str], label: str) -> str:
-    lower_map = {col.lower(): col for col in df.columns}
-    for candidate in candidates:
-        if candidate in df.columns:
-            return candidate
-        lowered = candidate.lower()
-        if lowered in lower_map:
-            return lower_map[lowered]
-    raise ValueError(f"Missing required {label} column. Tried: {', '.join(candidates)}")
-
-
 def _benjamini_hochberg(pvals: np.ndarray) -> np.ndarray:
     if pvals.size == 0:
         return pvals
@@ -55,30 +44,30 @@ def _sample_category(sample: str, group_names: set[str], sample_names: set[str])
 def main(omegas_file: str, samples_json: str, groups_json: str, output: str) -> None:
     df = pd.read_table(omegas_file)
 
-    gene_col = _find_column(df, ["gene", "GENE"], "gene")
-    sample_col = _find_column(df, ["sample", "SAMPLE"], "sample")
-    pvalue_col = _find_column(df, ["pvalue", "p_value", "pval", "p-value"], "p-value")
-
-    df[pvalue_col] = pd.to_numeric(df[pvalue_col], errors="coerce")
+    df["pvalue"] = pd.to_numeric(df["pvalue"], errors="coerce")
     df["pvalue_adj"] = np.nan
 
     sample_names = _load_json_keys(samples_json)
     group_names = _load_json_keys(groups_json) - {"all_samples"}
 
-    sample_categories = df[sample_col].astype(str).map(
+    sample_categories = df["sample"].astype(str).map(
         lambda sample: _sample_category(sample, group_names, sample_names)
     )
-    region_levels = df[gene_col].astype(str).str.contains("--", na=False).map(
+    region_levels = df["gene"].astype(str).str.contains("--", na=False).map(
         lambda has_subgenic: "subgenic" if has_subgenic else "gene"
     )
 
     for sample_group in ("all_samples", "group", "sample"):
         for region_level in ("gene", "subgenic"):
+            click.echo(
+                "Correcting omega values for: "
+                f"{sample_group} samples, {region_level} regions"
+            )
             mask = (sample_categories == sample_group) & (region_levels == region_level)
-            valid_mask = mask & df[pvalue_col].notna()
+            valid_mask = mask & df["pvalue"].notna()
             if not valid_mask.any():
                 continue
-            adjusted = _benjamini_hochberg(df.loc[valid_mask, pvalue_col].to_numpy())
+            adjusted = _benjamini_hochberg(df.loc[valid_mask, "pvalue"].to_numpy())
             df.loc[valid_mask, "pvalue_adj"] = adjusted
 
     unknown_samples = sample_categories[sample_categories == "unknown"].unique()
