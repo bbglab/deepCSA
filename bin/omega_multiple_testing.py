@@ -7,6 +7,8 @@ import click
 import numpy as np
 import pandas as pd
 
+MIN_NONZERO_PVALUE = 1.17e-38
+
 
 def _load_json_keys(path: str) -> set[str]:
     with open(path, "r", encoding="utf-8") as handle:
@@ -44,7 +46,8 @@ def _sample_category(sample: str, group_names: set[str], sample_names: set[str])
 def main(omegas_file: str, samples_json: str, groups_json: str, output: str) -> None:
     df = pd.read_table(omegas_file)
 
-    df["pvalue"] = pd.to_numeric(df["pvalue"], errors="coerce")
+    pvalues = pd.to_numeric(df["pvalue"], errors="coerce")
+    df["pvalue"] = pvalues.mask(pvalues <= 0, MIN_NONZERO_PVALUE)
     df["pvalue_adj"] = np.nan
 
     sample_names = _load_json_keys(samples_json)
