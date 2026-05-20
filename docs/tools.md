@@ -110,6 +110,12 @@ Defining the mutation density as $m/L$, according to the preceding explanation, 
 
 For more explanations on omega go to the [corresponding repo](https://github.com/bbglab/omega).
 
+deepCSA applies Benjamini-Hochberg multiple-testing correction separately for each of the following
+comparison sets: all-samples (cohort), sample groups, and per-sample results, and it does this
+independently for gene-level and subgenic regions. The corrected values are reported in the
+`pvalue_adj` column. P-values equal to 0 are set to `1.17e-38` (minimum non-zero float32) before
+correction to avoid underflow.
+
 ## Site comparison
 
 The site comparison step takes advantage of the computation of mutabilities in [omega](https://github.com/bbglab/omega), and then compares these mutabilities either by residue, residue change or nucleotide change.
