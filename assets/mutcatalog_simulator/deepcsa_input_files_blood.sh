@@ -3,7 +3,7 @@
 # from an existing valid mutcatalog_simulator output directory, generate the deepCSA input files
 # it generates required deepCSA input files
 
-DEEPCSA_RUN_DIR="/data/bbg/nobackup/prominent/SantPauCH/deepCSA/sp_vhio/custom/2026-03-23_Sp_CHa_H_T0s_only_custom"
+DEEPCSA_RUN_DIR="/data/bbg/nobackup/prominent/SantPauCH/deepCSA/sp_vhio/custom/2026-05-05_sp_vhio_H_T0sonly_custom"
 OUTPUT_DIR="${DEEPCSA_RUN_DIR}/fake_mutations_poisson_blood"
 
 ls ${OUTPUT_DIR}/vcf/*.vcf | xargs -n 1 basename | rev | cut -d '.' -f2- | rev > ${OUTPUT_DIR}/vcf/sample_names.txt

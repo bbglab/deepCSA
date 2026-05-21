@@ -2,7 +2,9 @@
 
 MUTCATALOG_SIMULATOR_HOME="/home/fmuinos/deepCSA/assets/mutcatalog_simulator"
 
-DEEPCSA_RUN_DIR="/data/bbg/nobackup/prominent/SantPauCH/deepCSA/sp_vhio/custom/2026-03-23_Sp_CHa_H_T0s_only_custom"
+# DEEPCSA_RUN_DIR="/data/bbg/nobackup/prominent/SantPauCH/deepCSA/sp_vhio/custom/2026-03-23_Sp_CHa_H_T0s_only_custom"
+# DEEPCSA_RUN_DIR="/data/bbg/nobackup/prominent/SantPauCH/deepCSA/sp_vhio/custom/2026-04-13_Sp_vhio_H_T0sonly_custom07"
+DEEPCSA_RUN_DIR="/data/bbg/nobackup/prominent/SantPauCH/deepCSA/sp_vhio/custom/2026-05-05_sp_vhio_H_T0sonly_custom"
 RUN_CONFIG="${MUTCATALOG_SIMULATOR_HOME}/test_config_blood.json"
 OUTPUT_DIR="${DEEPCSA_RUN_DIR}/fake_mutations_poisson_blood"
 
