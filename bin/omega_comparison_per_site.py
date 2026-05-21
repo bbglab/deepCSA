@@ -32,6 +32,17 @@ def poisson_pvalue(observed, expected):
     """
     return 1 - stats.poisson.cdf(observed - 1, expected)
 
+def benjamini_hochberg(pvals):
+    if pvals.size == 0:
+        return pvals
+    order = np.argsort(pvals)
+    ranked = np.arange(1, pvals.size + 1)
+    adjusted = np.empty_like(pvals, dtype=float)
+    adjusted[order] = pvals[order] * pvals.size / ranked
+    adjusted_sorted = np.minimum.accumulate(adjusted[order][::-1])[::-1]
+    adjusted[order] = adjusted_sorted
+    return np.clip(adjusted, 0.0, 1.0)
+
 def compute_by_size(panel, mutations, mutabilities, size, sample_column):
     # Merge mutations and panel to associate protein positions
     mutations = mutations.merge(panel[['CHROM', 'POS', 'REF', 'ALT', 'Protein_position', 'Amino_acids', 'GENE', 'Feature']],
@@ -66,6 +77,13 @@ def compute_by_size(panel, mutations, mutabilities, size, sample_column):
     result["OBS/EXP"] = (result["OBSERVED_MUTS"] / result["EXPECTED_MUTS"]).fillna(0)
     result["OBS/EXP"] = result["OBS/EXP"].replace([np.inf, -np.inf], 0)
     result["p_value"] = result[["OBSERVED_MUTS", "EXPECTED_MUTS"]].apply(lambda row: poisson_pvalue(row["OBSERVED_MUTS"], row["EXPECTED_MUTS"]), axis=1)
+    result["p_value_adj"] = np.nan
+    for gene, gene_df in result.groupby("GENE", dropna=False):
+        valid_mask = gene_df["p_value"].notna()
+        if not valid_mask.any():
+            continue
+        adjusted = benjamini_hochberg(gene_df.loc[valid_mask, "p_value"].to_numpy())
+        result.loc[gene_df.index[valid_mask], "p_value_adj"] = adjusted
 
     return result
 
