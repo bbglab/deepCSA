@@ -20,7 +20,7 @@ process GROUP_GENES {
     def grouping_info = "--table-file ${features_table} --separator ${separator} --output-json-groups pathway_groups_out.json"
     def custom_groups = task.ext.custom ? "${grouping_info}" : ""
     """
-    awk 'NR>1 {print \$1}' ${mutations_table} | sort -u  > gene_list.txt
+    awk 'NR>1 {print \$6}' ${mutations_table} | sort -u  > gene_list.txt
 
     features_2group_genes.py \\
         --panel-genes-file gene_list.txt \\
