@@ -105,7 +105,7 @@ The directory tree below shows the maximum diversity of outputs the pipeline can
 │   ├── trinucleotide_proportions
 │   ├── mutational_profiles_comparison
 │   ├── mutdensityqc
-│   ├── metrics_vs_depth           # depth-vs-metric scatter PDFs + status TSVs
+│   ├── metrics_vs_depth
 │   ├── mutationspecific
 │   ├── omega_flagged
 │   ├── evaluate_omega_globalloc
@@ -164,6 +164,8 @@ Optional (subgenic / domain expansion):
 
 - `regions/expandedregions/`
 - `regions/annotations/` (domain and DNA-to-protein mapping outputs)
+
+![DepthsVariability](image-9.png)
 
 ## Mutation preprocessing
 
@@ -285,6 +287,10 @@ Optional (subgenic / domain expansion):
 - `signatures/signatures_hdp/`
 - `signatures/hdp_decomposition_spa/`
 
+### Examples
+
+![MutationalSignatures](images/mutational_signatures.png)
+
 ## Plotting functionalities
 
 ### Key role
@@ -302,6 +308,20 @@ Optional (subgenic / domain expansion):
 - `plots/saturation_proportions/`
 - `plots/interindividual_variability/`
 
+### Examples
+
+![NeedlePlots](images/needle_plots.png)
+
+![SaturationPlots](images/saturation_plots.png)
+
+![DomainSelection](images/DomainSelection.png)
+
+![SelectionSummary](images/selection_summary.png)
+
+![SaturationProportions](images/saturation_proportions.png)
+
+![MutationsSummary](images/MutatedReads.png)
+
 ## QC outputs
 
 ### Key role
@@ -318,6 +338,22 @@ A `qc/` umbrella collects all the quality-control views; `qc/metrics_vs_depth/` 
 - `qc/omega_flagged/`
 - `qc/evaluate_omega_globalloc/`
 - `qc/contamination/`
+
+### Examples
+
+![TrinucleotideProportionsInPanel](images/TrinucleotideProportions.png)
+
+![MutProfileComparisons](images/ClustermapProfileSimilarity.png)
+
+![MutDensityQCSample](images/MutdensityQCsample.png)
+
+![MutDensityQCGenes](images/MutDensityQCgene.png)
+
+![EvalOmegaGloc](images/EvalOmegaGloc.png)
+
+![MutationDensityVSdepth](images/MutDensityNdepth.png)
+
+![VAFmutationQC](images/VAF_qc.png)
 
 ## Additional outputs
 
