@@ -60,7 +60,7 @@ def generate_all_side_figures(sample,
             omega_data = omega_data.merge(flagged_omega_data, how='left')
             omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
                                         & ~(omega_data["gene"].str.contains('--'))  # select only genes
-                                        & ~(omega_data["flagged"])                  # remove flagged genes
+                                        & ~(omega_data["flagged"] == True)                  # remove flagged genes
                                     ]
             if "omega_trunc" in tools :
                 omega_truncating = omega_data[omega_data["impact"] == "truncating"].reset_index(drop = True)[["gene", "mutations", "dnds", "pvalue", "lower", "upper"]]
@@ -715,15 +715,15 @@ def get_all_data(sample, outdir,
 @click.option('--include_indels', is_flag=True, default=False, help='Include indels track in the summary plot')
 def main(sample_name, outdir, include_indels):
     click.echo("Plotting omega results...")
-    try:
-        generate_all_side_figures(sample_name, f"{outdir}/side_figures")
-        # By default, exclude indels unless --include_indels is set
-        tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml")
-        if include_indels:
-            tracks = tracks + ("indels",)
-        get_all_data(sample_name, outdir, tracks=tracks)
-    except Exception as e:
-        print("Error in the process", e)
+    # try:
+    generate_all_side_figures(sample_name, f"{outdir}/side_figures")
+    # By default, exclude indels unless --include_indels is set
+    tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml")
+    if include_indels:
+        tracks = tracks + ("indels",)
+    get_all_data(sample_name, outdir, tracks=tracks)
+    # except Exception as e:
+    #     print("Error in the process", e)
 
 if __name__ == '__main__':
     main()
