@@ -2,7 +2,7 @@ include { TABIX_BGZIPTABIX_QUERY    as QUERYMUTATIONS      } from '../../../modu
 
 include { SUBSET_MAF                as SUBSETMUTDENSITY     } from '../../../modules/local/subsetmaf/main'
 
-include { MUTATION_DENSITY          as MUTDENSITY           } from '../../../modules/local/computemutdensity/main'
+include { MUTATION_DENSITY          as MUTDENSITY           } from '../../../modules/local/mut_density/simple/main'
 
 
 workflow MUTATION_DENSITY{

@@ -13,20 +13,24 @@ process RUN_DNDS {
     path (covariates)
 
     output:
-    tuple val(meta), path("*.out.tsv*") , emit: results
-    path "versions.yml"                 , topic: versions
+    tuple val(meta), path("*.cv.tsv*")          , emit: results_cv
+    tuple val(meta), path("*.loc.tsv*")         , emit: results_local
+    tuple val(meta), path("*.globaldnds.tsv*")  , emit: results_global    
+    path "versions.yml"                         , topic: versions
 
 
     script:
+    def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
     dNdS_run.R --inputfile ${mutations_table} \\
-                --outputfile ${prefix}.out.tsv \\
+                --outputprefix ${prefix} \\
                 --samplename ${prefix} \\
                 --covariates ${covariates} \\
                 --referencetranscripts ${ref_cds} \\
-                --genedepth ${depths}
+                --genedepth ${depths} \\
+                ${args}
     # --cores ${task.cpus}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -38,7 +42,9 @@ process RUN_DNDS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.out.tsv
+    touch ${prefix}.cv.tsv
+    touch ${prefix}.loc.tsv
+    touch ${prefix}.globaldnds.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -47,17 +53,7 @@ process RUN_DNDS {
     """
 }
 
-// "--referencetranscripts"
-// default="/workspace/projects/prominent/analysis/dNdScv/data/reference_files/RefCDS_human_latest_intogen.rda",
-// --covariates
-//     "/workspace/projects/prominent/analysis/dNdScv/data/reference_files/covariates_hg19_hg38_epigenome_pcawg.rda",
-//             help="Human GRCh38 covariates file [default= %default]", metavar="character"),
-// --genelist"), type="character",
-//             default=NULL,
-//             help="Gene list file [default= %default]", metavar="character"),
-// --genedepth"), type="character",
-//             default=NULL,
-//             help="Gene depth file (2 columns: GENE\tAVG_DEPTH) [default= %default]", metavar="character"),
+
 // --snvsonly"), type="logical",
 //             default=FALSE,
 //             help="Only use SNVs for the analysis [default= %default]", metavar="logical")

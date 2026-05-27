@@ -155,9 +155,43 @@ Defining the mutation density as $m/L$, according to the preceding explanation, 
 
 For more explanations on omega go to the [corresponding repo](https://github.com/bbglab/omega).
 
+deepCSA applies Benjamini-Hochberg multiple-testing correction separately for each of the following
+comparison sets: all-samples (cohort), sample groups, and per-sample results, and it does this
+independently for gene-level and subgenic regions. The corrected values are reported in the
+`pvalue_adj` column. P-values equal to 0 are set to `1.17e-38` (minimum non-zero float32) before
+correction to avoid underflow.
+
 ## Site comparison
 
 The site comparison step takes advantage of the computation of mutabilities in [omega](https://github.com/bbglab/omega), and then compares these mutabilities either by residue, residue change or nucleotide change.
+
+## dNdScv
+
+deepCSA wraps the [dNdScv](https://github.com/im3sanger/dndscv) R package and runs it with a **dynamically built** `RefCDS` reference instead of relying on a pre-baked `.rda` transcripts file.
+
+The `dnds` subworkflow performs three steps for every run:
+
+1. `ADAPT_PANEL_REFCDS` (`dNdScv_panel_prep.py`) — filter the biomart export referenced by `params.dnds_biomart_ref` to the transcripts overlapping the panel BED.
+2. `BUILD_REFCDS` — call `dndscv::buildref` using `params.fasta` to produce a fresh `RefCDS_custom.rda`.
+3. `DNDSRUN` (`dNdS_run.R`) — run dNdScv on the cohort, producing `*.cv.tsv`, `*.globaldnds.tsv` and `*.loc.tsv` under `selection/dndscv/{cv,persample,local}/`.
+
+Instructions for regenerating the biomart TSV are in [assets/build_datasets/dndscv/instructions.txt](../assets/build_datasets/dndscv/instructions.txt). The previously required `dnds_ref_transcripts` parameter has been removed.
+
+## dN/dS proxy
+
+When mutation density and the all-regions profile are computed, deepCSA also generates a quick **dN/dS proxy** per gene by taking the ratio of non-synonymous vs synonymous adjusted mutation densities. The implementation is in `mut_density_adjusted_dnds.py` and the results are published to `selection/dndsproxy/` as `*.gene_mutdensities_n_dnds.tsv`.
+
+This metric is intended as a fast sanity check and is independent of the R-based dNdScv run and of omega, both of which provide dN/dS estimates with significance testing. It is gated by `run_mutdensity` (which itself is enabled by either `mutationdensity` or `omega`) combined with `profileall`.
+
+## Depth-vs-metric QC
+
+The `qc/metrics_vs_depth/` directory is produced by `PLOT_METRICS_VS_DEPTH_QC` (in the `plotting_qc` subworkflow) and is always generated. It joins per-gene/sample average depth (from the `PLOTDEPTHSEXONSCONS` step) with:
+
+- raw mutation densities (`mutdensity/`)
+- adjusted mutation densities (`mutdensity_adjusted/`)
+- omega-globalloc estimates (`selection/omegagloballoc/`)
+
+Each combination yields a scatter PDF and a status TSV under `*.metrics_depth_qc/`, used to flag samples/genes whose metric values may be confounded by sequencing depth.
 
 ## Mutational signatures
 
@@ -166,6 +200,10 @@ We provide two different strategies for signature analysis.
 - Using SigProfilerAssignment with a set of known SBS signatures
 
 - Using a Hierarchical Dirichlet Process algorithm developed by Nicola Robets and compacted by the McGranahan lab into a wrapped version.
+
+  - The outputs of the signature extraction process are then further processed downstream using SigProfilerAssignment to decompose the de novo signature and reassign mutational processes to samples.
+
+- Additionally we also output mutation count matrices that are ready to be run through [MSA](https://gitlab.com/s.senkin/MSA) which is another method for mutational signature attribution.
 
 Additionally one could run SigProfilerExtractor on the data but this needs to be done externally.
 

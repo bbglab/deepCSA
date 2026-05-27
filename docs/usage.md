@@ -6,6 +6,7 @@
 
 - [Introduction](#introduction)
 - [How to run the pipeline](#how-to-run-the-pipeline)
+- [Input scenarios](#input-scenarios)
 - [Samplesheet input](#samplesheet-input)
 - [Available genomes](#available-genomes)
 - [Proposed run modes](#proposed-run-modes)
@@ -31,6 +32,10 @@ nextflow run bbglab/deepCSA --outdir <OUTDIR> -profile <DESIRED PROFILE> --input
 ```
 
 For more information on how to run Nextflow pipelines check a more detailed explanation [below](#running-the-pipeline) in this same document or check the [Nextflow](https://www.nextflow.io/docs/latest/index.html) or [nf-core](https://nf-co.re) community documentations.
+
+## Input scenarios
+
+deepCSA accepts three different input combinations: per-sample VCF + BAM (default), per-sample VCF + a precomputed depths table, or a cohort-level MAF + a precomputed depths table. The sections below describe each piece in detail; for a concise summary of the three modes and when to use each, see [Input scenarios](input_scenarios.md).
 
 ## Samplesheet input
 
@@ -256,8 +261,15 @@ params {
     cadd_scores_ind            = "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz.tbi"
 
     // dnds
-    dnds_ref_transcripts       = "RefCDS_human_latest_intogen.rda"
+    // dnds_biomart_ref is a biomart TSV; deepCSA dynamically builds a per-run RefCDS_custom.rda
+    // by intersecting it with the panel BED (replaces the previously required static
+    // RefCDS_*.rda transcripts file). See assets/build_datasets/dndscv/instructions.txt
+    // for how to regenerate the biomart export.
+    dnds_biomart_ref           = "biomart_export.tsv"
     dnds_covariates            = "covariates_hg19_hg38_epigenome_pcawg.rda"
+
+    // GFF3 annotation for the genome assembly, consumed when building exon/domain panels
+    gff3_file                  = "Homo_sapiens.GRCh38.111.gff3.gz"
 
     // oncodrive3d + fancy plots
     datasets3d                 = "oncodrive3d/datasets"
@@ -351,6 +363,12 @@ This value is used for filtering the mutations by depth. Meaning that if a mutat
 - use_custom_minimum_depth    = 0
 
 This value is the less stringent depth threshold and is used in the first step of computing the positions that may be part of the so called "panels". This value indicates the minimum average depth at a given position for this position to be kept for the posterior depth analysis and definition on panels. The main use of this value should be to reduce the size of the files that are being processed afterwards. This can be set to 20 or more very safely.
+
+### VAF-distortion filter
+
+- vaf_distortion_threshold   = 3
+
+Mutations whose ratio `VAF_AM / VAF` (all-molecules VAF over duplex VAF) exceeds this threshold are flagged as VAF-distorted during mutation filtering. Lower values are more conservative.
 
 ### Using a precomputed depths table
 

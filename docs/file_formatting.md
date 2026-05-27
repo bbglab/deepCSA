@@ -246,7 +246,7 @@ bgzip -c whole_genome_SNVs.tsv > whole_genome_SNVs.tsv.gz
 tabix -s 1 -b 2 -e 2 whole_genome_SNVs.tsv.gz
 ```
 
-### dnds_ref_transcripts
+### dnds_biomart_ref
 
 https://github.com/bbglab/deepCSA/tree/dev/assets/build_datasets/dndscv
 
