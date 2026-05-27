@@ -248,7 +248,7 @@ tabix -s 1 -b 2 -e 2 whole_genome_SNVs.tsv.gz
 
 ### dnds_ref_transcripts
 
-Reference transcript annotation for dNdScv. For human, this is typically `RefCDS_human_latest_intogen.rda` from the dNdScv reference bundle (IntOGen mirror).
+https://github.com/bbglab/deepCSA/tree/dev/assets/build_datasets/dndscv
 
 ### dnds_covariates
 

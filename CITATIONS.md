@@ -38,10 +38,6 @@
 
   > Stefano Pellegrini, Olivia Dove-Estrella, Ferran Muiños, Nuria Lopez-Bigas, Abel Gonzalez-Perez, Oncodrive3D: fast and accurate detection of structural clusters of somatic mutations under positive selection, Nucleic Acids Research, Volume 53, Issue 15, 28 August 2025, gkaf776, https://doi.org/10.1093/nar/gkaf776
 
-- **dNdScv (tool)**
-
-  > Martincorena I, Raine KM, Gerstung M, et al. Universal Patterns of Selection in Cancer and Somatic Tissues. Cell. 2017. https://doi.org/10.1016/j.cell.2017.09.042
-
 - **Omega (dN/dS)**
 
   > Repository: https://github.com/bbglab/omega (see repository for citation details)
@@ -62,10 +58,6 @@
 
   > Repository: https://github.com/AlexandrovLab/SigProfilerAssignment  
   > Repository: https://github.com/AlexandrovLab/SigProfilerMatrixGenerator
-
-- **HDP / mSigHdp**
-
-  > Repository: https://github.com/Nik-Zainal-Group/msigHdp (see repository for citation details)
 
 - **bgreference / bgdata**
 

@@ -219,7 +219,8 @@ Before running, ensure container images can be pulled (or are already available)
   Download the SBS signatures (context size = 96) for your genome build from the [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/). Set `cosmic_ref_signatures`.
 
 - **dNdScv reference data**  
-  Download `RefCDS_human_latest_intogen.rda` and `covariates_hg19_hg38_epigenome_pcawg.rda` from the [dNdScv](https://github.com/im3sanger/dndscv) reference data (also mirrored by [IntOGen](https://intogen.org/download)). Set `dnds_ref_transcripts` and `dnds_covariates`.
+  Download `covariates_hg19_hg38_epigenome_pcawg.rda` from the [dNdScv](https://github.com/im3sanger/dndscv) reference data (also mirrored by [IntOGen](https://intogen.org/download)). Set `dnds_covariates`.
+  Run the scripts for the generation of the dNdScv required reference input that you can find here: https://github.com/bbglab/deepCSA/tree/dev/assets/build_datasets/dndscv
 
 - **Oncodrive3D datasets**  
   Build datasets and annotations following the [Oncodrive3D dataset instructions](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets). Provide the resulting `datasets3d` and `annotations3d` directories.
