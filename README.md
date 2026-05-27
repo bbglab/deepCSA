@@ -6,6 +6,34 @@
 
 ![deepCSA workflow overview](docs/images/deepCSA.png)
 
+## Documentation
+
+Find the documentation ([link to docs](https://github.com/bbglab/deepCSA/tree/main/docs)).
+
+We are working to provide the biggest possible detail on the [usage](docs/usage.md) and explanation of the rationale and [tools](docs/tools.md).
+
+You can also find an explanation with examples on the [output](docs/output.md).
+
+For more examples and description of the entire process, you can check the publications listed below.
+
+## Publications
+
+> **Sex and smoking bias in the selection of somatic mutations in human bladder**
+>
+> Ferriol Calvet*, Raquel Blanco Martinez-Illescas*, Ferran Muiños, Maria Tretiakova, Elena S. Latorre-Esteves, Jeanne Fredrickson, Maria Andrianova, Stefano Pellegrini, Axel Rosendahl Huber, Joan Enric Ramis-Zaldivar, Shuyi Charlotte An, Elana Thieme, Brendan F. Kohrn, Miguel L. Grau, Abel Gonzalez-Perez, Nuria Lopez-Bigas & Rosa Ana Risques
+>
+>_Nature_ (2025) doi:[10.1038/s41586-025-09521-x](https://doi.org/10.1038/s41586-025-09521-x)
+>
+> *these authors contributed equally and the order was decided randomly
+
+&
+
+> **DeepClone, an end-to-end protocol to study somatic mutagenesis and selection at high resolution**
+>
+> Ferriol Calvet, Morena Pinheiro-Santin, Erika Lopez, Raquel Blanco Martinez-Illescas, Núria Samper, Miguel L. Grau, Ferran Muiños, Rocío Chamorro González, Maria Andrianova, Federica Brando, Stefano Pellegrini, Marta Huertas, Elisabet Figuerola-Bou, Coohleen Coombes, Brendan F. Kohrn, Jeanne Fredrickson, Rosa Ana Risques, Nuria Lopez-Bigas, Abel Gonzalez-Perez
+>
+> _protocols.io_ (2026) doi:[10.17504/protocols.io.dm6gp1jodgzp/v2](https://dx.doi.org/10.17504/protocols.io.dm6gp1jodgzp/v2)
+
 ## Usage
 
 You can find a detailed documentation in the [docs section](docs/README.md), but here there is a minimal summary on how to prepare the inputs. Still for your first runs if you need to make the complete set up you have to check the deeper documentation.
@@ -59,33 +87,3 @@ We thank the following people for their extensive assistance in the development 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
 This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
-
-> **The nf-core framework for community-curated bioinformatics pipelines.**
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
-> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
-
-## Documentation
-
-Find the documentation ([link to docs](https://github.com/bbglab/deepCSA/tree/main/docs)).
-
-We are working to provide the biggest possible detail on the [usage](docs/usage.md) and explanation of the rationale and [tools](docs/tools.md), but this is still in progress.
-
-## Publications
-
-> **Sex and smoking bias in the selection of somatic mutations in human bladder**
->
-> Ferriol Calvet*, Raquel Blanco Martinez-Illescas*, Ferran Muiños, Maria Tretiakova, Elena S. Latorre-Esteves, Jeanne Fredrickson, Maria Andrianova, Stefano Pellegrini, Axel Rosendahl Huber, Joan Enric Ramis-Zaldivar, Shuyi Charlotte An, Elana Thieme, Brendan F. Kohrn, Miguel L. Grau, Abel Gonzalez-Perez, Nuria Lopez-Bigas & Rosa Ana Risques
->
->_Nature_ (2025) doi:[10.1038/s41586-025-09521-x](https://doi.org/10.1038/s41586-025-09521-x)
->
-> *these authors contributed equally and the order was decided randomly
-
-&
-
-> **DeepClone, an end-to-end protocol to study somatic mutagenesis and selection at high resolution**
->
-> Ferriol Calvet, Morena Pinheiro-Santin, Erika Lopez, Raquel Blanco Martinez-Illescas, Núria Samper, Miguel L. Grau, Ferran Muiños, Rocío Chamorro González, Maria Andrianova, Federica Brando, Stefano Pellegrini, Marta Huertas, Elisabet Figuerola-Bou, Coohleen Coombes, Brendan F. Kohrn, Jeanne Fredrickson, Rosa Ana Risques, Nuria Lopez-Bigas, Abel Gonzalez-Perez
->
-> _protocols.io_ (2026) doi:[10.17504/protocols.io.dm6gp1jodgzp/v2](https://dx.doi.org/10.17504/protocols.io.dm6gp1jodgzp/v2)

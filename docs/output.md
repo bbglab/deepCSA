@@ -165,7 +165,7 @@ Optional (subgenic / domain expansion):
 - `regions/expandedregions/`
 - `regions/annotations/` (domain and DNA-to-protein mapping outputs)
 
-![DepthsVariability](image-9.png)
+![DepthsVariability](images/DepthsPerSampleGene.png)
 
 ## Mutation preprocessing
 

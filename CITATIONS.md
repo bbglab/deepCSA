@@ -22,7 +22,7 @@
 
   > https://cancer.sanger.ac.uk/signatures/sbs
 
-- **dNdScv covariates**
+- **dNdScv method + covariates**
 
   > Martincorena I, et al. (2017) Universal Patterns of Selection in Cancer and Somatic Tissues. Cell. http://www.cell.com/cell/fulltext/S0092-8674(17)31136-4
 
@@ -38,11 +38,27 @@
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
-- Python
-- SigProfilerAssignment, MatrixGenerator
-- HDP
-- OncodriveFML
-- OncodriveCLUSTL
+- **Python**
+
+  > Python Software Foundation. Python Language Reference, version 3.x. https://www.python.org/
+
+- **SigProfilerAssignment, SigProfilerMatrixGenerator**
+
+  > Alexandrov LB, et al. The repertoire of mutational signatures in human cancer. Nature 578, 94–101 (2020). doi:10.1038/s41586-020-1943-3.
+  > SigProfiler tools (SigProfilerMatrixGenerator, SigProfilerAssignment). Alexandrov Lab. https://github.com/AlexandrovLab
+
+- **HDP (Hierarchical Dirichlet Processes)**
+
+  > https://github.com/nicolaroberts/hdp
+  >   Roberts, N. D. (2018). Patterns of somatic genome rearrangement in human cancer. https://doi.org/10.17863/CAM.22674
+
+- **OncodriveFML**
+
+  > Mularoni L, Sabarinathan R, Deu-Pons J, Gonzalez-Perez A, Lopez-Bigas N. OncodriveFML: a general framework to identify coding and non-coding regions with cancer driver mutations. Genome Biology. 2016;17:128. doi:10.1186/s13059-016-0994-0. https://github.com/bbglab/oncodrivefml
+
+- **OncodriveCLUSTL**
+
+  > Claudia Arnedo-Pac, Loris Mularoni, Ferran Muiños, Abel Gonzalez-Perez, Nuria Lopez-Bigas, OncodriveCLUSTL: a sequence-based clustering method to identify cancer drivers, Bioinformatics, Volume 35, Issue 22, November 2019, Pages 4788–4790, https://doi.org/10.1093/bioinformatics/btz501; https://github.com/bbglab/oncodriveclustl
 
 ## Software packaging/containerisation tools
 
