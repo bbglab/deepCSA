@@ -590,7 +590,7 @@ def get_all_data(sample, outdir,
             omega_data = omega_data.merge(flagged_omega_data, how='left')
             omega_data = omega_data[(omega_data["impact"].isin(['missense', 'truncating']))
                                         & ~(omega_data["gene"].str.contains('--'))  # select only genes
-                                        & ~(omega_data["flagged"])                  # remove flagged genes
+                                        & ~(omega_data["flagged"] == True)                  # remove flagged genes
                                     ]
             
             if "omega_trunc" in tracks:
