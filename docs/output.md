@@ -298,6 +298,8 @@ Optional (subgenic / domain expansion):
 - Plot basic statistics on numbers and distribution of mutations in genes.
 - Plot selection results (omega, OncodriveFML, Oncodrive3D, gene/subgenic saturation, interindividual variability).
 
+Plotting scope can be controlled with `plot_only_allsamples`: when `true`, only cohort-level plots are generated; when `false`, plots are also produced for each defined subgroup.
+
 ### Outputs
 
 - `plots/mutations_summary/`

@@ -61,6 +61,18 @@ sample2,sample2.high.filtered.vcf,sample2.sorted.bam
 
 An [example samplesheet](../assets/example_inputs/input_example.csv) has been provided with the pipeline.
 
+### Input files from deepUMIcaller
+
+If your mutations were called with [deepUMIcaller](https://github.com/bbglab/deepUMIcaller), use the **final** per-sample outputs produced by that pipeline:
+
+- **VCF**: the filtered duplex VCF for each sample (commonly named `*.duplex.filtered.vcf` or `*.high.filtered.vcf`), typically found under the `mutations_vcf/` output directory. The VCF should be uncompressed.
+- **BAM**: the **duplex-consensus** BAM used for calling those variants (commonly named `*.sorted.bam` in `sortbamduplexcons/`). This BAM must be aligned to the same reference genome as the VCF.
+
+Batch/sample guidance:
+
+- **One row per library/run**: if you have multiple sequencing libraries for the same biological sample and want to **aggregate** them, keep the same `sample` name across rows and list each matching VCF/BAM pair.
+- **Separate batches**: if you want to compare batches or runs, keep distinct sample names and (optionally) add a `BATCH` or `RUN_ID` column in the feature groups table to stratify the analysis.
+
 ## Available genomes
 
 deepCSA pipeline heavily relies on bgreference and bgdata tools so the use of this pipeline is limited to those genomes available in these packages. In particular, the default containers that are being used already have the hg38 and mm39 genomes cached, if you want to use any other genome, open an issue and we will address it as soon as we can.
@@ -188,19 +200,49 @@ params {
 }
 ```
 
+### Feature toggles (turning steps on/off)
+
+All pipeline parameters are defined in `nextflow_schema.json` and exposed via `--help`. Most analysis steps can be enabled/disabled with boolean flags such as `mutationdensity`, `omega`, `oncodrive3d`, `signatures`, and `regressions`. If a step is turned off, its output directories are not produced. For a full list of parameters run:
+
+```bash
+nextflow run bbglab/deepCSA --help
+```
+
 ## Definition of structural parameters
 
-- Container pulling (either prior to running the pipeline or directly as the pipeline runs)
-- Generation of Oncodrive3D datasets (see: [Oncodrive3D repo datasets building process](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets))
+Before running, ensure container images can be pulled (or are already available) and that all reference datasets are accessible from your execution environment.
 
-- Download of additional specific datasets
-  - Ensembl VEP (see: [Ensembl VEP docs](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html#cache)). Modify accordingly your `nextflow.config` vep parameters, `vep_cache`, `vep_cache_version`, etc.
-  <!-- TODO we should revise if we can provide more specific information on how to download the cache -->
-  - CADD scores (see: [CADD downloads page](https://cadd.gs.washington.edu/download) "All possible SNVs of GRCh38/hg38" file)
-  - COSMIC signatures (i.e. [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/) (select context size = 96 and your desired species of interest))
+### Data sources and reference downloads
 
-- Provide custom domain definition file.
-  <!-- * dNdScv datasets (see: ) -->
+- **Ensembl VEP cache**  
+  Download from the [Ensembl VEP cache](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html#cache) page and set `vep_cache`, `vep_cache_version`, `vep_species`, and `vep_genome` accordingly.
+
+- **CADD scores**  
+  Use the ["All possible SNVs" GRCh38/hg38 file](https://cadd.gs.washington.edu/download). Provide both the compressed TSV (`cadd_scores`) and its tabix index (`cadd_scores_ind`).
+
+- **COSMIC signatures**  
+  Download the SBS signatures (context size = 96) for your genome build from the [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/). Set `cosmic_ref_signatures`.
+
+- **dNdScv reference data**  
+  Download `covariates_hg19_hg38_epigenome_pcawg.rda` from the [dNdScv](https://github.com/im3sanger/dndscv) reference data (also mirrored by [IntOGen](https://intogen.org/download)). Set `dnds_covariates`.
+  Run the scripts for the generation of the dNdScv required reference input that you can find here: https://github.com/bbglab/deepCSA/tree/dev/assets/build_datasets/dndscv
+
+- **Oncodrive3D datasets**  
+  Build datasets and annotations following the [Oncodrive3D dataset instructions](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets). Provide the resulting `datasets3d` and `annotations3d` directories.
+
+- **Trinucleotide counts**  
+  Provide a `wgs_trinuc_counts` file with the total count of each trinucleotide in your reference genome (see `assets/trinucleotide_counts/` for the expected format).
+
+- **DNA2PROTEINMAPPING GFF3 (optional)**  
+  By default, the pipeline fetches a GFF3 file from Ensembl FTP at runtime. For local/offline use, download the matching file from  
+  `https://ftp.ensembl.org/pub/release-<release>/gff3/<species>/`  
+  (e.g., `Homo_sapiens.GRCh38.111.gff3.gz`) and provide it via `gff3_file`.
+
+- **Domain definitions**  
+  Supply a Pfam/InterPro domain file (see [file formatting](file_formatting.md#domain-definition-file)).
+
+- **NanoSeq masks (optional)**  
+  See [Nanoseq genomic masks](#nanoseq-genomic-masks) below.
 
 ### Mandatory parameter configuration
 
@@ -287,6 +329,15 @@ These files identify sites overlapping common SNPs and noisy or variable genomic
 - Nanoseq SNP: Common SNP positions that should be excluded from analysis
 - Nanoseq Noise: Regions with high noise or variability
 
+Enable them with:
+
+```console
+params {
+    nanoseq_snp   = "SNP_GRCh38.wgns.bed.gz"
+    nanoseq_noise = "NOISE_GRCh38.wgns.bed.gz"
+}
+```
+
 Both files are available for GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
 
 ## Additional customizable parameters
@@ -339,6 +390,30 @@ Notes and requirements:
   - If your input.csv file contains only `sample` and `vcf` columns, the columns of the depths table have to be the same ones as the sample names indicated in the sample column of the input.csv file.
   - If your input.csv file contains `sample`, vcf and bam columns, the columns of the depths table have to be the same as the name of the BAM files of each sample in the input.csv file.
 - Make sure that you remove the column CONTEXT from the table in case you are starting with the all_samples individual depths table that is outputted by deepCSA. Check out the assets/useful_scripts/downsample_depths.ipynb file for an example on how to prepare the input for this parameter.
+
+### Plotting controls
+
+If you are running with sample groups (see [Feature groups](file_formatting.md#feature-groups)), you can control whether plotting steps generate cohort-only outputs or include all group-level plots:
+
+```console
+params {
+    plot_only_allsamples = true  // only cohort-level plots
+}
+```
+
+Set `plot_only_allsamples = false` to generate per-group plots alongside the cohort summaries.
+
+### Positive selection with non-protein-affecting profiles
+
+deepCSA can compute positive selection metrics using a **non-protein-affecting** mutational profile (synonymous + intronic + intergenic mutations). This is useful to compare selection metrics against a background that excludes protein-altering events.
+
+```console
+params {
+    positive_selection_non_protein_affecting = true
+}
+```
+
+When enabled, outputs will be labeled with the `.non_prot_aff` suffix in the corresponding selection directories (e.g., `omega/`, `omegagloballoc/`).
 
 ## Custom mutation calls -- option 1 (building input VCFs and providing them via normal input)
 
