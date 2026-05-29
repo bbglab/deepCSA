@@ -40,7 +40,7 @@ def gather(metadata_file):
         print("Without proper metadata no values can be computed in the X chromosome")
         clinical_df = df_all.copy()
         clinical_df["SEX"] = "UNKNOWN"
-        clinical_df = clinical_df[['SAMPLE', 'SEX']].copy()
+        clinical_df = clinical_df[['SAMPLE', 'SEX']].copy().drop_duplicates()
         clinical_df.rename(columns={'SAMPLE': 'SAMPLE_ID'}, inplace=True)
         remove_sex_chromosome = True
 
