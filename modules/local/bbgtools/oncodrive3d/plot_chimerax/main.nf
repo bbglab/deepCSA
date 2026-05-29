@@ -2,8 +2,7 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     tag "$meta.id"
     label 'process_medium'
 
-    // TODO pending to push the container somewhere and be able to retrieve it
-    container 'docker.io/spellegrini87/oncodrive3d_chimerax:latest'
+    container 'docker.io/spellegrini87/oncodrive3d:1.0.9-chimerax'
 
 
     input:

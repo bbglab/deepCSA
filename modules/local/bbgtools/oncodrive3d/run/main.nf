@@ -2,7 +2,7 @@ process ONCODRIVE3D_RUN {
     tag "$meta.id"
     label 'process_high'
 
-    container 'docker.io/bbglab/oncodrive3d:1.0.5'
+    container 'docker.io/spellegrini87/oncodrive3d:1.0.9-light'
 
 
     input:
