@@ -10,10 +10,10 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     path(datasets)
 
     output:
-    tuple val(meta), path("**.chimerax/attributes/**.defattr")       , emit: chimerax_defattr, optional: true
-    tuple val(meta), path("**.chimerax/plots/**.png")                , emit: chimerax_plot, optional: true
-    tuple val(meta), path("**.log")                               , emit: log
-    path "versions.yml"                                           , topic: versions
+    tuple val(meta), path("${meta.id}**.chimerax/attributes/**.defattr")    , emit: chimerax_defattr, optional: true
+    tuple val(meta), path("${meta.id}**.chimerax/plots/**.png")             , emit: chimerax_plot, optional: true
+    tuple val(meta), path("${meta.id}**.log")                               , emit: log
+    path "versions.yml"                                                     , topic: versions
 
 
     script:
