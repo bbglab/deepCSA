@@ -93,13 +93,18 @@ if (!is.null(opt$genelist)){
 
 }
 
-
+# CDKN2A.p16INK4a
 # Loads the covs object
 load(opt$covariates)
 load(opt$referencetranscripts)
 
+# Remove CDKN2A.p14arf row and
+#   rename CDKN2A.p16INK4a to CDKN2A
+covs <- covs[rownames(covs) != "CDKN2A.p14arf", ]
+rownames(covs)[rownames(covs) == "CDKN2A.p16INK4a"] <- "CDKN2A"
+
 reference_genes <- intersect(
-  unique(c("CDKN2A", rownames(covs))),
+  unique(rownames(covs)),
   unique(gr_genes$names)
   )
 
