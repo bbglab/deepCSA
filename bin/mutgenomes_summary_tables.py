@@ -58,9 +58,9 @@ def gather(metadata_file):
     for label in ['GENOMES_SNV_AM', 'GENOMES_SNV_ND']:
         for k in ['LOWER', 'MEAN', 'UPPER', 'TOTAL']:
 
-            df_all_annotated[f'CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_all_annotated[f'{label}_{k}'].values
+            df_all_annotated[f"CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_all_annotated[f'{label}_{k}'].values
 
-            df_all_annotated[f'CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_all_annotated.apply(
+            df_all_annotated[f"CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_all_annotated.apply(
                 lambda r: r[f'{label}_{k}'] if ((r['chr'] == 'chrX') and (r['SEX'] == 'M')) else 2 * r[f'{label}_{k}'],
                 axis=1)
 
@@ -69,9 +69,9 @@ def gather(metadata_file):
     label = 'GENOMES_INDEL_AM'
     k = 'TOTAL'
 
-    df_all_annotated[f'CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_all_annotated[f'{label}_{k}'].values
+    df_all_annotated[f"CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_all_annotated[f'{label}_{k}'].values
 
-    df_all_annotated[f'CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_all_annotated.apply(
+    df_all_annotated[f"CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_all_annotated.apply(
         lambda r: r[f'{label}_{k}'] if ((r['chr'] == 'chrX') and (r['SEX'] == 'M')) else 2 * r[f'{label}_{k}'],
         axis=1)
 
@@ -87,9 +87,9 @@ def gather(metadata_file):
     for label in ['GENOMES_SNV_AM', 'GENOMES_SNV_ND']:
         for k in ['LOWER', 'MEAN', 'UPPER', 'TOTAL']:
 
-            df_gene_annotated[f'CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_gene_annotated[f'{label}_{k}'].values
+            df_gene_annotated[f"CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_gene_annotated[f'{label}_{k}'].values
 
-            df_gene_annotated[f'CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_gene_annotated.apply(
+            df_gene_annotated[f"CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_gene_annotated.apply(
                 lambda r: r[f'{label}_{k}'] if ((r['chr'] == 'chrX') and (r['SEX'] == 'M')) else 2 * r[f'{label}_{k}'],
                 axis=1)
 
@@ -97,9 +97,9 @@ def gather(metadata_file):
     label = 'GENOMES_INDEL_AM'
     k = 'TOTAL'
 
-    df_gene_annotated[f'CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_gene_annotated[f'{label}_{k}'].values
+    df_gene_annotated[f"CELLS_DOUBLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_gene_annotated[f'{label}_{k}'].values
 
-    df_gene_annotated[f'CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}'] = df_gene_annotated.apply(
+    df_gene_annotated[f"CELLS_SINGLE_HIT_{'_'.join(label.split('_')[1:])}_{k}"] = df_gene_annotated.apply(
         lambda r: r[f'{label}_{k}'] if ((r['chr'] == 'chrX') and (r['SEX'] == 'M')) else 2 * r[f'{label}_{k}'],
         axis=1)
 
