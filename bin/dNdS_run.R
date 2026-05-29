@@ -100,8 +100,12 @@ load(opt$referencetranscripts)
 
 # Remove CDKN2A.p14arf row and
 #   rename CDKN2A.p16INK4a to CDKN2A
-covs <- covs[rownames(covs) != "CDKN2A.p14arf", ]
-rownames(covs)[rownames(covs) == "CDKN2A.p16INK4a"] <- "CDKN2A"
+if ("CDKN2A.p14arf" %in% rownames(covs)) {
+  covs <- covs[rownames(covs) != "CDKN2A.p14arf", ]
+}
+if ("CDKN2A.p16INK4a" %in% rownames(covs)) {
+  rownames(covs)[rownames(covs) == "CDKN2A.p16INK4a"] <- "CDKN2A"
+}
 
 reference_genes <- intersect(
   unique(rownames(covs)),

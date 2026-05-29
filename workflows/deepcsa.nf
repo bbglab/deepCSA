@@ -542,7 +542,7 @@ workflow DEEPCSA {
 
     }
 
-    if (params.mutated_cells_vaf){
+    if (params.mutated_cells_vaf && params.omega && params.omega_globalloc){
         MUT_PREPROCESSING.out.somatic_mafs
         .join(meta_samples_alone)
         .set{ sample_mutations_only }
