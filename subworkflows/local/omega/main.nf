@@ -69,11 +69,7 @@ workflow OMEGA_ANALYSIS{
     .join( depth )
     .set{ preprocess_n_depths }
 
-    channel.of([ [ id: "all_samples" ] ])
-    .join( PREPROCESSING.out.syn_muts_tsv )
-    .set{ all_samples_muts }
-
-    GROUPGENES(all_samples_muts, custom_gene_groups, json_subgenic)
+    GROUPGENES(expanded_panel, custom_gene_groups, json_subgenic)
 
     ESTIMATOR( preprocess_n_depths, expanded_panel,
                     GROUPGENES.out.json_genes.first(), "${projectDir}/assets/omega_consequences_groupings.json")

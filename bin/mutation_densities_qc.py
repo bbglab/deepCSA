@@ -178,6 +178,8 @@ def main(input_file, output_dir, panel, group_definition, group_name):
     for reg in regions : 
         for mod in mode_list: 
             filt_mutden = filter_mutdensities(mutden_df_panel, reg, group_name, mod, sample_names)
+            if filt_mutden.shape[0] < 2:
+                continue
             zero_cases_flag, mutden_zscore = z_score_log10(filt_mutden, mod)
 
             ## Generate csv with zscore result and store as csv
@@ -223,6 +225,10 @@ def main(input_file, output_dir, panel, group_definition, group_name):
                 # Close to free memory before next loop
                 plt.close(fig)
     
+    if compile_all_flagged.empty:
+        print("No flagged cases found across all regions and modes.")
+        compile_all_flagged = pd.DataFrame(columns=['ID', 'reason_exclusion', 'cohort', 'regions', 'criteria'])
+
     # Compile all flagged cases into a single csv
     compile_all_flagged.to_csv(f"{output_dir}/compiled_all_flagged_cases.{group_name}.tsv", index = False, sep='\t')
 

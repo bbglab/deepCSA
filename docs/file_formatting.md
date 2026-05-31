@@ -216,16 +216,84 @@ params {
 
 ### cosmic_ref_signatures
 
+Path to the COSMIC SBS signature reference file used by SigProfilerAssignment. Use the SBS 96 context file for your genome build (e.g., `COSMIC_v3.4_SBS_GRCh38.txt`). The file is a tab-delimited matrix where the first column encodes mutation context and each additional column corresponds to a signature.
+
 ### wgs_trinuc_counts
+
+Tab-delimited file with two columns:
+
+```text
+CONTEXT	COUNT
+ACA	118979126
+ACC	67570313
+...
+```
+
+The file represents the **total number of occurrences of each trinucleotide** in the reference genome. The pipeline provides a default example in `assets/trinucleotide_counts/`.
 
 ### cadd_scores
 
+Path to the CADD "All possible SNVs" file (BGZIP-compressed TSV). This file is used for OncodriveFML scoring.
+
+Recommended download: [CADD downloads](https://cadd.gs.washington.edu/download) → "All possible SNVs of GRCh38/hg38".
+
 ### cadd_scores_ind
+
+Tabix index (`.tbi`) for the `cadd_scores` file. If you need to generate it:
+
+```bash
+bgzip -c whole_genome_SNVs.tsv > whole_genome_SNVs.tsv.gz
+tabix -s 1 -b 2 -e 2 whole_genome_SNVs.tsv.gz
+```
 
 ### dnds_biomart_ref
 
+https://github.com/bbglab/deepCSA/tree/dev/assets/build_datasets/dndscv
+
 ### dnds_covariates
+
+dNdScv covariates file, usually `covariates_hg19_hg38_epigenome_pcawg.rda`. This provides covariate regression terms for mutation rate modeling.
 
 ### datasets3d
 
+Directory containing precomputed Oncodrive3D datasets (structure and mutation mapping information). Build using the [Oncodrive3D dataset builder](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets).
+
 ### annotations3d
+
+Directory containing Oncodrive3D annotation datasets (protein annotations, stability data, etc.). Use the same build process as `datasets3d` to ensure compatibility.
+
+### gff3_file
+
+Optional local GFF3 file used by the DNA2PROTEINMAPPING step. If not provided, the pipeline downloads the GFF3 from Ensembl. If provided, it must match the Ensembl release, species, and genome build you are using (compressed `.gff3.gz` files are supported).
+
+## Examples
+
+### Blacklist mutations
+
+```
+chr1:11107296_C>CA
+chr1:11107450_C>A
+chr1:11108379_T>A
+```
+
+### Gene grouping
+
+```
+chr15q  chr15q  IDH2    SIN3A
+chr17p  chr17p  MAP2K4  NCOR1   TP53    USP6
+```
+
+### Custom annotation
+
+See `assets/example_inputs/custom_regions.example.tsv` for a full example of a custom region annotation file.
+
+### Omega hotspots / subgenic regions
+
+Provide a BED file with 3 or 4 columns (`CHROM`, `START`, `END`, optional `NAME`):
+
+```
+chr7    55191765    55191840    EGFR_L858R_region
+chr12   25245300    25245380    KRAS_G12_region
+```
+
+You can expand these regions with `hotspot_expansion` and optionally generate complements with `subgenic_regions_complement`.

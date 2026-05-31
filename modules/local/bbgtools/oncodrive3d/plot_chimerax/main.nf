@@ -2,8 +2,7 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     tag "$meta.id"
     label 'process_medium'
 
-    // TODO pending to push the container somewhere and be able to retrieve it
-    container 'docker.io/spellegrini87/oncodrive3d_chimerax:latest'
+    container 'docker.io/spellegrini87/oncodrive3d:1.0.9-chimerax'
 
 
     input:
@@ -11,10 +10,10 @@ process ONCODRIVE3D_PLOT_CHIMERAX {
     path(datasets)
 
     output:
-    tuple val(meta), path("**.chimerax/attributes/**.defattr")       , emit: chimerax_defattr, optional: true
-    tuple val(meta), path("**.chimerax/plots/**.png")                , emit: chimerax_plot, optional: true
-    tuple val(meta), path("**.log")                               , emit: log
-    path "versions.yml"                                           , topic: versions
+    tuple val(meta), path("${meta.id}**.chimerax/attributes/**.defattr")    , emit: chimerax_defattr, optional: true
+    tuple val(meta), path("${meta.id}**.chimerax/plots/**.png")             , emit: chimerax_plot, optional: true
+    tuple val(meta), path("${meta.id}**.log")                               , emit: log
+    path "versions.yml"                                                     , topic: versions
 
 
     script:

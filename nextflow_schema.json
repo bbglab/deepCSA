@@ -337,6 +337,8 @@
                 },
                 "o3d_raw_vep": {
                     "type": "boolean",
+                    "default": true,
+                    "hidden": true,
                     "description": "Do you want to run oncodrive3d with the raw vep output as input?",
                     "fa_icon": "fas fa-book"
                 },
