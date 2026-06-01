@@ -6,9 +6,14 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stats
 
-def load_data(panel_file, mutations_file, mutabilities_file):
+from utils import MIN_NONZERO_PVALUE
+
+def load_data(panel_file, mutations_file, mutabilities_file, genes_subset=None):
     # Load captured panel
     panel = pd.read_csv(panel_file, sep="\t", compression="gzip")
+    if genes_subset:
+        genes_list = [gene.strip() for gene in genes_subset.split(',')]
+        panel = panel[panel['GENE'].isin(genes_list)].reset_index(drop=True)
     # Load mutations
     mutations = pd.read_csv(mutations_file, sep="\t")
     if "EFFECTIVE_MUTS" not in mutations.columns:
@@ -31,6 +36,17 @@ def poisson_pvalue(observed, expected):
     given a Poisson distribution with mean 'expected'.
     """
     return 1 - stats.poisson.cdf(observed - 1, expected)
+
+def benjamini_hochberg(pvals):
+    if pvals.size == 0:
+        return pvals
+    order = np.argsort(pvals)
+    ranked = np.arange(1, pvals.size + 1)
+    adjusted = np.empty_like(pvals, dtype=float)
+    adjusted[order] = pvals[order] * pvals.size / ranked
+    adjusted_sorted = np.minimum.accumulate(adjusted[order][::-1])[::-1]
+    adjusted[order] = adjusted_sorted
+    return np.clip(adjusted, 0.0, 1.0)
 
 def compute_by_size(panel, mutations, mutabilities, size, sample_column):
     # Merge mutations and panel to associate protein positions
@@ -66,6 +82,17 @@ def compute_by_size(panel, mutations, mutabilities, size, sample_column):
     result["OBS/EXP"] = (result["OBSERVED_MUTS"] / result["EXPECTED_MUTS"]).fillna(0)
     result["OBS/EXP"] = result["OBS/EXP"].replace([np.inf, -np.inf], 0)
     result["p_value"] = result[["OBSERVED_MUTS", "EXPECTED_MUTS"]].apply(lambda row: poisson_pvalue(row["OBSERVED_MUTS"], row["EXPECTED_MUTS"]), axis=1)
+    
+    # fill pvalues == 0 with the value or resolution limit
+    result["p_value"] = result["p_value"].replace(0, MIN_NONZERO_PVALUE)
+
+    result["p_value_adj"] = np.nan
+    for gene, gene_df in result.groupby("GENE", dropna=False):
+        valid_mask = gene_df["p_value"].notna()
+        if not valid_mask.any():
+            continue
+        adjusted = benjamini_hochberg(gene_df.loc[valid_mask, "p_value"].to_numpy())
+        result.loc[gene_df.index[valid_mask], "p_value_adj"] = adjusted
 
     return result
 
@@ -78,9 +105,10 @@ def compute_by_size(panel, mutations, mutabilities, size, sample_column):
 @click.option('--panel-file', type=click.Path(exists=True), required=True, help="Path to captured panel file (gzip compressed).")
 @click.option('--size', type=str, default='aminoacid_change', help="Comma-separated list of sizes or 'all' for all sizes. The options are: 'site', 'aminoacid', 'aminoacid_change'")
 @click.option('--output-prefix', type=str, required=True, help="Output file prefix.")
-def main(panel_file, mutations_file, mutabilities_file, size, output_prefix):
+@click.option('--genes', type=str, default= '', required=False, help="List of genes to subset (comma-separated). If not provided, all genes will be included.")
+def main(panel_file, mutations_file, mutabilities_file, size, output_prefix, genes):
     """Compute comparison between observed mutations and accumulated mutabilities."""
-    panel, mutations, mutabilities = load_data(panel_file, mutations_file, mutabilities_file)
+    panel, mutations, mutabilities = load_data(panel_file, mutations_file, mutabilities_file, genes if genes != '' else None)
 
     # Get sample column dynamically
     sample_column = get_sample_column(mutabilities)

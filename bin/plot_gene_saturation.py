@@ -447,7 +447,7 @@ def plot_gene_selection(mut_count_df,
                         plot_pars,
                         title,
                         ddg_df=None,
-                        thr_selection=1e-5,
+                        thr_selection=0.05,
                         lst_tracks=["Mut_count", "Site_selection", "Res_depth", "Domain"],
                         default_track_order=False,
                         save=False,
@@ -517,7 +517,7 @@ def plot_gene_selection(mut_count_df,
             )
 
         site_selection_hits_df = pd.DataFrame({"Protein_position" : np.arange(protein_len)+1}).merge(
-            site_selection_df[site_selection_df["p_value"] < thr_selection].reset_index(drop=True), how="left")
+            site_selection_df[site_selection_df["p_value_adj"] < thr_selection].reset_index(drop=True), how="left")
         axes[ax].fill_between(
             site_selection_hits_df.Protein_position, 0, site_selection_hits_df.Selection,
             color=plot_pars["colors"]["site_selection_hits"], alpha=1, zorder=2, lw=1.5, label="Significant"
@@ -583,7 +583,7 @@ def plot_gene_selection(mut_count_df,
         for impact in ["missense", "truncating"]:
 
             exon_selection_impact = exon_selection_df[exon_selection_df["impact"] == impact]
-            exon_selection_impact_hits = exon_selection_impact[exon_selection_impact["pvalue"] < thr_selection].reset_index(drop=True)
+            exon_selection_impact_hits = exon_selection_impact[exon_selection_impact["pvalue_adj"] < thr_selection].reset_index(drop=True)
             axes[ax].scatter(
                 exon_selection_impact["MID_PROT_POS"], exon_selection_impact["dnds"],
                 zorder=3, color=plot_pars["colors"]["exon_selection"][impact], s=60, lw=0.1, ec="black"
@@ -984,7 +984,7 @@ def plot_domain_selection(
     # this dictionary is defined in the gene plot with the gene--domain name
     domain_selection_in_gene["color"] = domain_selection_in_gene["DOMAIN_ID"].map(color_map)
 
-    domain_selection_in_gene["edge_width"] = domain_selection_in_gene["pvalue"].apply(lambda p: 1.5 if p < pvalue_threshold else 0.2)
+    domain_selection_in_gene["edge_width"] = domain_selection_in_gene["pvalue_adj"].apply(lambda p: 1.5 if p < pvalue_threshold else 0.2)
 
     fig = plt.figure(figsize=(5, 2.5))
 
@@ -1085,9 +1085,9 @@ def get_selection_groups(df, thr_selection):
 
     df = df.copy().rename(columns={"Protein_position": "Pos"})
     g0 = df[df["Selection"] == 0].copy()
-    g1 = df[(df["Selection"] != 0) & (df["p_value"] >= thr_selection)].copy()
+    g1 = df[(df["Selection"] != 0) & (df["p_value_adj"] >= thr_selection)].copy()
 
-    g2 = df[df["p_value"] < thr_selection].copy()
+    g2 = df[df["p_value_adj"] < thr_selection].copy()
     g2 = g2.sort_values("Selection").reset_index(drop=True)
 
     g0["Group"] = "G0"
@@ -1159,7 +1159,7 @@ def plot_all_domain_selection(df, color_map, figsize=(10, 3), show_domain_legend
     custom_markers = {"missense": "o", "truncating": "D"}  # 'o' = Circle, 'D' = Rotated Square
     custom_size = {"missense": 150, "truncating": 100}  # Larger for missense
     df["color"] = df["domain_id"].map(color_map) 
-    df["edge_width"] = df["pvalue"].apply(lambda p: 1.5 if p < 0.05 else 0.2)
+    df["edge_width"] = df["pvalue_adj"].apply(lambda p: 1.5 if p < 0.05 else 0.2)
 
     fig = plt.figure(figsize=figsize)
 
@@ -1268,7 +1268,8 @@ indels = False
 def plotting_single_gene(gene, maf, exons_depth, o3d_df,
                             exon_selection, domain_selection, site_selection,
                             output_dir, o3d_seq_df, o3d_pdb_tool_df, domain,
-                            lst_tracks
+                            lst_tracks,
+                            p_value_threshold = 0.05
                             ):
 
     # Data
@@ -1311,7 +1312,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
 
     exon_selection_gene = exon_selection[exon_selection["gene"].str.startswith(gene)]
     exon_selection_gene = exon_selection_gene.sort_values("exon_rank").reset_index(drop=True).rename(columns={"exon_rank" : "EXON_RANK"})
-    exon_selection_gene = exon_selection_gene[["EXON_RANK", "impact", "dnds", "lower", "upper", "pvalue"]]
+    exon_selection_gene = exon_selection_gene[["EXON_RANK", "impact", "dnds", "lower", "upper", "pvalue_adj"]]
 
     site_selection_gene = site_selection[site_selection["GENE"] == gene].sort_values("Protein_position").reset_index(drop=True)
 
@@ -1360,7 +1361,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
         plot_pars=plot_pars,
         title=f"{gene}",
         lst_tracks=lst_tracks,
-        thr_selection=0.00001,
+        thr_selection=p_value_threshold,
         default_track_order=False,
         save=True,
         filename=f"{output_dir}/{gene}.saturation_all.png"
@@ -1397,7 +1398,7 @@ def plotting_single_gene(gene, maf, exons_depth, o3d_df,
 
     # Selection groups feat
     # =====================
-    site_selection_gene_grouped = get_selection_groups(site_selection_gene, thr_selection=0.00001)
+    site_selection_gene_grouped = get_selection_groups(site_selection_gene, thr_selection=p_value_threshold)
     site_selection_gene_grouped = site_selection_gene_grouped.merge(pdb_tool_gene[["Pos", "pACC"]])
 
     if ddg_gene is not None:
@@ -1417,7 +1418,7 @@ def data_loading(sample_name, domain, exons_depth, track_list):
     # helper: check for files and call readers only when present
 
     ## Positive selection files
-    omega_file = f"output_mle.{sample_name}.global_loc.tsv"
+    omega_file = f"all_omegas_global_loc.tsv"
     site_selection_file = f"{sample_name}.aminoacid.comparison.tsv.gz"    
     o3d_df_file = f"{sample_name}.3d_clustering_pos.csv"
 
@@ -1425,6 +1426,7 @@ def data_loading(sample_name, domain, exons_depth, track_list):
     if os.path.isfile(omega_file):
         try:
             omega_table = pd.read_table(omega_file)
+            omega_table = omega_table[omega_table["sample"] == sample_name]
         except Exception as e:
             print(f"Could not read omega file {omega_file}: {e}")
             omega_table = pd.DataFrame()
