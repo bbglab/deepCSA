@@ -623,6 +623,9 @@ workflow DEEPCSA {
     if (params.omega || params.oncodrive3d || params.oncodrivefml || params.indels || run_mutdensity) {
         if (params.omega){
             positive_selection_results = positive_selection_results.combine(PLOTTINGQC.out.flagged_omegas)
+            if (params.omega_globalloc){
+                positive_selection_results = positive_selection_results.combine(all_compiled_omegasgloballoc)
+            }
         }
         positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
         PLOTTINGSUMMARY(positive_selection_results_ready,
