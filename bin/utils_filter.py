@@ -102,7 +102,7 @@ def somatic_mask(maf_df: pd.DataFrame, threshold: float) -> pd.Series:
 
 def germline_mask(maf_df: pd.DataFrame, threshold: float) -> pd.Series:
     """
-    Return a boolean mask identifying germline variants.s
+    Return a boolean mask identifying germline variants.
 
     Parameters
     ----------
