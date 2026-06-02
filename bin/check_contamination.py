@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from read_utils import custom_na_values
-from utils_filter import germline_mask
+from utils_filter import germline_mask, somatic_mask
 
 
 # Assuming somatic_variants and germline_variants are loaded as pandas DataFrames
@@ -54,7 +54,7 @@ def compute_shared_variants(somatic_variants, germline_variants):
     return shared_counts
 
 
-def contamination_detection_between_samples(maf_df, somatic_maf_df):
+def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary):
     """Detect cross-sample contamination by comparing somatic and germline mutations.
 
     Builds somatic-vs-germline, all-vs-germline and germline-vs-germline shared-mutation
@@ -71,11 +71,13 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df):
         ``VAF_AM`` columns.
     somatic_maf_df : pd.DataFrame
         Filtered somatic mutation table, with at least ``SAMPLE_ID`` and ``MUT_ID`` columns.
+    somatic_vaf_boundary : float
+        VAF threshold passed to ``germline_mask`` to identify germline variants (a variant is
+        germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
     """
-    # this is if we were to consider both unique and no-unique variants
-    vaf_threshold = 0.2
+    # consider both unique and non-unique variants when collecting germline variants
     germline_vars_all_samples = maf_df.loc[
-        germline_mask(maf_df, vaf_threshold), ["SAMPLE_ID", "MUT_ID"]
+        germline_mask(maf_df, somatic_vaf_boundary), ["SAMPLE_ID", "MUT_ID"]
     ].drop_duplicates()
 
     print(germline_vars_all_samples["MUT_ID"].shape)
@@ -440,16 +442,21 @@ def contamination_detection_in_snps(maf):
     Parameters
     ----------
     maf : pd.DataFrame
-        Full mutation table with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF`` and the boolean
+        Full mutation table with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF``, ``vd_VAF``, ``VAF_AM``, and the boolean
         ``FILTER.gnomAD_SNP`` column.
     """
-    snp_positions_maf = maf[maf["FILTER.gnomAD_SNP"]][["SAMPLE_ID", "MUT_ID", "VAF"]].reset_index(drop=True)
+    snp_positions_maf = maf[maf["FILTER.gnomAD_SNP"]][["SAMPLE_ID", "MUT_ID", "VAF", "vd_VAF", "VAF_AM"]].reset_index(
+        drop=True
+    )
 
     # being very restrictive in the VAF to count the occurrences of potentially contaminated mutations
-    # NOTE: intentional, distinct cutoff for the SNP-position contamination sub-analysis — single-column VAF at 0.05,
-    # deliberately NOT the canonical somatic/germline mask (see issue #418).
-    somatic_snp_positions_maf = snp_positions_maf[snp_positions_maf["VAF"] < 0.05].reset_index(drop=True)
-    germline_snp_positions_maf = snp_positions_maf[snp_positions_maf["VAF"] >= 0.05].reset_index(drop=True)
+    contamination_vaf_threshold = 0.05
+    somatic_snp_positions_maf = snp_positions_maf.loc[
+        somatic_mask(snp_positions_maf, contamination_vaf_threshold)
+    ].reset_index(drop=True)
+    germline_snp_positions_maf = snp_positions_maf[
+        germline_mask(snp_positions_maf, contamination_vaf_threshold)
+    ].reset_index(drop=True)
 
     unique_SNP_positions = snp_positions_maf["MUT_ID"].unique()
     number_unique_SNP_positions = len(unique_SNP_positions)
@@ -497,7 +504,14 @@ def contamination_detection_in_snps(maf):
 @click.option(
     "--somatic_maf", type=click.Path(exists=True), required=True, help="Path to the filtered somatic mutations file."
 )
-def main(maf_path, somatic_maf):
+@click.option(
+    "--somatic-vaf-boundary",
+    type=float,
+    default=0.3,
+    show_default=True,
+    help="VAF boundary for somatic variants; a variant with all of VAF/vd_VAF/VAF_AM above it is germline.",
+)
+def main(maf_path, somatic_maf, somatic_vaf_boundary):
     """Assess cross-sample contamination using germline and somatic mutations.
 
     Loads the input tables and runs both the between-samples and the SNP-based contamination
@@ -509,12 +523,14 @@ def main(maf_path, somatic_maf):
         Path to the full MAF file.
     somatic_maf : str
         Path to the filtered somatic mutations file.
+    somatic_vaf_boundary : float, optional
+        VAF boundary separating somatic from germline variants. Default is 0.3.
     """
 
     maf_df, somatic_maf_df = data_loading(maf_path, somatic_maf)
 
     print("Running contamination analysis between samples")
-    contamination_detection_between_samples(maf_df, somatic_maf_df)
+    contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary)
 
     print("Running general contamination analysis")
     contamination_detection_in_snps(maf_df)
