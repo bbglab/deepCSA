@@ -6,10 +6,11 @@ Script for checking contamination between samples.
 
 
 import click
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from read_utils import custom_na_values
+from utils_filter import germline_mask
 
 
 # Assuming somatic_variants and germline_variants are loaded as pandas DataFrames
@@ -45,7 +46,7 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df):
 
     # this is if we were to consider both unique and no-unique variants
     vaf_threshold = 0.2
-    germline_vars_all_samples = maf_df.loc[(maf_df["VAF"] > vaf_threshold) & (maf_df["vd_VAF"] > vaf_threshold) & (maf_df["VAF_AM"] > vaf_threshold),
+    germline_vars_all_samples = maf_df.loc[germline_mask(maf_df, vaf_threshold),
                                             ["SAMPLE_ID", "MUT_ID"]].drop_duplicates()
 
     print(germline_vars_all_samples["MUT_ID"].shape)
@@ -381,6 +382,8 @@ def contamination_detection_in_snps(maf):
         ].reset_index(drop = True)
     
     # being very restrictive in the VAF to count the occurrences of potentially contaminated mutations
+    # NOTE: intentional, distinct cutoff for the SNP-position contamination sub-analysis — single-column VAF at 0.05,
+    # deliberately NOT the canonical somatic/germline mask (see issue #418).
     somatic_snp_positions_maf = snp_positions_maf[snp_positions_maf["VAF"] < 0.05].reset_index(drop = True)
     germline_snp_positions_maf = snp_positions_maf[snp_positions_maf["VAF"] >= 0.05].reset_index(drop = True)
 
