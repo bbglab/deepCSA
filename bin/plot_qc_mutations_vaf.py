@@ -401,16 +401,16 @@ def plot_vaf_pseudocount_curve(maf_df, output_pdf, suffix=''):
         MAF dataframe containing VAF and VAF_AM columns
     """
 
-    fig, axes = plt.subplots(2, 3, figsize=(10, 8))
+    fig, axes = plt.subplots(3, 3, figsize=(8, 8))
     axes = axes.flatten()
     average_depth = maf_df[f'DEPTH{suffix}'].mean()
     dg = maf_df
     prior_vaf = dg[f'ALT_DEPTH{suffix}'].sum() / dg[f'DEPTH{suffix}'].sum()
     fig.suptitle(f'VAF{suffix} with pseudocounts, prior vaf={prior_vaf:.2e}, avg. depth={average_depth:.1f}')
-    for i, weight_prop in enumerate([0, 0.2, 0.5, 1, 1.25, 1.5]):
+    for i, weight_prop in enumerate([0, 0.2, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]):
         weight = weight_prop * average_depth // 1
         dg['VAF_PSEUDO'] = vaf_pseudocount(dg[f'ALT_DEPTH{suffix}'], dg[f'DEPTH{suffix}'], weight, prior_vaf=prior_vaf)
-        axes[i].scatter(dg[f'DEPTH{suffix}'], dg['VAF_PSEUDO'], alpha=0.1)
+        axes[i].scatter(dg[f'DEPTH{suffix}'], dg['VAF_PSEUDO'], s=3, alpha=0.1)
         rho = np.corrcoef(np.log(dg[f'DEPTH{suffix}']), np.log(dg['VAF_PSEUDO']))[0, 1]
         axes[i].set_xlabel(f'DEPTH{suffix}')
         axes[i].set_ylabel(f'VAF_PSEUDO', fontsize=6)
