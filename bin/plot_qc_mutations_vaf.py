@@ -388,6 +388,42 @@ def plot_vaf_vs_vafam_histogram (maf_df, output_pdf):
     plt.show()
 
 
+def vaf_pseudocount(alt_depth, depth, weight, prior_vaf=None):    
+    return (alt_depth + prior_vaf * weight) / (depth + weight)
+
+def plot_vaf_pseudocount_curve(maf_df, output_pdf, suffix=''):
+    """
+    Plot VAF distribution compared to VAF_AM in a histogram.
+    
+    Parameters:
+    -----------
+    maf_df : DataFrame
+        MAF dataframe containing VAF and VAF_AM columns
+    """
+
+    fig, axes = plt.subplots(2, 3, figsize=(10, 8))
+    axes = axes.flatten()
+    average_depth = maf_df[f'DEPTH{suffix}'].mean()
+    dg = maf_df
+    prior_vaf = dg[f'ALT_DEPTH{suffix}'].sum() / dg[f'DEPTH{suffix}'].sum()
+    fig.suptitle(f'VAF{suffix} with pseudocounts, prior vaf={prior_vaf:.2e}, avg. depth={average_depth:.1f}')
+    for i, weight_prop in enumerate([0, 0.2, 0.5, 1, 1.25, 1.5]):
+        weight = weight_prop * average_depth // 1
+        dg['VAF_PSEUDO'] = vaf_pseudocount(dg[f'ALT_DEPTH{suffix}'], dg[f'DEPTH{suffix}'], weight, prior_vaf=prior_vaf)
+        axes[i].scatter(dg[f'DEPTH{suffix}'], dg['VAF_PSEUDO'], alpha=0.1)
+        rho = np.corrcoef(np.log(dg[f'DEPTH{suffix}']), np.log(dg['VAF_PSEUDO']))[0, 1]
+        axes[i].set_xlabel(f'DEPTH{suffix}')
+        axes[i].set_ylabel(f'VAF_PSEUDO', fontsize=6)
+        axes[i].set_yscale('log')
+        axes[i].set_xscale('log')
+        axes[i].set_title(f'{weight_prop}|{weight}\nrho={rho:.2f}, \nprop_mut_tissue={dg['VAF_PSEUDO'].sum():.2f}', fontsize=6)
+    plt.tight_layout()
+    output_pdf.savefig()
+    plt.close()
+    plt.show()
+    
+
+
 @click.command()
 @click.option('--sample_name', type=str, required=True, help='Name of the sample')
 @click.option('--maf_file', type=click.Path(exists=True), required=False, help='MAF file with mutations')
@@ -413,6 +449,8 @@ def main(sample_name, maf_file, output_prefix, max_n):
             plot_vaf_vs_depth_per_site(maf_df, pdf, sample_name, max_n=max_n)
             plot_vaf_depth_heatmap(maf_df, pdf, sample_name)
             plot_vaf_vs_vafam_histogram(maf_df, pdf)
+            plot_vaf_pseudocount_curve(maf_df, pdf, suffix='')
+            plot_vaf_pseudocount_curve(maf_df, pdf, suffix='_AM')
     
     print(f"Plots saved to {output_pdf_path}")
 
