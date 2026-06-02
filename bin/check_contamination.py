@@ -454,7 +454,7 @@ def contamination_detection_in_snps(maf):
     somatic_snp_positions_maf = snp_positions_maf.loc[
         somatic_mask(snp_positions_maf, contamination_vaf_threshold)
     ].reset_index(drop=True)
-    germline_snp_positions_maf = snp_positions_maf[
+    germline_snp_positions_maf = snp_positions_maf.loc[
         germline_mask(snp_positions_maf, contamination_vaf_threshold)
     ].reset_index(drop=True)
 
