@@ -45,9 +45,9 @@ from pathlib import Path
 
 import click
 import pandas as pd
-from utils import add_filter
 from read_utils import custom_na_values
-from utils_filter import expand_filter_column
+from utils import add_filter
+from utils_filter import expand_filter_column, germline_mask, somatic_mask
 
 # Logging
 logging.basicConfig(
@@ -87,7 +87,7 @@ def flag_repetitive_variants(maf_df: pd.DataFrame,
 
     # Work with already filtered df + somatic only to explore potential artifacts
     # take only variant and sample info from the df
-    maf_df_f_somatic = maf_df.loc[maf_df["VAF"] <= somatic_vaf_boundary][["MUT_ID","SAMPLE_ID", "PMEAN", "PSTD"]].reset_index(drop = True)
+    maf_df_f_somatic = maf_df.loc[somatic_mask(maf_df, somatic_vaf_boundary)][["MUT_ID","SAMPLE_ID", "PMEAN", "PSTD"]].reset_index(drop = True)
 
     # Group by 'MUT_ID' and count occurrences
     maf_df_f_somatic_pivot = maf_df_f_somatic.groupby("MUT_ID").size().reset_index(name="count")
@@ -234,9 +234,7 @@ def flag_other_samples_snp(maf_df,
     """
     LOG.info("Flagging SNPs from other samples...")
     # Get all germline variants from all samples, consider both unique and non-unique variants
-    germline_vars_all_samples = maf_df.loc[(maf_df["VAF"] > somatic_vaf_boundary) &
-                                    (maf_df["VAF_AM"] > somatic_vaf_boundary) &
-                                    (maf_df["vd_VAF"] > somatic_vaf_boundary),
+    germline_vars_all_samples = maf_df.loc[germline_mask(maf_df, somatic_vaf_boundary),
                                     "MUT_ID"].unique()
     
     LOG.info(f"Using all germline variants of all samples, total: {len(germline_vars_all_samples)} variants.")
@@ -244,7 +242,7 @@ def flag_other_samples_snp(maf_df,
     # Identify variants that are germline in other samples but somatic in the current sample
     maf_df["other_sample_SNP"] = False
     maf_df.loc[(maf_df["MUT_ID"].isin(germline_vars_all_samples)) &
-            (maf_df["VAF"] <= somatic_vaf_boundary), "other_sample_SNP"] = True
+            somatic_mask(maf_df, somatic_vaf_boundary), "other_sample_SNP"] = True
     LOG.info("%s muts flagged as other_sample_SNP", maf_df['other_sample_SNP'].sum())
 
     # Flag variants that are germline in other samples but somatic in the current sample
