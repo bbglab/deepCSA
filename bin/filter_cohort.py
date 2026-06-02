@@ -41,7 +41,6 @@ python filter_cohort.py \\
 
 """
 import logging
-from pathlib import Path
 
 import click
 import pandas as pd

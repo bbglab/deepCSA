@@ -389,7 +389,7 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     contamination_detailed_df = pd.DataFrame(
         receiver_source_pairs, columns=["SAMPLE_ID", "MAX_PROPORTION_GERMLINE_FROM_SOURCE", "SOURCE_SAMPLEID_COUNTS"]
     )
-    contamination_detailed_df.to_csv(f"contaminated_samples.detailed.tsv", header=True, sep="\t", index=False)
+    contamination_detailed_df.to_csv("contaminated_samples.detailed.tsv", header=True, sep="\t", index=False)
 
     if contamination_detailed_df.empty:
         print("No contaminated samples detected.")
@@ -400,7 +400,7 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     contamination_detailed_df_long["SHARED_VARIANT_COUNT"] = expanded_df["SHARED_VARIANT_COUNT"].values
     contamination_detailed_df_long["SOURCE_SAMPLEID"] = expanded_df["SOURCE_SAMPLEID"].values
     contamination_detailed_df_long = contamination_detailed_df_long.drop("SOURCE_SAMPLEID_COUNTS", axis=1)
-    contamination_detailed_df_long.to_csv(f"contaminated_samples.detailed.long.tsv", header=True, sep="\t", index=False)
+    contamination_detailed_df_long.to_csv("contaminated_samples.detailed.long.tsv", header=True, sep="\t", index=False)
 
 
 def data_loading(maf_path, somatic_maf_path):
