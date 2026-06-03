@@ -441,23 +441,26 @@ def main(sample_name, maf_file, output_prefix, max_n):
     """
     output_pdf_path = f"{output_prefix}.mutations_vaf.pdf"
     
-    with PdfPages(output_pdf_path) as pdf:
-        # Plot VAF vs depth per site
-        if maf_file:
-            print(f"Generating VAF vs depth plot from {maf_file}")
-            maf_df = pd.read_csv(maf_file, sep='\t', na_values=custom_na_values)
-            plot_vaf_vs_depth_per_site(maf_df, pdf, sample_name, max_n=max_n)
-            print(f"VAF vs depth plot complete")
-            plot_vaf_depth_heatmap(maf_df, pdf, sample_name)
-            print(f"VAF vs depth heatmap complete")
-            plot_vaf_vs_vafam_histogram(maf_df, pdf)
-            print(f"VAF vs VAF_AM histogram complete")
-            plot_vaf_pseudocount_curve(maf_df, pdf, suffix='')
-            print(f"VAF pseudocount vs depth plot complete")
-            plot_vaf_pseudocount_curve(maf_df, pdf, suffix='_AM')
-            print(f"VAF AM pseudocount vs depth plot complete")
-    
-    print(f"Plots saved to {output_pdf_path}")
+    # Plot VAF vs depth per site
+    if maf_file:
+        print(f"Generating VAF vs depth plot from {maf_file}")
+        maf_df = pd.read_csv(maf_file, sep='\t', na_values=custom_na_values)
+        if maf_df.shape[0] < 5:
+            print(f"There are less than 5 mutations in MAF file {maf_file}. Skipping VAF vs depth plot.")
+        else:
+            with PdfPages(output_pdf_path) as pdf:
+                plot_vaf_vs_depth_per_site(maf_df, pdf, sample_name, max_n=max_n)
+                print(f"VAF vs depth plot complete")
+                plot_vaf_depth_heatmap(maf_df, pdf, sample_name)
+                print(f"VAF vs depth heatmap complete")
+                plot_vaf_vs_vafam_histogram(maf_df, pdf)
+                print(f"VAF vs VAF_AM histogram complete")
+                plot_vaf_pseudocount_curve(maf_df, pdf, suffix='')
+                print(f"VAF pseudocount vs depth plot complete")
+                plot_vaf_pseudocount_curve(maf_df, pdf, suffix='_AM')
+                print(f"VAF AM pseudocount vs depth plot complete")
+
+            print(f"Plots saved to {output_pdf_path}")
 
     get_top_mutations(maf_file, output_prefix)
     if len(maf_df["SAMPLE_ID"].unique()) > 1:
