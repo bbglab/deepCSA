@@ -323,7 +323,7 @@ workflow DEEPCSA {
             // Concatenate all outputs into a single file
             MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities }
-            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true).set{ all_adjusted_mutdensities_file }
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true).first().set{ all_adjusted_mutdensities_file }
 
             MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities_flat }
@@ -477,7 +477,7 @@ workflow DEEPCSA {
         }
         if (params.omega_globalloc){
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
-            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
+            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled.first()
         }
 
         if (params.regressions){
@@ -604,8 +604,8 @@ workflow DEEPCSA {
     PLOTTINGQC(
                 somatic_mutations,
                 all_mutdensities_file.first(),
-                all_adjusted_mutdensities_file.first(),
-                all_compiled_omegasgloballoc.first(),
+                all_adjusted_mutdensities_file,
+                all_compiled_omegasgloballoc,
                 PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample.first(),
                 all_compiled_omegas,
                 // site_comparison_results,
@@ -631,7 +631,7 @@ workflow DEEPCSA {
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         somatic_mutations,
                         all_mutdensities_file.first(),
-                        all_adjusted_mutdensities_file.first(),
+                        all_adjusted_mutdensities_file,
                         site_comparison_results,
                         ANNOTATEDEPTHS.out.all_samples_depths.first(),
                         TABLE2GROUP.out.json_samples.first(),

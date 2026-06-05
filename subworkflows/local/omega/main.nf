@@ -109,7 +109,7 @@ workflow OMEGA_ANALYSIS{
 
         PREPROCESSINGGLOBALLOC(muts_n_depths_n_profile,
                                 expanded_panel,
-                                mutationdensities.first(),
+                                mutationdensities,
                                 all_samples_mut_profile)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
