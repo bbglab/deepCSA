@@ -627,7 +627,16 @@ workflow DEEPCSA {
                 positive_selection_results = positive_selection_results.combine(all_compiled_omegasgloballoc)
             }
         }
-        positive_selection_results_ready = positive_selection_results.map { element -> [element[0], element[1..-1]] }
+        positive_selection_results.view { element -> "[pre-filter] $element" }
+        positive_selection_results_ready = positive_selection_results
+        .map { element ->
+            def meta = element[0]
+            def files = element[1..-1].findAll { it -> it != null }
+            [meta, files]
+        }
+        .filter { _meta, files -> files.size() > 0 }
+        positive_selection_results_ready.view { element -> "[post-filter] $element" }
+
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         somatic_mutations,
                         all_mutdensities_file.first(),

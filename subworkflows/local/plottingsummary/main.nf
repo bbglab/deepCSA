@@ -67,10 +67,13 @@ workflow PLOTTING_SUMMARY {
     .join( site_comparison )
     .set{ groups_results_sites }
 
+    groups_results.view { element -> "[groups_results] $element" }
+
     PLOTSELECTION(groups_results, seqinfo_df)
     // needles with consequence type
     // plot selection at cohort/group level, all the different methods available
     // plot selection per domain at cohort level
+    groups_results_sites.view { element -> "[groups_results_view] $element" }
 
     PLOTSATURATION(groups_results_sites, all_samples_depth, panel, seqinfo_df, pdb_tool_df, domain_df, exons_depths_df)
 
