@@ -22,14 +22,19 @@ def plot_trinucleotide_proportions(wgs_counts_file):
 
     counts_all = wgs_counts.copy()
     for cnsq in ["all", "non_protein_affecting", "introns_intergenic", "exons_splice_sites"]:
-        wgs_counts_cnsq = pd.read_table(f"consensus.{cnsq}.tsv",
-                                        header = 0,
-                                        sep = '\t',
-                                        usecols = ["CHROM", "POS", "CONTEXT_MUT", "CONTEXT"]
-                                    )
-        wgs_counts_cnsq = wgs_counts_cnsq.drop_duplicates()
-        counts_panel_cnsq = wgs_counts_cnsq["CONTEXT"].value_counts().to_frame(name = f'COUNT_{cnsq}').reset_index()
-        counts_all = counts_all.merge(counts_panel_cnsq, on = 'CONTEXT')
+        try:
+            wgs_counts_cnsq = pd.read_table(f"consensus.{cnsq}.tsv",
+                                            header = 0,
+                                            sep = '\t',
+                                            usecols = ["CHROM", "POS", "CONTEXT_MUT", "CONTEXT"]
+                                        )
+            wgs_counts_cnsq = wgs_counts_cnsq.drop_duplicates()
+            counts_panel_cnsq = wgs_counts_cnsq["CONTEXT"].value_counts().to_frame(name = f'COUNT_{cnsq}').reset_index()
+            counts_all = counts_all.merge(counts_panel_cnsq, on = 'CONTEXT')
+
+        except FileNotFoundError:
+            print(f"File not found for consensus panel: {cnsq}")
+
     counts_all = counts_all.set_index("CONTEXT")
     proportions_all = counts_all / counts_all.sum()
 
@@ -42,8 +47,12 @@ def plot_trinucleotide_proportions(wgs_counts_file):
 
     for i, cnsq in enumerate(["all", "non_protein_affecting", "introns_intergenic", "exons_splice_sites"]):
         ax = axs[i]
-        
-        rmse = np.sqrt(((proportions_all_plot["COUNT_WGS"] - proportions_all_plot[f"COUNT_{cnsq}"])**2).mean())
+        try :
+            rmse = np.sqrt(((proportions_all_plot["COUNT_WGS"] - proportions_all_plot[f"COUNT_{cnsq}"])**2).mean())
+
+        except KeyError:
+            print(f"KeyError: 'COUNT_{cnsq}' not found in proportions_all_plot. Skipping RMSE calculation for this panel.")
+            continue
         
         # Scatter plot
         sns.scatterplot(data=proportions_all_plot,
@@ -87,14 +96,17 @@ def plot_trinucleotide_proportions(wgs_counts_file):
         ax = axs[i]
 
         # rmse = np.sqrt(((counts_all_plot["COUNT_WGS"] - counts_all_plot[f"COUNT_{cnsq}"])**2).mean())
-
-        sns.scatterplot(data=counts_all_plot,
-                        x="COUNT_WGS",
-                        y=f"COUNT_{cnsq}",
-                        hue="CONTEXT",
-                        legend=False,
-                        ax=ax)
-        
+        try:
+            sns.scatterplot(data=counts_all_plot,
+                            x="COUNT_WGS",
+                            y=f"COUNT_{cnsq}",
+                            hue="CONTEXT",
+                            legend=False,
+                            ax=ax)
+        except KeyError:
+            print(f"KeyError: 'COUNT_{cnsq}' not found in counts_all_plot. Skipping scatter plot for this panel.")
+            continue
+    
         # Annotate points with CONTEXT
         for namee, row in counts_all_plot.iterrows():
             ax.text(row["COUNT_WGS"], row[f"COUNT_{cnsq}"], namee,
@@ -113,7 +125,10 @@ def plot_trinucleotide_proportions(wgs_counts_file):
 @click.option('--wgs-trinucleotide', type=click.Path(exists=True), help='Input trinucleotide counts file for WGS')
 def main(wgs_trinucleotide):
     click.echo("Comparing the trinucleotide proportions...")
-    plot_trinucleotide_proportions(wgs_trinucleotide)
+    try:
+        plot_trinucleotide_proportions(wgs_trinucleotide)
+    except Exception as e:
+        click.echo(f"Error occurred: {e}")
 
 if __name__ == '__main__':
     main()
