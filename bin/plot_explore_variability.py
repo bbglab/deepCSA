@@ -21,6 +21,37 @@ def filter_data_from_config(dataa, config):
         # print(filtered_data.shape)
     return filtered_data
 
+def plot_mutdensity_per_sample(data, samples_list, value, title, sample_column_name = "SAMPLE_ID"):
+    muts_per_sample = data[(data["SAMPLE_ID"].isin(samples_list))
+                           & (data["GENE"] == 'ALL_GENES')
+                           ]
+
+    # Calculate the length of the longest sample name
+    max_label_length = muts_per_sample[sample_column_name].astype(str).str.len().max()
+
+    # Determine the rotation angle and adjust figure size accordingly
+    rotation_angle = 90 if (max_label_length > 7) or (samples_list > 30) else 30  # Adjust threshold as needed
+    # fig_height = 4 + (max_label_length / 10) * 2  # Adjust multiplier as needed
+    # # Calculate the figure width based on the number of samples
+    # fig_width = min(18, max(2, len(muts_per_sample) * 0.5))
+
+    # # Create the figure and axis
+    # fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    fig, ax = plt.subplots(figsize=(max(12, 0.1*len(samples_list)), 4))
+    sns.barplot(data = muts_per_sample, x = "SAMPLE_ID",
+                y = value, order=samples_list,
+                ax = ax, palette = ["salmon"], dodge = False)
+    plt.xticks(rotation = rotation_angle)
+    plt.xlabel("")
+    plt.ylabel("Mutation density")
+    plt.title(title)
+
+    plt.tight_layout()
+
+    return fig
+
+
 def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
                             config_datasets = {
                                 "all" : ({"MUTTYPES": 'all_types', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
@@ -51,8 +82,9 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
 
         for title, (config, value) in config_datasets.items():
             print("Creating heatmap for:", title, config, value)
-            filtered_data = filter_data_from_config(data, config)
-            # print(filtered_data[['GENE', 'SAMPLE_ID', value]].head())
+            filtered_data = filter_data_from_config(data, config) # filtered_data[['GENE', 'SAMPLE_ID', value]]
+            plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
+
             # Create a pivot table for the heatmap
             heatmap_data = filtered_data.pivot_table(index='GENE', columns='SAMPLE_ID', values=value)
             heatmap_data = heatmap_data.reindex(index=genes_list, columns=samples_list)
@@ -79,6 +111,7 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
             plt.suptitle(f"{title} - Clustermap")
             pdf.savefig(g.fig)
             plt.close(g.fig)
+
 
 
 
@@ -109,6 +142,7 @@ def adj_mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = ''
         for title, value in config_datasets.items():
             print("Creating heatmap for:", title)
             filtered_data = data[["GENE", "SAMPLE_ID", value]]
+            plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
 
             # Create a pivot table for the heatmap
             heatmap_data = filtered_data.pivot_table(index='GENE', columns='SAMPLE_ID', values=value)

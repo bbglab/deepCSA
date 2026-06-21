@@ -7,20 +7,18 @@ library(jsonlite)
 library(Biostrings)
 library(data.table)
 
-genome_content_json <- "../data/genome_counts_tribases.json"
+## Read it from a TSV and format it as json
 
-deepCSA_run <- "2025-12-15"
-add_nanoseq_for_comparison = TRUE #if you want to add cord blood sequenced with Nanoseq for comparison
 
-# root_dir <- "../data/cord_blood_run"
-root_dir <- "/data/bbg/nobackup2/prominent/duplex_seq_tests/error_rate/cord_blood/bbg/deepCSA/2026-03-26_deepUMIcaller_and_dupcaller_4_paper"
-deepCSA_run_dir <- root_dir # paste0(root_dir,"deepCSA/", deepCSA_run)
+deepCSA_run_dir <- '.'
+sample_name
+depths              ## depths/individual/{sample}.depths.annotated.tsv.gz
+mutations           ## mutations/clean_somatic/{sample}
+consensus_bed       ## regions/consensuspanels/consensus.all.bed
+genome_content_json ## <- "../data/genome_counts_tribases.json"
 
-path2sites = paste0( deepCSA_run_dir, "/depths/individual/")
-path2mutations = paste0( deepCSA_run_dir, "/mutations/clean_somatic/")
-consensus_bed <- paste0( deepCSA_run_dir, "/regions/consensuspanels/consensus.all.bed")
 
-path2out = "results/cordblood_mutrate"
+path2out = "wgs_mutrate"
 
 get_genome_content <- function(genome_content_json){
   #' Get genome trinucleotide content
@@ -47,13 +45,13 @@ get_genome_content <- function(genome_content_json){
 }  
 
 
-get_consensus_sites_depth <- function(sample, depth_path, consensus_bed){
+get_consensus_sites_depth <- function(sample, depths_file, consensus_bed){
   #' Get depth per position for positions in consensus panel
   #'
   #' This function intersects consensus panel with file with annotated depth per position
 
   # Load depth data
-  dt_pos <- fread(paste0(depth_path, sample, ".depths.annotated.tsv.gz"))
+  dt_pos <- fread(depths_file)
   colnames(dt_pos) <- c("CHROM", "POS", "CONTEXT", "DEPTH")
   dt_pos[, `:=`(
     start = POS,
@@ -69,56 +67,51 @@ get_consensus_sites_depth <- function(sample, depth_path, consensus_bed){
   return(consensus_depth)
 }
 
-get_mutations_and_sites <- function(path2sites, path2mutations, consensus_bed, genome_sites_df){
+get_mutations_and_sites <- function(sample_name, sites_file, mutations_file, consensus_bed, genome_sites_df){
   #' Get number of mutations per sample and normalize panel content to whole genome content
   #'
   #' This function gets number of mutations per sample in each context and normalizes panel content to whole genome content 
   result <- NULL
-  sites_files <- list.files(path=path2sites, pattern=glob2rx("*.depths.annotated.tsv.gz"))
-  sites_files <- sites_files[sites_files != 'all_samples.depths.annotated.tsv.gz']
-  for(file in sites_files){
-    sample_name = str_split_i(file, ".depths", 1)
-    print(sample_name)
+  print(sample_name)
 
-    df_sites = get_consensus_sites_depth(sample_name, path2sites, consensus_bed)
-    df_sites$depth = as.numeric(df_sites$DEPTH)
-    df_sites_panel_agg = df_sites %>%
-      group_by(CONTEXT) %>% 
-      summarise(N = sum(DEPTH))
-    df_sites_panel_agg = as.data.frame(df_sites_panel_agg)
-    colnames(df_sites_panel_agg) <- c("CONTEXT", "N_sites_panel")
-    message("Contexts in panel sites = ", nrow(df_sites_panel_agg))
-    print(head(df_sites_panel_agg))
+  df_sites = get_consensus_sites_depth(sample_name, sites_file, consensus_bed)
+  df_sites$depth = as.numeric(df_sites$DEPTH)
+  df_sites_panel_agg = df_sites %>%
+    group_by(CONTEXT) %>% 
+    summarise(N = sum(DEPTH))
+  df_sites_panel_agg = as.data.frame(df_sites_panel_agg)
+  colnames(df_sites_panel_agg) <- c("CONTEXT", "N_sites_panel")
+  message("Contexts in panel sites = ", nrow(df_sites_panel_agg))
+  print(head(df_sites_panel_agg))
 
-    df_sites = merge(genome_sites_df, df_sites_panel_agg, by="CONTEXT")
-    print(head(df_sites))
-    message("Contexts in panel and genome sites = ", nrow(df_sites))
-    df_sites <- df_sites %>% mutate(proportion_genome=N_sites_genome/sum(N_sites_genome))
-    df_sites <- df_sites %>% mutate(proportion_panel=N_sites_panel/sum(N_sites_panel))
-    df_sites$ratio2genome = df_sites$proportion_panel/df_sites$proportion_genome
-    print(head(df_sites))
-    print(sum(df_sites$N_sites_panel))
+  df_sites = merge(genome_sites_df, df_sites_panel_agg, by="CONTEXT")
+  print(head(df_sites))
+  message("Contexts in panel and genome sites = ", nrow(df_sites))
+  df_sites <- df_sites %>% mutate(proportion_genome=N_sites_genome/sum(N_sites_genome))
+  df_sites <- df_sites %>% mutate(proportion_panel=N_sites_panel/sum(N_sites_panel))
+  df_sites$ratio2genome = df_sites$proportion_panel/df_sites$proportion_genome
+  print(head(df_sites))
+  print(sum(df_sites$N_sites_panel))
 
-    df_mutations = read.table(paste(path2mutations, sample_name, ".somatic.mutations.tsv", sep=""), header=TRUE, sep="\t")
-    df_mutations = df_mutations[df_mutations$TYPE=="SNV",]
-    df_mutations$CONTEXT = str_split_i(df_mutations$CONTEXT_MUT, ">", 1)
-    df_mutations_agg = df_mutations %>%
-      group_by(CONTEXT) %>% 
-      summarise(N_mut = n())
-    print(head(df_mutations_agg))
-    df_mutations = as.data.frame(df_mutations)
-    result_sample = merge(df_sites, df_mutations_agg, by="CONTEXT", all=TRUE)
-    # if some contexts are absent in mutataions - keep them but put mutation number to 0
-    if (nrow(result_sample[is.na(result_sample$N_mut),]) > 0){
-      result_sample[is.na(result_sample$N_mut),]$N_mut <- 0
-    }
-    print(head(result_sample))  
-    message("Contexts in df with mutations = ", nrow(result_sample))
-    result_sample$N_mut_corrected = result_sample$N_mut * result_sample$ratio2genome
-    sample_out <- c(sample_name, sum(result_sample$N_mut), sum(result_sample$N_mut_corrected), sum(df_sites$N_sites_panel), "sample", sample_name)
-    result <- rbind(result, sample_out) 
-
+  df_mutations = read.table(mutations_file, header=TRUE, sep="\t")
+  df_mutations = df_mutations[df_mutations$TYPE=="SNV",]
+  df_mutations$CONTEXT = str_split_i(df_mutations$CONTEXT_MUT, ">", 1)
+  df_mutations_agg = df_mutations %>%
+    group_by(CONTEXT) %>% 
+    summarise(N_mut = n())
+  print(head(df_mutations_agg))
+  df_mutations = as.data.frame(df_mutations)
+  result_sample = merge(df_sites, df_mutations_agg, by="CONTEXT", all=TRUE)
+  # if some contexts are absent in mutataions - keep them but put mutation number to 0
+  if (nrow(result_sample[is.na(result_sample$N_mut),]) > 0){
+    result_sample[is.na(result_sample$N_mut),]$N_mut <- 0
   }
+  print(head(result_sample))  
+  message("Contexts in df with mutations = ", nrow(result_sample))
+  result_sample$N_mut_corrected = result_sample$N_mut * result_sample$ratio2genome
+  sample_out <- c(sample_name, sum(result_sample$N_mut), sum(result_sample$N_mut_corrected), sum(df_sites$N_sites_panel))
+  result <- rbind(result, sample_out) 
+
   return(result)
 }
 
@@ -126,16 +119,12 @@ get_mutations_and_sites <- function(path2sites, path2mutations, consensus_bed, g
 df_sites_genome_agg <- get_genome_content(genome_content_json)
 
 #Get number of mutations and normalize panel contetnt to genome content
-result <- get_mutations_and_sites(path2sites, path2mutations, consensus_bed, df_sites_genome_agg)
+result <- get_mutations_and_sites(sample_name, depths, mutations, consensus_bed, df_sites_genome_agg)
 print(head(result))
 
-# Add nanoseq rate for comparison if needed
-if (add_nanoseq_for_comparison == TRUE){
-  result <- rbind(result, c("PD48442_cordblood_nanoseqv2", 41, 38.43131656, 2799554062, "Nanoseq_Sanger", "PD48442"))
-  result <- rbind(result, c("PD47269_cordblood_nanoseqv2", 26, 28.29844724, 2003725667, "Nanoseq_Sanger", "PD47269"))
-}
+
 result <- as.data.frame(result)
-colnames(result) <- c("sample", "N_mut", "N_mut_corrected", "DEPTH", "protocol", "donor_id")
+colnames(result) <- c("sample", "N_mut", "N_mut_corrected", "DEPTH")
 result$N_mut_corrected = as.numeric(result$N_mut_corrected)
 result$DEPTH = as.numeric(result$DEPTH)
 result$N_mut = as.numeric(result$N_mut)
@@ -153,34 +142,32 @@ if (!dir.exists(path2out)) {
   dir.create(path2out, recursive = TRUE)
 }
 
-write.csv(result, paste0(path2out,"/mutrates_results.tsv"),row.names = FALSE, quote = FALSE)
+write.csv(result, paste0(path2out,"/", sample_name, "_mutrates_results.tsv"),row.names = FALSE, quote = FALSE)
 
-setwd(path2out)
+# setwd(path2out)
 
-jpeg(filename=paste("mutrate_trint_corrected.with_nanoseq.jpeg", sep=""), width=30, height=15, res=300, units='cm')
+# jpeg(filename=paste("mutrate_trint_corrected.with_nanoseq.jpeg", sep=""), width=30, height=15, res=300, units='cm')
 
-ggplot(result, aes(x=sample, y=mutrate_observed)) +
-  geom_bar(stat="identity", position="dodge", fill="grey") +
-  geom_errorbar(aes(x=sample, ymin=mutrate_CI_low, ymax=mutrate_CI_high), width=0.4,  alpha=0.9, linewidth=1, position=position_dodge(.9)) +
-  theme_bw() +
-  facet_grid(~factor(protocol, levels=c("tests","IDT","TWS","Nanoseq_Sanger")), scales="free_x", space="free_x") +
-  theme(axis.text.x = element_text(angle = 90, hjust=1)) +
-  geom_text(aes(label = N_mut, x = sample, y = mutrate_observed), position = position_dodge(width = 0.9), vjust = -0.5, hjust = -0.1) +
-  xlab("") +
-  ylab("Mutation rate") +
-  theme(legend.position="bottom")
-dev.off()
+# ggplot(result, aes(x=sample, y=mutrate_observed)) +
+#   geom_bar(stat="identity", position="dodge", fill="grey") +
+#   geom_errorbar(aes(x=sample, ymin=mutrate_CI_low, ymax=mutrate_CI_high), width=0.4,  alpha=0.9, linewidth=1, position=position_dodge(.9)) +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 90, hjust=1)) +
+#   geom_text(aes(label = N_mut, x = sample, y = mutrate_observed), position = position_dodge(width = 0.9), vjust = -0.5, hjust = -0.1) +
+#   xlab("") +
+#   ylab("Mutation rate") +
+#   theme(legend.position="bottom")
+# dev.off()
 
-jpeg(filename=paste("mutrate_trint_corrected.jpeg", sep=""), width=30, height=15, res=300, units='cm')
-result<-result[result$protocol != "Nanoseq_Sanger",]
-ggplot(result, aes(x=sample, y=mutrate_observed)) +
-  geom_bar(stat="identity", position="dodge", fill="grey") +
-  geom_errorbar(aes(x=sample, ymin=mutrate_CI_low, ymax=mutrate_CI_high), width=0.4,  alpha=0.9, linewidth=1, position=position_dodge(.9)) +
-  theme_bw() +
-  facet_grid(~factor(protocol, levels=c("tests","IDT","TWS","Nanoseq_Sanger")), scales="free_x", space="free_x") +
-  theme(axis.text.x = element_text(angle = 90, hjust=1)) +
-  geom_text(aes(label = N_mut, x = sample, y = mutrate_observed), position = position_dodge(width = 0.9), vjust = -0.5, hjust = -0.1) +
-  xlab("") +
-  ylab("Mutation rate") +
-  theme(legend.position="bottom")
-dev.off()
+# jpeg(filename=paste("mutrate_trint_corrected.jpeg", sep=""), width=30, height=15, res=300, units='cm')
+# result<-result[result$protocol != "Nanoseq_Sanger",]
+# ggplot(result, aes(x=sample, y=mutrate_observed)) +
+#   geom_bar(stat="identity", position="dodge", fill="grey") +
+#   geom_errorbar(aes(x=sample, ymin=mutrate_CI_low, ymax=mutrate_CI_high), width=0.4,  alpha=0.9, linewidth=1, position=position_dodge(.9)) +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 90, hjust=1)) +
+#   geom_text(aes(label = N_mut, x = sample, y = mutrate_observed), position = position_dodge(width = 0.9), vjust = -0.5, hjust = -0.1) +
+#   xlab("") +
+#   ylab("Mutation rate") +
+#   theme(legend.position="bottom")
+# dev.off()
