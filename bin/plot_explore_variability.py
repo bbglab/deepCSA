@@ -22,6 +22,8 @@ def filter_data_from_config(dataa, config):
     return filtered_data
 
 def plot_mutdensity_per_sample(data, samples_list, value, title, sample_column_name = "SAMPLE_ID"):
+    print("Plotting mutation density per sample for:", title, value)
+
     muts_per_sample = data[(data["SAMPLE_ID"].isin(samples_list))
                            & (data["GENE"] == 'ALL_GENES')
                            ]
@@ -44,7 +46,7 @@ def plot_mutdensity_per_sample(data, samples_list, value, title, sample_column_n
                 ax = ax, palette = ["salmon"], dodge = False)
     plt.xticks(rotation = rotation_angle)
     plt.xlabel("")
-    plt.ylabel("Mutation density")
+    plt.ylabel("Mutation density\n(muts per Mb)")
     plt.title(title)
 
     plt.tight_layout()
@@ -83,7 +85,9 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
         for title, (config, value) in config_datasets.items():
             print("Creating heatmap for:", title, config, value)
             filtered_data = filter_data_from_config(data, config) # filtered_data[['GENE', 'SAMPLE_ID', value]]
-            plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
+            fig = plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
+            pdf.savefig(fig)
+            plt.close(fig)
 
             # Create a pivot table for the heatmap
             heatmap_data = filtered_data.pivot_table(index='GENE', columns='SAMPLE_ID', values=value)
@@ -142,7 +146,9 @@ def adj_mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = ''
         for title, value in config_datasets.items():
             print("Creating heatmap for:", title)
             filtered_data = data[["GENE", "SAMPLE_ID", value]]
-            plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
+            fig = plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
+            pdf.savefig(fig)
+            plt.close(fig)
 
             # Create a pivot table for the heatmap
             heatmap_data = filtered_data.pivot_table(index='GENE', columns='SAMPLE_ID', values=value)
