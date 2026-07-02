@@ -18,6 +18,8 @@ workflow PLOTTING_QC {
     panel
     groups_definition
     group_name
+    dndscv_cv //needs to be defined, where?
+    compiled_flagged //needs to be extracted from a process from the same module, how?
     // all_samples_depth
     // all_groups
     // full_panel_rich
@@ -50,7 +52,7 @@ workflow PLOTTING_QC {
         all_omegas_globalloc
     )
 
-    PLOTOMEGAVSDNDSCV(all_omegas, groups_definition, group_name)
+    PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, groups_definition, group_name, compiled_flagged)
 
     APPLYOMEGAQC(all_omegas, PLOTMUTDENSITYQC.out.compiled_flagged.collect())
 
