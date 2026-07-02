@@ -162,6 +162,7 @@ workflow DEEPCSA {
     all_mutdensities_file           = channel.empty()
     all_adjusted_mutdensities_file  = channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
     all_compiled_stabilities        = channel.empty()
+    dndscv_table                    = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -451,6 +452,7 @@ workflow DEEPCSA {
                     CREATEPANELS.out.exons_consensus_panel,
                     params.fasta
                     )
+        dndscv_table = DNDS.out.all_dndscv_results
     }
 
     if (params.omega){
@@ -613,7 +615,8 @@ workflow DEEPCSA {
                 // TABLE2GROUP.out.json_allgroups,
                 CREATEPANELS.out.exons_consensus_panel,
                 TABLE2GROUP.out.json_allgroups.first(),
-                group_keys_ch
+                group_keys_ch,
+                dndscv_table
                 // CREATEPANELS.out.panel_annotated_rich,
                 // seqinfo_df,
                 // CREATEPANELS.out.domains_in_panel,
