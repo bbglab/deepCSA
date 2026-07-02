@@ -3,6 +3,7 @@ include { PLOT_MUTDENSITY_QC        as PLOTMUTDENSITYQC     } from '../../../mod
 include { PLOT_METRICS_VS_DEPTH_QC  as PLOTMETRICSVSDEPTHQC } from '../../../modules/local/plot/qc/metrics_vs_depth/main'
 include { ANNOTATE_OMEGA_QC         as APPLYOMEGAQC         } from '../../../modules/local/plot/qc/annotate_omega/main'
 include { PLOT_MUTATION_SPECIFIC    as PLOTMUTATIONSPECIFIC } from '../../../modules/local/plot/qc/mutation_specific/main'
+include { PLOT_OMEGA_VS_DNDSCV      as PLOTOMEGAVSDNDSCV    } from '../../../modules/local/plot/qc/omega_vs_dndscv/main'
 
 
 workflow PLOTTING_QC {
@@ -49,6 +50,8 @@ workflow PLOTTING_QC {
         all_omegas_globalloc
     )
 
+    PLOTOMEGAVSDNDSCV(all_omegas, groups_definition, group_name)
+
     APPLYOMEGAQC(all_omegas, PLOTMUTDENSITYQC.out.compiled_flagged.collect())
 
     emit:
@@ -56,5 +59,6 @@ workflow PLOTTING_QC {
     metrics_vs_depth_plots  = PLOTMETRICSVSDEPTHQC.out.plots
     metrics_vs_depth_tables = PLOTMETRICSVSDEPTHQC.out.tables
     flagged_omegas          = APPLYOMEGAQC.out.all_omegas_annotated
+    omega_vs_dndscv_qc      = PLOTOMEGAVSDNDSCV.out.plots
 
 }
