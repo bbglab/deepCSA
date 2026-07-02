@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import seaborn as sns
-import os
-import time
 import json
 from scipy import stats
 from scipy.stats import pearsonr
@@ -114,7 +112,7 @@ def apply_correlation_and_plotting(df, samples_group, output_dir):
 @click.option("--output-dir", required=True, type=click.Path(writable=True),
               help="Directory where output files will be written")
 
-@click.option("--flagged-genes-omega", required=True, type=click.Path(writable=True),
+@click.option("--flagged-genes-omega", required=True, type=click.Path(exists=True),
               help="Directory where flagged_omega genes were stored from /qc/omega_flagged/debug.syn_flagged_gene.tsv")
 
 
