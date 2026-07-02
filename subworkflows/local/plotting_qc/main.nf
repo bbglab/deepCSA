@@ -54,7 +54,12 @@ workflow PLOTTING_QC {
 
     APPLYOMEGAQC(all_omegas, PLOTMUTDENSITYQC.out.compiled_flagged.collect())
     
-    PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, groups_definition, group_name, APPLYOMEGAQC.out.flagged_cases)
+    // Only run omega vs dndscv QC plot when dndscv results are available
+    omega_vs_dndscv_plots = channel.empty()
+    if (params.dnds) {
+        PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, groups_definition, group_name, APPLYOMEGAQC.out.flagged_cases)
+        omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
+    }
     
 
     emit:
@@ -62,6 +67,6 @@ workflow PLOTTING_QC {
     metrics_vs_depth_plots  = PLOTMETRICSVSDEPTHQC.out.plots
     metrics_vs_depth_tables = PLOTMETRICSVSDEPTHQC.out.tables
     flagged_omegas          = APPLYOMEGAQC.out.all_omegas_annotated
-    omega_vs_dndscv_qc      = PLOTOMEGAVSDNDSCV.out.plots
+    omega_vs_dndscv_qc      = omega_vs_dndscv_plots
 
 }
