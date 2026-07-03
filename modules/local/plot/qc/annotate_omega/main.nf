@@ -11,7 +11,7 @@ process ANNOTATE_OMEGA_QC {
 
     output:
     path("*flagged_annotated.tsv")                  , emit: all_omegas_annotated
-    path("*flagged.tsv")            , optional: true, emit: flagged_cases
+    path("debug_*flagged*.tsv")            , optional: true, emit: flagged_cases
     path("*.tsv")                   , optional: true, emit: files
     path("*.png")                   , optional: true, emit: plots
     path "versions.yml"             , topic: versions
