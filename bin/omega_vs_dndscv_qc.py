@@ -2,6 +2,7 @@
 
 # Needed basic packages
 import click
+import os
 import pandas as pd  
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
