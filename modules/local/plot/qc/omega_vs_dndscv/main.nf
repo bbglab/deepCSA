@@ -14,6 +14,7 @@ process PLOT_OMEGA_VS_DNDSCV {
 
     output:
     path("**.pdf")                              , optional: true    , emit: plots
+    path("**.tsv")                              , optional: true    , emit: tables
     path "versions.yml" , topic: versions
 
     script:

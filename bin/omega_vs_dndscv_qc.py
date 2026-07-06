@@ -48,7 +48,7 @@ def apply_correlation_and_plotting(df, samples_group, output_dir):
     for group in sorted(samples_group):
         subset = df[df['sample'] == group].copy()
         subset[['dnds_omega', 'dnds_dndscv']] = subset[['dnds_omega', 'dnds_dndscv']].fillna(0)
-        print(subset.head())
+        print(f'Subset shape for {group}: {subset.shape[0]}')
         
         if subset.empty:
             print(f'No data available for sample: {group}')
@@ -132,20 +132,27 @@ def main(input_omega_file, input_dndscv_file, output_dir, flagged_genes_omega):
     omega_filtered_df = omega_df[~(omega_df['gene'].str.contains("--")) & # discards exons if they are included in the analysis
                     (omega_df['impact'].isin(['missense', 'truncating']))].copy()
     print('Filtered omega table:')
-    print(omega_filtered_df.head())
+    print(omega_filtered_df.shape)
     
     # Process dNdScv table
     dndscv_cv_df = process_dndscv_table(dndscv_df)
     print('Processed dNdScv table:')
-    print(dndscv_cv_df.head())
+    print(dndscv_cv_df.shape)
 
     # Merge omega and dNdScv tables
     dndscv_n_omegas_df = omega_filtered_df.merge(dndscv_cv_df, on=['sample', 'gene', 'impact'], how='outer', suffixes=('_omega', '_dndscv'))
     print('Merged omega and dNdScv table:')
-    print(dndscv_n_omegas_df.head())
+    print(dndscv_n_omegas_df.shape)
 
     # Filter flagged omega genes within groups
     filtered_dndscv_n_omegas_df = filter_flagged_genes_per_group(dndscv_n_omegas_df, flagged_genes_df)
+
+    # Export filtered table
+    print('Filtered table from flagged genes, shape:')
+    print(filtered_dndscv_n_omegas_df.shape)
+
+    filtered_output_path = os.path.join(output_dir, "filtered_omega_dndscv_table.tsv")
+    filtered_dndscv_n_omegas_df.to_csv(filtered_output_path, sep='\t', index=False)
 
     # Apply function to plot omega values vs dndscv per group and compute correlation
     apply_correlation_and_plotting(filtered_dndscv_n_omegas_df, sample_groups, output_dir)
