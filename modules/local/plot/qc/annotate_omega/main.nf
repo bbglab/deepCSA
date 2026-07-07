@@ -10,11 +10,12 @@ process ANNOTATE_OMEGA_QC {
     path (compiled_flagged_cases)
 
     output:
-    path("*flagged_annotated.tsv")                  , emit: all_omegas_annotated
-    path("debug.*flagged*.tsv")     , optional: true, emit: flagged_cases
-    path("*.tsv")                   , optional: true, emit: files
-    path("*.png")                   , optional: true, emit: plots
-    path "versions.yml"             , topic: versions
+    path("*flagged_annotated.tsv")                      , emit: all_omegas_annotated
+    path("debug.*flagged*.tsv")         , optional: true, emit: flagged_cases
+    path("debug.syn_flagged_gene.tsv")  , optional: true, emit: flagged_synonymous_cases
+    path("*.tsv")                       , optional: true, emit: files
+    path("*.png")                       , optional: true, emit: plots
+    path "versions.yml"                 , topic: versions
 
     script:
     """

@@ -57,7 +57,7 @@ workflow PLOTTING_QC {
     // Only run omega vs dndscv QC plot when dndscv results are available
     omega_vs_dndscv_plots = channel.empty()
     if (params.dnds) {
-        PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, groups_definition, group_name, APPLYOMEGAQC.out.flagged_cases.flatten().filter { it.name == 'debug.syn_flagged_gene.tsv' })
+        PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, APPLYOMEGAQC.out.flagged_synonymous_cases)
         omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
     }
     

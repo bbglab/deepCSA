@@ -1,6 +1,6 @@
 process PLOT_OMEGA_VS_DNDSCV {
 
-    tag "${group_name}"
+    tag "all_samples"
     label 'process_low'
 
     label 'deepcsa_core'
@@ -8,8 +8,6 @@ process PLOT_OMEGA_VS_DNDSCV {
     input:
     path (all_omegas)
     path (dndscv_cv)
-    path (groups_json)
-    val (group_name)
     path (compiled_flagged)
 
     output:
@@ -19,11 +17,10 @@ process PLOT_OMEGA_VS_DNDSCV {
 
     script:
     """
-    mkdir ${group_name}.plots
     omega_vs_dndscv_qc.py \\
                     --input-omega-file ${all_omegas} \\
                     --input-dndscv-file ${dndscv_cv} \\
-                    --output-dir ${group_name}.plots \\
+                    --output-dir . \\
                     --flagged-genes-omega ${compiled_flagged}
 
 
