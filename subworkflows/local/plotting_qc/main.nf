@@ -1,9 +1,11 @@
 
-include { PLOT_MUTDENSITY_QC        as PLOTMUTDENSITYQC     } from '../../../modules/local/plot/qc/mutation_densities/main'
-include { PLOT_METRICS_VS_DEPTH_QC  as PLOTMETRICSVSDEPTHQC } from '../../../modules/local/plot/qc/metrics_vs_depth/main'
-include { ANNOTATE_OMEGA_QC         as APPLYOMEGAQC         } from '../../../modules/local/plot/qc/annotate_omega/main'
-include { PLOT_MUTATION_SPECIFIC    as PLOTMUTATIONSPECIFIC } from '../../../modules/local/plot/qc/mutation_specific/main'
-include { PLOT_OMEGA_VS_DNDSCV      as PLOTOMEGAVSDNDSCV    } from '../../../modules/local/plot/qc/omega_vs_dndscv/main'
+include { PLOT_MUTDENSITY_QC        as PLOTMUTDENSITYQC     }  from '../../../modules/local/plot/qc/mutation_densities/main'
+include { PLOT_METRICS_VS_DEPTH_QC  as PLOTMETRICSVSDEPTHQC }  from '../../../modules/local/plot/qc/metrics_vs_depth/main'
+include { ANNOTATE_OMEGA_QC         as APPLYOMEGAQC         }  from '../../../modules/local/plot/qc/annotate_omega/main'
+include { PLOT_MUTATION_SPECIFIC    as PLOTMUTATIONSPECIFIC }  from '../../../modules/local/plot/qc/mutation_specific/main'
+include { PLOT_OMEGA_VS_DNDSCV      as PLOTOMEGAVSDNDSCV    }  from '../../../modules/local/plot/qc/omega_vs_dndscv/main'
+include { PLOT_OMEGA_VS_OMEGAGLOBAL as PLOTOMEGAVSOMEGAGLOBAL} from '../../../modules/local/plot/qc/omega_vs_omegaglobal/main'
+
 
 
 workflow PLOTTING_QC {
@@ -61,6 +63,7 @@ workflow PLOTTING_QC {
         omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
     }
     
+    PLOTOMEGAVSOMEGAGLOBAL(all_omegas, all_omegas_globalloc, APPLYOMEGAQC.out.flagged_synonymous_cases)
 
     emit:
     mutdensity_plots        = PLOTMUTDENSITYQC.out.plots
@@ -68,5 +71,6 @@ workflow PLOTTING_QC {
     metrics_vs_depth_tables = PLOTMETRICSVSDEPTHQC.out.tables
     flagged_omegas          = APPLYOMEGAQC.out.all_omegas_annotated
     omega_vs_dndscv_qc      = omega_vs_dndscv_plots
+    omega_vs_omegaglobal    = PLOTOMEGAVSOMEGAGLOBAL.out.plots
 
 }
