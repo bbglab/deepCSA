@@ -54,13 +54,15 @@ def process_comparison(comparison_file, hotspots_panel, size_type, output_prefix
     
     grouped["p_value"] = grouped["p_value"].replace(0, MIN_NONZERO_PVALUE)
 
-    grouped["p_value_adj"] = np.nan
-    for gene, gene_df in grouped.groupby("GENE", dropna=False):
-        valid_mask = gene_df["p_value"].notna()
-        if not valid_mask.any():
-            continue
-        adjusted = benjamini_hochberg(gene_df.loc[valid_mask, "p_value"].to_numpy())
-        grouped.loc[gene_df.index[valid_mask], "p_value_adj"] = adjusted
+    # TO BE FIXED: Adjusted p-values are not being calculated correctly. The following code is commented out for now.
+    # grouped["p_value_adj"] = np.nan
+    # for gene, gene_df in grouped.groupby("GENE", dropna=False):
+    #     valid_mask = gene_df["p_value"].notna()
+    #     if not valid_mask.any():
+    #         continue
+    #     ## something is wrong here with the adjusted p-values, they are not being assigned correctly. Let's fix that.
+    #     adjusted = benjamini_hochberg(gene_df.loc[valid_mask, "p_value"].to_numpy())
+    #     grouped.loc[gene_df.index[valid_mask], "p_value_adj"] = adjusted
 
     # Write output
     output_file = f"{output_prefix}.{size_type}.hotspots_selection.tsv.gz"
