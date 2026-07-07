@@ -1,4 +1,4 @@
-process PLOTOMEGAVSOMEGAGLOBAL {
+process PLOT_OMEGA_VS_OMEGAGLOBAL {
 
     tag "all_samples"
     label 'process_low'
