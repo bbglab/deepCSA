@@ -22,6 +22,10 @@ logging.basicConfig(
 
 LOG = logging.getLogger("check_contamination")
 
+# Constants
+GERMLINE_LABEL = "Germline Samples"
+SOMATIC_LABEL = "Somatic Samples"
+
 # Assuming somatic_variants and germline_variants are loaded as pandas DataFrames
 def compute_shared_variants(somatic_variants, germline_variants):
     """Count mutations shared between each somatic sample and each germline sample.
@@ -130,50 +134,17 @@ def prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary):
     return germline_vars_all_samples, somatic_variants, all_variants
 
 
-def somatic_vs_germline(maf_df, somatic_maf_df, somatic_vaf_boundary):
+def somatic_vs_germline(germline_vars_all_samples, somatic_variants):
     """Detect cross-sample contamination, compare somatic and germline mutations.
 
         Parameters
         ----------
-        maf_df : pd.DataFrame
-            Full mutation table for all samples (used to derive germline variants and the
-            all-variants set), with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF``, ``vd_VAF`` and
-            ``VAF_AM`` columns.
-        somatic_maf_df : pd.DataFrame
-            Filtered somatic mutation table, with at least ``SAMPLE_ID`` and ``MUT_ID`` columns.
-        somatic_vaf_boundary : float
-            VAF threshold passed to ``germline_mask`` to identify germline variants (a variant is
-            germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
+        germline_vars_all_samples : pd.DataFrame
+            DataFrame of germline variants across all samples.
+        somatic_variants : pd.DataFrame
+            DataFrame of somatic variants.
+
     """
-    pass
-
-
-def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary):
-    """Detect cross-sample contamination by comparing somatic and germline mutations.
-
-    Builds somatic-vs-germline, all-vs-germline and germline-vs-germline shared-mutation
-    matrices, renders them as heatmaps, flags sample pairs where a large proportion of one
-    sample's germline variants appear as non-germline (somatic-looking) variants in another,
-    and writes the contaminated-sample tables and per-pair detail files to the current
-    working directory.
-
-    Parameters
-    ----------
-    maf_df : pd.DataFrame
-        Full mutation table for all samples (used to derive germline variants and the
-        all-variants set), with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF``, ``vd_VAF`` and
-        ``VAF_AM`` columns.
-    somatic_maf_df : pd.DataFrame
-        Filtered somatic mutation table, with at least ``SAMPLE_ID`` and ``MUT_ID`` columns.
-    somatic_vaf_boundary : float
-        VAF threshold passed to ``germline_mask`` to identify germline variants (a variant is
-        germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
-    """
-    # Prepare datasets
-    germline_vars_all_samples, somatic_variants, all_variants = prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary)
-
-    ## Somatic vs Germline
-
     shared_variants_somatic2germline_matrix = compute_shared_variants(somatic_variants, germline_vars_all_samples)
 
     # Compute total number of germline mutations per sample
@@ -194,10 +165,32 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         variants_matrix=shared_variants_somatic2germline_matrix,
         annot=annot,
         col_labels=col_labels,
-        xlabel="Germline Samples",
-        ylabel="Somatic Samples",
+        xlabel=GERMLINE_LABEL,
+        ylabel=SOMATIC_LABEL,
         title="Somatic mutations that are germline in other samples",
         output_file="somatic_vs_germline.pdf")
+
+
+def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary):
+    """Detect cross-sample contamination by comparing somatic and germline mutations.
+
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Full mutation table for all samples (used to derive germline variants and the
+        all-variants set), with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF``, ``vd_VAF`` and
+        ``VAF_AM`` columns.
+    somatic_maf_df : pd.DataFrame
+        Filtered somatic mutation table, with at least ``SAMPLE_ID`` and ``MUT_ID`` columns.
+    somatic_vaf_boundary : float
+        VAF threshold passed to ``germline_mask`` to identify germline variants (a variant is
+        germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
+    """
+    # Prepare datasets
+    germline_vars_all_samples, somatic_variants, all_variants = prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary)
+
+    ## Somatic vs Germline
+    somatic_vs_germline(germline_vars_all_samples, somatic_variants)
 
     ## All vs Germline
 
