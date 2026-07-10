@@ -53,6 +53,34 @@ def compute_shared_variants(somatic_variants, germline_variants):
 
     return shared_counts
 
+def create_heatmap(variants_matrix: pd.DataFrame,
+                   annot: pd.DataFrame,
+                   col_labels: list,
+                   xlabel: str,
+                   ylabel: str,
+                   title: str,
+                   output_file: str,
+                   annot_kws_color: str = "black",
+                   size: tuple[int, int] = (18, 15)):
+    """Create heatmap for specified set of mutations."""
+    plt.figure(figsize=size)
+    sns.heatmap(
+        variants_matrix,
+        annot=annot,
+        fmt="",
+        cmap="Blues",
+        cbar_kws={"label": "Shared Mutations"},
+        xticklabels=col_labels,
+        yticklabels=variants_matrix.index,
+        linewidths=0.5,
+        annot_kws={"color": annot_kws_color, "fontsize": 10},
+    )
+
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel(ylabel, fontsize=14)
+    plt.title(title, fontsize=16)
+    plt.savefig(output_file, bbox_inches="tight", dpi=100)
+    plt.close()
 
 def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary):
     """Detect cross-sample contamination by comparing somatic and germline mutations.
@@ -93,8 +121,6 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
 
     shared_variants_somatic2germline_matrix = compute_shared_variants(somatic_variants, germline_vars_all_samples)
 
-    plt.figure(figsize=(18, 15))
-
     # Compute total number of germline mutations per sample
     germline_counts = (
         germline_vars_all_samples["SAMPLE_ID"].value_counts().reindex(shared_variants_somatic2germline_matrix.columns)
@@ -109,23 +135,14 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     # convert selected values to nullable int then to string, replace missing with empty string
     annot = annot.round(0).astype("Int64").astype(str).replace("<NA>", "").fillna("")
 
-    sns.heatmap(
-        shared_variants_somatic2germline_matrix,
+    create_heatmap(
+        variants_matrix=shared_variants_somatic2germline_matrix,
         annot=annot,
-        fmt="",
-        cmap="Blues",
-        cbar_kws={"label": "Shared Mutations"},
-        xticklabels=col_labels,
-        yticklabels=shared_variants_somatic2germline_matrix.index,
-        linewidths=0.5,
-        annot_kws={"color": "black", "fontsize": 10},
-    )
-
-    plt.xlabel("Germline Samples", fontsize=14)
-    plt.ylabel("Somatic Samples", fontsize=14)
-    plt.title("Somatic mutations that are germline in other samples", fontsize=16)
-    plt.savefig("somatic_vs_germline.pdf", bbox_inches="tight", dpi=100)
-    plt.show()
+        col_labels=col_labels,
+        xlabel="Germline Samples",
+        ylabel="Somatic Samples",
+        title="Somatic mutations that are germline in other samples",
+        output_file="somatic_vs_germline.pdf")
 
     ## All vs Germline
 
@@ -142,8 +159,6 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
 
     # Count shared mutations between somatic and germline samples
 
-    plt.figure(figsize=(18, 15))
-
     # Create custom column labels with germline mutation counts
     col_labels = [
         f"(n={germline_counts[col]}) {col}" for col in normalized_shared_all_vs_germline_variants_matrix.columns
@@ -156,29 +171,19 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     annot = normalized_shared_all_vs_germline_variants_matrix.where(cond)
     annot = annot.round(2).astype("string").fillna("")
 
-    sns.heatmap(
-        normalized_shared_all_vs_germline_variants_matrix,
+    create_heatmap(
+        variants_matrix=normalized_shared_all_vs_germline_variants_matrix,
         annot=annot,
-        fmt="",
-        cmap="Blues",
-        cbar_kws={"label": "Shared Mutations"},
-        xticklabels=col_labels,
-        yticklabels=normalized_shared_all_vs_germline_variants_matrix.index,
-        annot_kws={"color": "white", "fontsize": 10},
-        linewidths=0.5,
-    )
-
-    plt.xlabel("Germline Samples", fontsize=14)
-    plt.ylabel("All mutations samples", fontsize=14)
-    plt.title("All mutations that are germline in other samples", fontsize=16)
-    plt.savefig("allmutations_vs_germline.pdf", bbox_inches="tight", dpi=100)
-    plt.show()
+        col_labels=col_labels,
+        xlabel="Germline Samples",
+        ylabel="All mutations samples",
+        title="All mutations that are germline in other samples",
+        output_file="allmutations_vs_germline.pdf",
+        annot_kws_color="white")
 
     ## Germline vs Germline
 
     shared_germline_variants_matrix = compute_shared_variants(germline_vars_all_samples, germline_vars_all_samples)
-
-    plt.figure(figsize=(18, 15))
 
     # Compute total number of germline mutations per sample
     germline_counts = (
@@ -193,23 +198,14 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     annot = shared_germline_variants_matrix.where(mask)
     annot = annot.astype("string").fillna("")
 
-    sns.heatmap(
-        shared_germline_variants_matrix,
+    create_heatmap(
+        variants_matrix=shared_germline_variants_matrix,
         annot=annot,
-        fmt="",
-        cmap="Blues",
-        cbar_kws={"label": "Shared Mutations"},
-        xticklabels=col_labels,
-        yticklabels=shared_germline_variants_matrix.index,
-        linewidths=0.5,
-        annot_kws={"fontsize": 8},
-    )
-
-    plt.xlabel("Germline Samples", fontsize=14)
-    plt.ylabel("Germline Samples", fontsize=14)
-    plt.title("Germline mutations that are germline in other samples", fontsize=16)
-    plt.savefig("germline_vs_germline.pdf", bbox_inches="tight", dpi=100)
-    plt.show()
+        col_labels=col_labels,
+        xlabel="Germline Samples",
+        ylabel="Germline Samples",
+        title="Germline mutations that are germline in other samples",
+        output_file="germline_vs_germline.pdf")
 
     # Compute total number of germline mutations per sample
     germline_counts = (
@@ -219,8 +215,6 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     normalized_share_germline_vs_germline_variants_matrix = shared_germline_variants_matrix.divide(
         germline_counts, axis=1
     )
-
-    plt.figure(figsize=(18, 15))
 
     # Create custom column labels with germline mutation counts
     col_labels = [
@@ -233,22 +227,15 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     annot = normalized_share_germline_vs_germline_variants_matrix.where(cond)
     annot = annot.round(2).astype("string").fillna("")
 
-    sns.heatmap(
-        normalized_share_germline_vs_germline_variants_matrix,
+    create_heatmap(
+        variants_matrix=normalized_share_germline_vs_germline_variants_matrix,
         annot=annot,
-        fmt="",
-        cmap="Blues",
-        cbar_kws={"label": "Shared Mutations"},
-        xticklabels=col_labels,
-        yticklabels=normalized_share_germline_vs_germline_variants_matrix.index,
-        annot_kws={"color": "white", "fontsize": 10},
-        linewidths=0.5,
-    )
-
-    plt.xlabel("Germline Samples", fontsize=14)
-    plt.ylabel("Germline samples", fontsize=14)
-    plt.savefig("normalized.germline_vs_germline.pdf", bbox_inches="tight", dpi=100)
-    plt.show()
+        col_labels=col_labels,
+        xlabel="Germline Samples",
+        ylabel="Germline Samples",
+        title="Normalized germline mutations that are germline in other samples",
+        output_file="normalized.germline_vs_germline.pdf",
+        annot_kws_color="white")
 
     ## Somatic vs Remaining Germline
     shared_somatic_to_non_shared_germline = shared_all_vs_germline_variants_matrix - shared_germline_variants_matrix
@@ -267,56 +254,36 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         shared_somatic_to_non_shared_germline / total_germline_available_per_sample
     ).fillna(0)
 
-    plt.figure(figsize=(22, 18))
-
     cond = shared_somatic_to_non_shared_germline_proportion > 0.45
     annot = shared_somatic_to_non_shared_germline_proportion.where(cond)
     annot = annot.round(2).astype("string").fillna("")
 
-    sns.heatmap(
-        shared_somatic_to_non_shared_germline_proportion,
+    create_heatmap(
+        variants_matrix=shared_somatic_to_non_shared_germline_proportion,
         annot=annot,
-        fmt="",
-        cmap="Blues",
-        cbar_kws={"label": "Shared Mutations"},
-        # xticklabels=col_labels,
-        yticklabels=shared_somatic_to_non_shared_germline_proportion.index,
-        annot_kws={"color": "black", "fontsize": 10},
-        linewidths=0.5,
+        col_labels=col_labels,
+        xlabel="Non-shared germline",
+        ylabel="Somatic",
+        title="Somatic mutations that are germline in other samples",
+        output_file="contamination.somatic_vs_remaininggermline.pdf",
+        annot_kws_color="white",
+        size=(22, 18)
     )
-
-    plt.xlabel("Non-shared germline", fontsize=14)
-    plt.ylabel("Somatic", fontsize=14)
-    plt.title("Somatic mutations that are germline in other samples", fontsize=16)
-    plt.savefig("contamination.somatic_vs_remaininggermline.pdf", bbox_inches="tight", dpi=100)
-    plt.show()
-    plt.close()
-
-    plt.figure(figsize=(22, 18))
-
     cond = shared_somatic_to_non_shared_germline > 0
     annot = shared_somatic_to_non_shared_germline.where(cond)
     # convert to nullable int then string, replace missing with empty string
     annot = annot.round(0).astype("Int64").astype("string").replace("<NA>", "").fillna("")
 
-    sns.heatmap(
-        shared_somatic_to_non_shared_germline,
+    create_heatmap(
+        variants_matrix=shared_somatic_to_non_shared_germline,
         annot=annot,
-        fmt="",
-        cmap="Blues",
-        cbar_kws={"label": "Shared Mutations"},
-        # xticklabels=col_labels,
-        yticklabels=shared_somatic_to_non_shared_germline.index,
-        annot_kws={"color": "black", "fontsize": 10},
-        linewidths=0.5,
+        col_labels=col_labels,
+        xlabel="Non-shared germline",
+        ylabel="Somatic",
+        title="Somatic mutations that are germline in other samples (count)",
+        output_file="contamination.somatic_vs_remaininggermline.numbers.pdf",
+        size=(22, 18)
     )
-
-    plt.xlabel("Non-shared germline", fontsize=14)
-    plt.ylabel("Somatic", fontsize=14)
-    plt.title("Somatic mutations that are germline in other samples (count)", fontsize=16)
-    plt.savefig("contamination.somatic_vs_remaininggermline.numbers.pdf", bbox_inches="tight", dpi=100)
-    plt.show()
-    plt.close()
 
     max_prop_per_sample = shared_somatic_to_non_shared_germline_proportion.max(axis="columns")
 
