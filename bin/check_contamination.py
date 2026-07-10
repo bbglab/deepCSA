@@ -8,10 +8,19 @@ Script for checking contamination between samples.
 import click
 import matplotlib.pyplot as plt
 import pandas as pd
+import logging
 import seaborn as sns
 from read_utils import custom_na_values
 from utils_filter import germline_mask, somatic_mask
 
+# Logging
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s",
+    level=logging.INFO,
+    datefmt="%m/%d/%Y %I:%M:%S %p"
+)
+
+LOG = logging.getLogger("check_contamination")
 
 # Assuming somatic_variants and germline_variants are loaded as pandas DataFrames
 def compute_shared_variants(somatic_variants, germline_variants):
@@ -82,6 +91,63 @@ def create_heatmap(variants_matrix: pd.DataFrame,
     plt.savefig(output_file, bbox_inches="tight", dpi=100)
     plt.close()
 
+
+def prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary):
+    """Prepare datasets for contamination analysis.
+
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Full mutation table for all samples (used to derive germline variants and the
+        all-variants set), with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF``, ``vd_VAF`` and
+        ``VAF_AM`` columns.
+    somatic_maf_df : pd.DataFrame
+        Filtered somatic mutation table, with at least ``SAMPLE_ID`` and ``MUT_ID`` columns.
+    somatic_vaf_boundary : float
+        VAF threshold passed to ``germline_mask`` to identify germline variants (a variant is
+        germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
+
+    Returns
+    -------
+    tuple
+        Tuple containing:
+        - germline_vars_all_samples: DataFrame of germline variants across all samples.
+        - somatic_variants: DataFrame of somatic variants.
+        - all_variants: DataFrame of all variants.
+    """
+    # Consider both unique and non-unique variants when collecting germline variants
+    germline_vars_all_samples = maf_df.loc[
+        germline_mask(maf_df, somatic_vaf_boundary), ["SAMPLE_ID", "MUT_ID"]
+    ].drop_duplicates()
+    LOG.info(f"Total variants: {germline_vars_all_samples.shape}")
+    LOG.info(f"Unique germline variants: {len(germline_vars_all_samples['MUT_ID'].unique())}")
+    
+    somatic_variants = somatic_maf_df[["SAMPLE_ID", "MUT_ID"]]
+    LOG.info(f"Somatic variants: {somatic_variants.shape}")
+    all_variants = maf_df[["SAMPLE_ID", "MUT_ID"]]
+    LOG.info(f"All variants: {all_variants.shape}")
+
+    return germline_vars_all_samples, somatic_variants, all_variants
+
+
+def somatic_vs_germline(maf_df, somatic_maf_df, somatic_vaf_boundary):
+    """Detect cross-sample contamination, compare somatic and germline mutations.
+
+        Parameters
+        ----------
+        maf_df : pd.DataFrame
+            Full mutation table for all samples (used to derive germline variants and the
+            all-variants set), with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF``, ``vd_VAF`` and
+            ``VAF_AM`` columns.
+        somatic_maf_df : pd.DataFrame
+            Filtered somatic mutation table, with at least ``SAMPLE_ID`` and ``MUT_ID`` columns.
+        somatic_vaf_boundary : float
+            VAF threshold passed to ``germline_mask`` to identify germline variants (a variant is
+            germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
+    """
+    pass
+
+
 def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary):
     """Detect cross-sample contamination by comparing somatic and germline mutations.
 
@@ -103,19 +169,8 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         VAF threshold passed to ``germline_mask`` to identify germline variants (a variant is
         germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
     """
-    # consider both unique and non-unique variants when collecting germline variants
-    germline_vars_all_samples = maf_df.loc[
-        germline_mask(maf_df, somatic_vaf_boundary), ["SAMPLE_ID", "MUT_ID"]
-    ].drop_duplicates()
-
-    print(germline_vars_all_samples["MUT_ID"].shape)
-    print(len(germline_vars_all_samples["MUT_ID"].unique()))
-
-    somatic_variants = somatic_maf_df[["SAMPLE_ID", "MUT_ID"]]
-    print(somatic_variants.shape)
-
-    all_variants = maf_df[["SAMPLE_ID", "MUT_ID"]]
-    print(all_variants.shape)
+    # Prepare datasets
+    germline_vars_all_samples, somatic_variants, all_variants = prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary)
 
     ## Somatic vs Germline
 
