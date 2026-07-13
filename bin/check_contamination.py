@@ -26,6 +26,21 @@ LOG = logging.getLogger("check_contamination")
 # Constants
 GERMLINE_LABEL = "Germline Samples"
 SOMATIC_LABEL = "Somatic Samples"
+CONTAMINATION_PROPORTION_THRESHOLD = 0.5
+# Deliberately more restrictive than the --somatic-vaf-boundary used for the between-samples
+# analysis: this is the numerator of a QC metric, so only confidently low-VAF calls should count.
+SNP_CONTAMINATION_VAF_THRESHOLD = 0.05
+VAF_COLUMNS = ["VAF", "vd_VAF", "VAF_AM"]
+VARIANT_DETAIL_COLUMNS = [
+    "SAMPLE_ID",
+    "MUT_ID",
+    "canonical_SYMBOL",
+    "ALT_DEPTH",
+    "DEPTH",
+    "VAF",
+    "canonical_Consequence_broader",
+    "FILTER",
+]
 OPS = {
     ">": operator.gt,
     "<": operator.lt,
@@ -190,6 +205,119 @@ def two_way_comparison(df_a: pd.DataFrame, df_b: pd.DataFrame, annotation_thresh
 
     return shared_df, annot, col_labels
 
+def find_contaminated_pairs(proportion_matrix: pd.DataFrame, counts_matrix: pd.DataFrame, threshold: float) -> pd.DataFrame:
+    """Identify receiver samples carrying the germline variants of another sample.
+
+    A sample is flagged as a receiver when its highest proportion of non-shared germline
+    variants coming from any single other sample exceeds ``threshold``. All sources tied at
+    that maximum are reported.
+
+    Parameters
+    ----------
+    proportion_matrix : pd.DataFrame
+        Matrix of the proportion of each source sample's non-shared germline variants that are
+        present as non-germline variants in each receiver sample (receivers as rows, sources as
+        columns).
+    counts_matrix : pd.DataFrame
+        Matrix of the corresponding raw shared variant counts, with the same shape and labels.
+    threshold : float
+        Minimum proportion above which a receiver sample is considered contaminated.
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per contaminated receiver, with columns ``SAMPLE_ID``,
+        ``MAX_PROPORTION_GERMLINE_FROM_SOURCE`` and ``SOURCE_SAMPLEID_COUNTS``, the latter
+        holding the list of ``(shared_variant_count, source_sample_id)`` pairs tied at the
+        maximum proportion.
+    """
+    max_prop_per_sample = proportion_matrix.max(axis="columns")
+
+    receiver_source_pairs = []
+    for sample, max_val in max_prop_per_sample[max_prop_per_sample > threshold].items():
+        sample_vals = proportion_matrix.loc[sample, :]
+        sample_vals_count = counts_matrix.loc[sample, :]
+
+        source_sampleids = sample_vals[sample_vals == max_val].index.values
+        receiver_source_pairs.append(
+            (
+                sample,
+                round(max_val, 3),
+                list(zip([sample_vals_count[x].item() for x in source_sampleids], source_sampleids)),
+            )
+        )
+
+        LOG.info(
+            f"{sample} has {max_val:.2f} proportion of the germline variants of {source_sampleids[0]} "
+            f"with a VAF not corresponding to germline variants "
+            f"(shared variants count: {sample_vals_count[source_sampleids[0]]})."
+        )
+
+    return pd.DataFrame(
+        receiver_source_pairs, columns=["SAMPLE_ID", "MAX_PROPORTION_GERMLINE_FROM_SOURCE", "SOURCE_SAMPLEID_COUNTS"]
+    )
+
+
+def contaminated_pairs_to_long(contaminated_pairs: pd.DataFrame) -> pd.DataFrame:
+    """Expand the tied-source lists into one row per receiver/source pair.
+
+    Parameters
+    ----------
+    contaminated_pairs : pd.DataFrame
+        Output of ``find_contaminated_pairs``; must be non-empty.
+
+    Returns
+    -------
+    pd.DataFrame
+        Long-format table with columns ``SAMPLE_ID``, ``MAX_PROPORTION_GERMLINE_FROM_SOURCE``,
+        ``SHARED_VARIANT_COUNT`` and ``SOURCE_SAMPLEID``.
+    """
+    contaminated_pairs_long = contaminated_pairs.explode("SOURCE_SAMPLEID_COUNTS")
+    contaminated_pairs_long[["SHARED_VARIANT_COUNT", "SOURCE_SAMPLEID"]] = pd.DataFrame(
+        contaminated_pairs_long["SOURCE_SAMPLEID_COUNTS"].tolist(), index=contaminated_pairs_long.index
+    )
+
+    return contaminated_pairs_long.drop(columns="SOURCE_SAMPLEID_COUNTS")
+
+
+def export_germline_variants_in_receiver(maf_df: pd.DataFrame,
+                                         germline_vars_all_samples: pd.DataFrame,
+                                         receiver_sample: str,
+                                         source_sample: str):
+    """Write the source sample's germline variants alongside their VAF in the receiver sample.
+
+    Parameters
+    ----------
+    maf_df : pd.DataFrame
+        Full mutation table for all samples, with at least the ``VARIANT_DETAIL_COLUMNS``.
+    germline_vars_all_samples : pd.DataFrame
+        Germline variants across all samples, with at least ``SAMPLE_ID`` and ``MUT_ID`` columns.
+    receiver_sample : str
+        Sample suspected of being contaminated.
+    source_sample : str
+        Sample suspected of being the contamination source.
+    """
+    variant_details = maf_df[VARIANT_DETAIL_COLUMNS]
+
+    receiver_variants = variant_details[variant_details["SAMPLE_ID"] == receiver_sample].drop("SAMPLE_ID", axis=1)
+
+    source_germline = germline_vars_all_samples[germline_vars_all_samples["SAMPLE_ID"] == source_sample]
+    source_variants = variant_details[
+        (variant_details["SAMPLE_ID"] == source_sample) & (variant_details["MUT_ID"].isin(source_germline["MUT_ID"].values))
+    ].drop("SAMPLE_ID", axis=1)
+
+    merged_samples = receiver_variants.merge(
+        source_variants,
+        on=["MUT_ID", "canonical_SYMBOL", "canonical_Consequence_broader"],
+        suffixes=("_dest", "_source"),
+        how="right",
+    )
+
+    merged_samples.sort_values(by=["VAF_dest"], ascending=False).to_csv(
+        f"{source_sample}.germline_variants_in.{receiver_sample}.tsv", header=True, sep="\t", index=False
+    )
+
+
 def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary):
     """Detect cross-sample contamination by comparing somatic and germline mutations.
 
@@ -309,89 +437,26 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         size=(22, 18)
     )
 
-    max_prop_per_sample = shared_somatic_to_non_shared_germline_proportion.max(axis="columns")
-
     ## Exploration of contaminated samples
-    receiver_source_pairs = []
-    for sample, max_val in max_prop_per_sample[max_prop_per_sample > 0.5].reset_index().values:
-        sample_vals = shared_somatic_to_non_shared_germline_proportion.loc[sample, :]
-        sample_vals_count = shared_somatic_to_non_shared_germline.loc[sample, :]
-
-        source_sampleids = sample_vals[sample_vals == max_val].index.values
-        source_sampleid = source_sampleids[0]
-        receiver_source_pairs.append(
-            (
-                sample,
-                round(max_val, 3),
-                list(zip([sample_vals_count[x].item() for x in source_sampleids], source_sampleids)),
-            )
-        )
-
-        print(
-            f"{sample} has {max_val:.2f} proportion of the germline variants of {source_sampleid} as with a VAF not corresponding to germline variants."
-        )
-        print(f"Shared variants count: {sample_vals_count[source_sampleid]}")
-        print()
-
-        subseeeet = maf_df[
-            [
-                "SAMPLE_ID",
-                "MUT_ID",
-                "canonical_SYMBOL",
-                "ALT_DEPTH",
-                "DEPTH",
-                "VAF",
-                "canonical_Consequence_broader",
-                "FILTER",
-            ]
-        ]
-        p_dest = subseeeet[subseeeet["SAMPLE_ID"] == sample].drop("SAMPLE_ID", axis=1)
-
-        p_source_germ = germline_vars_all_samples[germline_vars_all_samples["SAMPLE_ID"] == source_sampleid]
-        p_source = subseeeet[
-            (subseeeet["SAMPLE_ID"] == source_sampleid) & (subseeeet["MUT_ID"].isin(p_source_germ["MUT_ID"].values))
-        ].drop("SAMPLE_ID", axis=1)
-
-        merged_samples = p_dest.merge(
-            p_source,
-            on=["MUT_ID", "canonical_SYMBOL", "canonical_Consequence_broader"],
-            suffixes=("_dest", "_source"),
-            how="right",
-        )
-
-        merged_samples.sort_values(by=["VAF_dest"], ascending=False).to_csv(
-            f"{source_sampleid}.germline_variants_in.{sample}.tsv", header=True, sep="\t", index=False
-        )
-
-        # plt.figure(figsize=(8, 6))
-        # plt.scatter(x = merged_samples["VAF_dest"].fillna(0),
-        #             y = merged_samples["VAF_source"].fillna(0),
-        #             # color = ['blue' if x == 0 else 'red' for x in merged_samples["VAF_dest"].fillna(0)]
-        #         )
-
-        # plt.xscale('log')
-        # # plt.yscale('log')
-        # plt.xlabel("VAF_dest    "   + sample)
-        # plt.ylabel("VAF_source  " + source_sampleid)
-        # plt.savefig(f"{source_sampleid}_germline_in_{sample}_VAF_scatter.pdf", bbox_inches = 'tight', dpi = 100)
-        # plt.show()
-
-    # Store contamination results
-    contamination_detailed_df = pd.DataFrame(
-        receiver_source_pairs, columns=["SAMPLE_ID", "MAX_PROPORTION_GERMLINE_FROM_SOURCE", "SOURCE_SAMPLEID_COUNTS"]
+    contaminated_pairs = find_contaminated_pairs(
+        shared_somatic_to_non_shared_germline_proportion,
+        shared_somatic_to_non_shared_germline,
+        CONTAMINATION_PROPORTION_THRESHOLD,
     )
-    contamination_detailed_df.to_csv("contaminated_samples.detailed.tsv", header=True, sep="\t", index=False)
+    contaminated_pairs.to_csv("contaminated_samples.detailed.tsv", header=True, sep="\t", index=False)
 
-    if contamination_detailed_df.empty:
-        print("No contaminated samples detected.")
+    if contaminated_pairs.empty:
+        LOG.info("No contaminated samples detected.")
         return
-    contamination_detailed_df_long = contamination_detailed_df.explode("SOURCE_SAMPLEID_COUNTS")
-    expanded_df = pd.DataFrame(contamination_detailed_df_long["SOURCE_SAMPLEID_COUNTS"].tolist())
-    expanded_df.columns = ["SHARED_VARIANT_COUNT", "SOURCE_SAMPLEID"]
-    contamination_detailed_df_long["SHARED_VARIANT_COUNT"] = expanded_df["SHARED_VARIANT_COUNT"].values
-    contamination_detailed_df_long["SOURCE_SAMPLEID"] = expanded_df["SOURCE_SAMPLEID"].values
-    contamination_detailed_df_long = contamination_detailed_df_long.drop("SOURCE_SAMPLEID_COUNTS", axis=1)
-    contamination_detailed_df_long.to_csv("contaminated_samples.detailed.long.tsv", header=True, sep="\t", index=False)
+
+    for receiver in contaminated_pairs.itertuples():
+        # Only the first of the sources tied at the maximum proportion is reported in detail
+        source_sampleid = receiver.SOURCE_SAMPLEID_COUNTS[0][1]
+        export_germline_variants_in_receiver(maf_df, germline_vars_all_samples, receiver.SAMPLE_ID, source_sampleid)
+
+    contaminated_pairs_to_long(contaminated_pairs).to_csv(
+        "contaminated_samples.detailed.long.tsv", header=True, sep="\t", index=False
+    )
 
 
 def data_loading(maf_path, somatic_maf_path):
