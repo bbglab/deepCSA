@@ -488,6 +488,118 @@ def data_loading(maf_path, somatic_maf_path):
     return maf_df, somatic_maf_df
 
 
+def prepare_snp_datasets(maf: pd.DataFrame, vaf_threshold: float) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Split the known SNP positions into somatic-looking and germline-looking variants.
+
+    Germline is defined as the complement of somatic rather than through ``germline_mask``, so
+    that the two sets partition the SNP rows. A variant whose VAF estimates disagree (some at or
+    below the threshold, some above) is therefore counted as germline: it is not a confident
+    somatic call, so it must not be left out of both sets and silently inflate the denominator of
+    ``prop_somatic_SNPs``.
+
+    Rows with an undefined VAF cannot be classified either way and are dropped, since
+    ``somatic_mask`` is False for them and the germline complement would otherwise absorb them.
+
+    Parameters
+    ----------
+    maf : pd.DataFrame
+        Full mutation table with at least ``SAMPLE_ID``, ``MUT_ID``, the ``VAF_COLUMNS`` and the
+        boolean ``FILTER.gnomAD_SNP`` column.
+    vaf_threshold : float
+        Upper bound (inclusive) on all VAF estimates for a variant to be called somatic.
+
+    Returns
+    -------
+    tuple
+        Tuple containing:
+        - snp_positions_maf: DataFrame of all classifiable variants at known SNP positions.
+        - somatic_snp_positions_maf: DataFrame of the somatic ones.
+        - germline_snp_positions_maf: DataFrame of the remaining ones.
+    """
+    snp_positions_maf = maf.loc[maf["FILTER.gnomAD_SNP"], ["SAMPLE_ID", "MUT_ID", *VAF_COLUMNS]]
+
+    undefined_vaf = snp_positions_maf[VAF_COLUMNS].isna().any(axis="columns")
+    if undefined_vaf.any():
+        LOG.warning(f"Discarding {undefined_vaf.sum()} SNP variants with an undefined {VAF_COLUMNS} VAF.")
+    snp_positions_maf = snp_positions_maf.loc[~undefined_vaf]
+    LOG.info(f"SNP variants: {snp_positions_maf.shape}")
+
+    is_somatic = somatic_mask(snp_positions_maf, vaf_threshold)
+    somatic_snp_positions_maf = snp_positions_maf.loc[is_somatic]
+    germline_snp_positions_maf = snp_positions_maf.loc[~is_somatic]
+    LOG.info(f"Somatic SNP variants: {somatic_snp_positions_maf.shape}")
+    LOG.info(f"Germline SNP variants: {germline_snp_positions_maf.shape}")
+
+    return snp_positions_maf, somatic_snp_positions_maf, germline_snp_positions_maf
+
+
+def compute_snp_somatic_proportion(snp_positions_maf: pd.DataFrame,
+                                   somatic_snp_positions_maf: pd.DataFrame,
+                                   germline_snp_positions_maf: pd.DataFrame) -> pd.DataFrame:
+    """Compute, per sample, the proportion of non-germline SNP positions that look somatic.
+
+    Parameters
+    ----------
+    snp_positions_maf : pd.DataFrame
+        All classifiable variants at known SNP positions, as returned by ``prepare_snp_datasets``.
+    somatic_snp_positions_maf : pd.DataFrame
+        The somatic subset of ``snp_positions_maf``.
+    germline_snp_positions_maf : pd.DataFrame
+        The germline subset of ``snp_positions_maf``.
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per sample with columns ``SAMPLE_ID``, ``germline_count``, ``remaining_germline``,
+        ``somatic_count`` and ``prop_somatic_SNPs``, sorted by the latter in descending order.
+    """
+    samples = snp_positions_maf["SAMPLE_ID"].unique()
+    number_unique_snp_positions = snp_positions_maf["MUT_ID"].nunique()
+
+    germline_count = germline_snp_positions_maf["SAMPLE_ID"].value_counts().reindex(samples, fill_value=0)
+    somatic_count = somatic_snp_positions_maf["SAMPLE_ID"].value_counts().reindex(samples, fill_value=0)
+
+    # NOTE: the denominator counts every SNP position of the cohort that is not germline in this
+    # sample, including positions where the sample has no variant at all. Those can never end up in
+    # the numerator, so `prop_somatic_SNPs` is driven as much by how many SNP positions were called
+    # in a sample as by how many of them look somatic. It is comparable across samples of a cohort
+    # sequenced with the same panel, not an absolute contamination rate.
+    remaining_germline = number_unique_snp_positions - germline_count
+
+    sample_snp_mutation_freq_df = pd.DataFrame(
+        {
+            "germline_count": germline_count,
+            "remaining_germline": remaining_germline,
+            "somatic_count": somatic_count,
+            "prop_somatic_SNPs": (somatic_count / remaining_germline).where(remaining_germline > 0, 1),
+        }
+    ).rename_axis("SAMPLE_ID").reset_index()
+
+    return sample_snp_mutation_freq_df.sort_values(by="prop_somatic_SNPs", ascending=False)
+
+
+def create_snp_proportion_plot(sample_snp_mutation_freq_df: pd.DataFrame, output_file: str):
+    """Plot the distribution of the per-sample proportion of somatic SNPs across the cohort.
+
+    Parameters
+    ----------
+    sample_snp_mutation_freq_df : pd.DataFrame
+        Per-sample table with a ``prop_somatic_SNPs`` column, as returned by
+        ``compute_snp_somatic_proportion``.
+    output_file : str
+        Path of the plot to write.
+    """
+    plt.figure(figsize=(6, 3))
+    sns.violinplot(data=sample_snp_mutation_freq_df, x="prop_somatic_SNPs", fill=False, color="lightgray", inner=None)
+    sns.swarmplot(data=sample_snp_mutation_freq_df, x="prop_somatic_SNPs", color="black", size=3)
+
+    plt.title("Proportion of all SNPs across samples\ndetected as somatic")
+    plt.xlabel("Proportion of somatic SNPs per sample")
+    plt.ylabel("Density")
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
 def contamination_detection_in_snps(maf):
     """Estimate per-sample contamination from the VAF distribution at known SNP positions.
 
@@ -498,61 +610,19 @@ def contamination_detection_in_snps(maf):
     Parameters
     ----------
     maf : pd.DataFrame
-        Full mutation table with at least ``SAMPLE_ID``, ``MUT_ID``, ``VAF``, ``vd_VAF``, ``VAF_AM``, and the boolean
-        ``FILTER.gnomAD_SNP`` column.
+        Full mutation table with at least ``SAMPLE_ID``, ``MUT_ID``, the ``VAF_COLUMNS`` and the
+        boolean ``FILTER.gnomAD_SNP`` column.
     """
-    snp_positions_maf = maf[maf["FILTER.gnomAD_SNP"]][["SAMPLE_ID", "MUT_ID", "VAF", "vd_VAF", "VAF_AM"]].reset_index(
-        drop=True
+    snp_positions_maf, somatic_snp_positions_maf, germline_snp_positions_maf = prepare_snp_datasets(
+        maf, SNP_CONTAMINATION_VAF_THRESHOLD
     )
 
-    # being very restrictive in the VAF to count the occurrences of potentially contaminated mutations
-    contamination_vaf_threshold = 0.05
-    somatic_snp_positions_maf = snp_positions_maf.loc[
-        somatic_mask(snp_positions_maf, contamination_vaf_threshold)
-    ].reset_index(drop=True)
-    germline_snp_positions_maf = snp_positions_maf.loc[
-        germline_mask(snp_positions_maf, contamination_vaf_threshold)
-    ].reset_index(drop=True)
+    sample_snp_mutation_freq_df = compute_snp_somatic_proportion(
+        snp_positions_maf, somatic_snp_positions_maf, germline_snp_positions_maf
+    )
+    sample_snp_mutation_freq_df.to_csv("sample_SNP_mutation_freq.tsv", header=True, sep="\t", index=False)
 
-    unique_SNP_positions = snp_positions_maf["MUT_ID"].unique()
-    number_unique_SNP_positions = len(unique_SNP_positions)
-
-    sample_SNP_mutation_freq = []
-    for sample in snp_positions_maf["SAMPLE_ID"].unique():
-        germline_count = len(germline_snp_positions_maf[germline_snp_positions_maf["SAMPLE_ID"] == sample])
-        somatic_count = len(somatic_snp_positions_maf[somatic_snp_positions_maf["SAMPLE_ID"] == sample])
-        remaining_germline = number_unique_SNP_positions - germline_count
-        sample_SNP_mutation_freq.append(
-            [
-                sample,
-                germline_count,
-                remaining_germline,
-                somatic_count,
-                somatic_count / remaining_germline if remaining_germline > 0 else 1,
-            ]
-        )
-    sample_SNP_mutation_freq_df = pd.DataFrame(sample_SNP_mutation_freq)
-    sample_SNP_mutation_freq_df.columns = [
-        "SAMPLE_ID",
-        "germline_count",
-        "remaining_germline",
-        "somatic_count",
-        "prop_somatic_SNPs",
-    ]
-
-    # identify outliers in the "prop_somatic_SNPs" column
-    sample_SNP_mutation_freq_df = sample_SNP_mutation_freq_df.sort_values(by="prop_somatic_SNPs", ascending=False)
-    sample_SNP_mutation_freq_df.to_csv("sample_SNP_mutation_freq.tsv", header=True, sep="\t", index=False)
-
-    plt.figure(figsize=(6, 3))
-    sns.violinplot(data=sample_SNP_mutation_freq_df, x="prop_somatic_SNPs", fill=False, color="lightgray", inner=None)
-    sns.swarmplot(data=sample_SNP_mutation_freq_df, x="prop_somatic_SNPs", color="black", size=3)
-
-    plt.title("Proportion of all SNPs across samples\ndetected as somatic")
-    plt.xlabel("Proportion of somatic SNPs per sample")
-    plt.ylabel("Density")
-    plt.savefig("sample_SNP_mutation_freq.pdf", dpi=300, bbox_inches="tight")
-    plt.close()
+    create_snp_proportion_plot(sample_snp_mutation_freq_df, "sample_SNP_mutation_freq.pdf")
 
 
 @click.command()
