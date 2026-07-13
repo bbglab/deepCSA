@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import logging
 import seaborn as sns
+import operator
 from read_utils import custom_na_values
 from utils_filter import germline_mask, somatic_mask
 
@@ -25,6 +26,12 @@ LOG = logging.getLogger("check_contamination")
 # Constants
 GERMLINE_LABEL = "Germline Samples"
 SOMATIC_LABEL = "Somatic Samples"
+OPS = {
+    ">": operator.gt,
+    "<": operator.lt,
+    ">=": operator.ge,
+    "<=": operator.le
+}
 
 # Assuming somatic_variants and germline_variants are loaded as pandas DataFrames
 def compute_shared_variants(somatic_variants, germline_variants):
@@ -134,42 +141,37 @@ def prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary):
     return germline_vars_all_samples, somatic_variants, all_variants
 
 
-def somatic_vs_germline(germline_vars_all_samples, somatic_variants):
-    """Detect cross-sample contamination, compare somatic and germline mutations.
+def two_way_comparison(df_a: pd.DataFrame, df_b: pd.DataFrame, annotation_threshold: float, operator_str: str) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+    """Detect cross-sample contamination, compare one set of mutations with another set of mutations.
 
         Parameters
         ----------
-        germline_vars_all_samples : pd.DataFrame
-            DataFrame of germline variants across all samples.
-        somatic_variants : pd.DataFrame
-            DataFrame of somatic variants.
-
+        df_a : pd.DataFrame
+            First DataFrame of variants (e.g. somatic).
+        df_b : pd.DataFrame
+            Second DataFrame of variants (e.g. germline).
+        annotation_threshold : float
+            Threshold for annotating shared variants.
+        operator_str : str
+            String representing the comparison operator (e.g., ">", "<", ">=", "<=").
     """
-    shared_variants_somatic2germline_matrix = compute_shared_variants(somatic_variants, germline_vars_all_samples)
+    shared_df = compute_shared_variants(df_a, df_b,)
 
-    # Compute total number of germline mutations per sample
-    germline_counts = (
-        germline_vars_all_samples["SAMPLE_ID"].value_counts().reindex(shared_variants_somatic2germline_matrix.columns)
+    # Compute total number of counts of mutations per sample -> determined by the first dataframe (df_a)
+    counts = (
+        df_a["SAMPLE_ID"].value_counts().reindex(shared_df.columns)
     )
 
     # Create custom column labels with germline mutation counts
-    col_labels = [f"(n={germline_counts[col]}) {col}" for col in shared_variants_somatic2germline_matrix.columns]
+    col_labels = [f"(n={counts[col]}) {col}" for col in shared_df.columns]
 
     # Build annotation DataFrame without using deprecated DataFrame.applymap
-    mask = shared_variants_somatic2germline_matrix > 30
-    annot = shared_variants_somatic2germline_matrix.where(mask)
+    mask = OPS[operator_str](shared_df, annotation_threshold)
+    annot = shared_df.where(mask)
     # convert selected values to nullable int then to string, replace missing with empty string
     annot = annot.round(0).astype("Int64").astype(str).replace("<NA>", "").fillna("")
 
-    create_heatmap(
-        variants_matrix=shared_variants_somatic2germline_matrix,
-        annot=annot,
-        col_labels=col_labels,
-        xlabel=GERMLINE_LABEL,
-        ylabel=SOMATIC_LABEL,
-        title="Somatic mutations that are germline in other samples",
-        output_file="somatic_vs_germline.pdf")
-
+    return shared_df, annot, col_labels
 
 def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_boundary):
     """Detect cross-sample contamination by comparing somatic and germline mutations.
@@ -190,10 +192,30 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
     germline_vars_all_samples, somatic_variants, all_variants = prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary)
 
     ## Somatic vs Germline
-    somatic_vs_germline(germline_vars_all_samples, somatic_variants)
+    shared_variants_somatic2germline_matrix, somatic_vs_germline_annot, somatic_vs_germline_col_labels = two_way_comparison(germline_vars_all_samples, somatic_variants, annotation_threshold=0.3, operator_str=">")
+
+    create_heatmap(
+        variants_matrix=shared_variants_somatic2germline_matrix,
+        annot=somatic_vs_germline_annot,
+        col_labels=somatic_vs_germline_col_labels,
+        xlabel=GERMLINE_LABEL,
+        ylabel=SOMATIC_LABEL,
+        title="Somatic mutations that are germline in other samples",
+        output_file="somatic_vs_germline.pdf")
+
+    ## Germline vs Germline
+    shared_germline_variants_matrix, germline_vs_germline_annot, germline_vs_germline_col_labels = two_way_comparison(germline_vars_all_samples, germline_vars_all_samples, annotation_threshold=0, operator_str="<")
+
+    create_heatmap(
+        variants_matrix=shared_germline_variants_matrix,
+        annot=germline_vs_germline_annot,
+        col_labels=germline_vs_germline_col_labels,
+        xlabel=GERMLINE_LABEL,
+        ylabel=GERMLINE_LABEL,
+        title="Germline mutations that are germline in other samples",
+        output_file="germline_vs_germline.pdf")
 
     ## All vs Germline
-
     shared_all_vs_germline_variants_matrix = compute_shared_variants(all_variants, germline_vars_all_samples)
 
     # Compute total number of germline mutations per sample
@@ -223,39 +245,15 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         variants_matrix=normalized_shared_all_vs_germline_variants_matrix,
         annot=annot,
         col_labels=col_labels,
-        xlabel="Germline Samples",
+        xlabel=GERMLINE_LABEL,
         ylabel="All mutations samples",
         title="All mutations that are germline in other samples",
         output_file="allmutations_vs_germline.pdf",
         annot_kws_color="white")
+    
 
-    ## Germline vs Germline
+    # Show total number of germline mutations
 
-    shared_germline_variants_matrix = compute_shared_variants(germline_vars_all_samples, germline_vars_all_samples)
-
-    # Compute total number of germline mutations per sample
-    germline_counts = (
-        germline_vars_all_samples["SAMPLE_ID"].value_counts().reindex(shared_germline_variants_matrix.columns)
-    )
-
-    # Create custom column labels with germline mutation counts
-    col_labels = [f"(n={germline_counts[col]}) {col}" for col in shared_germline_variants_matrix.columns]
-
-    # Annotation: follow original logic (keep values where < 0, else blank)
-    mask = shared_germline_variants_matrix < 0
-    annot = shared_germline_variants_matrix.where(mask)
-    annot = annot.astype("string").fillna("")
-
-    create_heatmap(
-        variants_matrix=shared_germline_variants_matrix,
-        annot=annot,
-        col_labels=col_labels,
-        xlabel="Germline Samples",
-        ylabel="Germline Samples",
-        title="Germline mutations that are germline in other samples",
-        output_file="germline_vs_germline.pdf")
-
-    # Compute total number of germline mutations per sample
     germline_counts = (
         germline_vars_all_samples["SAMPLE_ID"].value_counts().reindex(shared_germline_variants_matrix.columns)
     )
@@ -279,8 +277,8 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         variants_matrix=normalized_share_germline_vs_germline_variants_matrix,
         annot=annot,
         col_labels=col_labels,
-        xlabel="Germline Samples",
-        ylabel="Germline Samples",
+        xlabel=GERMLINE_LABEL,
+        ylabel=GERMLINE_LABEL,
         title="Normalized germline mutations that are germline in other samples",
         output_file="normalized.germline_vs_germline.pdf",
         annot_kws_color="white")
