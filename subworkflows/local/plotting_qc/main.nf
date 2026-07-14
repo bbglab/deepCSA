@@ -62,8 +62,13 @@ workflow PLOTTING_QC {
         PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, APPLYOMEGAQC.out.flagged_synonymous_cases)
         omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
     }
-    
-    PLOTOMEGAVSOMEGAGLOBAL(all_omegas, all_omegas_globalloc, APPLYOMEGAQC.out.flagged_synonymous_cases)
+
+    // Only run omega vs omegaglobal QC plot when omegaglobal results are available
+    omega_vs_omegaglobal_plots = channel.empty()
+    if (params.omega_globalloc) {
+        PLOTOMEGAVSOMEGAGLOBAL(all_omegas, all_omegas_globalloc, APPLYOMEGAQC.out.flagged_synonymous_cases)
+        omega_vs_omegaglobal_plots = PLOTOMEGAVSOMEGAGLOBAL.out.plots
+    }
 
     emit:
     mutdensity_plots        = PLOTMUTDENSITYQC.out.plots
@@ -71,6 +76,6 @@ workflow PLOTTING_QC {
     metrics_vs_depth_tables = PLOTMETRICSVSDEPTHQC.out.tables
     flagged_omegas          = APPLYOMEGAQC.out.all_omegas_annotated
     omega_vs_dndscv_qc      = omega_vs_dndscv_plots
-    omega_vs_omegaglobal    = PLOTOMEGAVSOMEGAGLOBAL.out.plots
+    omega_vs_omegaglobal    = omega_vs_omegaglobal_plots
 
 }
