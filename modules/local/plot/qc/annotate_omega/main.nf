@@ -36,6 +36,7 @@ process ANNOTATE_OMEGA_QC {
     def prefix = task.ext.prefix ?: "all_samples"
     """
     touch ${prefix}.pdf
+    touch omega.flagged_annotated.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
