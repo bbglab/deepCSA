@@ -68,7 +68,7 @@ def apply_correlation_and_plotting(df, samples_group, output_dir):
                 continue
                 
             # Scatter plot
-            sns.scatterplot(data=impact_subset, x='dnds_omega', y='dnds_dndscv', hue='gene', ax=ax)
+            sns.scatterplot(data=impact_subset, x='dnds_omega', y='dnds_dndscv', hue='gene', ax=ax, legend=False)
             
             # Regression line
             sns.regplot(data=impact_subset_reg, x='dnds_omega', y='dnds_dndscv', scatter=False, color='red', label='Regression Line', ax=ax)
@@ -88,8 +88,6 @@ def apply_correlation_and_plotting(df, samples_group, output_dir):
 
             ax.set_xlabel('dN/dS (Omega)')
             ax.set_ylabel('dN/dS (dNdScv)')
-            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-            ax.legend().remove()
 
         fig.suptitle(f'Comparison for {group}')
         fig.tight_layout()
