@@ -9,12 +9,12 @@ process PLOT_DEPTHS {
     tuple val(meta2), path(panel)
 
     output:
-    tuple val(meta), path("*.pdf")                      , emit: plots
-    tuple val(meta), path("*.avgdepth_per_sample.tsv")  , emit: average_per_sample
-    tuple val(meta), path("*.avgdepth_per_gene.tsv")    , emit: average_per_gene
+    tuple val(meta), path("*.pdf")             , optional : true, emit: plots
+    tuple val(meta), path("*.avgdepth_per_sample.tsv")          , emit: average_per_sample
+    tuple val(meta), path("*.avgdepth_per_gene.tsv")            , emit: average_per_gene
     tuple val(meta), path("*.depth_per_gene_per_sample.tsv")    , emit: average_per_gene_sample
-    tuple val(meta), path("*depth*.tsv")                , emit: depths
-    path  "versions.yml"                                , topic: versions
+    tuple val(meta), path("*depth*.tsv")       , optional : true, emit: depths
+    path  "versions.yml"                                        , topic: versions
 
 
 
