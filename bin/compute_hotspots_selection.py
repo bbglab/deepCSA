@@ -46,8 +46,8 @@ def process_comparison(comparison_file, hotspots_panel, size_type, output_prefix
     comp_df['Hotspot'] = comp_df['Hotspot'].fillna('No')
 
     # Group by GENE and Hotspot
-    grouped_size = comp_df.groupby(['GENE', 'Hotspot']).size().reset_index(name='Count')
-    grouped_size_mut = comp_df.groupby(['GENE', 'Hotspot']).agg({'OBSERVED_MUTS': lambda x: (x != 0).sum()}).reset_index(name = 'CountDiffMutatedSites')
+    grouped_size = comp_df.groupby(['GENE', 'Hotspot']).size().to_frame(name='Count')
+    grouped_size_mut = comp_df.groupby(['GENE', 'Hotspot']).agg({'OBSERVED_MUTS': lambda x: (x != 0).sum()}).reset_index().rename(columns={'OBSERVED_MUTS': 'CountDiffMutatedSites'})
     grouped_size = grouped_size.merge(grouped_size_mut, on=['GENE', 'Hotspot'])
     grouped = comp_df.groupby(['GENE', 'Hotspot'])[['OBSERVED_MUTS', 'EXPECTED_MUTS']].sum().reset_index()
 
