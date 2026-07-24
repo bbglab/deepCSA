@@ -254,13 +254,34 @@ https://github.com/bbglab/deepCSA/tree/dev/assets/build_datasets/dndscv
 
 dNdScv covariates file, usually `covariates_hg19_hg38_epigenome_pcawg.rda`. This provides covariate regression terms for mutation rate modeling.
 
-### datasets3d
+### Oncodrive3D datasets and annotations
 
-Directory containing precomputed Oncodrive3D datasets (structure and mutation mapping information). Build using the [Oncodrive3D dataset builder](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets).
+Directory containing precomputed Oncodrive3D datasets (structure and mutation mapping information).
 
-### annotations3d
+Directory containing Oncodrive3D annotation datasets (protein annotations, stability data, etc.)
 
-Directory containing Oncodrive3D annotation datasets (protein annotations, stability data, etc.). Use the same build process as `datasets3d` to ensure compatibility.
+Use the same build process for datasets and annotations to ensure compatibility.
+
+Build using the [Oncodrive3D dataset builder](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets).
+
+These datasets can be downloaded from [Zenodo](https://zenodo.org/records/21031511).
+See explanation here: [Oncodrive3D pre-built datasets](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#pre-built-datasets-download-instead-of-building)
+
+Files for human:
+
+```sh
+o3d_annotations_human.v1.0.9.tar.zst
+o3d_datasets_human.v1.0.9.tar.zst
+```
+
+Files for mouse:
+
+```sh
+o3d_annotations_mouse.v1.0.9.tar.zst
+o3d_datasets_mouse.v1.0.9.tar.zst
+```
+
+
 
 ### gff3_file
 
