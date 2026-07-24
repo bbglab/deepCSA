@@ -21,7 +21,6 @@ include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { OMEGA_MULTITEST           as OMEGAMULTIPLETESTGLOBALLOC       } from '../../../modules/local/omega_multipletesting/main'
 include { HOTSPOTS_SELECTION        as HOTSPOTSSELECTION                } from '../../../modules/local/hotspots_selection/main'
-include { HOTSPOTS_SELECTION        as HOTSPOTSSELECTIONGLOBALLOC       } from '../../../modules/local/hotspots_selection/main'
 
 workflow OMEGA_ANALYSIS{
 
