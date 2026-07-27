@@ -8,6 +8,7 @@ process PLOT_OMEGA_VS_DNDSCV {
     path (all_omegas)
     path (dndscv_cv)
     path (compiled_flagged)
+    path (groups_json)
 
     output:
     path("**.pdf")                              , optional: true    , emit: plots

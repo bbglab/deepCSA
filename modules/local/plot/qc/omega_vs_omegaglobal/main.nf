@@ -8,6 +8,7 @@ process PLOT_OMEGA_VS_OMEGAGLOBAL {
     path (all_omegas)
     path (all_omegas_globalloc)
     path (compiled_flagged)
+    path (groups_json)
 
     output:
     path("**.pdf")                              , optional: true    , emit: plots

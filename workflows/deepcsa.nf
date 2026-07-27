@@ -616,7 +616,8 @@ workflow DEEPCSA {
                 CREATEPANELS.out.exons_consensus_panel,
                 TABLE2GROUP.out.json_allgroups.first(),
                 group_keys_ch,
-                dndscv_table
+                dndscv_table,
+                TABLE2GROUP.out.json_groups.first(),
                 // CREATEPANELS.out.panel_annotated_rich,
                 // seqinfo_df,
                 // CREATEPANELS.out.domains_in_panel,

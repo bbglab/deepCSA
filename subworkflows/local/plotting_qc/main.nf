@@ -20,7 +20,8 @@ workflow PLOTTING_QC {
     panel
     groups_definition
     group_name
-    dndscv_cv 
+    dndscv_cv
+    groups_only_definition
     // all_samples_depth
     // all_groups
     // full_panel_rich
@@ -59,14 +60,14 @@ workflow PLOTTING_QC {
     // Only run omega vs dndscv QC plot when dndscv results are available
     omega_vs_dndscv_plots = channel.empty()
     if (params.dnds) {
-        PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, APPLYOMEGAQC.out.flagged_synonymous_cases)
+        PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, APPLYOMEGAQC.out.flagged_synonymous_cases, groups_only_definition)
         omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
     }
 
     // Only run omega vs omegaglobal QC plot when omegaglobal results are available
     omega_vs_omegaglobal_plots = channel.empty()
     if (params.omega_globalloc) {
-        PLOTOMEGAVSOMEGAGLOBAL(all_omegas, all_omegas_globalloc, APPLYOMEGAQC.out.flagged_synonymous_cases)
+        PLOTOMEGAVSOMEGAGLOBAL(all_omegas, all_omegas_globalloc, APPLYOMEGAQC.out.flagged_synonymous_cases, groups_only_definition)
         omega_vs_omegaglobal_plots = PLOTOMEGAVSOMEGAGLOBAL.out.plots
     }
 
