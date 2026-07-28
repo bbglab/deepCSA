@@ -183,7 +183,7 @@ def apply_correlation_and_plotting(df, samples_group, output_dir, comp_label):
 @click.option("--flagged-genes-omega", required=True, type=click.Path(exists=True),
               help="Directory where flagged_omega genes were stored from /qc/omega_flagged/debug.syn_flagged_gene.tsv")
 
-@click.option("--defined_groups", required=True, type=click.Path(exists=True),
+@click.option("--defined-groups", required=True, type=click.Path(exists=True),
               help="User defined sample groups in the analysis")
 
 

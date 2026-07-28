@@ -24,7 +24,7 @@ process PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV {
                     --input-dndscv-file ${dndscv_cv} \\
                     --output-dir . \\
                     --flagged-genes-omega ${compiled_flagged}
-                    --defined_groups ${groups_json}
+                    --defined-groups ${groups_json}
 
 
     cat <<-END_VERSIONS > versions.yml
