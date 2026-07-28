@@ -1,11 +1,9 @@
 
-include { PLOT_MUTDENSITY_QC        as PLOTMUTDENSITYQC     }  from '../../../modules/local/plot/qc/mutation_densities/main'
-include { PLOT_METRICS_VS_DEPTH_QC  as PLOTMETRICSVSDEPTHQC }  from '../../../modules/local/plot/qc/metrics_vs_depth/main'
-include { ANNOTATE_OMEGA_QC         as APPLYOMEGAQC         }  from '../../../modules/local/plot/qc/annotate_omega/main'
-include { PLOT_MUTATION_SPECIFIC    as PLOTMUTATIONSPECIFIC }  from '../../../modules/local/plot/qc/mutation_specific/main'
-include { PLOT_OMEGA_VS_DNDSCV      as PLOTOMEGAVSDNDSCV    }  from '../../../modules/local/plot/qc/omega_vs_dndscv/main'
-include { PLOT_OMEGA_VS_OMEGAGLOBAL as PLOTOMEGAVSOMEGAGLOBAL} from '../../../modules/local/plot/qc/omega_vs_omegaglobal/main'
-
+include { PLOT_MUTDENSITY_QC                  as PLOTMUTDENSITYQC     }          from '../../../modules/local/plot/qc/mutation_densities/main'
+include { PLOT_METRICS_VS_DEPTH_QC            as PLOTMETRICSVSDEPTHQC }          from '../../../modules/local/plot/qc/metrics_vs_depth/main'
+include { ANNOTATE_OMEGA_QC                   as APPLYOMEGAQC         }          from '../../../modules/local/plot/qc/annotate_omega/main'
+include { PLOT_MUTATION_SPECIFIC              as PLOTMUTATIONSPECIFIC }          from '../../../modules/local/plot/qc/mutation_specific/main'
+include { PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV      as PLOTOMEGAVSGLOBALVSDNDSCV }     from '../../../modules/local/plot/qc/omega_vs_global_vs_dndscv/main'
 
 
 workflow PLOTTING_QC {
@@ -56,27 +54,27 @@ workflow PLOTTING_QC {
 
 
     APPLYOMEGAQC(all_omegas, PLOTMUTDENSITYQC.out.compiled_flagged.collect())
-    
-    // Only run omega vs dndscv QC plot when dndscv results are available
-    omega_vs_dndscv_plots = channel.empty()
-    if (params.dnds) {
-        PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, APPLYOMEGAQC.out.flagged_synonymous_cases, groups_only_definition)
-        omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
-    }
 
-    // Only run omega vs omegaglobal QC plot when omegaglobal results are available
-    omega_vs_omegaglobal_plots = channel.empty()
-    if (params.omega_globalloc) {
-        PLOTOMEGAVSOMEGAGLOBAL(all_omegas, all_omegas_globalloc, APPLYOMEGAQC.out.flagged_synonymous_cases, groups_only_definition)
-        omega_vs_omegaglobal_plots = PLOTOMEGAVSOMEGAGLOBAL.out.plots
-    }
+    // Run omega qc script independently of dndscv output (handled in the script)
+    PLOTOMEGAVSGLOBALVSDNDSCV(
+        all_omegas, 
+        all_omegas_globalloc,
+        dndscv_cv, 
+        APPLYOMEGAQC.out.flagged_synonymous_cases, 
+        groups_only_definition)
+    
+    // // Only run omega vs dndscv QC plot when dndscv results are available
+    // omega_vs_dndscv_plots = channel.empty()
+    // if (params.dnds) {
+    //     PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, APPLYOMEGAQC.out.flagged_synonymous_cases, groups_only_definition)
+    //     omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
+    // }
 
     emit:
-    mutdensity_plots        = PLOTMUTDENSITYQC.out.plots
-    metrics_vs_depth_plots  = PLOTMETRICSVSDEPTHQC.out.plots
-    metrics_vs_depth_tables = PLOTMETRICSVSDEPTHQC.out.tables
-    flagged_omegas          = APPLYOMEGAQC.out.all_omegas_annotated
-    omega_vs_dndscv_qc      = omega_vs_dndscv_plots
-    omega_vs_omegaglobal    = omega_vs_omegaglobal_plots
+    mutdensity_plots                  = PLOTMUTDENSITYQC.out.plots
+    metrics_vs_depth_plots            = PLOTMETRICSVSDEPTHQC.out.plots
+    metrics_vs_depth_tables           = PLOTMETRICSVSDEPTHQC.out.tables
+    flagged_omegas                    = APPLYOMEGAQC.out.all_omegas_annotated
+    omega_vs_global_vs_dndscv_plots   = PLOTOMEGAVSGLOBALVSDNDSCV.out.plots
 
 }

@@ -1,4 +1,4 @@
-process PLOT_OMEGA_VS_DNDSCV {
+process PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV {
 
     tag "all_samples"
     label 'process_low'
@@ -6,22 +6,25 @@ process PLOT_OMEGA_VS_DNDSCV {
 
     input:
     path (all_omegas)
+    path (all_omegas_globalloc)
     path (dndscv_cv)
     path (compiled_flagged)
     path (groups_json)
 
     output:
-    path("**.pdf")                              , optional: true    , emit: plots
+    path("**.pdf")     , optional: true    , emit: plots
     path("**.tsv")     , optional: true    , emit: tables
     path "versions.yml" , topic: versions
 
     script:
     """
-    omega_vs_dndscv_qc.py \\
+    omega_vs_global_vs_dndscv_qc.py \\
                     --input-omega-file ${all_omegas} \\
+                    --input-omegaglobal-file ${all_omegas_globalloc} \\
                     --input-dndscv-file ${dndscv_cv} \\
                     --output-dir . \\
                     --flagged-genes-omega ${compiled_flagged}
+                    --defined_groups ${groups_json}
 
 
     cat <<-END_VERSIONS > versions.yml
