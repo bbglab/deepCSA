@@ -23,7 +23,7 @@ process PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV {
                     --input-omegaglobal-file ${all_omegas_globalloc} \\
                     --input-dndscv-file ${dndscv_cv} \\
                     --output-dir . \\
-                    --flagged-genes-omega ${compiled_flagged}
+                    --flagged-genes-omega ${compiled_flagged} \\
                     --defined-groups ${groups_json}
 
 
