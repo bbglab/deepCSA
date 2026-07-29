@@ -6,8 +6,8 @@ process VAF_SMOOTHING {
 
     input:
     tuple val(meta) , path(all_mutations) 
-    tuple val(meta2), path(all_mutdensities) 
-    tuple val(meta3), path(average_depth_sample) 
+    path (all_mutdensities) 
+    tuple val(meta2), path(average_depth_sample) 
     
     output:
     path("*.tsv.gz")        , emit: smoothed_vaf_tables

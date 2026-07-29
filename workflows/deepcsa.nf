@@ -385,7 +385,7 @@ workflow DEEPCSA {
         channel.of([ [ id: "all_samples" ] ])
         .join( somatic_mutations )
         .set{ mutations_all_samples }
-        VAFSMOOTHING(mutations_all_samples, all_mutdensities_file)
+        VAFSMOOTHING(mutations_all_samples, all_mutdensities_file, PLOTDEPTHSEXONSCONS.out.average_depth_sample)
 
     }
 
