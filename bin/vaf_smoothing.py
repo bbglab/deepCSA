@@ -30,7 +30,7 @@ def compute_priors(mutdensity_file, samples):
     npa_mutdensities['prior'] = npa_mutdensities['N_MUTATED'] / npa_mutdensities['DEPTH']
     npa_mutdensities_values = npa_mutdensities[['SAMPLE_ID', 'prior']]
 
-    npa_mutdensities_values.to_csv(f"sample_specific_priors.tsv",
+    npa_mutdensities_values.to_csv(f"sample_specific_priors.tsv.gz",
                                    header=True,
                                    index=False,
                                    sep="\t")
@@ -122,17 +122,23 @@ def calc_vaf_distance_summary(
     pseudo_prefix="VAF_PSEUDO",
     depth_col="DEPTH",
     depth_quantile=0.1,
-    large_clone_threshold=1e-2,
+    large_clone_quantile=0.95,
 ):
     """
     Calculate distance between VAF_PSEUDO and target VAF column
     for low-depth clones and large clones.
     """
 
-    depth_cutoff = df[depth_col].quantile(depth_quantile)
+    depth_cutoff_low = df[depth_col].quantile(depth_quantile)
 
-    df_low_depth = df[(df[depth_col] < depth_cutoff) & (df['ALT_DEPTH'] < 2)].copy()
-    df_large = df[df[target_col] > large_clone_threshold].copy()
+    df_low_depth = df[(df[depth_col] < depth_cutoff_low)
+                      & (df['ALT_DEPTH'] < 2)].copy()
+
+    # define large clones except from low depth clones
+    large_clone_quantile_value = df[(df[depth_col] > depth_cutoff_low)
+                                    ][target_col].quantile(large_clone_quantile)
+    df_large = df[(df[depth_col] > depth_cutoff_low)
+                  & (df[target_col] > large_clone_quantile_value)].copy()
 
     # Reference: original VAF vs target VAF
     ref_dist_log_low_depth = np.abs(np.log10(df_low_depth[vaf_col]) - np.log10(df_low_depth[target_col])).sum()
@@ -161,7 +167,8 @@ def calc_vaf_distance_summary(
             "mean_dist_log_large_clones": dist_log_large.mean(),
             "n_low_depth": len(df_low_depth),
             "n_large_clones": len(df_large),
-            "depth_cutoff": depth_cutoff,
+            "depth_cutoff_low": depth_cutoff_low,
+            "large_clone_definition": large_clone_quantile_value,
             "ref_dist_log_low_depth": ref_dist_log_low_depth,
             "ref_dist_log_large_clones": ref_dist_log_large,
             "ref_dist_low_depth": ref_dist_low_depth,
@@ -178,6 +185,7 @@ def plot_vaf_distance_summary(
     figsize=(7, 4),
     log_dist=False,
     log_y=False,
+    sample_name = "sample"
 ):
     """
     Plot pseudocount distance curves and reference VAF vs VAF_AM distances.
@@ -245,6 +253,7 @@ def plot_vaf_distance_summary(
     if log_y:
         ax.set_yscale("log")
 
+    plt.title(f"{sample_name}\nlow_depth cutoff: {dist_df['depth_cutoff_low'].iloc[0]:.2f}, large clone definition: {dist_df['large_clone_definition'].iloc[0]:.2e}")
     ax.legend(frameon=False)
     sns.despine()
     plt.tight_layout()
@@ -275,7 +284,7 @@ def main(mutdensities, mutations, depth_sample):
 
     mutations_plus_info = all_mutations_table.merge(priors_n_depth, on='SAMPLE_ID', how='left')
     mutations_plus_info = mutations_plus_info[['SAMPLE_ID', 'MUT_ID', 'prior', 'avg_depth_sample'] + [x for x in all_mutations_table.columns if x not in ['SAMPLE_ID', 'MUT_ID', 'prior', 'avg_depth_sample']]]
-    mutations_plus_info.to_csv(f"mutations_with_smoothed_VAF.tsv",
+    mutations_plus_info.to_csv(f"mutations_with_smoothed_VAF.tsv.gz",
                                 header=True,
                                 index=False,
                                 sep="\t")
@@ -294,6 +303,28 @@ def main(mutdensities, mutations, depth_sample):
         plot_vaf_pseudocount_curve(all_mutations_table, samples_list, priors_per_sample, pdf, suffix='_AM')
 
         weights = [0, 0.2, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]
+        for sample in samples_list:
+            sample_mutations = all_mutations_table[all_mutations_table['SAMPLE_ID'] == sample]
+            dist_df = calc_vaf_distance_summary(
+                sample_mutations,
+                weights=weights,
+                vaf_col="VAF",
+                target_col="VAF_AM",
+                pseudo_prefix="VAF_PSEUDO",
+                depth_col="DEPTH",
+                depth_quantile=0.2,
+                large_clone_quantile=0.95,
+            )
+
+            fig, ax = plot_vaf_distance_summary(
+                dist_df,
+                log_dist=False,   
+                use_mean=False,
+                log_y=False,
+                sample_name = sample
+            )
+            pdf.savefig()
+            plt.close()
 
         dist_df = calc_vaf_distance_summary(
             all_mutations_table,
@@ -303,14 +334,15 @@ def main(mutdensities, mutations, depth_sample):
             pseudo_prefix="VAF_PSEUDO",
             depth_col="DEPTH",
             depth_quantile=0.2,
-            large_clone_threshold=1e-2,
+            large_clone_quantile=0.95,
         )
 
         fig, ax = plot_vaf_distance_summary(
             dist_df,
             log_dist=False,   
             use_mean=False,
-            log_y=False
+            log_y=False,
+            sample_name = 'all_samples'
         )
         pdf.savefig()
         plt.close()
