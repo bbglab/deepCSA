@@ -96,15 +96,17 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { MAF_2_VCF                     as INPUTMAF2VCF             } from '../modules/local/maf2vcf/main'
-include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../modules/local/table2groups/main'
-include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
-include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
+include { MAF_2_VCF                     as INPUTMAF2VCF                 } from '../modules/local/maf2vcf/main'
+include { TABLE_2_GROUP                 as TABLE2GROUP                  } from '../modules/local/table2groups/main'
+include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS               } from '../modules/local/annotatedepth/main'
+include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS             } from '../modules/local/downsample/depths/main'
 include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHSALLSAMPLES   } from '../modules/local/downsample/depths/main'
 
 include { TABIX_BGZIPTABIX_QUERY        as QUERYMUTATIONSEXONS          } from '../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { ANALYZE_DEPTHS_GROUPS         as ANALYZEDEPTHSGROUPS          } from '../modules/local/analyzedepths/main'
+
+include { VAF_SMOOTHING                 as VAFSMOOTHING                 } from '../modules/local/vaf_smoothing/main'
 
 include { SELECT_MUTDENSITIES           as SYNMUTDENSITY                } from '../modules/local/select_mutdensity/main'
 include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY           } from '../modules/local/select_mutdensity/main'
@@ -379,6 +381,11 @@ workflow DEEPCSA {
         SYNMUTDENSITY(all_samples_syn_mutdensity)
 
         SYNMUTREADSDENSITY(all_samples_syn_mutdensity)
+
+        channel.of([ [ id: "all_samples" ] ])
+        .join( somatic_mutations )
+        .set{ mutations_all_samples }
+        VAFSMOOTHING(mutations_all_samples, all_mutdensities_file)
 
     }
 
