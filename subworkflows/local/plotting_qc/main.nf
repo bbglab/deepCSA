@@ -30,6 +30,8 @@ workflow PLOTTING_QC {
 
     main:
 
+    dndscv_channel  = dndscv_cv ?: channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
+
     // Channel.of([ [ id: "all_samples" ] ])
     // .join( all_mutations )
     // .set{ mutations }
@@ -59,17 +61,10 @@ workflow PLOTTING_QC {
     PLOTOMEGAVSGLOBALVSDNDSCV(
         all_omegas, 
         all_omegas_globalloc,
-        dndscv_cv, 
+        dndscv_channel, 
         APPLYOMEGAQC.out.flagged_synonymous_cases, 
         groups_only_definition)
     
-    // // Only run omega vs dndscv QC plot when dndscv results are available
-    // omega_vs_dndscv_plots = channel.empty()
-    // if (params.dnds) {
-    //     PLOTOMEGAVSDNDSCV(all_omegas, dndscv_cv, APPLYOMEGAQC.out.flagged_synonymous_cases, groups_only_definition)
-    //     omega_vs_dndscv_plots = PLOTOMEGAVSDNDSCV.out.plots
-    // }
-
     emit:
     mutdensity_plots                  = PLOTMUTDENSITYQC.out.plots
     metrics_vs_depth_plots            = PLOTMETRICSVSDEPTHQC.out.plots

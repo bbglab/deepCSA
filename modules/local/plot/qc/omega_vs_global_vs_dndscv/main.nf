@@ -17,11 +17,12 @@ process PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV {
     path "versions.yml" , topic: versions
 
     script:
+    def dndscv_flag = params.dnds ? "--input-dndscv-file ${dndscv_cv}" : ""
     """
     omega_vs_global_vs_dndscv_qc.py \\
                     --input-omega-file ${all_omegas} \\
                     --input-omegaglobal-file ${all_omegas_globalloc} \\
-                    --input-dndscv-file ${dndscv_cv} \\
+                    ${dndscv_flag} \\
                     --output-dir . \\
                     --flagged-genes-omega ${compiled_flagged} \\
                     --defined-groups ${groups_json}
