@@ -30,7 +30,7 @@ workflow PLOTTING_QC {
 
     main:
 
-    dndscv_channel  = dndscv_cv ?: channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
+    dndscv_channel  = params.dnds ? dndscv_cv : channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true)) 
 
     // Channel.of([ [ id: "all_samples" ] ])
     // .join( all_mutations )
