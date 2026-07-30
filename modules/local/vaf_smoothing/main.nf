@@ -10,9 +10,9 @@ process VAF_SMOOTHING {
     tuple val(meta2), path(average_depth_sample) 
     
     output:
-    path("*.tsv.gz")        , emit: smoothed_vaf_tables
-    path("*.pdf")           , emit: plots
-    path  "versions.yml"    , topic: versions
+    path("*.tsv.gz")                        , emit: smoothed_vaf_tables
+    path("*.pdf")           , optional: true, emit: plots
+    path  "versions.yml"                    , topic: versions
 
     script:
     """

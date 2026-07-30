@@ -302,11 +302,33 @@ def main(mutdensities, mutations, depth_sample):
         plot_vaf_pseudocount_curve(all_mutations_table, samples_list, priors_per_sample, pdf, suffix='')
         plot_vaf_pseudocount_curve(all_mutations_table, samples_list, priors_per_sample, pdf, suffix='_AM')
 
-        weights = [0, 0.2, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]
-        for sample in samples_list:
-            sample_mutations = all_mutations_table[all_mutations_table['SAMPLE_ID'] == sample]
+        try :
+            weights = [0, 0.2, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]
+            for sample in samples_list:
+                sample_mutations = all_mutations_table[all_mutations_table['SAMPLE_ID'] == sample]
+                dist_df = calc_vaf_distance_summary(
+                    sample_mutations,
+                    weights=weights,
+                    vaf_col="VAF",
+                    target_col="VAF_AM",
+                    pseudo_prefix="VAF_PSEUDO",
+                    depth_col="DEPTH",
+                    depth_quantile=0.2,
+                    large_clone_quantile=0.95,
+                )
+
+                fig, ax = plot_vaf_distance_summary(
+                    dist_df,
+                    log_dist=False,   
+                    use_mean=False,
+                    log_y=False,
+                    sample_name = sample
+                )
+                pdf.savefig()
+                plt.close()
+
             dist_df = calc_vaf_distance_summary(
-                sample_mutations,
+                all_mutations_table,
                 weights=weights,
                 vaf_col="VAF",
                 target_col="VAF_AM",
@@ -321,31 +343,13 @@ def main(mutdensities, mutations, depth_sample):
                 log_dist=False,   
                 use_mean=False,
                 log_y=False,
-                sample_name = sample
+                sample_name = 'all_samples'
             )
             pdf.savefig()
             plt.close()
 
-        dist_df = calc_vaf_distance_summary(
-            all_mutations_table,
-            weights=weights,
-            vaf_col="VAF",
-            target_col="VAF_AM",
-            pseudo_prefix="VAF_PSEUDO",
-            depth_col="DEPTH",
-            depth_quantile=0.2,
-            large_clone_quantile=0.95,
-        )
-
-        fig, ax = plot_vaf_distance_summary(
-            dist_df,
-            log_dist=False,   
-            use_mean=False,
-            log_y=False,
-            sample_name = 'all_samples'
-        )
-        pdf.savefig()
-        plt.close()
+        except Exception as e:
+            click.echo(f"Error in plotting VAF distance summary: {e}")
 
 
 if __name__ == '__main__':
