@@ -252,7 +252,6 @@ def main(outdir, panel_regions, samples_json, all_groups_json, mutdensities, adj
     except Exception as e:
         print("Error in the process", e)
 
-
 if __name__ == '__main__':
     main()
 
