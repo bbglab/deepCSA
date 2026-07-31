@@ -1,3 +1,6 @@
+#!/opt/conda/bin/Rscript --vanilla
+
+
 library(Hmisc)
 library(tidyr)
 library(stringr)
@@ -9,18 +12,43 @@ library(data.table)
 
 ## Read it from a TSV and format it as json
 
+## command line arguments
+option_list = list(
+  make_option(c("-n", "--samplename"), type="character", default=NULL,
+              help="sample name/identifier of the run", metavar="character"),
+  make_option(c("-m", "--mutations"), type="character", default=NULL,
+              help="mutation dataset file name", metavar="character"),
+  make_option(c("-o", "--outputprefix"), type="character", default="dNdScv_output",
+              help="output file name [default= %default]", metavar="character"),
+  make_option(c("-depths", "--depths"), type="character", default=NULL,
+              help="depths dataset file name", metavar="character"),
+  make_option(c("-consensus", "--consensus_bed"), type="character", default=NULL,
+              help="consensus bed file name", metavar="character"),
+  make_option(c("-wgs", "--wgs_counts"), type="character", default=NULL,
+              help="WGS trinucleotide counts file name", metavar="character")
+);
 
-deepCSA_run_dir <- '.'
-sample_name
-depths              ## depths/individual/{sample}.depths.annotated.tsv.gz
-mutations           ## mutations/clean_somatic/{sample}
-consensus_bed       ## regions/consensuspanels/consensus.all.bed
-genome_content_json ## <- "../data/genome_counts_tribases.json"
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
 
+
+sample_name <- opt$samplename
+mutations <- opt$mutations
+depths <- opt$depths
+consensus_bed <- opt$consensus_bed
+wgs_counts <- opt$wgs_counts
+output_name <- opt$outputprefix
+
+print(paste("Sample name: ", sample_name))
+print(paste("Mutations file: ", mutations))
+print(paste("Depths file: ", depths))
+print(paste("Consensus bed file: ", consensus_bed))
+print(paste("WGS counts file: ", wgs_counts))
+print(paste("Output name: ", output_name))
 
 path2out = "wgs_mutrate"
 
-get_genome_content <- function(genome_content_json){
+get_genome_content <- function(genome_content){
   #' Get genome trinucleotide content
   #'
   #' This function reads trinucleotide counts from a JSON genome composition file
@@ -28,20 +56,10 @@ get_genome_content <- function(genome_content_json){
 
   #' As input uses path to the json file with genome trinucleotide content
 
-  genome_json <- read_json(genome_content_json)
-  df_sites_genome <- data.frame(Context = names(genome_json), sites = unlist(genome_json), stringsAsFactors = FALSE)
-  df_sites_genome <- df_sites_genome %>%
-    filter(!grepl("N",Context))
-  df_sites_genome$Compl_context <- as.character(reverseComplement(DNAStringSet(df_sites_genome$Context)))
-  df_sites_genome$CONTEXT <- ifelse(substr(df_sites_genome$Context,2,2) %in% c("T","C"),
-                       df_sites_genome$Context,
-                       df_sites_genome$Compl_context)
-  df_sites_genome_agg = df_sites_genome %>%
-    group_by(CONTEXT) %>% 
-    summarise(N_sites_genome= sum(sites))
-  df_sites_genome_agg <- as.data.frame(df_sites_genome_agg)  
-  message("Contexts in genome sites = ", nrow(df_sites_genome_agg))
-  return(df_sites_genome_agg)
+  counts_df <- read.table(genome_content, header=TRUE, sep="\t")
+  colnames(counts_df) <- c("CONTEXT", "N_sites_genome")
+  message("Contexts in genome sites = ", nrow(counts_df))
+  return(counts_df)
 }  
 
 
@@ -75,10 +93,13 @@ get_mutations_and_sites <- function(sample_name, sites_file, mutations_file, con
   print(sample_name)
 
   df_sites = get_consensus_sites_depth(sample_name, sites_file, consensus_bed)
+  print("1")
   df_sites$depth = as.numeric(df_sites$DEPTH)
+  print("2")
   df_sites_panel_agg = df_sites %>%
     group_by(CONTEXT) %>% 
     summarise(N = sum(DEPTH))
+  print("3")
   df_sites_panel_agg = as.data.frame(df_sites_panel_agg)
   colnames(df_sites_panel_agg) <- c("CONTEXT", "N_sites_panel")
   message("Contexts in panel sites = ", nrow(df_sites_panel_agg))
@@ -116,7 +137,7 @@ get_mutations_and_sites <- function(sample_name, sites_file, mutations_file, con
 }
 
 #Download df with genome trinucleotide contexts
-df_sites_genome_agg <- get_genome_content(genome_content_json)
+df_sites_genome_agg <- get_genome_content(wgs_counts)
 
 #Get number of mutations and normalize panel contetnt to genome content
 result <- get_mutations_and_sites(sample_name, depths, mutations, consensus_bed, df_sites_genome_agg)
@@ -137,12 +158,8 @@ result$mutrate_CI_low <- apply(result, 1, function(x) binconf(as.numeric(x["N_mu
 result$Muts_per_cell <- result$mutrate_observed*2*sum(df_sites_genome_agg$N_sites_genome)
 print((result))
 
-message("Output will be written to ", path2out)
-if (!dir.exists(path2out)) {
-  dir.create(path2out, recursive = TRUE)
-}
-
-write.csv(result, paste0(path2out,"/", sample_name, "_mutrates_results.tsv"),row.names = FALSE, quote = FALSE)
+message("Output will be written to ", paste0(output_name, "_mutrates_results.tsv"))
+write.csv(result, paste0(output_name, "_mutrates_results.tsv"),row.names = FALSE, quote = FALSE)
 
 # setwd(path2out)
 
