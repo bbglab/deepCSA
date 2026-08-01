@@ -8,6 +8,8 @@ library(dplyr, warn = FALSE)
 library(ggplot2)
 library(jsonlite)
 library(Biostrings)
+library(optparse)
+library(R.utils)
 library(data.table)
 
 ## Read it from a TSV and format it as json
@@ -20,11 +22,11 @@ option_list = list(
               help="mutation dataset file name", metavar="character"),
   make_option(c("-o", "--outputprefix"), type="character", default="dNdScv_output",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-depths", "--depths"), type="character", default=NULL,
+  make_option(c("-d", "--depths"), type="character", default=NULL,
               help="depths dataset file name", metavar="character"),
-  make_option(c("-consensus", "--consensus_bed"), type="character", default=NULL,
+  make_option(c("-c", "--consensus_bed"), type="character", default=NULL,
               help="consensus bed file name", metavar="character"),
-  make_option(c("-wgs", "--wgs_counts"), type="character", default=NULL,
+  make_option(c("-w", "--wgs_counts"), type="character", default=NULL,
               help="WGS trinucleotide counts file name", metavar="character")
 );
 
@@ -156,6 +158,7 @@ result$mutrate_observed_per_MB <- result$mutrate_observed * 10**6
 result$mutrate_CI_high <- apply(result, 1, function(x) binconf(as.numeric(x["N_mut_corrected"]), as.numeric(x["DEPTH"]), alpha=0.05, method=c("wilson","exact","asymptotic","all"), include.x=FALSE, include.n=FALSE, return.df=FALSE)[3])
 result$mutrate_CI_low <- apply(result, 1, function(x) binconf(as.numeric(x["N_mut_corrected"]), as.numeric(x["DEPTH"]), alpha=0.05, method=c("wilson","exact","asymptotic","all"), include.x=FALSE, include.n=FALSE, return.df=FALSE)[2])
 result$Muts_per_cell <- result$mutrate_observed*2*sum(df_sites_genome_agg$N_sites_genome)
+result$computation_type <- output_name
 print((result))
 
 message("Output will be written to ", paste0(output_name, "_mutrates_results.tsv"))

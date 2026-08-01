@@ -366,10 +366,10 @@ workflow DEEPCSA {
 
     if (run_mutdensity){
         // Mutation Density
-        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel, samples_keys_ch, wgs_trinucs)
-        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel, samples_keys_ch, wgs_trinucs)
-        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel, samples_keys_ch, wgs_trinucs)
-        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel, samples_keys_ch, wgs_trinucs)
+        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
+        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
+        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
+        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
 
         // Concatenate all outputs into a single file
         channel.empty()

@@ -14,6 +14,7 @@ workflow MUTATION_DENSITY{
     panel
     samples_ch
     wgs_trinucs
+    raw_depth
 
     main:
 
@@ -28,10 +29,11 @@ workflow MUTATION_DENSITY{
 
     MUTDENSITY(mutations_n_depth, panel)
 
-    mutations_n_depth
+    QUERYMUTATIONS.out.subset
     .map { mut -> tuple(mut[0].id, mut) }
     .join(samples_ch)
     .map { it -> it[1] }
+    .join(raw_depth)
     .set{ mutations_n_depths_samples}
     WGSCALEDMUTDENSITY(mutations_n_depths_samples, bedfile, wgs_trinucs)
 
