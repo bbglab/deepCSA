@@ -27,7 +27,9 @@ option_list = list(
   make_option(c("-c", "--consensus_bed"), type="character", default=NULL,
               help="consensus bed file name", metavar="character"),
   make_option(c("-w", "--wgs_counts"), type="character", default=NULL,
-              help="WGS trinucleotide counts file name", metavar="character")
+              help="WGS trinucleotide counts file name", metavar="character"),
+  make_option(c("-p", "--panel_version"), type="character", default=NULL,
+              help="panel version", metavar="character")
 );
 
 opt_parser = OptionParser(option_list=option_list);
@@ -40,6 +42,7 @@ depths <- opt$depths
 consensus_bed <- opt$consensus_bed
 wgs_counts <- opt$wgs_counts
 output_name <- opt$outputprefix
+panel_version <- opt$panel_version
 
 print(paste("Sample name: ", sample_name))
 print(paste("Mutations file: ", mutations))
@@ -47,6 +50,7 @@ print(paste("Depths file: ", depths))
 print(paste("Consensus bed file: ", consensus_bed))
 print(paste("WGS counts file: ", wgs_counts))
 print(paste("Output name: ", output_name))
+print(paste("Panel version: ", panel_version))
 
 path2out = "wgs_mutrate"
 
@@ -158,11 +162,11 @@ result$mutrate_observed_per_MB <- result$mutrate_observed * 10**6
 result$mutrate_CI_high <- apply(result, 1, function(x) binconf(as.numeric(x["N_mut_corrected"]), as.numeric(x["DEPTH"]), alpha=0.05, method=c("wilson","exact","asymptotic","all"), include.x=FALSE, include.n=FALSE, return.df=FALSE)[3])
 result$mutrate_CI_low <- apply(result, 1, function(x) binconf(as.numeric(x["N_mut_corrected"]), as.numeric(x["DEPTH"]), alpha=0.05, method=c("wilson","exact","asymptotic","all"), include.x=FALSE, include.n=FALSE, return.df=FALSE)[2])
 result$Muts_per_cell <- result$mutrate_observed*2*sum(df_sites_genome_agg$N_sites_genome)
-result$computation_type <- output_name
+result$panel_version <- panel_version
 print((result))
 
 message("Output will be written to ", paste0(output_name, "_mutrates_results.tsv"))
-write.csv(result, paste0(output_name, "_mutrates_results.tsv"),row.names = FALSE, quote = FALSE)
+write.table(result, paste0(output_name, "_mutrates_results.tsv"), sep="\t", row.names = FALSE, quote = FALSE)
 
 # setwd(path2out)
 

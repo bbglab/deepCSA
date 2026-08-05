@@ -23,6 +23,7 @@ process WG_SCALED_MUTATION_DENSITY {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
+    def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
     mutrate_genome_trinuc_corrected.R \\
         --samplename ${meta.id} \\
@@ -30,7 +31,8 @@ process WG_SCALED_MUTATION_DENSITY {
         --depths ${depths_file} \\
         --consensus_bed ${consensus_bed_all} \\
         --wgs_counts ${wgs_counts} \\
-        --outputprefix ${prefix}
+        --outputprefix ${prefix} \\
+        --panel_version ${panel_version}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
