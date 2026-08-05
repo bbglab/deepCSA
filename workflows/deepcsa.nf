@@ -162,6 +162,7 @@ workflow DEEPCSA {
     all_mutdensities_file           = channel.empty()
     all_adjusted_mutdensities_file  = channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
     all_compiled_stabilities        = channel.empty()
+    dndscv_table                    = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -323,7 +324,7 @@ workflow DEEPCSA {
             // Concatenate all outputs into a single file
             MUTDENSITYADJUSTED.out.mutdensities.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities }
-            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true).set{ all_adjusted_mutdensities_file }
+            all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true).first().set{ all_adjusted_mutdensities_file }
 
             MUTDENSITYADJUSTED.out.mutdensities_flat.map{ it -> it[1]}.flatten()
             .set{ all_adjusted_mutdensities_flat }
@@ -358,10 +359,10 @@ workflow DEEPCSA {
 
     if (run_mutdensity){
         // Mutation Density
-        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel.first())
-        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel.first())
-        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel.first())
-        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel.first())
+        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel)
+        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel)
+        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel)
+        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel)
 
         // Concatenate all outputs into a single file
         channel.empty()
@@ -451,6 +452,7 @@ workflow DEEPCSA {
                     CREATEPANELS.out.exons_consensus_panel,
                     params.fasta
                     )
+        dndscv_table = DNDS.out.all_dndscv_results
     }
 
     if (params.omega){
@@ -461,8 +463,8 @@ workflow DEEPCSA {
         OMEGA(mutations_in_exons,
                 DEPTHSEXONSCONS.out.subset,
                 MUTPROFILEALL.out.profile,
-                CREATEPANELS.out.exons_consensus_bed.first(),
-                ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
+                CREATEPANELS.out.exons_consensus_bed,
+                ENRICHPANELS.out.exons_consensus_expanded_panel,
                 custom_groups_table,
                 SYNMUTDENSITY.out.mutdensity.first(),
                 CREATEPANELS.out.panel_annotated_rich,
@@ -477,7 +479,7 @@ workflow DEEPCSA {
         }
         if (params.omega_globalloc){
             positive_selection_results = positive_selection_results.join(OMEGA.out.results_global, remainder: true)
-            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled
+            all_compiled_omegasgloballoc = OMEGA.out.all_globalloc_compiled.first()
         }
 
         if (params.regressions){
@@ -491,8 +493,8 @@ workflow DEEPCSA {
               OMEGAMULTI(mutations_in_exons,
                           DEPTHSEXONSCONS.out.subset,
                           MUTPROFILEALL.out.profile,
-                          CREATEPANELS.out.exons_consensus_bed.first(),
-                          ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
+                          CREATEPANELS.out.exons_consensus_bed,
+                          ENRICHPANELS.out.exons_consensus_expanded_panel,
                           custom_groups_table,
                           SYNMUTREADSDENSITY.out.mutdensity.first(),
                           CREATEPANELS.out.panel_annotated_rich,
@@ -513,8 +515,8 @@ workflow DEEPCSA {
             OMEGANONPROT(mutations_in_exons,
                             DEPTHSEXONSCONS.out.subset,
                             MUTPROFILENONPROT.out.profile,
-                            CREATEPANELS.out.exons_consensus_bed.first(),
-                            ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
+                            CREATEPANELS.out.exons_consensus_bed,
+                            ENRICHPANELS.out.exons_consensus_expanded_panel,
                             custom_groups_table,
                             SYNMUTDENSITY.out.mutdensity.first(),
                             CREATEPANELS.out.panel_annotated_rich,
@@ -527,8 +529,8 @@ workflow DEEPCSA {
                 OMEGANONPROTMULTI(mutations_in_exons,
                                     DEPTHSEXONSCONS.out.subset,
                                     MUTPROFILENONPROT.out.profile,
-                                    CREATEPANELS.out.exons_consensus_bed.first(),
-                                    ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
+                                    CREATEPANELS.out.exons_consensus_bed,
+                                    ENRICHPANELS.out.exons_consensus_expanded_panel,
                                     custom_groups_table,
                                     SYNMUTREADSDENSITY.out.mutdensity.first(),
                                     CREATEPANELS.out.panel_annotated_rich,
@@ -604,8 +606,8 @@ workflow DEEPCSA {
     PLOTTINGQC(
                 somatic_mutations,
                 all_mutdensities_file.first(),
-                all_adjusted_mutdensities_file.first(),
-                all_compiled_omegasgloballoc.first(),
+                all_adjusted_mutdensities_file,
+                all_compiled_omegasgloballoc,
                 PLOTDEPTHSEXONSCONS.out.average_depth_gene_sample.first(),
                 all_compiled_omegas,
                 // site_comparison_results,
@@ -613,7 +615,9 @@ workflow DEEPCSA {
                 // TABLE2GROUP.out.json_allgroups,
                 CREATEPANELS.out.exons_consensus_panel,
                 TABLE2GROUP.out.json_allgroups.first(),
-                group_keys_ch
+                group_keys_ch,
+                dndscv_table,
+                TABLE2GROUP.out.json_groups.first(),
                 // CREATEPANELS.out.panel_annotated_rich,
                 // seqinfo_df,
                 // CREATEPANELS.out.domains_in_panel,
@@ -638,19 +642,19 @@ workflow DEEPCSA {
         PLOTTINGSUMMARY(positive_selection_results_ready,
                         somatic_mutations,
                         all_mutdensities_file.first(),
-                        all_adjusted_mutdensities_file.first(),
+                        all_adjusted_mutdensities_file,
                         site_comparison_results,
                         ANNOTATEDEPTHS.out.all_samples_depths.first(),
                         TABLE2GROUP.out.json_samples.first(),
                         TABLE2GROUP.out.json_allgroups.first(),
 
-                        CREATEPANELS.out.exons_consensus_panel.first(),
-                        ENRICHPANELS.out.exons_consensus_expanded_panel.first(),
-                        CREATEPANELS.out.panel_annotated_rich.first(),
+                        CREATEPANELS.out.exons_consensus_panel,
+                        ENRICHPANELS.out.exons_consensus_expanded_panel,
+                        CREATEPANELS.out.panel_annotated_rich,
 
                         seqinfo_df,
-                        CREATEPANELS.out.domains_in_panel.first(),
-                        ENRICHPANELS.out.dna2protein_mapping_depth_exons.first(),
+                        CREATEPANELS.out.domains_in_panel,
+                        ENRICHPANELS.out.dna2protein_mapping_depth_exons,
                         group_keys_ch
                         )
     }

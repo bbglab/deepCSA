@@ -63,7 +63,7 @@ workflow MUTATION_PREPROCESSING {
         CUSTOMANNOTATION(SUMANNOTATION.out.tab, custom_annotation_tsv)
         summary_of_mutations = CUSTOMANNOTATION.out.mutations.first()
     } else {
-        summary_of_mutations = SUMANNOTATION.out.tab.first()
+        summary_of_mutations = SUMANNOTATION.out.tab
     }
 
     VCF2MAF(vcfs, summary_of_mutations)

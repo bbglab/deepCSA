@@ -106,14 +106,10 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         sns.boxplot(data = bed6_probesByGene_df,
                     x = "GENE", y = "MEAN_GENE_DEPTH",
                     ax = ax2, showfliers = False,
-                    # order = panel, palette = colors
                 )
         sns.stripplot(data = bed6_probesByGene_df,
                     x = "GENE", y = "MEAN_GENE_DEPTH",
                     ax = ax2,
-                    # order = panel, palette = colors
-                    # hue = "PROJECT_NAME",
-                    # palette = colors,
                     jitter = True,
                     alpha = 0.5, size = 4)
         ax2.set_title("Depth per GENE")
@@ -512,14 +508,15 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
     """
     depth_df, samples_list, avgdepth_per_sample_names, bed6_probes_df, bed6_probesByGene_df, genes_list = load_depths_and_panel(sample_name, depth_file, panel_bed6_file)
 
-    general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list)
+    if len(samples_list) < 200 and len(genes_list) < 200:
+        general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list)
 
-    ####
-    ## Until here all the plots and all the information was at the gene or sample level.
-    # Now it starts to contain within gene information, exons, normalized scores, ...
-    ####
-    if plot_within_gene:
-        process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names)
+        ####
+        ## Until here all the plots and all the information was at the gene or sample level.
+        # Now it starts to contain within gene information, exons, normalized scores, ...
+        ####
+        if plot_within_gene:
+            process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names)
 
 
 

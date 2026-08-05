@@ -20,6 +20,7 @@ include { PLOT_OMEGA                as PLOTOMEGAGLOBALLOC               } from '
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { OMEGA_MULTITEST           as OMEGAMULTIPLETESTGLOBALLOC       } from '../../../modules/local/omega_multipletesting/main'
+include { HOTSPOTS_SELECTION        as HOTSPOTSSELECTION                } from '../../../modules/local/hotspots_selection/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -109,7 +110,7 @@ workflow OMEGA_ANALYSIS{
 
         PREPROCESSINGGLOBALLOC(muts_n_depths_n_profile,
                                 expanded_panel,
-                                mutationdensities.first(),
+                                mutationdensities,
                                 all_samples_mut_profile)
 
         PREPROCESSINGGLOBALLOC.out.mutabs_n_mutations_tsv
@@ -172,6 +173,17 @@ workflow OMEGA_ANALYSIS{
         def all_files = it[1..-1].flatten()
         [meta, all_files]
     }.set{ site_comparison_results_flattened }
+
+    if (params.hotspots_annotation && params.hotspots_definition_file) {
+        hotspots_file = channel.fromPath(params.hotspots_definition_file, checkIfExists: true).first()
+        
+        HOTSPOTSSELECTION(
+            site_comparison_results,
+            QUERYPANEL.out.subset.first(),
+            hotspots_file
+        )
+        // If needed, we can also collect or emit these results
+    }
 
 
     ESTIMATOR.out.results.map{ it -> it[1]}.flatten().set{ all_indv_results }
