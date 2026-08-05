@@ -380,6 +380,16 @@ workflow DEEPCSA {
         .set{ all_mutdensities }
         all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
 
+        // Concatenate all outputs into a single file
+        channel.empty()
+        .concat(MUTDENSITYALL.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYPROT.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYNONPROT.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYSYNONYMOUS.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .set{ all_mutdensities_wgs }
+        all_mutdensities_wgs.collectFile(name: "all_mutdensities_wgs.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_wgs_file }
+
+
         channel.of([ [ id: "all_samples" ] ])
         .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
         .set{ all_samples_syn_mutdensity }

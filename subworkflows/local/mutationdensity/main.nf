@@ -40,4 +40,5 @@ workflow MUTATION_DENSITY{
 
     emit:
     mutdensities = MUTDENSITY.out.mutdensities
+    mutdensities_wgs = WGSCALEDMUTDENSITY.out.adjusted_mutrate
 }
