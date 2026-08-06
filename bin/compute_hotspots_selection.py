@@ -12,15 +12,12 @@ from omega_comparison_per_site import poisson_pvalue, benjamini_hochberg
 
 def load_panel_hotspots(panel_file, hotspots_file):
     panel = pd.read_csv(panel_file, sep="\t", compression="gzip")
-    hotspots = pd.read_csv(hotspots_file, sep="\t")
-    
-    # Merge hotspots with panel to find which sites are hotspots
-    # Hotspots have CHROM, POS, MUTTYPE. MUTTYPE is REF>ALT.
-    hotspots['REF'] = hotspots['MUTTYPE'].str.split('>').str[0]
-    hotspots['ALT'] = hotspots['MUTTYPE'].str.split('>').str[1]
-    
+    panel["MUTTYPE"] = panel["CONTEXT_MUT"].str[1] + panel["CONTEXT_MUT"].str[-2:]
+
+    hotspots = pd.read_csv(hotspots_file, sep="\t").drop_duplicates()
+
     # Some hotspots might have MUTTYPE = '-' for non-SNV, but let's assume standard format for now
-    hotspots_panel = panel.merge(hotspots, on=['CHROM', 'POS', 'REF', 'ALT'], how='inner')
+    hotspots_panel = panel.merge(hotspots, on=['CHROM', 'POS', 'MUTTYPE'], how='inner')
     
     return hotspots_panel
 
