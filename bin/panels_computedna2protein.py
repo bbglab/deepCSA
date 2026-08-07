@@ -568,7 +568,7 @@ def plot_coverage_per_gene(depths_df: pd.DataFrame) -> None:
         plot_single_coverage(coverage_summary, prefix)
 
 
-def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size: int = 5):
+def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size: int = 40):
     """
     Plot coverage for a single prefix (DNA, protein or exon) and save the results in a PDF file.
 
@@ -579,7 +579,7 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
     prefix : str
         The prefix to plot (DNA, Protein or Exon).
     batch_size : int, optional
-        The number of genes to include in each batch when plotting (default is 5).
+        The number of genes to include in each batch when plotting (default is 40).
     """
     # Generate copy of the coverage summary to avoid modifying the original DataFrame
     coverage_summary_cp = coverage_summary.copy()
@@ -594,7 +594,7 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
 
     if len(genes_list) < batch_size:
 
-        fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+        fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
 
         covered_col = True if True in coverage_pivot.columns else (1 if 1 in coverage_pivot.columns else coverage_pivot.columns[-1])
 
@@ -624,7 +624,7 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
                 batch_coverage_pivot = coverage_pivot.loc[batch_genes]
                 batch_coverage_perc = coverage_perc.loc[batch_genes]
 
-                fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+                fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
 
                 covered_col = True if True in batch_coverage_pivot.columns else (1 if 1 in batch_coverage_pivot.columns else batch_coverage_pivot.columns[-1])
 
