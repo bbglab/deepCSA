@@ -29,8 +29,8 @@ process VAF_SMOOTHING {
 
     stub:
     """
-    touch vaf_smoothing.pdf
-    touch smoothed_VAFs.tsv
+    touch vaf_pseudocounts_curves.pdf
+    touch mutations_with_smoothed_VAF.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
