@@ -28,13 +28,13 @@ def compute_priors(mutdensity_file, samples):
                                      & (mutdensity_df["SAMPLE_ID"].isin(samples))
                                      ].reset_index(drop = True)
     npa_mutdensities['prior'] = npa_mutdensities['N_MUTATED'] / npa_mutdensities['DEPTH']
-    npa_mutdensities_values = npa_mutdensities[['SAMPLE_ID', 'prior']]
+    npa_priors = npa_mutdensities[['SAMPLE_ID', 'prior']]
 
-    npa_mutdensities_values.to_csv(f"sample_specific_priors.tsv.gz",
-                                   header=True,
-                                   index=False,
-                                   sep="\t")
-    return npa_mutdensities_values
+    # npa_priors.to_csv(f"sample_specific_priors.tsv.gz",
+    #                                header=True,
+    #                                index=False,
+    #                                sep="\t")
+    return npa_priors
 
 
 
@@ -55,7 +55,6 @@ def apply_correction_per_sample(mutations_table, priors_per_sample, depths_per_s
         ].copy()
         sample_depths = depths_per_sample[depths_per_sample['SAMPLE_ID'] == sample_id]
         average_depth = sample_depths['avg_depth_sample'].values[0]
-
         for weight_prop in weights_list:
             weight = weight_prop * average_depth // 1
             sample_mutations[f'VAF_PSEUDO_{weight_prop}'] = vaf_pseudocount(
@@ -90,10 +89,11 @@ def plot_vaf_pseudocount_curve(maf_df, samples, prior_vafs, output_pdf, suffix='
         MAF dataframe containing VAF and VAF_AM columns
     """
 
-    
+    n_cols = 5 if len(weights_list) > 9 else 3
+    n_rows = len(weights_list) // n_cols if len(weights_list) % n_cols == 0 else len(weights_list) // n_cols + 1
     for sample in samples:
-        fig, axes = plt.subplots(3, len(weights_list)//3 if len(weights_list)%3 == 0 else len(weights_list)//3 + 1,
-                                 figsize=(8, 8), sharex=True, sharey=True)
+        fig, axes = plt.subplots(n_rows, n_cols,
+                                 figsize=(n_cols * 2.5, n_rows * 2.5), sharex=True, sharey=True)
         axes = axes.flatten()
         fig.suptitle(f'{sample} : VAF{suffix} with pseudocounts')
 
@@ -152,14 +152,21 @@ def calc_vaf_distance_summary(
     print(f"Large clones ALTDEPTH: {df_large_ALTDEPTH.shape[0]}")
 
     # Reference: original VAF vs target VAF
-    ref_dist_log_low_depth = np.abs(np.log10(df_low_depth[vaf_col]) - np.log10(df_low_depth[target_col])).sum()
-    ref_dist_low_depth = np.abs(df_low_depth[vaf_col] - df_low_depth[target_col]).sum()
+    ref_dist_log_low_depth_sum = np.abs(np.log10(df_low_depth[vaf_col]) - np.log10(df_low_depth[target_col])).sum()
+    ref_dist_low_depth_sum = np.abs(df_low_depth[vaf_col] - df_low_depth[target_col]).sum()
+    ref_dist_log_low_depth_mean = np.abs(np.log10(df_low_depth[vaf_col]) - np.log10(df_low_depth[target_col])).mean()
+    ref_dist_low_depth_mean = np.abs(df_low_depth[vaf_col] - df_low_depth[target_col]).mean()
 
-    ref_dist_log_large = np.abs(np.log10(df_large[vaf_col]) - np.log10(df_large[target_col])).sum()
-    ref_dist_large = np.abs(df_large[vaf_col] - df_large[target_col]).sum()
 
-    ref_dist_log_largeALTDEPTH = np.abs(np.log10(df_large_ALTDEPTH[vaf_col]) - np.log10(df_large_ALTDEPTH[target_col])).sum()
-    ref_dist_largeALTDEPTH = np.abs(df_large_ALTDEPTH[vaf_col] - df_large_ALTDEPTH[target_col]).sum()
+    ref_dist_log_large_sum = np.abs(np.log10(df_large[vaf_col]) - np.log10(df_large[target_col])).sum()
+    ref_dist_log_large_mean = np.abs(np.log10(df_large[vaf_col]) - np.log10(df_large[target_col])).mean()
+    ref_dist_large_sum = np.abs(df_large[vaf_col] - df_large[target_col]).sum()
+    ref_dist_large_mean = np.abs(df_large[vaf_col] - df_large[target_col]).mean()
+
+    ref_dist_log_largeALTDEPTH_sum = np.abs(np.log10(df_large_ALTDEPTH[vaf_col]) - np.log10(df_large_ALTDEPTH[target_col])).sum()
+    ref_dist_log_largeALTDEPTH_mean = np.abs(np.log10(df_large_ALTDEPTH[vaf_col]) - np.log10(df_large_ALTDEPTH[target_col])).mean()
+    ref_dist_largeALTDEPTH_sum = np.abs(df_large_ALTDEPTH[vaf_col] - df_large_ALTDEPTH[target_col]).sum()
+    ref_dist_largeALTDEPTH_mean = np.abs(df_large_ALTDEPTH[vaf_col] - df_large_ALTDEPTH[target_col]).mean()
 
     results = []
 
@@ -193,12 +200,18 @@ def calc_vaf_distance_summary(
             "n_largeALTDEPTH": len(df_large_ALTDEPTH),
             "depth_cutoff_low": depth_cutoff_low,
             "large_clone_definition": large_clone_quantile_value,
-            "ref_dist_log_low_depth": ref_dist_log_low_depth,
-            "ref_dist_log_large_clones": ref_dist_log_large,
-            "ref_dist_low_depth": ref_dist_low_depth,
-            "ref_dist_large_clones": ref_dist_large,
-            "ref_dist_log_largeALTDEPTH": ref_dist_log_largeALTDEPTH,
-            "ref_dist_largeALTDEPTH": ref_dist_largeALTDEPTH
+            "ref_dist_log_low_depth_sum": ref_dist_log_low_depth_sum,
+            "ref_dist_log_large_clones_sum": ref_dist_log_large_sum,
+            "ref_dist_low_depth_sum": ref_dist_low_depth_sum,
+            "ref_dist_large_clones_sum": ref_dist_large_sum,
+            "ref_dist_log_largeALTDEPTH_sum": ref_dist_log_largeALTDEPTH_sum,
+            "ref_dist_largeALTDEPTH_sum": ref_dist_largeALTDEPTH_sum,
+            "ref_dist_log_low_depth_mean": ref_dist_log_low_depth_mean,
+            "ref_dist_log_large_clones_mean": ref_dist_log_large_mean,
+            "ref_dist_low_depth_mean": ref_dist_low_depth_mean,
+            "ref_dist_large_clones_mean": ref_dist_large_mean,
+            "ref_dist_log_largeALTDEPTH_mean": ref_dist_log_largeALTDEPTH_mean,
+            "ref_dist_largeALTDEPTH_mean": ref_dist_largeALTDEPTH_mean
         })
 
     return pd.DataFrame(results)
@@ -218,23 +231,35 @@ def plot_vaf_distance_summary(
     """
 
     if use_mean:
-        y_low = "mean_dist_log_low_depth"
-        y_large = "mean_dist_log_large_clones"
-        y_large_alt = "mean_dist_log_largeALTDEPTH"
-        ylabel = "Mean log-distance"
+        if log_dist:
+            ref_low = dist_df["ref_dist_log_low_depth_mean"].iloc[0]
+            ref_large = dist_df["ref_dist_log_large_clones_mean"].iloc[0]
+            ref_large_alt = dist_df["ref_dist_log_largeALTDEPTH_mean"].iloc[0]
+            y_low = "mean_dist_log_low_depth"
+            y_large = "mean_dist_log_large_clones"
+            y_large_alt = "mean_dist_log_largeALTDEPTH"
+            ylabel = "Mean log-distance"
+        else:
+            ref_low = dist_df["ref_dist_low_depth_mean"].iloc[0]
+            ref_large = dist_df["ref_dist_large_clones_mean"].iloc[0]
+            ref_large_alt = dist_df["ref_dist_largeALTDEPTH_mean"].iloc[0]
+            y_low = "mean_dist_low_depth"
+            y_large = "mean_dist_large_clones"
+            y_large_alt = "mean_dist_log_largeALTDEPTH"
+            ylabel = "Mean distance"
     else:
         if log_dist:
-            ref_low = dist_df["ref_dist_log_low_depth"].iloc[0]
-            ref_large = dist_df["ref_dist_log_large_clones"].iloc[0]
-            ref_large_alt = dist_df["ref_dist_log_largeALTDEPTH"].iloc[0]
+            ref_low = dist_df["ref_dist_log_low_depth_sum"].iloc[0]
+            ref_large = dist_df["ref_dist_log_large_clones_sum"].iloc[0]
+            ref_large_alt = dist_df["ref_dist_log_largeALTDEPTH_sum"].iloc[0]
             y_low = "sum_dist_log_low_depth"
             y_large = "sum_dist_log_large_clones"
             y_large_alt = "sum_dist_log_largeALTDEPTH"
             ylabel = "Sum log distance"
         else:
-            ref_low = dist_df["ref_dist_low_depth"].iloc[0]
-            ref_large = dist_df["ref_dist_large_clones"].iloc[0]
-            ref_large_alt = dist_df["ref_dist_largeALTDEPTH"].iloc[0]
+            ref_low = dist_df["ref_dist_low_depth_sum"].iloc[0]
+            ref_large = dist_df["ref_dist_large_clones_sum"].iloc[0]
+            ref_large_alt = dist_df["ref_dist_largeALTDEPTH_sum"].iloc[0]
             y_low = "sum_dist_low_depth"
             y_large = "sum_dist_large_clones"
             y_large_alt = "sum_dist_largeALTDEPTH"
@@ -313,6 +338,39 @@ def plot_vaf_distance_summary(
 
 
 
+def select_vafpseudo_per_sample(selected_weights_df, mutations_table):
+    """
+    Select the best VAF_PSEUDO column for each sample based on the selected weights.
+    """
+
+    selected_vafpseudo_columns = []
+    columns_to_keep = ['SAMPLE_ID', 'MUT_ID', 'ALT_DEPTH', 'DEPTH', 'VAF', 'ALT_DEPTH_AM', 'DEPTH_AM', 'VAF_AM', 'prior', 'avg_depth_sample']
+    for _, row in selected_weights_df.iterrows():
+        sample_id = row['SAMPLE_ID']
+        selected_weight = row['selected_weight']
+        selected_column = f'VAF_PSEUDO_{selected_weight}'
+        selected_vafpseudo_columns.append((sample_id, selected_column, selected_weight))
+
+    # Create a new DataFrame with the selected VAF_PSEUDO columns
+    selected_vafpseudo_df = pd.DataFrame(selected_vafpseudo_columns, columns=['SAMPLE_ID', 'selected_column', 'selected_weight'])
+
+    # Merge with the original mutations table to get the selected VAF_PSEUDO values
+    merged_df = mutations_table.merge(selected_vafpseudo_df, on='SAMPLE_ID', how='left')
+
+    # Create a new column for the final selected VAF_PSEUDO values
+    merged_df['selected_VAF_PSEUDO'] = merged_df.apply(lambda x: x[x['selected_column']], axis=1)
+    merged_df["artificial_depth"] = merged_df["avg_depth_sample"] * merged_df["selected_weight"]
+    merged_df = merged_df[columns_to_keep + ['selected_weight', 'artificial_depth', 'selected_VAF_PSEUDO']]
+
+    # Save the final DataFrame with selected VAF_PSEUDO values
+    merged_df.to_csv("mutations_with_final_selected_VAF_PSEUDO.tsv.gz", sep="\t", index=False)
+
+    corrections_summary_df = merged_df[['SAMPLE_ID', 'prior', 'avg_depth_sample', 'selected_weight', 'artificial_depth']].drop_duplicates()
+    
+    # Save the final DataFrame with a summary of the corrections applied per sample
+    corrections_summary_df.to_csv("corrections_per_sample_summary.tsv.gz", sep="\t", index=False)
+
+
 @click.command()
 @click.option('--mutdensities', type=click.Path(exists=True), help='Input mutation density file')
 @click.option('--mutations', type=click.Path(), help='Mutations file')
@@ -322,10 +380,21 @@ def main(mutdensities, mutations, depth_sample):
     """
     Main function to execute the VAF smoothing pipeline.
     """
-    weights = np.arange(0, 1.6, 0.1)
+    weights = [x.round(1) for x in np.arange(0, 1.6, 0.1)]
 
     click.echo("Loading data...")
     mutations_table = pd.read_csv(mutations, sep = "\t", header = 0, na_values = custom_na_values)
+    mutations_0_vaf = mutations_table[~(mutations_table["VAF"] > 0)
+                                          | ~(mutations_table["VAF_AM"] > 0)
+                                          ]
+    if not mutations_0_vaf.empty:
+        click.echo(f"Warning: {mutations_0_vaf.shape[0]} mutations have VAF or VAF_AM <= 0 and will be excluded from the analysis.")
+        click.echo("These mutations are:")
+        click.echo(mutations_0_vaf[['SAMPLE_ID', 'MUT_ID', 'VAF', 'VAF_AM']])
+        mutations_table = mutations_table[(mutations_table["VAF"] > 0)
+                                          & (mutations_table["VAF_AM"] > 0)
+                                          ].reset_index(drop = True)
+
     depths_per_sample = pd.read_csv(depth_sample, sep = "\t", header = 0, na_values = custom_na_values)
 
     samples_list = sorted(mutations_table['SAMPLE_ID'].unique())
@@ -345,7 +414,7 @@ def main(mutdensities, mutations, depth_sample):
                                 sep="\t")
 
     click.echo("Plotting VAF pseudocount curves...")
-    with PdfPages("vaf_pseudocounts.pdf") as pdf:
+    with PdfPages("vaf_pseudocounts_curves.pdf") as pdf:
         plt.figure(figsize=(8, 6))
         plt.hist(priors_per_sample['prior'], bins=10)
         plt.title('Distribution of sample-specific priors')
@@ -357,6 +426,9 @@ def main(mutdensities, mutations, depth_sample):
 
         plot_vaf_pseudocount_curve(all_mutations_table, samples_list, priors_per_sample, pdf, suffix='', weights_list=weights)
         plot_vaf_pseudocount_curve(all_mutations_table, samples_list, priors_per_sample, pdf, suffix='_AM', weights_list=weights)
+
+    click.echo("Plotting pseudocount curves weight comparison...")
+    with PdfPages("vaf_pseudocount_weights_comparison.pdf") as pdf:
 
         selected_weights_dict = {}
         try :
@@ -390,6 +462,17 @@ def main(mutdensities, mutations, depth_sample):
                 pdf.savefig()
                 plt.close()
 
+                fig, ax = plot_vaf_distance_summary(
+                    dist_df,
+                    log_dist=True,
+                    use_mean=True,
+                    log_y=False,
+                    sample_name = f'{sample}_mean'
+                )
+                pdf.savefig()
+                plt.close()
+
+
             dist_df = calc_vaf_distance_summary(
                 all_mutations_table,
                 weights=weights,
@@ -414,14 +497,29 @@ def main(mutdensities, mutations, depth_sample):
             pdf.savefig()
             plt.close()
 
+            fig, ax = plot_vaf_distance_summary(
+                dist_df,
+                log_dist=True,
+                use_mean=True,
+                log_y=False,
+                sample_name = 'all_samples_mean'
+            )
+            pdf.savefig()
+            plt.close()
+
+
             # store selected weights in a tsv file
             selected_weights_df = pd.DataFrame(list(selected_weights_dict.items()), columns=['SAMPLE_ID', 'selected_weight'])
-            selected_weights_df.to_csv("selected_weights_per_sample.tsv.gz", sep="\t", index=False)
+            # selected_weights_df.to_csv("selected_weights_per_sample.tsv.gz", sep="\t", index=False)
 
         except Exception as e:
             click.echo(f"Error in plotting VAF distance summary: {e}")
 
+    click.echo("Storing summary of priors and weights used.")
+    select_vafpseudo_per_sample(selected_weights_df, mutations_plus_info)
+
     click.echo("VAF smoothing pipeline completed successfully.")
+
 
 
 if __name__ == '__main__':
