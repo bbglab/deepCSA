@@ -96,15 +96,17 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                       } from '../modules/n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { MAF_2_VCF                     as INPUTMAF2VCF             } from '../modules/local/maf2vcf/main'
-include { TABLE_2_GROUP                 as TABLE2GROUP              } from '../modules/local/table2groups/main'
-include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS           } from '../modules/local/annotatedepth/main'
-include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS         } from '../modules/local/downsample/depths/main'
+include { MAF_2_VCF                     as INPUTMAF2VCF                 } from '../modules/local/maf2vcf/main'
+include { TABLE_2_GROUP                 as TABLE2GROUP                  } from '../modules/local/table2groups/main'
+include { ANNOTATE_DEPTHS               as ANNOTATEDEPTHS               } from '../modules/local/annotatedepth/main'
+include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHS             } from '../modules/local/downsample/depths/main'
 include { DOWNSAMPLE_DEPTHS             as DOWNSAMPLEDEPTHSALLSAMPLES   } from '../modules/local/downsample/depths/main'
 
 include { TABIX_BGZIPTABIX_QUERY        as QUERYMUTATIONSEXONS          } from '../modules/nf-core/tabix/bgziptabixquery/main'
 
 include { ANALYZE_DEPTHS_GROUPS         as ANALYZEDEPTHSGROUPS          } from '../modules/local/analyzedepths/main'
+
+include { VAF_SMOOTHING                 as VAFSMOOTHING                 } from '../modules/local/vaf_smoothing/main'
 
 include { SELECT_MUTDENSITIES           as SYNMUTDENSITY                } from '../modules/local/select_mutdensity/main'
 include { SELECT_MUTDENSITIES           as SYNMUTREADSDENSITY           } from '../modules/local/select_mutdensity/main'
@@ -223,6 +225,12 @@ workflow DEEPCSA {
     grouping_definitions = TABLE2GROUP.out.json_samples.concat(TABLE2GROUP.out.json_groups).concat(TABLE2GROUP.out.json_allgroups).collect()
 
     // Load group keys from JSON file in 'groups' channel
+    TABLE2GROUP.out.json_samples.map { json_path ->
+        def json = file(json_path).text
+        groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
+    }.flatten().unique()
+    .set { samples_keys_ch } // this is a channel that contains only the group names as elements of the channel
+
     TABLE2GROUP.out.json_groups.map { json_path ->
         def json = file(json_path).text
         groovy.json.JsonSlurper.newInstance().parseText(json).keySet()
@@ -359,10 +367,10 @@ workflow DEEPCSA {
 
     if (run_mutdensity){
         // Mutation Density
-        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel)
-        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel)
-        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel)
-        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel)
+        MUTDENSITYALL(somatic_mutations, DEPTHSALLCONS.out.subset, CREATEPANELS.out.all_consensus_bed, ENRICHPANELS.out.all_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
+        MUTDENSITYPROT(somatic_mutations, DEPTHSPROTCONS.out.subset, CREATEPANELS.out.prot_consensus_bed, ENRICHPANELS.out.prot_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
+        MUTDENSITYNONPROT(somatic_mutations, DEPTHSNONPROTCONS.out.subset, CREATEPANELS.out.nonprot_consensus_bed, ENRICHPANELS.out.nonprot_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
+        MUTDENSITYSYNONYMOUS(somatic_mutations, DEPTHSSYNONYMOUSCONS.out.subset, CREATEPANELS.out.synonymous_consensus_bed, ENRICHPANELS.out.synonymous_consensus_expanded_panel, samples_keys_ch, wgs_trinucs, annotated_depths)
 
         // Concatenate all outputs into a single file
         channel.empty()
@@ -373,6 +381,16 @@ workflow DEEPCSA {
         .set{ all_mutdensities }
         all_mutdensities.collectFile(name: "all_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_file }
 
+        // Concatenate all outputs into a single file
+        channel.empty()
+        .concat(MUTDENSITYALL.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYPROT.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYNONPROT.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .concat(MUTDENSITYSYNONYMOUS.out.mutdensities_wgs.map{ it -> it[1]}.flatten())
+        .set{ all_mutdensities_wgs }
+        all_mutdensities_wgs.collectFile(name: "all_mutdensities_wgs.tsv", storeDir:"${params.outdir}/mutdensity", skip: 1, keepHeader: true).set{ all_mutdensities_wgs_file }
+
+
         channel.of([ [ id: "all_samples" ] ])
         .join( MUTDENSITYSYNONYMOUS.out.mutdensities )
         .set{ all_samples_syn_mutdensity }
@@ -380,6 +398,11 @@ workflow DEEPCSA {
         SYNMUTDENSITY(all_samples_syn_mutdensity)
 
         SYNMUTREADSDENSITY(all_samples_syn_mutdensity)
+
+        channel.of([ [ id: "all_samples" ] ])
+        .join( somatic_mutations )
+        .set{ mutations_all_samples }
+        VAFSMOOTHING(mutations_all_samples, all_mutdensities_file, PLOTDEPTHSEXONSCONS.out.average_depth_sample)
 
     }
 
