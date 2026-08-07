@@ -1,6 +1,6 @@
 process RUN_HDP_CHAIN_SAMPLING {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/ferriolcalvet/hdp_wrapper'
 

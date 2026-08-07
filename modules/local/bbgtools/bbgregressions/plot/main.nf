@@ -1,7 +1,6 @@
 process PLOT {
 
     tag "regressions"
-    label 'process_single'
 
     label "bbgregressions"
 

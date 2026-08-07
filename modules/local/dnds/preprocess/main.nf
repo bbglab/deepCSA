@@ -1,8 +1,5 @@
 process PREPROCESS_DNDS {
     tag "$meta.id"
-    label 'cpu_single_fixed'
-    label 'time_low'
-    label 'process_high_memory'
 
     label 'deepcsa_core'
 

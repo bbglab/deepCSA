@@ -1,7 +1,7 @@
 process PLOT_MUTDENSITY_QC {
 
     tag "${group_name}"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

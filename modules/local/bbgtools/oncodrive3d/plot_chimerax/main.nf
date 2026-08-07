@@ -1,6 +1,6 @@
 process ONCODRIVE3D_PLOT_CHIMERAX {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/spellegrini87/oncodrive3d:1.0.9-chimerax'
 

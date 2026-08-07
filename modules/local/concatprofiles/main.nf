@@ -1,6 +1,7 @@
 process CONCAT_PROFILES {
     tag "${meta.id}"
-    label 'process_medium'
+    label 'cpu_medium'
+    label 'mem_low'
     label 'deepcsa_core'
 
     input:

@@ -1,7 +1,8 @@
 process COMPUTE_MATRIX {
 
     tag "$meta.id"
-    label 'process_low'
+    label 'cpu_low'
+    label 'mem_low'
 
     label 'deepcsa_core'
 

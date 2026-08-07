@@ -2,6 +2,8 @@ process SORT_MERGED_PANEL {
 
     tag "${meta.id}"
 
+    label 'mem_low'
+
     container "docker.io/bbglab/deepcsa-core:0.0.2-alpha"
 
     input:

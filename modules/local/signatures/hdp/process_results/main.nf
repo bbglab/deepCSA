@@ -1,6 +1,6 @@
 process  PROCESS_HDP_RESULTS {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/ferriolcalvet/hdp_wrapper'
 
