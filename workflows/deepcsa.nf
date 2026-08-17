@@ -190,6 +190,14 @@ workflow DEEPCSA {
               "Please set '--use_custom_depths true' and provide '--custom_depths_table <path>'."
     }
 
+    if (params.omega_v2 && !params.omega) {
+        error "ERROR: '--omega_v2' requires '--omega true' because it reuses omega preprocessing outputs."
+    }
+
+    if (params.omega_v2 && !params.omega_v2_context_counts) {
+        error "ERROR: '--omega_v2_context_counts' is required when '--omega_v2 true'."
+    }
+
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     if ( params.input_maf && params.use_custom_depths ) {
         channel.fromPath( params.input_maf, checkIfExists: true)

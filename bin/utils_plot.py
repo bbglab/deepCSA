@@ -14,6 +14,16 @@ snv_color = {
     '-' : 'orange'
 }
 
+mutation_type_colors = {
+    "C>A": "#5abdeb",
+    "C>G": "#050708",
+    "C>T": "#d43c32",
+    "T>A": "#cbcacb",
+    "T>C": "#aacb72",
+    "T>G": "#e7c9c6"
+}
+
+
 def plot_profile(frequencies, title='Mutational profile',
                         yticks=[0, 0.1],
                         ymax=0.3,
@@ -149,18 +159,9 @@ metrics_colors_dictionary = {"ofml"        : "viridis_r",
                                 "splicing"    : "#A1C5DF",
                                 }
 
-mutation_type_colors = {
-    "C>A": "#5abdeb",
-    "C>G": "#050708",
-    "C>T": "#d43c32",
-    "T>A": "#cbcacb",
-    "T>C": "#aacb72",
-    "T>G": "#e7c9c6"
-}
 
 plots_general_config = {
-
-                        # fonsizes
+                        # fontsizes
                         "ylabel_fontsize": 6,
                         "xlabel_fontsize": 6,
                         "xylabel_fontsize": 6,

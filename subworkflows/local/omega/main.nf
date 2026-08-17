@@ -21,6 +21,8 @@ include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { OMEGA_MULTITEST           as OMEGAMULTIPLETESTGLOBALLOC       } from '../../../modules/local/omega_multipletesting/main'
 include { HOTSPOTS_SELECTION        as HOTSPOTSSELECTION                } from '../../../modules/local/hotspots_selection/main'
+include { OMEGA_V2_PREPROCESS       as PREPROCESSINGOMEGAV2             } from '../../../modules/local/omega_covariates/preprocess/main'
+include { OMEGA_V2_RUN              as ESTIMATOROMEGAV2                 } from '../../../modules/local/omega_covariates/run/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -43,6 +45,7 @@ workflow OMEGA_ANALYSIS{
     site_comparison_results = channel.empty()
     global_loc_results      = channel.empty()
     all_gloc_results        = channel.empty()
+    omega_v2_results        = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     QUERYPANEL(panel_captured_rich, bedfile)
@@ -69,6 +72,33 @@ workflow OMEGA_ANALYSIS{
     PREPROCESSING.out.mutabs_n_mutations_tsv
     .join( depth )
     .set{ preprocess_n_depths }
+
+    if (params.omega_v2 && suffix == "") {
+        def sample_filters = params.omega_v2_sample_filter
+            ? params.omega_v2_sample_filter.tokenize(',').collect { value -> value.trim() }.findAll { value -> value }
+            : []
+
+        omega_v2_context_counts = channel.fromPath(params.omega_v2_context_counts, checkIfExists: true).first()
+        omega_v2_covariates = channel.fromPath(params.omega_v2_covariates, checkIfExists: true).first()
+        omega_v2_assets = channel.fromPath("${projectDir}/assets/omega-covariates", checkIfExists: true, type: 'dir').first()
+
+        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[1] }.collect().set { omega_v2_mutability_tables }
+        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[2] }.collect().set { omega_v2_mutations_tables }
+        depth.map { it -> it[1] }.collect().set { omega_v2_depths_tables }
+
+        PREPROCESSINGOMEGAV2(
+            omega_v2_mutability_tables,
+            omega_v2_mutations_tables,
+            omega_v2_depths_tables,
+            expanded_panel.first(),
+            omega_v2_context_counts,
+            omega_v2_covariates,
+            sample_filters,
+        )
+
+        ESTIMATOROMEGAV2(PREPROCESSINGOMEGAV2.out.config, omega_v2_assets)
+        omega_v2_results = ESTIMATOROMEGAV2.out.omega_grouped
+    }
 
     GROUPGENES(expanded_panel, custom_gene_groups, json_subgenic)
 
@@ -203,6 +233,7 @@ workflow OMEGA_ANALYSIS{
 
     all_compiled            = all_results
     all_globalloc_compiled  = all_gloc_results
+    omega_v2_compiled       = omega_v2_results
     // plots = ONCODRIVE3D.out.plots
 
 }
