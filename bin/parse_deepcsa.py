@@ -236,8 +236,8 @@ class deepCSAparser:
         deepcsa_output_path = data['path']['deepcsa_output_path']
         context_counts_path = data['path']['context_counts_path']
         covariates_path = data['path']['covariates_path']
-        samples_json_path = data['path'].get('samples', None)
-        sample_filter = data['filter']['sample']
+        samples_json_path = data['path'].get('samples_path', None)
+        sample_filter = data.get('filter', {}).get('sample', None)
         
         return deepcsa_output_path, context_counts_path, covariates_path, samples_json_path, sample_filter
     
@@ -271,7 +271,7 @@ class deepCSAparser:
         self.config_path = config_path
 
         # deepCSA output
-        self.depths_path = lambda sample_id: os.path.join(self.deepcsa_output_path, f'depths/individual/{sample_id}.depths.annotated.tsv.gz')  # CHROM, POS, CONTEXT, SAMPLE1, SAMPLE2, ...
+        self.depths_path = lambda sample_id: os.path.join(self.deepcsa_output_path, f'depths/individual/{sample_id}.subset_depths.tsv.gz')  # CHROM, POS, CONTEXT, SAMPLE1, SAMPLE2, ...
         self.mutability_path = lambda sample_id: os.path.join(self.deepcsa_output_path, f'selection/omega/preprocessing/mutability_per_sample_gene_context.{sample_id}.tsv')
         self.mutations_path = lambda sample_id: os.path.join(self.deepcsa_output_path, f'selection/omega/preprocessing/mutations_per_sample_gene_impact_context.{sample_id}.tsv')
 
@@ -280,7 +280,7 @@ class deepCSAparser:
             self.samples = self.samples_list
         else:
             self.samples = list(map(lambda x: os.path.basename(x).split('.')[0], 
-                glob.glob(os.path.join(self.deepcsa_output_path, 'depths/individual/*.depths.annotated.tsv.gz'))))
+                glob.glob(os.path.join(self.deepcsa_output_path, 'depths/individual/*.subset_depths.tsv.gz'))))
 
         # impact
         self.csqn_types = {
@@ -393,8 +393,8 @@ class deepCSAparser:
         
         # sample name filters
         res = []
-        for value in self.sample_filter:
-            res.append(df_nonzero[df_nonzero['sample_id'].str.startswith(value)])
+        for value in self.samples:
+            res.append(df_nonzero[df_nonzero['sample_id'] == value])
         df_nonzero = pd.concat(res, axis=0)
         
         # data type formatting

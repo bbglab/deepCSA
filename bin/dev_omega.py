@@ -1,5 +1,4 @@
 import os
-import daiquiri
 from functools import reduce, partial
 
 import numpy as np

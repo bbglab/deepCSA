@@ -81,14 +81,10 @@ workflow OMEGA_ANALYSIS{
         PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[2] }.collect().set { omega_v2_mutations_tables }
         depth.map { it -> it[1] }.collect().set { omega_v2_depths_tables }
 
-        PREPROCESSINGOMEGAV2(
-            omega_v2_mutability_tables,
+        ESTIMATOROMEGAV2(omega_v2_mutability_tables,
             omega_v2_mutations_tables,
             omega_v2_depths_tables,
-            expanded_panel
-        )
-
-        ESTIMATOROMEGAV2(PREPROCESSINGOMEGAV2.out.workspace,
+            expanded_panel,
                             omega_v2_context_counts, omega_v2_covariates,
                             grouping_defs
                             )

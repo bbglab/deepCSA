@@ -2,9 +2,7 @@
 
 import os
 import click
-import tqdm
-import json
-from joblib import Parallel, delayed
+# from joblib import Parallel, delayed
 
 import pandas as pd
 import numpy as np
@@ -100,13 +98,13 @@ def fit_omega(data, grouped=False, test=False):
     else:
         limit = data.shape[0]
 
-    results = Parallel(n_jobs=-1, verbose=10)(
-        delayed(process_row)(row, grouped=grouped) for row in data[: limit+1].itertuples(index=False)
-        )
-    # results = [
-    #     process_row(row, grouped=grouped) 
-    #     for row in data[: limit + 1].itertuples(index=False)
-    # ]
+    # results = Parallel(n_jobs=-1, verbose=10)(
+    #     delayed(process_row)(row, grouped=grouped) for row in data[: limit+1].itertuples(index=False)
+    #     )
+    results = [
+        process_row(row, grouped=grouped) 
+        for row in data[: limit + 1].itertuples(index=False)
+    ]
 
     res = pd.DataFrame(results)
     
