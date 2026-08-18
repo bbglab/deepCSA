@@ -74,13 +74,8 @@ workflow OMEGA_ANALYSIS{
     .set{ preprocess_n_depths }
 
     if (params.omega_v2 && suffix == "") {
-        def sample_filters = params.omega_v2_sample_filter
-            ? params.omega_v2_sample_filter.tokenize(',').collect { value -> value.trim() }.findAll { value -> value }
-            : []
-
         omega_v2_context_counts = channel.fromPath(params.omega_v2_context_counts, checkIfExists: true).first()
         omega_v2_covariates = channel.fromPath(params.omega_v2_covariates, checkIfExists: true).first()
-        omega_v2_assets = channel.fromPath("${projectDir}/assets/omega-covariates", checkIfExists: true, type: 'dir').first()
 
         PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[1] }.collect().set { omega_v2_mutability_tables }
         PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[2] }.collect().set { omega_v2_mutations_tables }
@@ -90,13 +85,13 @@ workflow OMEGA_ANALYSIS{
             omega_v2_mutability_tables,
             omega_v2_mutations_tables,
             omega_v2_depths_tables,
-            expanded_panel.first(),
-            omega_v2_context_counts,
-            omega_v2_covariates,
-            sample_filters,
+            expanded_panel
         )
 
-        ESTIMATOROMEGAV2(PREPROCESSINGOMEGAV2.out.config, omega_v2_assets)
+        ESTIMATOROMEGAV2(PREPROCESSINGOMEGAV2.out.workspace,
+                            omega_v2_context_counts, omega_v2_covariates,
+                            grouping_defs
+                            )
         omega_v2_results = ESTIMATOROMEGAV2.out.omega_grouped
     }
 

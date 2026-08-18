@@ -7,21 +7,14 @@ process OMEGA_V2_PREPROCESS {
     path(mutability_tables)
     path(mutations_tables)
     path(depths_tables)
-    path(consensus_panel)
-    path(context_counts)
-    path(covariates)
-    val(sample_filters)
+    tuple val (meta2), path(consensus_panel)
 
     output:
-    path("omega_v2_workspace"), emit: workspace
-    path("omega_v2_config.json"), emit: config
-    path "versions.yml"         , topic: versions
+    path("omega_v2_workspace")    , emit: workspace
+    path "versions.yml"           , topic: versions
 
     script:
-    def filtersJson = groovy.json.JsonOutput.toJson(sample_filters ?: [])
     """
-    set -euo pipefail
-
     mkdir -p omega_v2_workspace/deepcsa_output/depths/individual
     mkdir -p omega_v2_workspace/deepcsa_output/selection/omega/preprocessing
     mkdir -p omega_v2_workspace/deepcsa_output/regions/consensuspanels
@@ -43,24 +36,8 @@ process OMEGA_V2_PREPROCESS {
         cp "\$f" "omega_v2_workspace/deepcsa_output/selection/omega/preprocessing/mutations_per_sample_gene_impact_context.\${sample}.tsv"
     done
 
-    cp ${context_counts} omega_v2_workspace/context_counts.csv
-    cp ${covariates} omega_v2_workspace/covariates.tsv
-
-    cat > omega_v2_config.json << EOF
-    {
-      "path": {
-        "deepcsa_output_path": "omega_v2_workspace/deepcsa_output",
-        "context_counts_path": "omega_v2_workspace/context_counts.csv",
-        "covariates_path": "omega_v2_workspace/covariates.tsv"
-      },
-      "filter": {
-        "sample": ${filtersJson}
-      }
-    }
-    EOF
-
     cat <<-END_VERSIONS > versions.yml
-    "\${task.process}":
+    "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
@@ -89,7 +66,7 @@ process OMEGA_V2_PREPROCESS {
     EOF
 
     cat <<-END_VERSIONS > versions.yml
-    "\${task.process}":
+    "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """

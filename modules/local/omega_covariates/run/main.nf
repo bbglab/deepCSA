@@ -3,11 +3,14 @@ process OMEGA_V2_RUN {
     label 'cpu_medium'
     label 'process_high_memory'
 
-    label 'bbgregressions'
+    label 'deepcsa'
 
     input:
-    path(config)
     path(omega_assets)
+    path(context_counts)
+    path(covariates)
+    path(groups)
+
 
     output:
     path("data.tsv")          , emit: data
@@ -18,10 +21,20 @@ process OMEGA_V2_RUN {
     script:
     def args = task.ext.args ?: ""
     """
-    set -euo pipefail
+    cat > omega_v2_config.json << EOF
+    {
+      "path": {
+        "deepcsa_output_path": "omega_v2_workspace/deepcsa_output",
+        "context_counts_path": "${context_counts}",
+        "covariates_path": "${covariates}",
+        "samples_path": "samples.json"
+      }
+    }
+    EOF
 
-    python ${omega_assets}/run.py \\
-        --config ${config} \\
+    run_omega_covariates.py \\
+        --config omega_v2_config.json \\
+        --samples-file samples.json \\
         --outfolder . \\
         ${args}
 
