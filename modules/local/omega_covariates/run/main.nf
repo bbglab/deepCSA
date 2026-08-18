@@ -3,7 +3,7 @@ process OMEGA_V2_RUN {
     label 'cpu_medium'
     label 'process_high_memory'
 
-    container 'docker.io/bbglab/omega:0.2.1'
+    container 'docker.io/ferriolcalvet/deepcsa_core:v0.2.0'
 
     input:
     path(mutability_tables)
