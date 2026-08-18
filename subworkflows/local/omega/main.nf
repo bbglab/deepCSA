@@ -21,7 +21,6 @@ include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { OMEGA_MULTITEST           as OMEGAMULTIPLETESTGLOBALLOC       } from '../../../modules/local/omega_multipletesting/main'
 include { HOTSPOTS_SELECTION        as HOTSPOTSSELECTION                } from '../../../modules/local/hotspots_selection/main'
-include { OMEGA_V2_PREPROCESS       as PREPROCESSINGOMEGAV2             } from '../../../modules/local/omega_covariates/preprocess/main'
 include { OMEGA_V2_RUN              as ESTIMATOROMEGAV2                 } from '../../../modules/local/omega_covariates/run/main'
 
 workflow OMEGA_ANALYSIS{
@@ -82,10 +81,11 @@ workflow OMEGA_ANALYSIS{
         depth.map { it -> it[1] }.collect().set { omega_v2_depths_tables }
 
         ESTIMATOROMEGAV2(omega_v2_mutability_tables,
-            omega_v2_mutations_tables,
-            omega_v2_depths_tables,
-            expanded_panel,
-                            omega_v2_context_counts, omega_v2_covariates,
+                            omega_v2_mutations_tables,
+                            omega_v2_depths_tables,
+                            expanded_panel,
+                            omega_v2_context_counts,
+                            omega_v2_covariates,
                             grouping_defs
                             )
         omega_v2_results = ESTIMATOROMEGAV2.out.omega_grouped
