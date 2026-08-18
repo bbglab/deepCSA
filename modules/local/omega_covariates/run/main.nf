@@ -3,7 +3,7 @@ process OMEGA_V2_RUN {
     label 'cpu_medium'
     label 'process_high_memory'
 
-    label 'deepcsa'
+    label 'deepcsa_core'
 
     input:
     path(omega_assets)

@@ -103,6 +103,10 @@ def fit_omega(data, grouped=False, test=False):
     results = Parallel(n_jobs=-1, verbose=10)(
         delayed(process_row)(row, grouped=grouped) for row in data[: limit+1].itertuples(index=False)
         )
+    # results = [
+    #     process_row(row, grouped=grouped) 
+    #     for row in data[: limit + 1].itertuples(index=False)
+    # ]
 
     res = pd.DataFrame(results)
     
