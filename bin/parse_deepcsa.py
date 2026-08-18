@@ -32,17 +32,6 @@ import pandas as pd
 import numpy as np
 
 
-# # reference genome trinucleotide counts
-# context_counts_path = '/data/bbg/datasets/genomes/context_counts/sigprofiler/context_counts_GRCh38_96.csv'
-
-# # deepCSA output
-# deepcsa_output_folder = '/data/bbg/nobackup/prominent/SantPauCH/deepCSA/sp_vhio/custom/2026-05-31_sp_vhio_H_T0sonly_custom'
-# depths_path = lambda sample_id: os.path.join(deepcsa_output_folder, f'depths/individual/{sample_id}.depths.annotated.tsv.gz')  # CHROM, POS, CONTEXT, SAMPLE1, SAMPLE2, ...
-# mutability_path = lambda sample_id: os.path.join(deepcsa_output_folder, f'selection/omega/preprocessing/mutability_per_sample_gene_context.{sample_id}.tsv')
-# mutations_path = lambda sample_id: os.path.join(deepcsa_output_folder, f'selection/omega/preprocessing/mutations_per_sample_gene_impact_context.{sample_id}.tsv')
-
-# # samples
-# samples = list(map(lambda x: os.path.basename(x).split('.')[0], glob.glob(os.path.join(deepcsa_output_folder, 'depths/individual/*.depths.annotated.tsv.gz'))))
 
 # impact
 csqn_types = {
@@ -52,11 +41,6 @@ csqn_types = {
     }
 inv_csqn_types = {v: k for k, vs in csqn_types.items() for v in vs}
 
-# # consensus panel
-# consensus_panel_path = os.path.join(deepcsa_output_folder, 'regions/consensuspanels/consensus.all.tsv')
-# consensus_panel = pd.read_csv(consensus_panel_path, sep='\t')
-# consensus_panel['IMPACT'] = consensus_panel['IMPACT'].map(inv_csqn_types)
-# genes = consensus_panel['GENE'].unique().tolist()
 
 # delta is a standard neutral density satisfying the following property:
 # weight * delta = expected number of mutations when the mutation density is equivalent to 1 mut/sequenced-Mb
@@ -74,155 +58,6 @@ def standard_trinucleotide_contexts():
 
 
 standard_contexts = standard_trinucleotide_contexts()
-
-
-# def get_megabase_content():
-
-#     """
-#     Trinucleotide abundance in one representative megabase of the reference mappable genome.
-#     Output format: 96-channel list of trinucleotide counts in the standard order
-#     """
-
-#     df = pd.read_csv(context_counts_path, index_col=0)
-#     dg = df.sum(axis=1) / df.sum(axis=1).sum()
-#     d = dict(dg.apply(lambda x: int(1e6 * x)))
-    
-#     standard_contexts = standard_trinucleotide_contexts()
-#     res = [d[c[:3]] for c in standard_contexts]
-#     return res
-
-
-# megabase_content = np.array(get_megabase_content())
-
-
-# def get_relative_mutability(sample_id):
-
-#     """
-#     Relative mutability of each trinucleotide context for a given sample.
-#     Output format: 96-channel list of relative mutability in the standard order
-#     """
-
-#     df = pd.read_csv(mutability_path(sample_id), sep='\t')
-#     dg = df.groupby('CONTEXT_MUT').agg({sample_id: 'sum'}).sort_values('CONTEXT_MUT')[sample_id] / df[sample_id].sum()
-#     dg = dg.reindex(standard_contexts, fill_value=0)
-#     return dg
-
-
-# def get_offsets_aggregated(sample_id, consensus_panel):
-
-#     """
-#     Offset per sample, gene and consequence type
-#     Format: 96-channel list of offsets for each trinucleotide context in the standard order
-#     """
-
-#     rel_mut = get_relative_mutability(sample_id)
-#     one_megabase_weight = np.dot(megabase_content, rel_mut)
-#     delta = 1 / one_megabase_weight
-
-
-#     depths = pd.read_csv(depths_path(sample_id), sep='\t')
-#     panel_with_depths = pd.merge(consensus_panel, depths, on=['CHROM', 'POS', 'CONTEXT'], how='left')
-#     dg = panel_with_depths.groupby(['IMPACT', 'GENE', 'CONTEXT_MUT']).agg({sample_id: 'sum'})
-
-#     # create a multiindex with all combinations of gene, consequence type and trinucleotide context
-#     index = pd.MultiIndex.from_product([csqn_types.keys(), genes, standard_contexts], names=['IMPACT', 'GENE', 'CONTEXT_MUT'])
-#     dg = dg.reindex(index, fill_value=0).reset_index()  # dataframe with columns: IMPACT, GENE, CONTEXT_MUT, sample_id
-
-#     # Pivot the dataframe into a matrix shape
-#     matrix = dg.pivot(index=['GENE', 'IMPACT'], columns='CONTEXT_MUT', values=sample_id).fillna(0)
-#     # Ensure rel_mut is perfectly aligned with the matrix columns
-#     rel_mut_aligned = rel_mut.reindex(matrix.columns).fillna(0)
-#     # Perform the matrix-vector dot product and reset the index
-#     df_result = matrix.dot(rel_mut_aligned).reset_index(name='weight')
-#     df_result['offset'] = df_result['weight'] * delta
-
-#     return df_result
-
-
-# def build_table_aggregated():
-#     """
-#     Build a table with the following columns:
-#     sample_id, gene_id, csqn_type, n, n_syn, offset
-#     """
-
-#     data = []
-#     for s in tqdm.tqdm(samples):
-#         dg = get_offsets_aggregated(s, consensus_panel)
-#         muts = pd.read_csv(mutations_path(s), sep='\t')
-#         muts['IMPACT'] = muts['IMPACT'].map(inv_csqn_types)
-#         muts_grouped = muts.groupby(['GENE', 'IMPACT']).agg({s: 'sum'}).reset_index()
-#         dg = pd.merge(dg, muts_grouped, on=['GENE', 'IMPACT'], how='left').fillna(0)
-#         dg['sample_id'] = s
-#         dg.rename(columns={s: 'n'}, inplace=True)
-#         data.append(dg)
-
-#     df = pd.concat(data, axis=0)
-#     df['is_nonsyn'] = df['IMPACT'].apply(lambda x: 0 if x == 'synonymous' else 1)
-#     df['log_offset'] = df['offset'].apply(lambda x: np.log(x + 1e-6))
-    
-#     # TODO: collapse the table so that all consequence types are represented within each row
-    
-#     return df
-
-
-# def postprocess_aggregated(df):
-
-#     # basic filters
-#     df_nonzero = df[df['offset'] > 0]  # gene-impact must have positive offset = being covered by the sequencing experiment
-    
-#     # sample name filters
-#     df_nonzero = df_nonzero[df_nonzero['sample_id'].str.startswith('CHa')]
-    
-#     # data type formatting
-#     df_nonzero['n'] = df_nonzero['n'].astype(int)
-
-#     # re-arrage data items
-#     res = {'gene_id': [], 'sample_id': [], 'offset_syn': [], 'offset_trunc': [], 'offset_mis': [], 'n_syn': [], 'n_trunc': [], 'n_mis': []}
-#     for gene, sample in df_nonzero.groupby(['GENE', 'sample_id']).groups.keys():
-        
-#         dg = df_nonzero[(df_nonzero['GENE'] == gene) & (df_nonzero['sample_id'] == sample)]
-#         res['gene_id'].append(gene)
-#         res['sample_id'].append(sample)
-
-#         for impact in ['missense', 'synonymous', 'truncating']:
-#             if (impact == 'synonymous'):
-#                 if dg[dg['IMPACT'] == impact].shape[0] > 0:
-#                     res['offset_syn'].append(dg[dg['IMPACT'] == impact]['offset'].values[0])
-#                     res['n_syn'].append(dg[dg['IMPACT'] == impact]['n'].values[0])
-#                 else:
-#                     res['offset_syn'].append(None)
-#                     res['n_syn'].append(None)
-#             if (impact == 'truncating'):
-#                 if dg[dg['IMPACT'] == impact].shape[0] > 0:
-#                     res['offset_trunc'].append(dg[dg['IMPACT'] == impact]['offset'].values[0])
-#                     res['n_trunc'].append(dg[dg['IMPACT'] == impact]['n'].values[0])
-#                 else:
-#                     res['offset_trunc'].append(None)
-#                     res['n_trunc'].append(None)
-#             if (impact == 'missense'): 
-#                 if dg[dg['IMPACT'] == impact].shape[0] > 0:
-#                     res['offset_mis'].append(dg[dg['IMPACT'] == impact]['offset'].values[0])
-#                     res['n_mis'].append(dg[dg['IMPACT'] == impact]['n'].values[0])
-#                 else:
-#                     res['offset_mis'].append(None)
-#                     res['n_mis'].append(None)
-#     res = pd.DataFrame(res)
-
-#     # data type formatting
-#     res.dropna(inplace=True)
-#     res['n_syn'] = res['n_syn'].astype(int)
-#     res['n_mis'] = res['n_mis'].astype(int)
-#     res['n_trunc'] = res['n_trunc'].astype(int)
-
-#     # add the principal components roadmap of epigenomics
-
-#     pc_roadmap = pd.read_csv('./covariates_hg19_hg38_epigenome_pcawg.tsv', sep='\t', index_col=0)
-#     pc_roadmap.reset_index(inplace=True)
-#     pc_roadmap.rename(columns={'index': 'gene_id'}, inplace=True)
-#     res = pd.merge(res, pc_roadmap, on=['gene_id'], how='left')
-
-#     res.dropna(inplace=True)
-#     return res
 
 
 class deepCSAparser:
@@ -311,7 +146,7 @@ class deepCSAparser:
         """
 
         df = pd.read_csv(self.context_counts_path, index_col=0)
-        dg = df.sum(axis=1) / df.sum(axis=1).sum()
+        dg = df / df.sum()
         d = dict(dg.apply(lambda x: int(1e6 * x)))
         
         standard_contexts = standard_trinucleotide_contexts()

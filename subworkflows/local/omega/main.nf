@@ -37,6 +37,7 @@ workflow OMEGA_ANALYSIS{
     suffix
     grouping_defs
     json_subgenic
+    wgs_counts
 
 
     main:
@@ -73,7 +74,6 @@ workflow OMEGA_ANALYSIS{
     .set{ preprocess_n_depths }
 
     if (params.omega_v2 && suffix == "") {
-        omega_v2_context_counts = channel.fromPath(params.omega_v2_context_counts, checkIfExists: true).first()
         omega_v2_covariates = channel.fromPath(params.omega_v2_covariates, checkIfExists: true).first()
 
         PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[1] }.collect().set { omega_v2_mutability_tables }
@@ -84,7 +84,7 @@ workflow OMEGA_ANALYSIS{
                             omega_v2_mutations_tables,
                             omega_v2_depths_tables,
                             expanded_panel,
-                            omega_v2_context_counts,
+                            wgs_counts,
                             omega_v2_covariates,
                             grouping_defs
                             )

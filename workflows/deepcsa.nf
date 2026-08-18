@@ -501,7 +501,8 @@ workflow DEEPCSA {
                 CREATEPANELS.out.panel_annotated_rich,
                 "",
                 grouping_definitions,
-                ENRICHPANELS.out.exons_json_subgenic
+                ENRICHPANELS.out.exons_json_subgenic,
+                wgs_trinucs
                 )
         positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
         all_compiled_omegas = OMEGA.out.all_compiled
@@ -531,7 +532,8 @@ workflow DEEPCSA {
                           CREATEPANELS.out.panel_annotated_rich,
                           ".multi",
                           grouping_definitions,
-                          ENRICHPANELS.out.exons_json_subgenic
+                          ENRICHPANELS.out.exons_json_subgenic,
+                          wgs_trinucs
                           )
               positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
               if (params.omega_globalloc){
@@ -553,7 +555,8 @@ workflow DEEPCSA {
                             CREATEPANELS.out.panel_annotated_rich,
                             ".non_protein_affecting",
                             grouping_definitions,
-                            ENRICHPANELS.out.exons_json_subgenic
+                            ENRICHPANELS.out.exons_json_subgenic,
+                            wgs_trinucs
                             )
 
             if (params.omega_multi){
@@ -567,7 +570,8 @@ workflow DEEPCSA {
                                     CREATEPANELS.out.panel_annotated_rich,
                                     ".multi.non_protein_affecting",
                                     grouping_definitions,
-                                    ENRICHPANELS.out.exons_json_subgenic
+                                    ENRICHPANELS.out.exons_json_subgenic,
+                                    wgs_trinucs
                                     )
             }
 
