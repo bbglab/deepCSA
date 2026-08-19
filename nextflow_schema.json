@@ -384,23 +384,11 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Runs assets/omega-covariates as an additional omega output. Requires omega=true."
                 },
-                "omega_v2_context_counts": {
-                    "type": "string",
-                    "description": "Path to the context-counts CSV used by omega_v2.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "Required when omega_v2 is true."
-                },
                 "omega_v2_covariates": {
                     "type": "string",
                     "description": "Path to gene-level covariates table for omega_v2.",
                     "fa_icon": "fas fa-book",
                     "default": "assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv"
-                },
-                "omega_v2_sample_filter": {
-                    "type": "string",
-                    "description": "Comma-separated sample prefixes to retain in omega_v2.",
-                    "fa_icon": "fas fa-book",
-                    "default": ""
                 },
                 "omega_v2_roadmap_covariates": {
                     "type": "boolean",
