@@ -1,5 +1,5 @@
-process OMEGA_V2_RUN {
-    tag "omega_v2"
+process OMEGA_COVARIATES_RUN {
+    tag "all_samples"
     label 'cpu_medium'
     label 'process_high_memory'
 
@@ -60,7 +60,7 @@ process OMEGA_V2_RUN {
         ${args}
 
     cat <<-END_VERSIONS > versions.yml
-    "\${task.process}":
+    "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
@@ -72,7 +72,7 @@ process OMEGA_V2_RUN {
     touch omega.grouped.tsv
 
     cat <<-END_VERSIONS > versions.yml
-    "\${task.process}":
+    "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """

@@ -21,7 +21,7 @@ include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { OMEGA_MULTITEST           as OMEGAMULTIPLETESTGLOBALLOC       } from '../../../modules/local/omega_multipletesting/main'
 include { HOTSPOTS_SELECTION        as HOTSPOTSSELECTION                } from '../../../modules/local/hotspots_selection/main'
-include { OMEGA_V2_RUN              as ESTIMATOROMEGAV2                 } from '../../../modules/local/omega_covariates/run/main'
+include { OMEGA_COVARIATES_RUN      as ESTIMATOROMEGACOVARIATES         } from '../../../modules/local/omega_covariates/run/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -38,6 +38,7 @@ workflow OMEGA_ANALYSIS{
     grouping_defs
     json_subgenic
     wgs_counts
+    exons_consensus_panel
 
 
     main:
@@ -80,15 +81,15 @@ workflow OMEGA_ANALYSIS{
         PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[2] }.collect().set { omega_v2_mutations_tables }
         depth.map { it -> it[1] }.collect().set { omega_v2_depths_tables }
 
-        ESTIMATOROMEGAV2(omega_v2_mutability_tables,
+        ESTIMATOROMEGACOVARIATES(omega_v2_mutability_tables,
                             omega_v2_mutations_tables,
                             omega_v2_depths_tables,
-                            expanded_panel,
+                            exons_consensus_panel,
                             wgs_counts,
                             omega_v2_covariates,
                             grouping_defs
                             )
-        omega_v2_results = ESTIMATOROMEGAV2.out.omega_grouped
+        omega_v2_results = ESTIMATOROMEGACOVARIATES.out.omega_grouped
     }
 
     GROUPGENES(expanded_panel, custom_gene_groups, json_subgenic)
