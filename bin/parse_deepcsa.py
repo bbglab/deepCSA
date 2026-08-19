@@ -145,10 +145,10 @@ class deepCSAparser:
         Output format: 96-channel list of trinucleotide counts in the standard order
         """
 
-        df = pd.read_csv(self.context_counts_path, index_col=0)
+        df = pd.read_table(self.context_counts_path, index_col=0, header=0)
         dg = df / df.sum()
-        d = dict(dg.apply(lambda x: int(1e6 * x)))
-        
+        dg = (dg * 1e6).round()
+        d = dict(zip(dg.index, dg.iloc[:, 0]))
         standard_contexts = standard_trinucleotide_contexts()
         res = [d[c[:3]] for c in standard_contexts]
         return res
