@@ -63,9 +63,9 @@ The directory tree below shows the maximum diversity of outputs the pipeline can
 │   ├── omega
 │   │   ├── preprocessing          # syn_muts.<sample>, mutabilities.<sample>
 │   │   └── estimator              # all_omegas.tsv, output_mle.<sample>.tsv
-│   ├── omega_v2                   # omega-covariates additional model output
+│   ├── omega_covariates                   # omega-covariates additional model output
 │   │   ├── data.tsv               # parsed and augmented sample-gene table
-│   │   ├── omega.tsv              # per sample-gene estimates (unless --omega_v2_all_samples)
+│   │   ├── omega.tsv              # per sample-gene estimates (unless --omega_covariates_all_samples)
 │   │   └── omega.grouped.tsv      # grouped per-gene estimates
 │   ├── omegagloballoc
 │   │   ├── preprocessing

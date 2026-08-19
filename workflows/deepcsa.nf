@@ -190,8 +190,8 @@ workflow DEEPCSA {
               "Please set '--use_custom_depths true' and provide '--custom_depths_table <path>'."
     }
 
-    if (params.omega_v2 && !params.omega) {
-        error "ERROR: '--omega_v2' requires '--omega true' because it reuses omega preprocessing outputs."
+    if (params.omega_covariates && !params.omega) {
+        error "ERROR: '--omega_covariates' requires '--omega true' because it reuses omega preprocessing outputs."
     }
 
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files

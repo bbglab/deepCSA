@@ -43,10 +43,10 @@ workflow OMEGA_ANALYSIS{
 
     main:
 
-    site_comparison_results = channel.empty()
-    global_loc_results      = channel.empty()
-    all_gloc_results        = channel.empty()
-    omega_v2_results        = channel.empty()
+    site_comparison_results     = channel.empty()
+    global_loc_results          = channel.empty()
+    all_gloc_results            = channel.empty()
+    omega_covariates_results    = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     QUERYPANEL(panel_captured_rich, bedfile)
@@ -74,22 +74,22 @@ workflow OMEGA_ANALYSIS{
     .join( depth )
     .set{ preprocess_n_depths }
 
-    if (params.omega_v2 && suffix == "") {
-        omega_v2_covariates = channel.fromPath(params.omega_v2_covariates, checkIfExists: true).first()
+    if (params.omega_covariates && suffix == "") {
+        omega_covariates_file = channel.fromPath(params.omega_covariates_cov_file, checkIfExists: true).first()
 
-        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[1] }.collect().set { omega_v2_mutability_tables }
-        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[2] }.collect().set { omega_v2_mutations_tables }
-        depth.map { it -> it[1] }.collect().set { omega_v2_depths_tables }
+        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[1] }.collect().set { omega_covariates_mutability_tables }
+        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[2] }.collect().set { omega_covariates_mutations_tables }
+        depth.map { it -> it[1] }.collect().set { omega_covariates_depths_tables }
 
-        ESTIMATOROMEGACOVARIATES(omega_v2_mutability_tables,
-                            omega_v2_mutations_tables,
-                            omega_v2_depths_tables,
+        ESTIMATOROMEGACOVARIATES(omega_covariates_mutability_tables,
+                            omega_covariates_mutations_tables,
+                            omega_covariates_depths_tables,
                             exons_consensus_panel,
                             wgs_counts,
-                            omega_v2_covariates,
+                            omega_covariates_file,
                             grouping_defs
                             )
-        omega_v2_results = ESTIMATOROMEGACOVARIATES.out.omega_grouped
+        omega_covariates_results = ESTIMATOROMEGACOVARIATES.out.omega_grouped
     }
 
     GROUPGENES(expanded_panel, custom_gene_groups, json_subgenic)
@@ -218,14 +218,14 @@ workflow OMEGA_ANALYSIS{
 
 
     emit:
-    results                 = ESTIMATOR.out.results
-    results_global          = global_loc_results
-    expanded_panel          = expanded_panel
-    site_comparison         = site_comparison_results_flattened
+    results                     = ESTIMATOR.out.results
+    results_global              = global_loc_results
+    expanded_panel              = expanded_panel
+    site_comparison             = site_comparison_results_flattened
 
-    all_compiled            = all_results
-    all_globalloc_compiled  = all_gloc_results
-    omega_v2_compiled       = omega_v2_results
+    all_compiled                = all_results
+    all_globalloc_compiled      = all_gloc_results
+    omega_covariates_compiled   = omega_covariates_results
     // plots = ONCODRIVE3D.out.plots
 
 }
