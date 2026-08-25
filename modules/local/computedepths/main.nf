@@ -26,6 +26,7 @@ process COMPUTEDEPTHS {
     // positions with a mean depth above a given value
     // if the provided value is 0 this is not used
     def minimum_depth = task.ext.minimum_depth ? "| awk 'NR == 1 {print; next}  {sum = 0; for (i=3; i<=NF; i++) sum += \$i; mean = sum / (NF - 2); if (mean >= ${task.ext.minimum_depth} ) print }'": ""
+    def remove_chrM = task.ext.remove_chrM ? "| egrep -v '^chrM'" : ""
     """
     ls -1 *.bam > bam_files_list.txt;
     samtools \\
@@ -35,6 +36,7 @@ process COMPUTEDEPTHS {
         -@ $task.cpus \\
         -f bam_files_list.txt \\
         | tail -c +2 \\
+        ${remove_chrM} \\
         ${minimum_depth} \\
         | gzip -c > ${prefix}.depths.tsv.gz;
 

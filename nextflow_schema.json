@@ -178,6 +178,13 @@
                     "default": 0,
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
+                },
+                "remove_chrM": {
+                    "type": "boolean",
+                    "description": "Whether to remove chrM from the depths table.",
+                    "default": true,
+                    "help_text": "If true, any positions on chrM will be removed from the computed depths table. This is useful if you want to exclude mitochondrial DNA from downstream analyses.",
+                    "fa_icon": "fas fa-ban"
                 }
             }
         },
