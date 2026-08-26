@@ -34,6 +34,8 @@ def mutation_based_assessment(panel_tsv, expected_mutation_density_in_mb, sample
 
     total_adjusted_size = size_per_consequence.groupby(by = ["GENE", "IMPACT"])["ADJUSTED_DEPTH"].sum() / 3
     expected_mutations_per_cnsq = (expected_mutation_density_in_mb * total_adjusted_size * samples) / 1e6
+    expected_mutations_per_cnsq.name = "EXPECTED_MUTATIONS"
+    expected_mutations_per_cnsq = expected_mutations_per_cnsq.round(5)
 
     return expected_mutations_per_cnsq
 
@@ -51,13 +53,18 @@ def mutation_based_assessment(panel_tsv, expected_mutation_density_in_mb, sample
 @click.option('--mutational-profile', '-m', 'mutational_profile_path', default=None, type=click.Path(exists=True, dir_okay=False),
               help='Optional mutational profile TSV with CONTEXT_MUT and Probability (or column named like all_samples.all)')
 @click.option('--output-prefix', '-o', default=None, help='Optional prefix to write TSV outputs (will create <prefix>*.tsv)')
-def main(panel_path, expected_mutation_density, samples, depth, mutational_profile_path, output_prefix):
+@click.option('--genes-list', '-g', 'genes_list', default=None, type=str,
+              help='Optional list of genes to consider')
+def main(panel_path, expected_mutation_density, samples, depth, mutational_profile_path, output_prefix, genes_list):
     """CLI entrypoint for assess_panel.
 
     Loads the panel TSV and optional mutational profile, runs the mutation-based assessment
     (with and without the provided profile) and optionally writes results to TSV files.
     """
     panel = pd.read_table(panel_path)
+    if genes_list:
+        genes_list = [gene.strip() for gene in genes_list.split(",")]
+        panel = panel[panel["GENE"].isin(genes_list)]
 
     mutational_prof = None
     if mutational_profile_path:
@@ -79,23 +86,29 @@ def main(panel_path, expected_mutation_density, samples, depth, mutational_profi
                     mutational_prof = None
 
     # Run assessments
+    print(f"Running mutation-based assessment with expected mutation density: {expected_mutation_density}, samples: {samples}, depth: {depth}")
     mutations_per_gene_consequence = mutation_based_assessment(panel, expected_mutation_density, samples, depth)
-    mutations_per_gene_consequence_mut_prof = mutation_based_assessment(panel, expected_mutation_density, samples, depth, mutational_prof)
-
-
-    signatures_based_assessment(panel_tsv, expected_mutation_density_in_mb, samples, depth, mutational_profile)
-
 
     # Print a short summary to stdout
     click.echo("Mutation-based assessment (uniform profile) - top rows:")
     click.echo(mutations_per_gene_consequence.head().to_string())
-    click.echo("\nMutation-based assessment (provided mutational profile) - top rows:")
-    click.echo(mutations_per_gene_consequence_mut_prof.head().to_string())
+    
+    if mutational_prof is not None:
+        print(f"Running mutation-based assessment with provided mutational profile: {mutational_profile_path}")
+        mutations_per_gene_consequence_mut_prof = mutation_based_assessment(panel, expected_mutation_density, samples, depth, mutational_prof)
+
+        click.echo("\nMutation-based assessment (provided mutational profile) - top rows:")
+        click.echo(mutations_per_gene_consequence_mut_prof.head().to_string())
 
     # Optionally write outputs
     if output_prefix:
         out1 = f"{output_prefix}.mutations_per_gene_consequence.tsv"
-        out2 = f"{output_prefix}.mutations_per_gene_consequence_mutprof.tsv"
         mutations_per_gene_consequence.to_csv(out1, sep='\t')
-        mutations_per_gene_consequence_mut_prof.to_csv(out2, sep='\t')
-        click.echo(f"Wrote results to: {out1} and {out2}")
+        click.echo(f"Wrote results to: {out1}")
+        if mutational_prof is not None:
+            out2 = f"{output_prefix}.mutations_per_gene_consequence_mutprof.tsv"
+            mutations_per_gene_consequence_mut_prof.to_csv(out2, sep='\t')
+            click.echo(f"Wrote results to: {out1} and {out2}")
+
+if __name__ == "__main__":
+    main()
