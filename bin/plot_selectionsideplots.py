@@ -333,16 +333,17 @@ def plot_all_positive_selection(omega_truncating,
                                 indels_panel_df,
                                 oncodrive3d_data_scores,
                                 oncodrivefml_data,
+                                dndscv_data,
                                 gene_order,
                                 title = None,
                                 pvalue_thres = 0.05,
                                 linewidth_def = 0.6,
-                                tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml")
+                                tracks = ("omega_trunc", "omega_mis", "dndscv", "oncodrive3d", "oncodrivefml")
                                 ):
 
     num_genes = len(gene_order)
     # Determine which tracks to plot and their order
-    all_tracks = ["omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml", "indels"]
+    all_tracks = ["omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml", "dndscv", "indels"]
     plot_tracks = [t for t in all_tracks if t in tracks]
     n_tracks = len(plot_tracks)
     
@@ -427,7 +428,44 @@ def plot_all_positive_selection(omega_truncating,
         ax_idx += 1
 
 
+    if "dndscv" in plot_tracks and dndscv_data is not None:
+        ax = axes[ax_idx]
+        dndscv_sig = dndscv_data[dndscv_data["pvalue"] <= pvalue_thres].reset_index(drop = True)
+        dndscv_notsig = dndscv_data[dndscv_data["pvalue"] > pvalue_thres].reset_index(drop = True)
+        sns.barplot(data=dndscv_notsig, x='GENE', y='dndscv',
+                    ax=ax, alpha=1,
+                    fill = False,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    hue = 'impact',
+                    hue_order = ["missense", "truncating", "indel"],
+                    palette = metrics_colors_dictionary)
+        sns.barplot(data=dndscv_sig, x='GENE', y='dndscv',
+                    ax=ax, alpha=1,
+                    legend = False,
+                    linewidth = linewidth_def,
+                    order = gene_order,
+                    hue = 'impact',
+                    hue_order = ["missense", "truncating", "indel"],
+                    palette = metrics_colors_dictionary
+                    )
+        ax.set_xlabel('')
+        ax.set_ylabel('dNdScv', rotation = 0, labelpad=17, verticalalignment = 'center')
+        # Only set xticklabels on last axis
+        if ax_idx == n_tracks - 1:
+            ax.set_xticks(range(num_genes))
+            ax.set_xticklabels(gene_order, rotation=90)
+        else:
+            ax.set_xticks(range(len(gene_order)))
+            ax.set_xticklabels([])
+        ax.axhline(1, color='black', linestyle='--')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax_idx += 1
 
+
+    
     if "oncodrive3d" in plot_tracks and oncodrive3d_data_scores is not None:
         ax = axes[ax_idx]
         df = oncodrive3d_data_scores
@@ -563,6 +601,7 @@ def get_all_data(sample, outdir,
     omega_missense = None
     oncodrive3d_data_scores = None
     indels_panel_df = None
+    dndscv_df = None
     global_omega_decreasing = []
     available_tracks = []
 
@@ -685,6 +724,27 @@ def get_all_data(sample, outdir,
     else:
         print(f"Warning: Indels file {indels_file} not found. Skipping indels track.")
 
+    # Check and load oncodrivefml data
+    dndscv_file = f"{sample}.cv.tsv"
+    if os.path.exists(dndscv_file) and "dndscv" in tracks:
+        try:
+            dndscv_data = pd.read_table(dndscv_file)
+            dndscv_mis = dndscv_data[["gene_name", "sample", "wmis_cv", "qmis_cv"]]
+            dndscv_mis["impact"] = 'missense'
+            dndscv_trunc = dndscv_data[["gene_name", "sample", "wnon_cv", "qtrunc_cv"]] 
+            dndscv_trunc["impact"] = 'truncating'
+            dndscv_ind = dndscv_data[["gene_name", "sample", "wind_cv", "qind_cv"]]
+            dndscv_ind["impact"] = 'indel'
+            dndscv_df = pd.concat([dndscv_trunc, dndscv_mis, dndscv_ind], axis=1)
+            dndscv_df.columns = ["GENE", "SAMPLE", "dndscv", "pvalue"]
+
+            available_tracks.append("dndscv")
+            print(f"Loaded dNdScv data from {dndscv_file}")
+        except Exception as e:
+            print(f"Warning: Failed to load dNdScv data: {e}")
+    else:
+        print(f"Warning: dNdScv file {dndscv_file} not found. Skipping dNdScv track.")
+
     # Check if we have any data to plot
     if not available_tracks:
         print("Warning: No data files found for any of the requested tracks. Skipping plot generation.")
@@ -698,6 +758,7 @@ def get_all_data(sample, outdir,
                                             indels_panel_df,
                                             oncodrive3d_data_scores,
                                             oncodrivefml_data,
+                                            dndscv_df,
                                             global_omega_decreasing if gene_order is None else gene_order,
                                             title = sample,
                                             pvalue_thres = pvaluee,

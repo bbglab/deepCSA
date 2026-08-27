@@ -467,7 +467,6 @@ workflow DEEPCSA {
         positive_selection_results = positive_selection_results.join(ONCODRIVE3D.out.results_pos, remainder: true)
     }
 
-    // if (params.expected_mutated_cells & params.dnds){
     if (params.dnds){
         DNDS(mutations_in_exons,
                     DEPTHSEXONSCONS.out.subset,
@@ -476,6 +475,7 @@ workflow DEEPCSA {
                     params.fasta
                     )
         dndscv_table = DNDS.out.all_dndscv_results
+        positive_selection_results = positive_selection_results.join(DNDS.out.dnds_cv_per_sample, remainder: true)
     }
 
     if (params.omega){
