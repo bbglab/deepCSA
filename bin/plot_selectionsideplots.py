@@ -387,7 +387,7 @@ def plot_all_positive_selection(omega_truncating,
         else:
             ax.set_xticks(range(len(gene_order)))
             ax.set_xticklabels([])
-        ax.axhline(1, color='black', linestyle='--')
+        ax.axhline(1, color='black', linestyle='--', linewidth=0.5)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax_idx += 1
@@ -422,7 +422,7 @@ def plot_all_positive_selection(omega_truncating,
         else:
             ax.set_xticks(range(len(gene_order)))
             ax.set_xticklabels([])
-        ax.axhline(1, color='black', linestyle='--')
+        ax.axhline(1, color='black', linestyle='--', linewidth=0.5)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax_idx += 1
@@ -459,7 +459,7 @@ def plot_all_positive_selection(omega_truncating,
         else:
             ax.set_xticks(range(len(gene_order)))
             ax.set_xticklabels([])
-        ax.axhline(1, color='black', linestyle='--')
+        ax.axhline(1, color='black', linestyle='--', linewidth=0.5)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax_idx += 1
@@ -591,7 +591,7 @@ def plot_all_positive_selection(omega_truncating,
 
 def get_all_data(sample, outdir,
                  pvaluee = 0.05,
-                 tracks=("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml"),
+                 tracks=("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml", "dndscv"),
                  gene_order = None
                  ):
 
@@ -725,18 +725,23 @@ def get_all_data(sample, outdir,
         print(f"Warning: Indels file {indels_file} not found. Skipping indels track.")
 
     # Check and load oncodrivefml data
-    dndscv_file = f"{sample}.cv.tsv"
+    dndscv_file = f"{sample}.dNdScv.cv.tsv"
     if os.path.exists(dndscv_file) and "dndscv" in tracks:
         try:
             dndscv_data = pd.read_table(dndscv_file)
-            dndscv_mis = dndscv_data[["gene_name", "sample", "wmis_cv", "qmis_cv"]]
+            dndscv_mis = dndscv_data[["gene_name", "sample", "wmis_cv", "qmis_cv"]].copy()
+            dndscv_mis.columns = ["GENE", "SAMPLE", "dndscv", "pvalue"]
             dndscv_mis["impact"] = 'missense'
-            dndscv_trunc = dndscv_data[["gene_name", "sample", "wnon_cv", "qtrunc_cv"]] 
+
+            dndscv_trunc = dndscv_data[["gene_name", "sample", "wnon_cv", "qtrunc_cv"]].copy()
+            dndscv_trunc.columns = ["GENE", "SAMPLE", "dndscv", "pvalue"]
             dndscv_trunc["impact"] = 'truncating'
-            dndscv_ind = dndscv_data[["gene_name", "sample", "wind_cv", "qind_cv"]]
+            
+            dndscv_ind = dndscv_data[["gene_name", "sample", "wind_cv", "qind_cv"]].copy()
+            dndscv_ind.columns = ["GENE", "SAMPLE", "dndscv", "pvalue"]
             dndscv_ind["impact"] = 'indel'
-            dndscv_df = pd.concat([dndscv_trunc, dndscv_mis, dndscv_ind], axis=1)
-            dndscv_df.columns = ["GENE", "SAMPLE", "dndscv", "pvalue"]
+
+            dndscv_df = pd.concat([dndscv_trunc, dndscv_mis, dndscv_ind], axis=0)
 
             available_tracks.append("dndscv")
             print(f"Loaded dNdScv data from {dndscv_file}")
@@ -779,7 +784,7 @@ def main(sample_name, outdir, include_indels):
     try:
         generate_all_side_figures(sample_name, f"{outdir}/side_figures")
         # By default, exclude indels unless --include_indels is set
-        tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml")
+        tracks = ("omega_trunc", "omega_mis", "oncodrive3d", "oncodrivefml", "dndscv")
         if include_indels:
             tracks = tracks + ("indels",)
         get_all_data(sample_name, outdir, tracks=tracks)
