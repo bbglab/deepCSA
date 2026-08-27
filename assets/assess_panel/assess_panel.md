@@ -40,5 +40,5 @@ An additional scenario to consider is the trinucleotide mutation probabilities. 
 The average depth represents the number of times that you sequence your region of interest, then it can be seen as:
 
 $$
-\text{Expected number of mutations} = (\text{ average depth * region of interest (bp) }) \times (\text{expected mutation density (muts/bp)})}
+\text{Expected number of mutations} = (\text{ average depth * region of interest (bp) }) \times (\text{expected mutation density (muts/bp)})
 $$
