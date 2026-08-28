@@ -21,8 +21,6 @@ process BUILD_REFCDS {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     Rscript -e "library(dndscv); buildref('${biomart_cds}', '${reference_genome}', outfile = 'RefCDS_custom.rda')"
 
@@ -34,8 +32,6 @@ process BUILD_REFCDS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch RefCDS_custom.rda
 
