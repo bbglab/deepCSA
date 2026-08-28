@@ -270,10 +270,10 @@ def manager(mutations_file, outdir, expand_muts = False):
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
 def main(sample_name, mut_file, o3d_seq_file, outdir):
     click.echo("Generating simple needle plots...")
-    manager(sample_name, mut_file, o3d_seq_file, outdir)
+    manager(mut_file, outdir)
 
     click.echo("Generating expanded needle plots...")
-    manager(sample_name, mut_file, o3d_seq_file, outdir, expand_muts=True)
+    manager(mut_file, outdir, expand_muts=True)
 
 if __name__ == '__main__':
     main()
