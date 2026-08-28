@@ -236,10 +236,6 @@ def calc_vaf_distance_summary(
     df_large = df[(df[depth_col] > depth_cutoff_low)
                   & (df[target_col] > large_clone_quantile_vaf_value)].copy()
 
-    df_large_ALTDEPTH = df[(df[depth_col] > depth_cutoff_low)
-                            & (df["ALT_DEPTH"] > 1)
-                            ].copy()
-
     df_high_depth = df[(df[depth_col] > depth_cutoff_high)].copy()
 
     sample_name = df_high_depth["SAMPLE_ID"].iloc[0] if len(df_high_depth["SAMPLE_ID"].unique()) > 1 else "all_samples"
@@ -247,7 +243,6 @@ def calc_vaf_distance_summary(
 
     print(f"Low depth clones: {df_low_depth.shape[0]}")
     print(f"Large clones: {df_large.shape[0]}")
-    print(f"Large clones ALTDEPTH: {df_large_ALTDEPTH.shape[0]}")
     print(f"High depth clones: {df_high_depth.shape[0]}")
 
     results = []
@@ -258,7 +253,6 @@ def calc_vaf_distance_summary(
 
         reldist_low_depth       = compute_column_distances(df_low_depth, col, target_col)
         reldist_large           = compute_column_distances(df_large, col, target_col)
-        reldist_largeALTDEPTH   = compute_column_distances(df_large_ALTDEPTH, col, target_col)
         reldist_high_depth      = compute_column_distances(df_high_depth, col, target_col)
 
         results.append({
@@ -266,13 +260,11 @@ def calc_vaf_distance_summary(
 
             "mean_reldist_low_depth": reldist_low_depth.mean().round(6),
             "mean_reldist_large_clones": reldist_large.mean().round(6),
-            "mean_reldist_largeALTDEPTH": reldist_largeALTDEPTH.mean().round(6),
             "mean_reldist_high_depth": reldist_high_depth.mean().round(6),
 
             "n_total": len(df),
             "n_low_depth": len(df_low_depth),
             "n_large_clones": len(df_large),
-            "n_largeALTDEPTH": len(df_large_ALTDEPTH),
             "n_high_depth": len(df_high_depth),
             "depth_cutoff_low": depth_cutoff_low,
             "depth_cutoff_high": depth_cutoff_high,
@@ -295,7 +287,6 @@ def plot_vaf_distance_summary(
 
     y_low       = "mean_reldist_low_depth"
     y_large     = "mean_reldist_large_clones"
-    y_large_alt = "mean_reldist_largeALTDEPTH"
     y_high_depth= "mean_reldist_high_depth"
     ylabel      = "Mean relative distance of updated VAF"
 
@@ -310,14 +301,9 @@ def plot_vaf_distance_summary(
             "-o", lw=2, ms=5, label=f"Large clones (n={dist_df['n_large_clones'].iloc[0]})"
             )
 
-    if dist_df['n_largeALTDEPTH'].iloc[0] > 0:
-        ax.plot( dist_df["w"], dist_df[y_large_alt],
-                "-o", lw=2, ms=5, label=f"Large clones ALTDEPTH (n={dist_df['n_largeALTDEPTH'].iloc[0]})"
-                )
-
     if dist_df['n_high_depth'].iloc[0] > 0:
         ax.plot(dist_df["w"], dist_df[y_high_depth],
-                "-o", lw=2, ms=5, label=f"Large clones HIGH_DEPTH (n={dist_df['n_high_depth'].iloc[0]})"
+                "-o", lw=2, ms=5, label=f"High-depth clones (n={dist_df['n_high_depth'].iloc[0]})"
                 )
 
     ax.set_xlabel("Pseudocount weight (w)")
@@ -365,7 +351,7 @@ def select_vafpseudo_per_sample(selected_weights_df, mutations_table):
                                         'avg_depth_mutations', 'avg_depth_am_mutations']].drop_duplicates()
 
     # Save the final DataFrame with a summary of the corrections applied per sample
-    corrections_summary_df.to_csv("corrections_per_sample_summary.tsv", sep="\t", index=False)
+    corrections_summary_df.to_csv("corrections_per_sample_summary.tsv.gz", sep="\t", index=False)
 
 
 @click.command()
@@ -444,7 +430,7 @@ def main(mutdensities, mutations, depth_sample):
                     )
                     dist_df["mean_reldist_diff_low_over_large_clones"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_large_clones"]).round(4)
                     dist_df["mean_reldist_diff_low_over_high_depth"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_high_depth"]).round(4)
-                    dist_df.to_csv(f"vaf_distance_summary_{sample}.tsv", sep="\t", index=False)
+                    dist_df.to_csv(f"distances/vaf_distance_summary_{sample}.tsv.gz", sep="\t", index=False, compression='gzip')
 
                     #get minimum distance weight for low depth clones
                     try:
@@ -473,9 +459,8 @@ def main(mutdensities, mutations, depth_sample):
                     output_pdf=pdf_separation
                 )
                 dist_df["mean_reldist_diff_low_over_large_clones"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_large_clones"]).round(4)
-                dist_df["mean_reldist_diff_low_over_largeALTDEPTH"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_largeALTDEPTH"]).round(4)
                 dist_df["mean_reldist_diff_low_over_high_depth"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_high_depth"]).round(4)
-                dist_df.to_csv(f"vaf_distance_summary_all_samples.tsv", sep="\t", index=False)
+                dist_df.to_csv(f"distances/vaf_distance_summary_all_samples.tsv.gz", sep="\t", index=False, compression='gzip')
 
                 fig, ax = plot_vaf_distance_summary(dist_df, log_y=False, sample_name = 'all_samples')
                 pdf.savefig()
