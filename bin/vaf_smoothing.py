@@ -30,10 +30,6 @@ def compute_priors(mutdensity_file, samples):
     npa_mutdensities['prior'] = npa_mutdensities['N_MUTATED'] / npa_mutdensities['DEPTH']
     npa_priors = npa_mutdensities[['SAMPLE_ID', 'prior']]
 
-    # npa_priors.to_csv(f"sample_specific_priors.tsv.gz",
-    #                                header=True,
-    #                                index=False,
-    #                                sep="\t")
     return npa_priors
 
 # Reference: original VAF vs target VAF
@@ -62,8 +58,9 @@ def apply_correction_per_sample(mutations_table, priors_per_sample, depths_per_s
         ].copy()
         sample_depths = depths_per_sample[depths_per_sample['SAMPLE_ID'] == sample_id]
         average_depth = sample_depths['avg_depth_sample'].values[0]
+        sample_mutations["avg_depth_mutations"] = sample_mutations["DEPTH"].mean()
+        sample_mutations["avg_depth_am_mutations"] = sample_mutations["DEPTH_AM"].mean()
         for weight_prop in weights_list:
-            # weight = weight_prop * average_depth // 1
             sample_mutations[f'VAF_PSEUDO_{weight_prop}'] = vaf_pseudocount(
                                         sample_mutations['ALT_DEPTH'],
                                         sample_mutations['DEPTH'],
@@ -85,7 +82,7 @@ def apply_correction_per_sample(mutations_table, priors_per_sample, depths_per_s
 def vaf_pseudocount(alt_depth, depth, weight, prior_vaf=None):    
     return (alt_depth + prior_vaf * weight) / (depth + weight)
 
-def plot_vaf_pseudocount_curve(maf_df, samples, prior_vafs, output_pdf, suffix='',
+def plot_vaf_pseudocount_curve(maf_df, samples, output_pdf, suffix='',
                                weights_list=[0, 0.2, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]):
     """
     Plot VAF distribution compared to VAF_AM in a histogram.
@@ -163,6 +160,52 @@ def plot_vaf_pseudocount_curve_pair(maf_df, samples, selected_weights, suffix=''
 
 
 
+def plot_vaf_pseudocount_curve_groups(sample, df, df_low, df_large, df_high, suffix='', pdf_to_store=None):
+    """
+    Plot VAF distribution compared to VAF_AM in a histogram.
+    
+    Parameters:
+    -----------
+    sample : str
+        Sample ID
+    df : DataFrame
+        MAF dataframe containing VAF and VAF_AM columns
+    df_low : DataFrame
+        MAF dataframe containing low depth clones
+    df_large : DataFrame
+        MAF dataframe containing large clones
+    df_high : DataFrame
+        MAF dataframe containing high depth clones
+    suffix : str
+        Suffix to append to column names
+    pdf_to_store : PdfPages
+        PDF pages object to store the plot
+    """
+
+    n_cols = 4
+    n_rows = 1
+    fig, axes = plt.subplots(n_rows, n_cols,
+                            figsize=(n_cols * 2.5, n_rows * 2.5), sharex=True, sharey=True)
+    axes = axes.flatten()
+    fig.suptitle(f'{sample} groups : VAF{suffix} vs DEPTH{suffix}', fontsize = 7)
+
+    names = ["ALL", "Low Depth", "Large Clones", "High Depth"]
+    for i, samples_maf_df in enumerate([df, df_low, df_large, df_high]):
+        axes[i].scatter(samples_maf_df[f'DEPTH{suffix}'], samples_maf_df[f'VAF{suffix}'], s=3, alpha=0.1)
+        axes[i].set_xlabel(f'DEPTH{suffix}', fontsize=6)
+        axes[i].set_ylabel(f'VAF{suffix}', fontsize=6)
+        axes[i].set_yscale('log')
+        axes[i].set_xscale('log')
+        axes[i].tick_params(labelsize=6)
+        axes[i].set_title(names[i])
+    plt.tight_layout()
+    if pdf_to_store is not None:
+        pdf_to_store.savefig()
+    plt.close()
+    plt.show()
+
+
+
 def calc_vaf_distance_summary(
     df,
     weights,
@@ -172,6 +215,7 @@ def calc_vaf_distance_summary(
     depth_col="DEPTH",
     depth_quantile=0.1,
     large_clone_quantile=0.95,
+    output_pdf=None
     ):
     """
     Calculate distance between VAF_PSEUDO and target VAF column
@@ -196,6 +240,8 @@ def calc_vaf_distance_summary(
                             ].copy()
 
     df_high_depth = df[(df[depth_col] > depth_cutoff_high)].copy()
+
+    plot_vaf_pseudocount_curve_groups(df_high_depth["SAMPLE_ID"].iloc[0], df, df_low_depth, df_large, df_high_depth, '_AM', output_pdf)
 
     # print(df[(df[depth_col] > depth_cutoff_low)]["ALT_DEPTH"].value_counts())
     # print(df[(df[depth_col] > depth_cutoff_low)]["ALT_DEPTH_AM"].value_counts())
@@ -433,13 +479,13 @@ def select_vafpseudo_per_sample(selected_weights_df, mutations_table):
 
     # Create a new column for the final selected VAF_PSEUDO values
     merged_df['selected_VAF_PSEUDO'] = merged_df.apply(lambda x: x[x['selected_column']], axis=1)
-    merged_df["artificial_depth"] = merged_df["selected_weight"]
-    merged_df = merged_df[columns_to_keep + ['selected_weight', 'artificial_depth', 'selected_VAF_PSEUDO']]
+    merged_df = merged_df[columns_to_keep + ['selected_weight', 'selected_VAF_PSEUDO', 'avg_depth_mutations', 'avg_depth_am_mutations']]
 
     # Save the final DataFrame with selected VAF_PSEUDO values
     merged_df.to_csv("mutations_with_final_selected_VAF_PSEUDO.tsv.gz", sep="\t", index=False)
 
-    corrections_summary_df = merged_df[['SAMPLE_ID', 'prior', 'avg_depth_sample', 'selected_weight', 'artificial_depth']].drop_duplicates()
+    corrections_summary_df = merged_df[['SAMPLE_ID', 'prior', 'avg_depth_sample', 'selected_weight',
+                                        'avg_depth_mutations', 'avg_depth_am_mutations']].drop_duplicates()
     
     # Save the final DataFrame with a summary of the corrections applied per sample
     corrections_summary_df.to_csv("corrections_per_sample_summary.tsv.gz", sep="\t", index=False)
@@ -488,30 +534,78 @@ def main(mutdensities, mutations, depth_sample):
                                 index=False,
                                 sep="\t")
 
-    click.echo("Plotting VAF pseudocount curves...")
-    with PdfPages("vaf_pseudocounts_curves.pdf") as pdf:
-        plt.figure(figsize=(8, 6))
-        plt.hist(priors_per_sample['prior'], bins=10)
-        plt.title('Distribution of sample-specific priors')
-        plt.xlabel('Prior VAF')
-        plt.ylabel('Frequency')
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
+    # click.echo("Plotting VAF pseudocount curves...")
+    # with PdfPages("vaf_pseudocounts_curves.pdf") as pdf:
+    #     plt.figure(figsize=(8, 6))
+    #     plt.hist(priors_per_sample['prior'], bins=10)
+    #     plt.title('Distribution of sample-specific priors')
+    #     plt.xlabel('Prior VAF')
+    #     plt.ylabel('Frequency')
+    #     plt.tight_layout()
+    #     pdf.savefig()
+    #     plt.close()
 
-        plot_vaf_pseudocount_curve(all_mutations_table, samples_list, priors_per_sample, pdf, suffix='', weights_list=weights)
-        plot_vaf_pseudocount_curve(all_mutations_table, samples_list, priors_per_sample, pdf, suffix='_AM', weights_list=weights)
+    #     plot_vaf_pseudocount_curve(all_mutations_table, samples_list, pdf, suffix='', weights_list=weights)
+    #     plot_vaf_pseudocount_curve(all_mutations_table, samples_list, pdf, suffix='_AM', weights_list=weights)
 
     click.echo("Plotting pseudocount curves weight comparison...")
-    with PdfPages("vaf_pseudocount_weights_comparison.pdf") as pdf:
+    with PdfPages("vaf_groups_per_sample.pdf") as pdf_separation:
+        with PdfPages("vaf_pseudocount_weights_comparison.pdf") as pdf:
 
-        selected_weights_dict = {}
-        try :
-            for sample in samples_list:
-                sample_mutations = all_mutations_table[all_mutations_table['SAMPLE_ID'] == sample]
+            selected_weights_dict = {}
+            try :
+                for sample in samples_list:
+                    sample_mutations = all_mutations_table[all_mutations_table['SAMPLE_ID'] == sample]
+
+                    dist_df = calc_vaf_distance_summary(
+                        sample_mutations,
+                        weights=weights,
+                        vaf_col="VAF_AM",
+                        target_col="VAF_AM",
+                        pseudo_prefix="VAF_AM_PSEUDO",
+                        depth_col="DEPTH_AM",
+                        depth_quantile=0.2,
+                        large_clone_quantile=0.90,
+                        output_pdf=pdf_separation
+                    )
+                    dist_df["mean_reldist_diff_low_over_large_clones"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_large_clones"]).round(4)
+                    dist_df["mean_reldist_diff_low_over_high_depth"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_high_depth"]).round(4)
+                    dist_df.to_csv(f"vaf_distance_summary_{sample}.tsv", sep="\t", index=False)
+
+                    #get minimum distance weight for low depth clones
+                    try:
+                        max_weight_below_threshold = dist_df.loc[np.where(dist_df['mean_reldist_large_clones'] < 0.2)[0][-1], 'w']
+                    except IndexError:
+                        click.echo(f"Warning: No weight found for sample {sample} where mean_reldist_large_clones < 0.2. Using the smallest non-0 weight.")
+                        max_weight_below_threshold = weights[1]  # or some default value
+
+                    selected_weights_dict[sample] = max_weight_below_threshold
+
+                    print(f"Sample {sample}: Maximum weight below threshold for low depth clones: {max_weight_below_threshold}")
+
+                    fig, ax = plot_vaf_distance_summary(
+                        dist_df,
+                        log_dist=False,   
+                        use_mean=False,
+                        log_y=False,
+                        sample_name = sample
+                    )
+                    pdf.savefig()
+                    plt.close()
+
+                #     fig, ax = plot_vaf_distance_summary(
+                #         dist_df,
+                #         log_dist=True,
+                #         use_mean=True,
+                #         log_y=False,
+                #         sample_name = f'{sample}_mean'
+                #     )
+                #     pdf.savefig()
+                #     plt.close()
+
 
                 dist_df = calc_vaf_distance_summary(
-                    sample_mutations,
+                    all_mutations_table,
                     weights=weights,
                     vaf_col="VAF_AM",
                     target_col="VAF_AM",
@@ -519,11 +613,22 @@ def main(mutdensities, mutations, depth_sample):
                     depth_col="DEPTH_AM",
                     depth_quantile=0.2,
                     large_clone_quantile=0.90,
+                    output_pdf=pdf_separation
                 )
                 dist_df["mean_reldist_diff_low_over_large_clones"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_large_clones"]).round(4)
                 dist_df["mean_reldist_diff_low_over_largeALTDEPTH"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_largeALTDEPTH"]).round(4)
                 dist_df["mean_reldist_diff_low_over_high_depth"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_high_depth"]).round(4)
-                dist_df.to_csv(f"vaf_distance_summary_{sample}.tsv", sep="\t", index=False)
+                dist_df.to_csv(f"vaf_distance_summary_all_samples.tsv", sep="\t", index=False)
+
+                fig, ax = plot_vaf_distance_summary(
+                    dist_df,
+                    log_dist=False,   
+                    use_mean=False,
+                    log_y=False,
+                    sample_name = 'all_samples'
+                )
+                pdf.savefig()
+                plt.close()
 
                 #get minimum distance weight for low depth clones
                 try:
@@ -532,84 +637,27 @@ def main(mutdensities, mutations, depth_sample):
                     click.echo(f"Warning: No weight found for sample {sample} where mean_reldist_large_clones < 0.2. Using the smallest non-0 weight.")
                     max_weight_below_threshold = weights[1]  # or some default value
 
-                selected_weights_dict[sample] = max_weight_below_threshold
-
-                print(f"Sample {sample}: Maximum weight below threshold for low depth clones: {max_weight_below_threshold}")
-
-                fig, ax = plot_vaf_distance_summary(
-                    dist_df,
-                    log_dist=False,   
-                    use_mean=False,
-                    log_y=False,
-                    sample_name = sample
-                )
-                pdf.savefig()
-                plt.close()
-
-            #     fig, ax = plot_vaf_distance_summary(
-            #         dist_df,
-            #         log_dist=True,
-            #         use_mean=True,
-            #         log_y=False,
-            #         sample_name = f'{sample}_mean'
-            #     )
-            #     pdf.savefig()
-            #     plt.close()
-
-
-            dist_df = calc_vaf_distance_summary(
-                all_mutations_table,
-                weights=weights,
-                vaf_col="VAF_AM",
-                target_col="VAF_AM",
-                pseudo_prefix="VAF_AM_PSEUDO",
-                depth_col="DEPTH_AM",
-                depth_quantile=0.2,
-                large_clone_quantile=0.90,
-            )
-            dist_df["mean_reldist_diff_low_over_large_clones"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_large_clones"]).round(4)
-            dist_df["mean_reldist_diff_low_over_largeALTDEPTH"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_largeALTDEPTH"]).round(4)
-            dist_df["mean_reldist_diff_low_over_high_depth"] = (dist_df["mean_reldist_low_depth"] / dist_df["mean_reldist_high_depth"]).round(4)
-            dist_df.to_csv(f"vaf_distance_summary_all_samples.tsv", sep="\t", index=False)
-
-            fig, ax = plot_vaf_distance_summary(
-                dist_df,
-                log_dist=False,   
-                use_mean=False,
-                log_y=False,
-                sample_name = 'all_samples'
-            )
-            pdf.savefig()
-            plt.close()
-
-            #get minimum distance weight for low depth clones
-            try:
-                max_weight_below_threshold = dist_df.loc[np.where(dist_df['mean_reldist_large_clones'] < 0.2)[0][-1], 'w']
-            except IndexError:
-                click.echo(f"Warning: No weight found for sample {sample} where mean_reldist_large_clones < 0.2. Using the smallest non-0 weight.")
-                max_weight_below_threshold = weights[1]  # or some default value
-
-            selected_weights_dict['all_samples'] = max_weight_below_threshold
+                selected_weights_dict['all_samples'] = max_weight_below_threshold
 
 
 
-            # fig, ax = plot_vaf_distance_summary(
-            #     dist_df,
-            #     log_dist=True,
-            #     use_mean=True,
-            #     log_y=False,
-            #     sample_name = 'all_samples_mean'
-            # )
-            # pdf.savefig()
-            # plt.close()
+                # fig, ax = plot_vaf_distance_summary(
+                #     dist_df,
+                #     log_dist=True,
+                #     use_mean=True,
+                #     log_y=False,
+                #     sample_name = 'all_samples_mean'
+                # )
+                # pdf.savefig()
+                # plt.close()
 
 
-            # store selected weights in a tsv file
-            selected_weights_df = pd.DataFrame(list(selected_weights_dict.items()), columns=['SAMPLE_ID', 'selected_weight'])
-            # selected_weights_df.to_csv("selected_weights_per_sample.tsv.gz", sep="\t", index=False)
+                # store selected weights in a tsv file
+                selected_weights_df = pd.DataFrame(list(selected_weights_dict.items()), columns=['SAMPLE_ID', 'selected_weight'])
+                # selected_weights_df.to_csv("selected_weights_per_sample.tsv.gz", sep="\t", index=False)
 
-        except Exception as e:
-            click.echo(f"Error in plotting VAF distance summary: {e}")
+            except Exception as e:
+                click.echo(f"Error in plotting VAF distance summary: {e}")
 
     plot_vaf_pseudocount_curve_pair(all_mutations_table, samples_list, selected_weights_df, suffix='_AM')
 
