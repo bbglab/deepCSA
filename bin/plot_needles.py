@@ -21,7 +21,7 @@ mpl.rcParams.update({
 
 
 
-def get_counts_per_position_n_consequence(somatic_maf_file):
+def get_counts_per_position_n_consequence(somatic_maf_file, expanded = False):
     somatic_maf = pd.read_table(somatic_maf_file, na_values = custom_na_values)
 
     somatic_maf_clean = somatic_maf[(somatic_maf["TYPE"] == 'SNV')
@@ -29,14 +29,22 @@ def get_counts_per_position_n_consequence(somatic_maf_file):
                                     & (somatic_maf['canonical_Protein_position'] != '-')
                                     ].reset_index(drop = True)
     somatic_maf_clean['canonical_Protein_position'] = somatic_maf_clean['canonical_Protein_position'].astype(int)
-    counts_per_position = somatic_maf_clean.groupby(by = ["SAMPLE_ID", "canonical_SYMBOL", 'canonical_Consequence_broader', 'canonical_Protein_position'])['ALT_DEPTH'].size().to_frame('Count').reset_index()
+    if expanded:
+        somatic_maf_clean.loc[somatic_maf_clean["ALT_DEPTH"] > 5, "ALT_DEPTH"] = 5
+        counts_per_position = somatic_maf_clean.groupby(by = ["SAMPLE_ID", "canonical_SYMBOL", 'canonical_Consequence_broader', 'canonical_Protein_position'])['ALT_DEPTH'].sum().to_frame('Count').reset_index()
+        click.echo("Using expanded counts")
+
+    else:
+        counts_per_position = somatic_maf_clean.groupby(by = ["SAMPLE_ID", "canonical_SYMBOL", 'canonical_Consequence_broader', 'canonical_Protein_position'])['ALT_DEPTH'].size().to_frame('Count').reset_index()
+
     counts_per_position.columns = ["SAMPLE_ID", 'Gene', 'Consequence', 'Pos', 'Count']
 
     return counts_per_position
 
 
 def plot_count_track(count_df,
-                        gene_len,
+                     gene_start,
+                     gene_end,
                         axes,
                         colors_dict,
                         ax=0,
@@ -50,7 +58,7 @@ def plot_count_track(count_df,
     batches = np.array_split(shuffled_df, n_batches)
 
     legend_list = []
-    pos_df = pd.DataFrame({"Pos" : range(1, gene_len+1)})
+    pos_df = pd.DataFrame({"Pos" : range(gene_start, gene_end + 1)})
 
     for batch_idx, batch in enumerate(batches):
         for cnsq in ['nonsense', 'missense', 'synonymous']:
@@ -91,7 +99,8 @@ def plot_count_track(count_df,
         ax_right.set_ylabel("Proportion of mutations")
 
 def plot_stacked_bar_track_binned(count_df,
-                                    gene_len,
+                                    gene_start,
+                                    gene_end,
                                     axes,
                                     colors_dict,
                                     ax=0,
@@ -105,7 +114,8 @@ def plot_stacked_bar_track_binned(count_df,
 
     Parameters:
         count_df: DataFrame with ['Pos', 'Consequence', 'Count'] columns
-        gene_len: Length of the protein sequence
+        gene_start: Start position of the gene
+        gene_end: End position of the gene
         axes: matplotlib axes array
         colors_dict: dictionary mapping consequence -> color
         ax: index of subplot
@@ -114,6 +124,9 @@ def plot_stacked_bar_track_binned(count_df,
         bin_size: size of non-overlapping bins
         tick_every: show x-axis ticks every N bins
     """
+    assert gene_start < gene_end, "gene_start must be less than gene_end"
+
+    gene_len = gene_end - gene_start + 1
 
     # Compute bin_size or result to default
     candidate_bin_size = max(1, gene_len // num_bins)
@@ -138,7 +151,7 @@ def plot_stacked_bar_track_binned(count_df,
     )
 
     # Ensure all bins are represented
-    all_bins = list(range(1, gene_len + 1, bin_size))
+    all_bins = list(range(gene_start, gene_end + 1, bin_size))
     binned_df = binned_df.reindex(all_bins, fill_value=0)
 
     # Plot stacked bars
@@ -188,12 +201,12 @@ def plot_stacked_bar_track_binned(count_df,
 
     axes[ax].set_xticks(sparse_ticks)
     axes[ax].set_xticklabels(sparse_ticks)
-    axes[ax].set_xlim(0, gene_len + bin_size)
+    axes[ax].set_xlim(gene_start - bin_size, gene_end + bin_size)
 
 
-def manager(sample_name, mutations_file, o3d_seq_file, outdir):
+def manager(mutations_file, outdir, expand_muts = False):
 
-    counts_per_position = get_counts_per_position_n_consequence(mutations_file)
+    counts_per_position = get_counts_per_position_n_consequence(mutations_file, expanded=expand_muts)
 
     gene_order = sorted(pd.unique(counts_per_position["Gene"]))
 
@@ -208,13 +221,13 @@ def manager(sample_name, mutations_file, o3d_seq_file, outdir):
             fig, ax = plt.subplots(1, 1, figsize=(5, 1.2))
             plot_count_track(
                 mut_count_df,
-                gene_len=mut_count_df["Pos"].max(),  # FIXME: this is not ideal, the max position is the biggest position with mutation
-
+                gene_start=mut_count_df["Pos"].min(),
+                gene_end=mut_count_df["Pos"].max(),
                 axes=[ax], ax=0,
                 colors_dict=metrics_colors_dictionary, indel=False, alpha=0.7
             )
             ax.set_title(f"{gene}")
-            plt.savefig(f"{outdir}/{gene}.needle.pdf", bbox_inches='tight', dpi=100)
+            plt.savefig(f"{outdir}/{gene}{".expanded" if expand_muts else ''}.needle.pdf", bbox_inches='tight', dpi=100)
             plt.show()
             plt.close()
 
@@ -230,14 +243,15 @@ def manager(sample_name, mutations_file, o3d_seq_file, outdir):
             fig, ax = plt.subplots(1, 1, figsize=(5, 1.2))
             plot_stacked_bar_track_binned(
                 count_df=mut_count_df,
-                gene_len=mut_count_df["Pos"].max(),  # FIXME: this is not ideal, the max position is the biggest position with mutation
+                gene_start=mut_count_df["Pos"].min(),
+                gene_end=mut_count_df["Pos"].max(),
                 axes=[ax], ax=0,
                 colors_dict=metrics_colors_dictionary,
                 alpha=1,
                 indel=False
             )
             ax.set_title(f"{gene}")
-            plt.savefig(f"{outdir}/{gene}.stacked.pdf", bbox_inches='tight', dpi=100)
+            plt.savefig(f"{outdir}/{gene}{".expanded" if expand_muts else ''}.stacked.pdf", bbox_inches='tight', dpi=100)
             plt.show()
             plt.close()
 
@@ -255,8 +269,11 @@ def manager(sample_name, mutations_file, o3d_seq_file, outdir):
 @click.option('--o3d_seq_file', type=click.Path(exists=True), help='Input Oncodrive3D sequence df file')
 @click.option('--outdir', type=click.Path(), help='Output path for plots')
 def main(sample_name, mut_file, o3d_seq_file, outdir):
-    click.echo("Plotting omega results...")
+    click.echo("Generating simple needle plots...")
     manager(sample_name, mut_file, o3d_seq_file, outdir)
+
+    click.echo("Generating expanded needle plots...")
+    manager(sample_name, mut_file, o3d_seq_file, outdir, expand_muts=True)
 
 if __name__ == '__main__':
     main()
