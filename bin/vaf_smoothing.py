@@ -242,7 +242,8 @@ def calc_vaf_distance_summary(
 
     df_high_depth = df[(df[depth_col] > depth_cutoff_high)].copy()
 
-    plot_vaf_pseudocount_curve_groups(df_high_depth["SAMPLE_ID"].iloc[0], df, df_low_depth, df_large, df_high_depth, '_AM', output_pdf)
+    sample_name = df_high_depth["SAMPLE_ID"].iloc[0] if len(df_high_depth["SAMPLE_ID"].unique()) > 1 else "all_samples"
+    plot_vaf_pseudocount_curve_groups(sample_name, df, df_low_depth, df_large, df_high_depth, '_AM', output_pdf)
 
     print(f"Low depth clones: {df_low_depth.shape[0]}")
     print(f"Large clones: {df_large.shape[0]}")
