@@ -6,8 +6,8 @@ process PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV {
 
     input:
     path (all_omegas)
-    path (all_omegas_globalloc)
-    path (dndscv_cv)
+    path (all_omegas_globalloc) , stageAs : "all_omegas_globalloc.tsv"
+    path (dndscv_cv)            , stageAs : "dndscv_cv.tsv"
     path (compiled_flagged)
     path (groups_json)
 

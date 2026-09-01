@@ -14,11 +14,11 @@ from scipy.stats import pearsonr
 
 
 # Functions
-def filter_omega_tables(df):
+def filter_omega_tables(df, table_name):
     # Apply basic filter for omega/omegaglobal tables
     filtered_omega = df[~(df['gene'].str.contains("--")) & # discards exons if they are included in the analysis
                     (df['impact'].isin(['missense', 'truncating']))].copy()
-    print('Filtered omega/omegaglobal table:')
+    print(f'Filtered {table_name} table:')
     print(filtered_omega.shape)
     return filtered_omega
 
@@ -171,7 +171,7 @@ def apply_correlation_and_plotting(df, samples_group, output_dir, comp_label):
 @click.option("--input-omega-file", required=True, type=click.Path(exists=True),
               help="Directory containing selection/omega/all_omegas.tsv")
 
-@click.option("--input-omegaglobal-file", required=True, type=click.Path(exists=True),
+@click.option("--input-omegaglobal-file", required=False, default=None, type=click.Path(exists=True),
               help="Directory containing selection/omegaglobal/all_omegaglobal.tsv")
 
 @click.option("--input-dndscv-file", required=False, default=None, type=click.Path(exists=True), #set to default and required false/none to avoid processing when is missing
@@ -203,13 +203,14 @@ def main(input_omega_file, input_omegaglobal_file, input_dndscv_file, output_dir
     print(sample_groups)
 
     # Apply basic filters to omega/omegaglobal tables
-    omega_filtered_df = filter_omega_tables(omega_df)
-    omegaglobal_filtered_df = filter_omega_tables(omegaglobal_df)
+    omega_filtered_df = filter_omega_tables(omega_df, 'omega')
 
     # Initialize a dictionary for comparisons (label used : table to compare)
-    comparisons = {
-        'omegaglobal': omegaglobal_filtered_df
-    }
+    comparisons = {}
+
+    if omegaglobal_df.shape[0] > 0:
+        omegaglobal_filtered_df = filter_omega_tables(omegaglobal_df, 'omegaglobal')
+        comparisons['omegaglobal'] = omegaglobal_filtered_df
 
     # Add dndscv to comparisons dictionary if provided
     if input_dndscv_file:
