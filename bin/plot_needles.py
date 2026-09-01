@@ -52,7 +52,24 @@ def plot_count_track(count_df,
                         indel=False,
                         n_batches = 10
                     ):
+    """
+    Plots needle plot of mutation counts by position.
 
+    Parameters:
+        count_df: DataFrame with ['Pos', 'Consequence', 'Count'] columns
+        gene_start: Start position of the gene
+        gene_end: End position of the gene
+        axes: matplotlib axes array
+        colors_dict: dictionary mapping consequence -> color
+        ax: index of subplot
+        alpha: transparency
+        indel: whether to include 'indel' consequence
+        n_batches: number of batches to split the data into for plotting
+
+    """
+    assert gene_start < gene_end, "gene_start must be less than gene_end"
+
+    gene_len = gene_end - gene_start + 1
     # Shuffle the data and split into batches
     shuffled_df = count_df.sample(frac=1, random_state=42).reset_index(drop=True)
     batches = np.array_split(shuffled_df, n_batches)
@@ -98,6 +115,8 @@ def plot_count_track(count_df,
         ax_right.set_yticklabels(["0.00"] * len(axes[ax].get_yticks()))
         ax_right.set_ylabel("Proportion of mutations")
 
+    axes[ax].set_xlim(gene_start - gene_len * 0.02, gene_end + gene_len * 0.02)
+
 def plot_stacked_bar_track_binned(count_df,
                                     gene_start,
                                     gene_end,
@@ -107,8 +126,7 @@ def plot_stacked_bar_track_binned(count_df,
                                     alpha=1,
                                     indel=False,
                                     min_bin_size=3,
-                                    num_bins = 100,
-                                    num_ticks=5):
+                                    num_bins = 100):
     """
     Plots stacked barplot of mutation counts binned by position.
 
@@ -121,8 +139,8 @@ def plot_stacked_bar_track_binned(count_df,
         ax: index of subplot
         alpha: transparency
         indel: whether to include 'indel' consequence
-        bin_size: size of non-overlapping bins
-        tick_every: show x-axis ticks every N bins
+        min_bin_size: minimum size of non-overlapping bins
+        num_bins: number of bins to create
     """
     assert gene_start < gene_end, "gene_start must be less than gene_end"
 
@@ -151,7 +169,7 @@ def plot_stacked_bar_track_binned(count_df,
     )
 
     # Ensure all bins are represented
-    all_bins = list(range(gene_start, gene_end + 1, bin_size))
+    all_bins = list(range((gene_start-1)//bin_size * bin_size + 1, gene_end + 1, bin_size))
     binned_df = binned_df.reindex(all_bins, fill_value=0)
 
     # Plot stacked bars
@@ -194,14 +212,7 @@ def plot_stacked_bar_track_binned(count_df,
         ax_right.set_yticklabels(["0.00"] * len(axes[ax].get_yticks()))
         ax_right.set_ylabel("Proportion of mutations")
 
-    # Sparse x-ticks
-    tick_every = len(all_bins) // num_ticks
-    sparse_ticks = all_bins[::tick_every]
-    sparse_ticks = [x-1 for x in sparse_ticks]
-
-    axes[ax].set_xticks(sparse_ticks)
-    axes[ax].set_xticklabels(sparse_ticks)
-    axes[ax].set_xlim(gene_start - bin_size, gene_end + bin_size)
+    axes[ax].set_xlim(gene_start - gene_len * 0.02, gene_end + gene_len * 0.02)
 
 
 def manager(mutations_file, outdir, expand_muts = False):
@@ -227,7 +238,7 @@ def manager(mutations_file, outdir, expand_muts = False):
                 colors_dict=metrics_colors_dictionary, indel=False, alpha=0.7
             )
             ax.set_title(f"{gene}")
-            plt.savefig(f"{outdir}/{gene}{".expanded" if expand_muts else ''}.needle.pdf", bbox_inches='tight', dpi=100)
+            plt.savefig(f"{outdir}/{gene}{'_expanded' if expand_muts else ''}.needle.pdf", bbox_inches='tight', dpi=100)
             plt.show()
             plt.close()
 
@@ -251,7 +262,7 @@ def manager(mutations_file, outdir, expand_muts = False):
                 indel=False
             )
             ax.set_title(f"{gene}")
-            plt.savefig(f"{outdir}/{gene}{".expanded" if expand_muts else ''}.stacked.pdf", bbox_inches='tight', dpi=100)
+            plt.savefig(f"{outdir}/{gene}{'_expanded' if expand_muts else ''}.stacked.pdf", bbox_inches='tight', dpi=100)
             plt.show()
             plt.close()
 
