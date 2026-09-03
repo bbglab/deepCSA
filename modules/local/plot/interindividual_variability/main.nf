@@ -1,15 +1,16 @@
 process PLOT_INTERINDIVIDUAL_VARIABILITY {
 
     tag "samples"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 
     input:
-    path(samples_json)
-    path(all_groups_json)
+    path (samples_json)
+    path (all_groups_json)
     tuple val(meta), path(panel_file)
-    path(mutdensities_file)
+    path (mutdensities_file)
+    path (adjusted_mutdensities_file)
 
     output:
     path("**.pdf")      , emit: plots
@@ -23,6 +24,7 @@ process PLOT_INTERINDIVIDUAL_VARIABILITY {
     mkdir ${prefix}.variability_plots
     plot_explore_variability.py \\
                     --mutdensities ${mutdensities_file} \\
+                    --adjusted-mutdensities ${adjusted_mutdensities_file} \\
                     --panel-regions ${panel_file} \\
                     --outdir ${prefix}.variability_plots \\
                     --samples-json ${samples_json} \\

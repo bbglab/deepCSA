@@ -1,7 +1,7 @@
 process COMPUTE_CONTAMINATION {
 
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_high'
 
     label 'deepcsa_core'
 
@@ -16,10 +16,12 @@ process COMPUTE_CONTAMINATION {
     path "versions.yml" ,                               topic: versions
 
     script:
+    def somatic_vaf_boundary = task.ext.germline_threshold ? "--somatic-vaf-boundary ${task.ext.germline_threshold}" : ""
     """
     check_contamination.py \\
                         --maf_path ${maf} \\
-                        --somatic_maf ${somatic_maf}
+                        --somatic_maf ${somatic_maf} \\
+                        ${somatic_vaf_boundary}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

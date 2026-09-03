@@ -143,24 +143,16 @@ metrics_colors_dictionary = {"ofml"        : "viridis_r",
                                 "omega_miss_tert" : "#f5840c",
                                 "omega_synon_tert": "#378c12",
                                 "nonsense" : "#FA5E32",
+                                "truncating" : "#FA5E32",                                
                                 "synonymous" : "#89E4A2",
                                 "missense"  : "#FABE4A",
                                 "indel"       : "#ECC4F7",
                                 "splicing"    : "#A1C5DF",
                                 }
 
-mutation_type_colors = {
-    "C>A": "#5abdeb",
-    "C>G": "#050708",
-    "C>T": "#d43c32",
-    "T>A": "#cbcacb",
-    "T>C": "#aacb72",
-    "T>G": "#e7c9c6"
-}
 
 plots_general_config = {
-
-                        # fonsizes
+                        # fontsizes
                         "ylabel_fontsize": 6,
                         "xlabel_fontsize": 6,
                         "xylabel_fontsize": 6,

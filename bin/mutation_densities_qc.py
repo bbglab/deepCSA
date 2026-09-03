@@ -80,20 +80,28 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
         return None
     
     # Setup subplots
-    fig, axes = plt.subplots(1, 2, figsize=(12, 7), sharey=False)
+    fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=False)
 
     metrics = ['MUTDENSITY_MB', 'zscore']
     titles = ['MUTDENSITY_MB', 'Z-score of log10(MUTDENSITY_MB)']
 
     for ax, metric, title in zip(axes, metrics, titles):
         # Violin plot
-        sns.violinplot(data=mutdensity_zscore_df, y=metric, inner=None, color='white', ax=ax)
+        sns.violinplot(data=mutdensity_zscore_df, y=metric,
+                    inner=None, color='skyblue', ax=ax, alpha=0.3, linewidth=0)
 
-        # Jittered points
+        # Define masks for outliers
+        is_outlier = (mutdensity_zscore_df['zscore'].abs() > 2).values
+        is_clean = ~is_outlier
+
+        # Jittered x-coordinates
         jitter_strength = 0.1
-        x_base = 0
-        xs = x_base + np.random.uniform(-jitter_strength, jitter_strength, size=len(mutdensity_zscore_df))
-        ax.scatter(xs, mutdensity_zscore_df[metric], color='skyblue', s=40, zorder=3)
+        xs = np.random.uniform(-jitter_strength, jitter_strength, size=len(mutdensity_zscore_df))
+
+        ax.scatter(xs[is_clean], mutdensity_zscore_df.loc[is_clean, metric], color='skyblue', s=40, zorder=3)
+
+        if is_outlier.any():
+            ax.scatter(xs[is_outlier], mutdensity_zscore_df.loc[is_outlier, metric], color='red', s=40, zorder=3)
 
         # Threshold lines for zscore
         if metric == 'zscore':
@@ -102,17 +110,16 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
 
         # Label outliers
         texts = []
-        for i, row in mutdensity_zscore_df.iterrows():
-            if abs(row['zscore']) > 2:
-                x = xs[i]
-                y = row[metric]
+        for i, row in mutdensity_zscore_df.loc[is_outlier, :].iterrows():
+            x = xs[i]
+            y = row[metric]
 
-                if mode == 'per_gene':
-                    texts.append(ax.text(x + 0.02, y, row['GENE'],
-                                         color='red', fontsize=8, va='center'))
-                elif mode == 'per_sample':
-                    texts.append(ax.text(x + 0.02, y, row['SAMPLE_ID'],
-                                         color='red', fontsize=8, va='center'))
+            if mode == 'per_gene':
+                texts.append(ax.text(x + 0.02, y, row['GENE'],
+                                        color='red', fontsize=8, va='center'))
+            elif mode == 'per_sample':
+                texts.append(ax.text(x + 0.02, y, row['SAMPLE_ID'],
+                                        color='red', fontsize=8, va='center'))
 
         if texts:
             adjust_text(texts, ax=ax,
@@ -178,6 +185,8 @@ def main(input_file, output_dir, panel, group_definition, group_name):
     for reg in regions : 
         for mod in mode_list: 
             filt_mutden = filter_mutdensities(mutden_df_panel, reg, group_name, mod, sample_names)
+            if filt_mutden.shape[0] < 2:
+                continue
             zero_cases_flag, mutden_zscore = z_score_log10(filt_mutden, mod)
 
             ## Generate csv with zscore result and store as csv
@@ -223,6 +232,10 @@ def main(input_file, output_dir, panel, group_definition, group_name):
                 # Close to free memory before next loop
                 plt.close(fig)
     
+    if compile_all_flagged.empty:
+        print("No flagged cases found across all regions and modes.")
+        compile_all_flagged = pd.DataFrame(columns=['ID', 'reason_exclusion', 'cohort', 'regions', 'criteria'])
+
     # Compile all flagged cases into a single csv
     compile_all_flagged.to_csv(f"{output_dir}/compiled_all_flagged_cases.{group_name}.tsv", index = False, sep='\t')
 

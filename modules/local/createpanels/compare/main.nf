@@ -1,6 +1,5 @@
 process COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS {
     tag "1"
-    label 'process_single'
 
     label 'deepcsa_core'
 

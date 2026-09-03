@@ -123,7 +123,7 @@ def main(table_filename, depth_gene_sample, depth_sample, unique_identifier, sep
 
     # Process groups
     # First clean the string (adds quotes if the shell stripped them)
-    cleaned = re.sub(r'(?<!["\'])\b([a-zA-Z_][a-zA-Z0-9_]*)\b(?!["\'])', r'"\1"', groups)
+    cleaned = re.sub(r'(?<!["\'])\b([a-zA-Z0-9_ ]*)\b(?!["\'])', r'"\1"', groups)
 
     # Then parse into a list of lists
     raw_groups = ast.literal_eval(cleaned) if groups else []
@@ -144,7 +144,8 @@ def main(table_filename, depth_gene_sample, depth_sample, unique_identifier, sep
 
     # Handle groups so each group has its own plot in all and individual genes and stored in the same pdf file per group
     for group in groups_of_interest:
-        output_name = f"{group}.plot_depth_per_group.pdf"
+        group_formatted = group.replace(" ", "_")
+        output_name = f"{group_formatted}.plot_depth_per_group.pdf"
         
         with PdfPages(output_name) as pdf:    
             print(f"Processing {group} group, type: {type(group)}")

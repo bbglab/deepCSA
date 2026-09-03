@@ -1,7 +1,7 @@
 
 process NORMALIZE_SIGNATURES {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/ferriolcalvet/hdp_wrapper'
 

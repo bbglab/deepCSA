@@ -178,6 +178,13 @@
                     "default": 0,
                     "help_text": "",
                     "fa_icon": "far fa-file-code"
+                },
+                "remove_chrM": {
+                    "type": "boolean",
+                    "description": "Whether to remove chrM from the depths table.",
+                    "default": true,
+                    "help_text": "If true, any positions on chrM will be removed from the computed depths table. This is useful if you want to exclude mitochondrial DNA from downstream analyses.",
+                    "fa_icon": "fas fa-ban"
                 }
             }
         },
@@ -337,6 +344,8 @@
                 },
                 "o3d_raw_vep": {
                     "type": "boolean",
+                    "default": true,
+                    "hidden": true,
                     "description": "Do you want to run oncodrive3d with the raw vep output as input?",
                     "fa_icon": "fas fa-book"
                 },
@@ -642,6 +651,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": ""
                 },
+                "vaf_distortion_threshold": {
+                    "type": "number",
+                    "description": "VAF distortion threshold used to flag VAF-distorted mutations (VAF_AM / VAF).",
+                    "default": 3,
+                    "fa_icon": "fas fa-book",
+                    "help_text": ""
+                },
                 "mutation_depth_threshold": {
                     "type": "integer",
                     "description": "Depth threshold for discarding mutations. Minimum to have a reliable estimation of the VAF.",
@@ -776,7 +792,7 @@
                     "fa_icon": "far fa-file-code",
                     "default": "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz.tbi"
                 },
-                "dnds_ref_transcripts": {
+                "dnds_biomart_ref": {
                     "type": "string",
                     "description": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
                     "help_text": "Path to the dNdScv RefCDS file for all genes. See https://github.com/im3sanger/dndscv",
@@ -860,6 +876,13 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Define a place to store the Ensembl VEP cache.",
                     "default": ".vep"
+                },
+                "gff3_file": {
+                    "type": "string",
+                    "description": "Path to the GFF3 file for the genome assembly being used.",
+                    "fa_icon": "far fa-file-code",
+                    "help_text": "Path to the GFF3 file for the genome assembly being used. This is used for building the exon and domain panels. It should be compatible with the genome assembly and species being used for VEP annotation.",
+                    "default": null
                 }
             }
         },

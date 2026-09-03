@@ -1,7 +1,7 @@
 process ANNOTATE_OMEGA_QC {
 
     tag "all_samples"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 
@@ -10,11 +10,12 @@ process ANNOTATE_OMEGA_QC {
     path (compiled_flagged_cases)
 
     output:
-    path("*flagged_annotated.tsv")                  , emit: all_omegas_annotated
-    path("*flagged.tsv")            , optional: true, emit: flagged_cases
-    path("*.tsv")                   , optional: true, emit: files
-    path("*.png")                   , optional: true, emit: plots
-    path "versions.yml"             , topic: versions
+    path("*flagged_annotated.tsv")                      , emit: all_omegas_annotated
+    path("debug.*flagged*.tsv")         , optional: true, emit: flagged_cases
+    path("debug.syn_flagged_gene.tsv")  , optional: true, emit: flagged_synonymous_cases
+    path("*.tsv")                       , optional: true, emit: files
+    path("*.png")                       , optional: true, emit: plots
+    path "versions.yml"                 , topic: versions
 
     script:
     """
@@ -35,6 +36,7 @@ process ANNOTATE_OMEGA_QC {
     def prefix = task.ext.prefix ?: "all_samples"
     """
     touch ${prefix}.pdf
+    touch omega.flagged_annotated.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -33,10 +33,11 @@ def downsample_depths(file, proportion):
 
     # Load the input file
     df = pd.read_csv(file, sep='\t', header=0)
-    sample_name = df.columns[-1]
+    sample_name = file.split('.')[0]  # Extract sample name from file name
+    column_names = df.columns[3:]
 
     # Downsample the depth values by multiplying and rounding
-    df[sample_name] = ((df[sample_name] * proportion) // 1).astype(int)
+    df[column_names] = ((df[column_names] * proportion) // 1).astype(int)
 
     # Output the downsampled data
     output_file = f"{sample_name}.depths.downsampled.tsv.gz"

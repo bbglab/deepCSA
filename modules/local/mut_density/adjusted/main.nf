@@ -1,14 +1,14 @@
 process MUTATION_DENSITY {
 
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_high'
 
     label 'deepcsa_core'
 
     input:
     tuple val(meta), path(somatic_mutations_file), path(depths_file), path(mutability_file)
     tuple val(meta2), path(panel_file)
-    path(trinucleotide_counts_file)
+    path (trinucleotide_counts_file)
 
 
     output:
@@ -20,7 +20,7 @@ process MUTATION_DENSITY {
     script:
     def sample_name = "${meta.id}"
     """
-    mut_density.py \\
+    mut_density_adjusted.py \\
                         --sample_name ${sample_name} \\
                         --depths_file ${depths_file} \\
                         --somatic_mutations_file ${somatic_mutations_file} \\

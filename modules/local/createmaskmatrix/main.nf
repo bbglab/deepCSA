@@ -1,8 +1,8 @@
 process CREATE_MASK_MATRIX {
     tag "mask_matrix"
 
-    label 'process_low'
-    label 'time_low'
+    label 'cpu_low'
+    label 'mem_low'
 
     container "docker.io/bbglab/deepcsa-core:0.1.0"
 

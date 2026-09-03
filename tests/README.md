@@ -68,7 +68,7 @@ nf-test test tests/deepcsa.nf.test --tag omega --update-snapshot
   - `mutational_profile/` and `omega/` directories exist
   - `omega/all_omegas.tsv` exists
   - `oncodrivefml/`, `oncodrive3d/` directories do **not** exist
-  - Structural checks on `all_omegas.tsv`: header contains `gene`, `sample`, `dnds`; all rows contain same columns, all samples are present.
+- Structural checks on `all_omegas.tsv`: header contains `gene`, `sample`, `dnds`, `pvalue_adj`; all rows contain same columns, all samples are present.
   - Snapshot of `mutational_profile/all_samples.all.profile.tsv` (MD5)
 
 - `input_maf_validation` (Parameter validation):
@@ -142,7 +142,7 @@ The parameters you will need to provide are:
 | `cadd_scores` / `cadd_scores_ind` | CADD scores TSV + index |
 | `cosmic_ref_signatures` | COSMIC SBS signatures file |
 | `nanoseq_snp` / `nanoseq_noise` | NanoSeq masking BED files |
-| `dnds_ref_transcripts` / `dnds_covariates` | dNdScv reference files |
+| `dnds_biomart_ref` / `dnds_covariates` | dNdScv reference files |
 | `datasets3d` / `annotations3d` | Oncodrive3D datasets |
 | `singularity.cacheDir` / `singularity.libraryDir` | Singularity image cache |
 
