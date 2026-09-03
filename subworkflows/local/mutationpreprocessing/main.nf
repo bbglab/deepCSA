@@ -21,6 +21,7 @@ include { PLOT_MUTATIONS                as PLOTSOMATICMAF   }   from '../../../m
 include { PLOT_NEEDLES                  as PLOTNEEDLES      }   from '../../../modules/local/plot/needles/main'
 include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   }   from '../../../modules/local/downsample/mutations/main'
 include { COMPUTE_CONTAMINATION         as CONTAMINATION    }   from '../../../modules/local/contamination/main'
+include { FILTERING_REPORT              as FILTERINGREPORT  }   from '../../../modules/local/filteringqc/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -142,6 +143,7 @@ workflow MUTATION_PREPROCESSING {
     if ( params.contamination ) {
         CONTAMINATION(raw_muts_all_samples, muts_all_samples)
     }
+    FILTERINGREPORT(raw_muts_all_samples, muts_all_samples)
 
     PLOTSOMATICMAF(muts_all_samples)
 
