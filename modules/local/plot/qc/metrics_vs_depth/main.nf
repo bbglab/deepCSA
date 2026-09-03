@@ -1,7 +1,7 @@
 process PLOT_METRICS_VS_DEPTH_QC {
 
     tag "${group_name}"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

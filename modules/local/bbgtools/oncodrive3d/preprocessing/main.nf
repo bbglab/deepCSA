@@ -1,6 +1,6 @@
 process ONCODRIVE3D_PREPROCESSING {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     label 'deepcsa_core'
 

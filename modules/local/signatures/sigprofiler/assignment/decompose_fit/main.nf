@@ -1,6 +1,6 @@
 process SIGPROFILERASSIGNMENT_DECOMPOSE_FIT {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/ferriolcalvet/sigprofiler_assignment:1.1.3'
 

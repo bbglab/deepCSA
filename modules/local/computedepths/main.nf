@@ -1,6 +1,9 @@
 process COMPUTEDEPTHS {
     tag "$meta.id"
 
+    label 'cpu_medium'
+    label 'mem_low'
+
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/samtools:1.18--h50ea8bc_1' :

@@ -1,6 +1,6 @@
 process ONCODRIVEFML {
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_high'
 
     container 'docker.io/ferriolcalvet/oncodrivefml:latest'
 

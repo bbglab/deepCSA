@@ -2,7 +2,7 @@
 process PREPARE_INPUT {
 
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/ferriolcalvet/hdp_wrapper'
 

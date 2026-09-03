@@ -1,6 +1,6 @@
 process ONCODRIVECLUSTL {
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_high'
 
     // // conda "YOUR-TOOL-HERE"
     // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

@@ -1,8 +1,7 @@
 process COMPUTE_RELATIVE_MUTABILITY {
 
     tag "$meta.id"
-    label 'process_low_fixed_cpus'
-    label 'process_high_memory'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

@@ -2,6 +2,7 @@ process TABLE_2_GROUP {
     tag "groups"
 
     label 'deepcsa_core'
+    label 'mem_low'
 
     input:
     path(features_table)

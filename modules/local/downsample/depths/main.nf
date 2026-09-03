@@ -1,7 +1,7 @@
 process DOWNSAMPLE_DEPTHS {
 
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_high'
 
     label 'deepcsa_core'
 
