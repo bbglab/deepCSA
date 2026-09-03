@@ -21,6 +21,7 @@ include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOC          } from '
 include { SITE_COMPARISON           as SITECOMPARISONGLOBALLOCMULTI     } from '../../../modules/local/bbgtools/sitecomparison/main'
 include { OMEGA_MULTITEST           as OMEGAMULTIPLETESTGLOBALLOC       } from '../../../modules/local/omega_multipletesting/main'
 include { HOTSPOTS_SELECTION        as HOTSPOTSSELECTION                } from '../../../modules/local/hotspots_selection/main'
+include { OMEGA_COVARIATES_RUN      as ESTIMATOROMEGACOVARIATES         } from '../../../modules/local/omega_covariates/run/main'
 
 workflow OMEGA_ANALYSIS{
 
@@ -36,13 +37,16 @@ workflow OMEGA_ANALYSIS{
     suffix
     grouping_defs
     json_subgenic
+    wgs_counts
+    exons_consensus_panel
 
 
     main:
 
-    site_comparison_results = channel.empty()
-    global_loc_results      = channel.empty()
-    all_gloc_results        = channel.empty()
+    site_comparison_results     = channel.empty()
+    global_loc_results          = channel.empty()
+    all_gloc_results            = channel.empty()
+    omega_covariates_results    = channel.empty()
 
     // Intersect BED of all sites with BED of sample filtered sites
     QUERYPANEL(panel_captured_rich, bedfile)
@@ -69,6 +73,24 @@ workflow OMEGA_ANALYSIS{
     PREPROCESSING.out.mutabs_n_mutations_tsv
     .join( depth )
     .set{ preprocess_n_depths }
+
+    if (params.omega_covariates && suffix == "") {
+        omega_covariates_file = channel.fromPath(params.omega_covariates_cov_file, checkIfExists: true).first()
+
+        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[1] }.collect().set { omega_covariates_mutability_tables }
+        PREPROCESSING.out.mutabs_n_mutations_tsv.map { it -> it[2] }.collect().set { omega_covariates_mutations_tables }
+        depth.map { it -> it[1] }.collect().set { omega_covariates_depths_tables }
+
+        ESTIMATOROMEGACOVARIATES(omega_covariates_mutability_tables,
+                            omega_covariates_mutations_tables,
+                            omega_covariates_depths_tables,
+                            exons_consensus_panel,
+                            wgs_counts,
+                            omega_covariates_file,
+                            grouping_defs
+                            )
+        omega_covariates_results = ESTIMATOROMEGACOVARIATES.out.omega_grouped
+    }
 
     GROUPGENES(expanded_panel, custom_gene_groups, json_subgenic)
 
@@ -196,13 +218,14 @@ workflow OMEGA_ANALYSIS{
 
 
     emit:
-    results                 = ESTIMATOR.out.results
-    results_global          = global_loc_results
-    expanded_panel          = expanded_panel
-    site_comparison         = site_comparison_results_flattened
+    results                     = ESTIMATOR.out.results
+    results_global              = global_loc_results
+    expanded_panel              = expanded_panel
+    site_comparison             = site_comparison_results_flattened
 
-    all_compiled            = all_results
-    all_globalloc_compiled  = all_gloc_results
+    all_compiled                = all_results
+    all_globalloc_compiled      = all_gloc_results
+    omega_covariates_compiled   = omega_covariates_results
     // plots = ONCODRIVE3D.out.plots
 
 }

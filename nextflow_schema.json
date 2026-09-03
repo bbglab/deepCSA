@@ -385,6 +385,28 @@
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to get omega mutabilities per site and a per site comparison with the observed?"
                 },
+                "omega_covariates": {
+                    "type": "boolean",
+                    "description": "Do you want to run the omega covariates model as an additional output?",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Runs assets/omega-covariates as an additional omega output. Requires omega=true."
+                },
+                "omega_covariates_cov_file": {
+                    "type": "string",
+                    "description": "Path to gene-level covariates table for omega_covariates.",
+                    "fa_icon": "fas fa-book",
+                    "default": "assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv"
+                },
+                "omega_covariates_samples_as_covariates": {
+                    "type": "boolean",
+                    "description": "Use sample IDs as covariates in the omega_covariates background model.",
+                    "fa_icon": "fas fa-book"
+                },
+                "omega_covariates_all_samples": {
+                    "type": "boolean",
+                    "description": "For omega_covariates, only compute grouped outputs across all samples.",
+                    "fa_icon": "fas fa-book"
+                },
                 "site_comparison_grouping": {
                     "type": "string",
                     "description": "Define which is the unit of comparison of the per site mutabilities exp. vs obs. The options are: 'site', 'aminoacid', 'aminoacid_change'. You can provide a comma separated list of the preferred options or also all.",
