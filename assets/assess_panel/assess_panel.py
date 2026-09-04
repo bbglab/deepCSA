@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import click
 
 
-sys.path.append("../../bin")
+sys.path.append("../../bin/")
 
 from utils_context import triplet_context_iterator
 
