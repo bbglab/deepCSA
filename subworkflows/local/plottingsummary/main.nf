@@ -5,7 +5,8 @@ include { PLOT_SELECTION_METRICS            as PLOTSELECTION                    
 include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/saturation/main'
 include { PLOT_SATURATION_PROPORTIONS       as PLOTSATURATIONPROPORTIONS        } from '../../../modules/local/plot/saturation/proportions/main'
 include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/interindividual_variability/main'
-
+include { COMPUTE_SATURATION_KINETICS       as COMPUTESATURATIONKINETICS        } from '../../../modules/local/saturation_kinetics/compute/main'
+include { PLOT_SATURATION_KINETICS          as PLOTSTATURATIONKINETICS          } from '../../../modules/local/saturation_kinetics/plot/main'
 
 
 workflow PLOTTING_SUMMARY {
@@ -26,6 +27,7 @@ workflow PLOTTING_SUMMARY {
     domain_df
     exons_depths_df
     groups_channel
+    depths_indv
 
 
     main:
@@ -78,7 +80,13 @@ workflow PLOTTING_SUMMARY {
     PLOTSATURATIONPROPORTIONS(groups_mutations, panel, full_panel_rich, expanded_panel)
     // plot gene + site selection
     // omega selection per domain in gene
-    // ? plot saturation kinetics curves
+    
+    // plot saturation kinetics curves
+    groups_mutations
+    .join(depths_indv)
+    .set{ groups_mutations_n_depths }
+    COMPUTESATURATIONKINETICS(groups_mutations_n_depths, full_panel_rich, expanded_panel)
+    // PLOTSTATURATIONKINETICS(groups_mutations, panel, full_panel_rich, expanded_panel)
 
 
     PLOTINTERINDIVIDUALVARIABILITY(samples, all_groups, panel,  all_mutdensities, all_mutdensities_adjusted)

@@ -678,7 +678,8 @@ workflow DEEPCSA {
                         seqinfo_df,
                         CREATEPANELS.out.domains_in_panel,
                         ENRICHPANELS.out.dna2protein_mapping_depth_exons,
-                        group_keys_ch
+                        group_keys_ch,
+                        annotated_depths
                         )
     }
 

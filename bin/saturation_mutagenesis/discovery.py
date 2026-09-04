@@ -47,9 +47,7 @@ def prob_min_uniform_sample_below_cut_vec(N, n, cut):
 
     return out
 
-def load_mutations(deepcsa_dir, samples_group, protein_affecting_type):
-
-    somatic_mutations_file = f'{deepcsa_dir}/mutations/clean_somatic/{samples_group}.somatic.mutations.tsv'
+def load_mutations(somatic_mutations_file, protein_affecting_type):
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
     mutations = somatic_mutations[
         ~(somatic_mutations['FILTER'].str.contains("not_in_exons"))
@@ -72,19 +70,19 @@ def get_aachange_format(r):
         return r['Amino_acids'].split('/')[0] + r['Protein_position'] + r['Amino_acids'].split('/')[1]
 
         
-def collect_vep(deepcsa_dir):
-    fn = os.path.join(deepcsa_dir, 'regions', 'annotations','captured_panel.vep.annotation.rich.sorted.tsv')
-    vep_panel = pd.read_csv(fn, sep='\t')
+def collect_vep(vep_filename):
+    vep_panel = pd.read_csv(vep_filename, sep='\t')
     dg = vep_panel[['CHROM', 'POS', 'REF', 'ALT', 'Protein_position', 'Amino_acids', 'GENE']].copy()
     dg['POS'] = dg['POS'].astype(int)
     dg['AACHANGE'] = dg.apply(get_aachange_format, axis=1)
     return dg
 
 
-def load_panel(deepcsa_dir,samples_group, vep_annotations):
+def load_panel(consensus_panel_file, depths_file, samples_group, vep_annotations):
 
-    df_panel = pd.read_csv(os.path.join(deepcsa_dir, 'regions', 'consensuspanels', 'consensus.exons_splice_sites.tsv'), sep='\t')
-    df_depth = pd.read_csv(os.path.join(deepcsa_dir, 'depths', 'individual', f'{samples_group}.depths.annotated.tsv.gz'), sep='\t')
+    df_panel = pd.read_csv(consensus_panel_file, sep='\t')
+    df_depth = pd.read_csv(depths_file, sep='\t')
+
     df_panel = pd.merge(df_panel, df_depth[['CHROM', 'POS', samples_group]], on=['CHROM', 'POS'], how='left')
     df_panel.rename(columns={samples_group: 'DEPTH'}, inplace=True)
     df_panel = pd.merge(df_panel, vep_annotations[['CHROM', 'POS', 'REF', 'ALT', 'AACHANGE', 'GENE']], 
@@ -98,16 +96,21 @@ def load_panel(deepcsa_dir,samples_group, vep_annotations):
 
 
 @click.command()
-@click.option("--deepcsa-dir", required=True, type=click.Path(exists=True, file_okay=False, dir_okay=True),help="deepCSA output directory")
+@click.option("--somatic-mutations-file", required=True, type=click.Path(exists=True),help="Path to the somatic mutations file")
+@click.option("--vep-file", required=True, type=click.Path(exists=True),help="Path to the VEP annotation file")
+@click.option("--consensus-panel-file", required=True, type=click.Path(exists=True),help="Path to the exons consensus panel file")
+@click.option("--depths-file", required=True, type=click.Path(exists=True),help="Path to the depths file")
 @click.option("--residue", is_flag=True, show_default=True, default=False, help="either genomic or residue based sites")
 @click.option("--group-name", type=str, default="all_samples", show_default=True, help="Name of the group/sample to be used in the code")
 @click.option("--impact", type=str, default="protein_affecting", show_default=True, help="either protein_affecting or non_protein_affecting positions")
-def cli(deepcsa_dir, residue, group_name, impact):
+def cli(somatic_mutations_file, vep_filename, consensus_panel_file, depths_file, residue, group_name, impact):
+
     print(f"Analyzing {group_name}")
-    mutations = load_mutations(deepcsa_dir, group_name, impact)
+    mutations = load_mutations(somatic_mutations_file, impact)
     print("Mutations loaded")
-    vep = collect_vep(deepcsa_dir)
-    df_panel = load_panel(deepcsa_dir,group_name, vep)
+    vep = collect_vep(vep_filename)
+    df_panel = load_panel(consensus_panel_file, depths_file, group_name, vep)
+
     print("Panel loaded")
     mutations_lite = pd.merge(mutations, 
                           df_panel[['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'GENE', 'AACHANGE']],
@@ -125,9 +128,6 @@ def cli(deepcsa_dir, residue, group_name, impact):
     subsampling_rates = np.logspace(-2, np.log10(0.9), num=20)
     print("Starting subsampling")
 
-    #for i, p in tqdm.tqdm(enumerate(subsampling_rates)):
-    #    mutations_lite[f'UNIQUE_RATE_{i}'] = mutations_lite.apply(lambda r: prob_min_uniform_sample_below_cut(r['DEPTH'], int(p * r['DEPTH']), r['ALT_DEPTH']), axis=1)
-
     depth = mutations_lite["DEPTH"].to_numpy()
     alt_depth = mutations_lite["ALT_DEPTH"].to_numpy()
     print(mutations_lite.shape)
@@ -136,14 +136,11 @@ def cli(deepcsa_dir, residue, group_name, impact):
     for i, p in tqdm.tqdm(enumerate(subsampling_rates), total=len(subsampling_rates)):
         n = np.floor(p * depth).astype(int)
         mutations_lite[f"UNIQUE_RATE_{i}"] = prob_min_uniform_sample_below_cut_vec(depth, n, alt_depth)
-
-    out_dir = Path(f"{deepcsa_dir}_analyses/results/saturation_mutagenesis/saturation_kinetics")
-    out_dir.mkdir(parents=True, exist_ok=True)
     
     if residue:
-        out_file = out_dir / f"{group_name}_mutations_residue_rates.{impact}.tsv"
+        out_file = f"{group_name}_mutations_residue_rates.{impact}.tsv"
     else:
-        out_file = out_dir / f"{group_name}_mutations_genomic_rates.{impact}.tsv"
+        out_file = f"{group_name}_mutations_genomic_rates.{impact}.tsv"
 
     mutations_lite.to_csv(out_file, sep="\t", index=False)        
 
