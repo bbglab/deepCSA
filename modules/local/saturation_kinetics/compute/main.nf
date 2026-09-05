@@ -6,13 +6,14 @@ process COMPUTE_SATURATION_KINETICS {
     label 'deepcsa_core'
 
     input:
-    tuple val(meta) , path(mutations), path(depths), path(omega_mutability), path(relative_mutability)
+    tuple val(meta) , path(mutations), path(depths), path(omega_mutability), path(relative_mutability), path(relative_mutability_index)
     tuple val(meta1), path(captured_panel_rich)
     tuple val(meta2), path(expanded_panel, stageAs: "expanded_panel.tsv")
     
 
     output:
     tuple val(meta), path("**.tsv"), emit: table
+    tuple val(meta), path("**.pdf"), emit: plots
     path "versions.yml"            , topic: versions
 
 

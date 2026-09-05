@@ -157,7 +157,8 @@ def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_ra
 # theoretical neutral vs empirical discovery curves
 # Create a PDF to save the plots
 def main_empirical(sample,
-                   mutations_dict, df_panel_dict,
+                   mutations_dict, panel_df,
+                   df_panel_dict,
                    omega_mutability_file, relative_mutability_file,
                    subsampling_rates,
                    output_folder,
@@ -167,16 +168,13 @@ def main_empirical(sample,
     mutations_lite['VAF'] = mutations_lite.apply(lambda r: r['ALT_DEPTH']/r['DEPTH'], axis=1)
 
     # retrieve relative mutability
-    mutability_raw = pd.read_csv(relative_mutability_file, sep='\t')
+    mutability_raw = pd.read_csv(relative_mutability_file, sep='\t',
+                                 header=None, names=['CHROM', 'POS', 'REF', 'ALT', 'MUTABILITY'])
 
-    mutability_raw = pd.merge(mutability_raw, df_panel, on=['CHROM', 'POS', 'CONTEXT_MUT', 'GENE','IMPACT'], how='left')
+    df_panel = panel_df
+    mutability_raw = pd.merge(mutability_raw, df_panel, on=['CHROM', 'POS', 'REF', 'ALT'], how='left')
     mutability_raw = mutability_raw.rename(columns={sample: "MUTABILITY"})
-    # collect VEP annotations
 
-    df_panel = pd.merge(df_panel, vep[['CHROM', 'POS', 'REF', 'ALT', 'AACHANGE', 'GENE']], 
-                              left_on=['CHROM', 'POS', 'REF', 'ALT', 'GENE'], 
-                              right_on=['CHROM', 'POS', 'REF', 'ALT', 'GENE'],
-                              how='left')
 
     if genes_list is None:
         genes_list = df_panel['GENE'].unique()
@@ -191,8 +189,6 @@ def main_empirical(sample,
             mutability_gene = pd.merge(mutability_gene, synonymous_mutation_rate[['CONTEXT_MUT', sample]], on=['CONTEXT_MUT'], how='left')
             mutability_gene.rename(columns={sample: 'MUTRATE'}, inplace=True)
 
-            mutability_gene = pd.merge(mutability_gene, df_panel[['CHROM', 'POS', 'REF', 'ALT', 'AACHANGE']], on=['CHROM', 'POS', 'REF', 'ALT'], how='left')
-
             # discard positions in non-CDS regions, probably splicing and intronic
             mutability_gene = mutability_gene[(mutability_gene['AACHANGE'] != '-') & (~mutability_gene['AACHANGE'].isnull())]
 
@@ -204,6 +200,7 @@ def main_empirical(sample,
 
             mutability_gene['RESIDUE'] = mutability_gene['AACHANGE'].apply(lambda s: s[:-1])
             print(mutability_gene.head())
+
             if sites == 'residue':
                 mutability_gene = mutability_gene.groupby(['GENE', 'RESIDUE']).agg({'MUTRATE': 'sum', 'DEPTH': 'mean'}).reset_index()
             elif sites == 'genomic':
@@ -233,7 +230,6 @@ def main_empirical(sample,
                 y_unique_neutral.append(unique_neutral)
 
             # compute empirical discovery index curve
-
             x_empirical, mean, err_low, err_high = empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict, subsampling_rates, sites=sites)
 
             # plot
@@ -271,17 +267,16 @@ def main_empirical(sample,
             plt.title(gene + " (" + impact + ")")
 
             if logscale:
-                plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_logscale_{gene}.{impact}.png', bbox_inches='tight', dpi=300)
+                plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_logscale_{gene}.{impact}.pdf', bbox_inches='tight', dpi=300)
                 print(f"Plot saved to {output_folder}")
             else:
-                plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_{gene}.{impact}.png', bbox_inches='tight', dpi=300)
+                plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_{gene}.{impact}.pdf', bbox_inches='tight', dpi=300)
                 print(f"Plot saved to {output_folder}")
 
             plt.show()
 
-        except:
-
-            print(gene)
+        except Exception as e:
+            print(f"Error occurred while processing {gene}: {e}")
             continue
 
 
@@ -346,18 +341,21 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
     output_folder = f'{group_name}.curves.{"residue" if residue else "genomic"}_{impact}'
     os.makedirs(output_folder, exist_ok=True)
 
-    # # load mutations
-    mutations_genomic = None #pd.read_csv(f'{base_folder}/analysis/{deepCSA_run}_deepCSA_CH_I_wSP/{deepCSA_run}_CH_I_wSP_custom_analysis/saturation_mutagenesis/saturation_kinetics/{sample_group}_mutations_genomic_rates.{impact}.tsv', sep='\t')
-    mutations_residue = mutations_lite
+    # load mutations
+    mutations_genomic = mutations_lite
+    mutations_residue = mutations_lite # to be fixed later
 
+    mutations_dict = {
+        'genomic': mutations_genomic,
+        'residue': mutations_residue
+    }
 
     # df_panel represents the total number of mutable sites,
     # either genomic or residue sites
     if impact == "protein_affecting":
         df_panel = df_panel[df_panel["IMPACT"].isin(PROTEIN_AFFECTING_SET)]
     else:
-        df_panel = df_panel[df_panel["IMPACT"] == "synonymous"]    
-
+        df_panel = df_panel[df_panel["IMPACT"] == "synonymous"]
 
     df_panel_genomic = df_panel.groupby(['POS', 'GENE']).agg({'DEPTH': 'mean'}).reset_index()
     df_panel_residue = df_panel.groupby(['RESIDUE',  'GENE']).agg({'DEPTH': 'mean'}).reset_index()
@@ -366,18 +364,14 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
         'residue': df_panel_residue
         }
 
-    mutations_dict = {
-        'genomic': mutations_genomic,
-        'residue': mutations_residue
-    }
-    subsampling_rates = np.logspace(-2, np.log10(0.9), num=20)
 
     # plot_empirical_discovery('TP53', mutations_dict, df_panel_dict, subsampling_rates
-    main_empirical(group_name, mutations_dict, df_panel_dict,
+    main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
                    omega_mutability_file, relative_mutability_file,
                    subsampling_rates,
                    output_folder,
-                   sites='residue', impact = impact,
+                   sites='residue' if residue else 'genomic',
+                   impact = impact,
                    logscale=False, genes_list = ["TP53","RBM10"])
     # main_empirical('CohortCha_TimepointT0', sites='residue', impact=impact, logscale=False,genes_list = ["DNMT3A","TET2","PPM1D","TP53","CHEK2","ASXL1"])
 
