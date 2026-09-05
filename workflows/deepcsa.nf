@@ -679,7 +679,9 @@ workflow DEEPCSA {
                         CREATEPANELS.out.domains_in_panel,
                         ENRICHPANELS.out.dna2protein_mapping_depth_exons,
                         group_keys_ch,
-                        annotated_depths
+                        annotated_depths,
+                        MUTABILITYALL.out.mutability,
+                        OMEGA.out.preprocessing_mutab
                         )
     }
 

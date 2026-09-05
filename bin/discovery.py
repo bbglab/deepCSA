@@ -2,24 +2,18 @@
 # -*- coding: utf-8 -*-
 
 
+import os
+
 import warnings
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 
 # import tqdm
 import click
 
 import numpy as np
 import pandas as pd
-import os
-import tqdm
-import functools
-import sys
-
-import pandas as pd
 
 import matplotlib.pyplot as plt
-
-import numpy as np
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -132,7 +126,8 @@ def empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict,
     x, mean, err_low, err_high = [], [], [], []
     
     unique_dict = {}
-    for i, p in tqdm.tqdm(enumerate(subsampling_rates)):
+    # for i, p in tqdm.tqdm(enumerate(subsampling_rates)):
+    for i, p in enumerate(subsampling_rates):
         dist_bernoulli = tfd.Bernoulli(probs=df[f'UNIQUE_RATE_{i}'].values)
         unique_mutations = np.sum(dist_bernoulli.sample(sample_shape=(100,)), axis=1)
         y = list(unique_mutations / size)
@@ -171,10 +166,6 @@ def main_empirical(sample,
     mutations_lite = mutations_dict[sites]
     mutations_lite['VAF'] = mutations_lite.apply(lambda r: r['ALT_DEPTH']/r['DEPTH'], axis=1)
 
-    # relative_mutability_file = os.path.join(deepCSA_folder, 'processing_files', 'relativemutability', 'all_samples.all.tsv.gz')
-    # omega_mutability_file = os.path.join(deepCSA_folder, 'selection','omega', 'preprocessing', f'mutability_per_sample_gene_context.{sample}.tsv')
-
-
     # retrieve relative mutability
     mutability_raw = pd.read_csv(relative_mutability_file, sep='\t')
 
@@ -190,7 +181,8 @@ def main_empirical(sample,
     if genes_list is None:
         genes_list = df_panel['GENE'].unique()
 
-    for gene in tqdm.tqdm(genes_list):
+    # for gene in tqdm.tqdm(genes_list):
+    for gene in genes_list:
 
         try:
             synonymous_mutation_rate = pd.read_csv(omega_mutability_file, sep='\t')
@@ -291,18 +283,6 @@ def main_empirical(sample,
 
             print(gene)
             continue
-main_empirical('CohortCha_TimepointT0', sites='genomic', impact = impact, logscale=False, genes_list = ["DNMT3A","TET2","PPM1D","TP53","CHEK2","ASXL1"])
-main_empirical('CohortCha_TimepointT0', sites='residue', impact=impact, logscale=False,genes_list = ["DNMT3A","TET2","PPM1D","TP53","CHEK2","ASXL1"])
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -312,10 +292,15 @@ main_empirical('CohortCha_TimepointT0', sites='residue', impact=impact, logscale
 @click.option("--vep-file", required=True, type=click.Path(exists=True),help="Path to the VEP annotation file")
 @click.option("--consensus-panel-file", required=True, type=click.Path(exists=True),help="Path to the exons consensus panel file")
 @click.option("--depths-file", required=True, type=click.Path(exists=True),help="Path to the depths file")
+@click.option("--omega-mutability-file", required=True, type=click.Path(exists=True),help="Path to the omega mutability file")
+@click.option("--relative-mutability-file", required=True, type=click.Path(exists=True),help="Path to the relative mutability file")
 @click.option("--residue", is_flag=True, show_default=True, default=False, help="either genomic or residue based sites")
 @click.option("--group-name", type=str, default="all_samples", show_default=True, help="Name of the group/sample to be used in the code")
 @click.option("--impact", type=str, default="protein_affecting", show_default=True, help="either protein_affecting or non_protein_affecting positions")
-def cli(somatic_mutations_file, vep_file, consensus_panel_file, depths_file, residue, group_name, impact):
+def cli(somatic_mutations_file, vep_file, consensus_panel_file,
+        omega_mutability_file, relative_mutability_file,
+        depths_file, residue, group_name, impact
+        ):
 
     print(f"Analyzing {group_name}")
     mutations = load_mutations(somatic_mutations_file, impact)
@@ -388,10 +373,13 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file, depths_file, res
     subsampling_rates = np.logspace(-2, np.log10(0.9), num=20)
 
     # plot_empirical_discovery('TP53', mutations_dict, df_panel_dict, subsampling_rates
-
-
-
-
+    main_empirical(group_name, mutations_dict, df_panel_dict,
+                   omega_mutability_file, relative_mutability_file,
+                   subsampling_rates,
+                   output_folder,
+                   sites='residue', impact = impact,
+                   logscale=False, genes_list = ["TP53","RBM10"])
+    # main_empirical('CohortCha_TimepointT0', sites='residue', impact=impact, logscale=False,genes_list = ["DNMT3A","TET2","PPM1D","TP53","CHEK2","ASXL1"])
 
 
 

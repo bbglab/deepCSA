@@ -6,7 +6,7 @@ process COMPUTE_SATURATION_KINETICS {
     label 'deepcsa_core'
 
     input:
-    tuple val(meta) , path(mutations), path(depths)
+    tuple val(meta) , path(mutations), path(depths), path(omega_mutability), path(relative_mutability)
     tuple val(meta1), path(captured_panel_rich)
     tuple val(meta2), path(expanded_panel, stageAs: "expanded_panel.tsv")
     
@@ -27,6 +27,8 @@ process COMPUTE_SATURATION_KINETICS {
                     --vep-file ${captured_panel_rich} \\
                     --consensus-panel-file ${expanded_panel} \\
                     --depths-file ${depths} \\
+                    --omega-mutability-file ${omega_mutability} \\
+                    --relative-mutability-file ${relative_mutability} \\
                     --group-name ${meta.id}
 
     cat <<-END_VERSIONS > versions.yml

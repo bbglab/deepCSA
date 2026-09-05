@@ -28,6 +28,8 @@ workflow PLOTTING_SUMMARY {
     exons_depths_df
     groups_channel
     depths_indv
+    relative_mutability
+    omega_mutabilities
 
 
     main:
@@ -84,8 +86,10 @@ workflow PLOTTING_SUMMARY {
     // plot saturation kinetics curves
     groups_mutations
     .join(depths_indv)
-    .set{ groups_mutations_n_depths }
-    COMPUTESATURATIONKINETICS(groups_mutations_n_depths, full_panel_rich, expanded_panel)
+    .join(omega_mutabilities)
+    .join(relative_mutability)
+    .set{ groups_mutations_depths_n_mutability }
+    COMPUTESATURATIONKINETICS(groups_mutations_depths_n_mutability, full_panel_rich, expanded_panel)
     // PLOTSTATURATIONKINETICS(groups_mutations, panel, full_panel_rich, expanded_panel)
 
 
