@@ -63,7 +63,7 @@ def add_bed_positions(bed_df: pd.DataFrame,
     entries_added = 0
     
     for row in bed_df.itertuples():
-        for pos in range(row.START, row.END + 1):
+        for pos in range(int(row.START), int(row.END) + 1):
             key = (row.CHROM, pos, sample_name)
             if key not in masked_positions:
                 mask_data.append({

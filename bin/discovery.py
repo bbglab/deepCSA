@@ -53,7 +53,7 @@ def prob_min_uniform_sample_below_cut_vec(N, n, cut):
     valid = (N > 0) & (n > 0) & (cut > 0) & (cut < N)
 
     for j in np.where(valid)[0]:
-        k = np.arange(n[j])
+        k = np.arange(int(n[j]))
         log_terms = np.log(N[j] - cut[j] - k) - np.log(N[j] - k)
         out[j] = 1 - np.exp(log_terms.sum())
 
@@ -226,7 +226,7 @@ def main_empirical(sample,
                 x_theoretical = np.logspace(3, 7, num=100)
 
             for depth in x_theoretical:
-                unique_neutral = np.sum(1 - np.exp(-mutability_gene['RATE_NEUTRAL'].values * depth)) / mutability_gene.shape[0]
+                unique_neutral = np.sum(1 - np.exp(-mutability_gene['RATE_NEUTRAL'].to_numpy(dtype=float) * depth)) / mutability_gene.shape[0]
                 y_unique_neutral.append(unique_neutral)
 
             # compute empirical discovery index curve
