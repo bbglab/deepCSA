@@ -5,8 +5,7 @@ include { PLOT_SELECTION_METRICS            as PLOTSELECTION                    
 include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/saturation/main'
 include { PLOT_SATURATION_PROPORTIONS       as PLOTSATURATIONPROPORTIONS        } from '../../../modules/local/plot/saturation/proportions/main'
 include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/interindividual_variability/main'
-include { COMPUTE_SATURATION_KINETICS       as COMPUTESATURATIONKINETICS        } from '../../../modules/local/saturation_kinetics/compute/main'
-include { PLOT_SATURATION_KINETICS          as PLOTSTATURATIONKINETICS          } from '../../../modules/local/saturation_kinetics/plot/main'
+include { COMPUTE_SATURATION_KINETICS       as SATURATIONKINETICS               } from '../../../modules/local/saturation_kinetics/compute/main'
 
 
 workflow PLOTTING_SUMMARY {
@@ -89,7 +88,7 @@ workflow PLOTTING_SUMMARY {
     .join(omega_mutabilities)
     .join(relative_mutability)
     .set{ groups_mutations_depths_n_mutability }
-    COMPUTESATURATIONKINETICS(groups_mutations_depths_n_mutability, full_panel_rich, expanded_panel)
+    SATURATIONKINETICS(groups_mutations_depths_n_mutability, full_panel_rich, expanded_panel)
     // PLOTSTATURATIONKINETICS(groups_mutations, panel, full_panel_rich, expanded_panel)
 
 

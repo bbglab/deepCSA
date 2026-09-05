@@ -3,7 +3,7 @@ process COMPUTE_SATURATION_KINETICS {
     tag "$meta.id"
     label 'cpu_low'
 
-    label 'deepcsa_core'
+    container 'docker.io/bbglab/omega:0.2.1'
 
     input:
     tuple val(meta) , path(mutations), path(depths), path(omega_mutability), path(relative_mutability), path(relative_mutability_index)
@@ -14,14 +14,13 @@ process COMPUTE_SATURATION_KINETICS {
     output:
     tuple val(meta), path("**.tsv"), emit: table
     tuple val(meta), path("**.pdf"), emit: plots
+    tuple val(meta), path("**.png"), emit: plots_png
     path "versions.yml"            , topic: versions
 
 
     script:
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    // --residue
-    // --impact
     """
     discovery.py \\
                     --somatic-mutations-file ${mutations} \\
