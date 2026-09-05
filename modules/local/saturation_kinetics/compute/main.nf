@@ -22,7 +22,7 @@ process COMPUTE_SATURATION_KINETICS {
     // --residue
     // --impact
     """
-    saturation_mutagenesis/discovery.py \\
+    discovery.py \\
                     --somatic-mutations-file ${mutations} \\
                     --vep-file ${captured_panel_rich} \\
                     --consensus-panel-file ${expanded_panel} \\
