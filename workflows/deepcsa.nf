@@ -165,6 +165,8 @@ workflow DEEPCSA {
     all_adjusted_mutdensities_file  = channel.value(file("${projectDir}/assets/placeholder_no_file.tsv", checkIfExists: true))
     all_compiled_stabilities        = channel.empty()
     dndscv_table                    = channel.empty()
+    relative_mutabilities           = channel.empty()
+    omega_mutabilities              = channel.empty()
 
     // if the user wants to use custom gene groups, import the gene groups table
     // otherwise I am using the input csv as a dummy value channel
@@ -413,6 +415,7 @@ workflow DEEPCSA {
                         MUTPROFILEALL.out.profile,
                         CREATEPANELS.out.exons_consensus_panel
                         )
+        relative_mutabilities = MUTABILITYALL.out.mutability
         if (params.profilenonprot){
             MUTABILITYNONPROT(mutations_in_exons,
                                 annotated_depths,
@@ -495,6 +498,7 @@ workflow DEEPCSA {
                 grouping_definitions,
                 ENRICHPANELS.out.exons_json_subgenic
                 )
+        omega_mutabilities = OMEGA.out.preprocessing_mutab
         positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
         all_compiled_omegas = OMEGA.out.all_compiled
         if (params.omega_mutabilities){
@@ -680,8 +684,8 @@ workflow DEEPCSA {
                         ENRICHPANELS.out.dna2protein_mapping_depth_exons,
                         group_keys_ch,
                         annotated_depths,
-                        MUTABILITYALL.out.mutability,
-                        OMEGA.out.preprocessing_mutab
+                        relative_mutabilities,
+                        omega_mutabilities
                         )
     }
 
