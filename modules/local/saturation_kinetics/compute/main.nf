@@ -3,7 +3,7 @@ process COMPUTE_SATURATION_KINETICS {
     tag "$meta.id"
     label 'cpu_low'
 
-    container 'docker.io/bbglab/omega:0.2.1'
+    container 'docker.io/ferriolcalvet/saturation:v0.1.0'
 
     input:
     tuple val(meta) , path(mutations), path(depths), path(omega_mutability), path(relative_mutability), path(relative_mutability_index)
