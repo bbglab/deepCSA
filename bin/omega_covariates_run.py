@@ -8,8 +8,8 @@ import pandas as pd
 import numpy as np
 from statsmodels.stats.multitest import multipletests
 
-from parse_deepcsa import deepCSAparser
-from dev_omega import Background, Omega
+from omega_covariates_get_data import deepCSAparser
+from omega_covariates_definitions import Background, Omega
 
 
 # all fitting methods

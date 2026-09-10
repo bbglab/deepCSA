@@ -25,28 +25,28 @@ process OMEGA_COVARIATES_RUN {
     script:
     def args = task.ext.args ?: ""
     """
-    mkdir -p omega_covariates_workspace/deepcsa_output/depths/individual
-    mkdir -p omega_covariates_workspace/deepcsa_output/selection/omega/preprocessing
-    mkdir -p omega_covariates_workspace/deepcsa_output/regions/consensuspanels
+    mkdir -p ./depths/individual
+    mkdir -p ./selection/omega/preprocessing
+    mkdir -p ./regions/consensuspanels
 
-    mv ${consensus_panel} omega_covariates_workspace/deepcsa_output/regions/consensuspanels/consensus.all.tsv
+    mv ${consensus_panel} ./regions/consensuspanels/consensus.all.tsv
 
     for f in ${depths_tables}; do
-        mv "\$f" "omega_covariates_workspace/deepcsa_output/depths/individual/."
+        mv "\$f" "./depths/individual/."
     done
 
     for f in ${mutability_tables}; do
-        mv "\$f" "omega_covariates_workspace/deepcsa_output/selection/omega/preprocessing/."
+        mv "\$f" "./selection/omega/preprocessing/."
     done
 
     for f in ${mutations_tables}; do
-        mv "\$f" "omega_covariates_workspace/deepcsa_output/selection/omega/preprocessing/."
+        mv "\$f" "./selection/omega/preprocessing/."
     done
 
     cat > omega_covariates_config.json << EOF
     {
       "path": {
-        "deepcsa_output_path": "omega_covariates_workspace/deepcsa_output",
+        "deepcsa_output_path": ".",
         "context_counts_path": "${context_counts}",
         "covariates_path": "${covariates}",
         "samples_path": "samples.json"
@@ -54,7 +54,7 @@ process OMEGA_COVARIATES_RUN {
     }
     EOF
 
-    run_omega_covariates.py \\
+    omega_covariates_run.py \\
         --config omega_covariates_config.json \\
         --outfolder . \\
         ${args}
