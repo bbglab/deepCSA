@@ -498,7 +498,7 @@ class Omega:
         
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_trunc = 0
-        for n in range(round(self.n_mis + 1)):
+        for n in range(round(self.n_trunc + 1)):
             pcum_trunc += np.exp(self.log_like_posterior_marginal(1., self.n_syn, n, self.offset_syn, self.offset_trunc))
 
         return omega_mis, lower_mis, upper_mis, pvalue_mis, pneg_mis, pcum_mis, omega_trunc, lower_trunc, upper_trunc, pvalue_trunc, pneg_trunc, pcum_trunc, t_hat, t_hat_low, t_hat_high
@@ -594,7 +594,7 @@ class Omega:
 
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_trunc = 0
-        for n in range(self.n_trunc + 1):
+        for n in range(round(self.n_trunc + 1)):
             pcum_trunc += np.exp(self.log_like_map(1., self.n_syn, n, self.offset_syn, self.offset_trunc))
 
         return omega_mis, lower_mis, upper_mis, pvalue_mis, pneg_mis, pcum_mis, omega_trunc, lower_trunc, upper_trunc, pvalue_trunc, pneg_trunc, pcum_trunc, t_hat, t_hat_low, t_hat_high
@@ -613,7 +613,6 @@ class Omega:
         n = self.n_syn + self.n_mis
         
         # MLE omega hat
-
         if self.n_syn > 0:
             omega_mis = max(0, ((n / self.n_syn) - 1) / k)
         else:
@@ -624,11 +623,9 @@ class Omega:
             return self.log_like_loc(omega, self.n_syn, self.n_mis, self.offset_syn, self.offset_mis)
 
         # pvalue
-
         pvalue_mis = self.compute_lrt_pvalue(log_like_mis, omega_mis, dof=1.0)
 
         # CI
-
         max_ll = log_like_mis(omega_mis)
         target_lrt = chi2.ppf(confidence_level, df=1) / 2.0
         target_ll = max_ll - target_lrt
@@ -665,11 +662,9 @@ class Omega:
             return self.log_like_loc(omega, self.n_syn, self.n_trunc, self.offset_syn, self.offset_trunc)
 
         # pvalue
-
         pvalue_trunc = self.compute_lrt_pvalue(log_like_trunc, omega_trunc, dof=1.0)
 
         # CI
-
         max_ll = log_like_trunc(omega_trunc)
         target_lrt = chi2.ppf(confidence_level, df=1) / 2.0
         target_ll = max_ll - target_lrt
@@ -684,7 +679,7 @@ class Omega:
         
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_trunc = 0
-        for n in range(round(self.n_mis + 1)):
+        for n in range(round(self.n_trunc + 1)):
             pcum_trunc += np.exp(self.log_like_loc(1., self.n_syn, n, self.offset_syn, self.offset_trunc))
 
         return omega_mis, lower_mis, upper_mis, pvalue_mis, pneg_mis, pcum_mis, omega_trunc, lower_trunc, upper_trunc, pvalue_trunc, pneg_trunc, pcum_trunc, t_hat, np.nan, np.nan
