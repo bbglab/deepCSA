@@ -458,7 +458,7 @@ class Omega:
         
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_mis = 0
-        for n in range(self.n_mis + 1):
+        for n in range(round(self.n_mis + 1)):
             pcum_mis += np.exp(self.log_like_posterior_marginal(1., self.n_syn, n, self.offset_syn, self.offset_mis))
 
 
@@ -498,7 +498,7 @@ class Omega:
         
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_trunc = 0
-        for n in range(self.n_mis + 1):
+        for n in range(round(self.n_mis + 1)):
             pcum_trunc += np.exp(self.log_like_posterior_marginal(1., self.n_syn, n, self.offset_syn, self.offset_trunc))
 
         return omega_mis, lower_mis, upper_mis, pvalue_mis, pneg_mis, pcum_mis, omega_trunc, lower_trunc, upper_trunc, pvalue_trunc, pneg_trunc, pcum_trunc, t_hat, t_hat_low, t_hat_high
@@ -553,7 +553,7 @@ class Omega:
         
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_mis = 0
-        for n in range(self.n_mis + 1):
+        for n in range(round(self.n_mis + 1)):
             pcum_mis += np.exp(self.log_like_map(1., self.n_syn, n, self.offset_syn, self.offset_mis))
         
         # Truncating
@@ -643,7 +643,7 @@ class Omega:
         
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_mis = 0
-        for n in range(self.n_mis + 1):
+        for n in range(round(self.n_mis + 1)):
             pcum_mis += np.exp(self.log_like_loc(1., self.n_syn, n, self.offset_syn, self.offset_mis))
 
 
@@ -684,7 +684,7 @@ class Omega:
         
         # conditional cumulative probability P(n <= n_obs | omega=1) of observed under neutrality
         pcum_trunc = 0
-        for n in range(self.n_mis + 1):
+        for n in range(round(self.n_mis + 1)):
             pcum_trunc += np.exp(self.log_like_loc(1., self.n_syn, n, self.offset_syn, self.offset_trunc))
 
         return omega_mis, lower_mis, upper_mis, pvalue_mis, pneg_mis, pcum_mis, omega_trunc, lower_trunc, upper_trunc, pvalue_trunc, pneg_trunc, pcum_trunc, t_hat, np.nan, np.nan
