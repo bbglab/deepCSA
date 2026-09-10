@@ -22,10 +22,11 @@ tfb = tfp.bijectors
 
 
 CONSEQUENCES_CATEGORIES = {
-'protein_affecting' : { 'nonsense', 'missense', 'essential_splice', 'protein_altering_variant', 'transcript_amplification'},
-"truncating": {"nonsense", "essential_splice"},
-'missense' : { 'missense' },
-'synonymous' : { 'synonymous' }
+    'protein_affecting' : { 'nonsense', 'missense', 'essential_splice', 'protein_altering_variant'},
+    'nonsense': {'nonsense'},
+    'truncating': {'nonsense', 'essential_splice'},
+    'missense' : { 'missense' },
+    'synonymous' : { 'synonymous' }
 }
 
 def prob_min_uniform_sample_below_cut(N, n, cut):
@@ -329,11 +330,9 @@ def compute_mutation_rates(mutations, name, impact, subsampling_rates_list, resi
 @click.option("--relative-mutability-file", required=True, type=click.Path(exists=True),help="Path to the relative mutability file")
 @click.option("--resolution", type=click.Choice(['genomic', 'residue', 'genomic,residue']), show_default=True, default='genomic,residue', help="either genomic or residue based sites")
 @click.option("--group-name", type=str, default="all_samples", show_default=True, help="Name of the group/sample to be used in the code")
-# @click.option("--impact", type=str, default="protein_affecting", show_default=True, help="either protein_affecting or non_protein_affecting positions")
 def cli(somatic_mutations_file, vep_file, consensus_panel_file,
         omega_mutability_file, relative_mutability_file,
         depths_file, resolution, group_name,
-        # impact
         ):
     subsampling_rates = np.logspace(-2, np.log10(0.9), num=20)
 
@@ -350,7 +349,7 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
 
     # df_panel represents the total number of mutable sites,
     # either genomic or residue sites
-    for impact in ["protein_affecting", "synonymous", "missense", "truncating"]:
+    for impact in CONSEQUENCES_CATEGORIES.keys():
         df_panel = df_panel_orig[df_panel_orig["IMPACT"].isin(CONSEQUENCES_CATEGORIES[impact])]
     
         click.echo(f"Panel filtered with {df_panel.shape[0]} sites for {impact} mutations")
@@ -383,7 +382,7 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
 
         if 'residue' in resolution:
             click.echo("Plotting empirical discovery for residue sites")
-            output_folder = f'{group_name}.curves.residue_{impact}'
+            output_folder = f'{group_name}.curves/residue/{impact}'
             os.makedirs(output_folder, exist_ok=True)
             main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
                         omega_mutability_file, relative_mutability_file,
@@ -397,7 +396,7 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
 
         if 'genomic' in resolution:
             click.echo("Plotting empirical discovery for genomic sites")
-            output_folder = f'{group_name}.curves.genomic_{impact}'
+            output_folder = f'{group_name}.curves/genomic/{impact}'
             os.makedirs(output_folder, exist_ok=True)
             main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
                         omega_mutability_file, relative_mutability_file,

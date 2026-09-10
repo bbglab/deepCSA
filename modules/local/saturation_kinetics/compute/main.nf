@@ -22,7 +22,7 @@ process COMPUTE_SATURATION_KINETICS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    discovery.py \\
+    saturation_kinetics_curves.py \\
                     --somatic-mutations-file ${mutations} \\
                     --vep-file ${captured_panel_rich} \\
                     --consensus-panel-file ${expanded_panel} \\
