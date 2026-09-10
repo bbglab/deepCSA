@@ -1,5 +1,7 @@
 process MULTIQC {
 
+    label 'mem_low'
+
     conda "bioconda::multiqc=1.20"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/multiqc:1.20--pyhdfd78af_0' :

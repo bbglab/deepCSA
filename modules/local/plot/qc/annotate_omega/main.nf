@@ -1,7 +1,7 @@
 process ANNOTATE_OMEGA_QC {
 
     tag "all_samples"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

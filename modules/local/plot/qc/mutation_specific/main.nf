@@ -1,7 +1,7 @@
 process PLOT_MUTATION_SPECIFIC {
 
     tag "${meta.id}"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

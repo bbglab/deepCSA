@@ -1,7 +1,7 @@
 process PLOT_SATURATION {
 
     tag "$meta.id"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

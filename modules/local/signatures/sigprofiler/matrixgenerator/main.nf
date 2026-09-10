@@ -1,6 +1,5 @@
 process SIGPROFILER_MATRIXGENERATOR {
     tag "samples"
-    label 'process_single'
 
     container 'docker.io/ferriolcalvet/sigprofilermatrixgenerator:1.3.5'
 

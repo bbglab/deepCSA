@@ -1,7 +1,7 @@
 process PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV {
 
     tag "all_samples"
-    label 'process_low'
+    label 'cpu_low'
     label 'deepcsa_core'
 
     input:

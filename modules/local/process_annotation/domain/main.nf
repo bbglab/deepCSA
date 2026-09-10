@@ -3,6 +3,7 @@ process DOMAIN_ANNOTATION {
     tag "${meta.id}"
 
     label 'deepcsa_core'
+    label 'cpu_low'
 
     input:
     tuple val(meta) , path(panel_annotated)

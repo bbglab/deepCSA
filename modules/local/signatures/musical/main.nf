@@ -4,7 +4,6 @@
 
 process MUSICAL {
     tag "$meta.id"
-    label 'process_high'
     label 'cpu_high'
 
     container 'docker.io/ferriolcalvet/musical:latest'

@@ -1,6 +1,6 @@
 process OMEGA_MULTITEST {
     tag "all"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

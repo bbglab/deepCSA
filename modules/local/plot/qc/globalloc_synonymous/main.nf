@@ -1,7 +1,7 @@
 process PLOT_OMEGASYN_QC {
 
     tag "all"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

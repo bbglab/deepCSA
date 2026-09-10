@@ -1,6 +1,6 @@
 process ANALYZE_DEPTHS_GROUPS {
     tag "groups"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

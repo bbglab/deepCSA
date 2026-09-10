@@ -1,7 +1,7 @@
 process PLOT_INTERINDIVIDUAL_VARIABILITY {
 
     tag "samples"
-    label 'process_low'
+    label 'cpu_low'
 
     label 'deepcsa_core'
 

@@ -45,6 +45,7 @@ workflow DNDS {
     local_results.collectFile(name: "all_dNdScv.local.tsv", storeDir:"${params.outdir}/selection/dndscv/local", skip: 1, keepHeader: true).set{ all_dndscv_local_results }
 
     emit:
+    dnds_cv_per_sample = DNDSRUN.out.results_cv
     all_dndscv_results
     all_dndscv_global_results
     all_dndscv_local_results

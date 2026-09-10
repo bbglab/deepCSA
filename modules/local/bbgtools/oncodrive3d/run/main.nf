@@ -1,6 +1,6 @@
 process ONCODRIVE3D_RUN {
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_high'
 
     container 'docker.io/spellegrini87/oncodrive3d:1.0.9-light'
 
