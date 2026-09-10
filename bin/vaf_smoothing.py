@@ -331,7 +331,7 @@ def select_vafpseudo_per_sample(selected_weights_df, mutations_table):
     for _, row in selected_weights_df.iterrows():
         sample_id = row['SAMPLE_ID']
         selected_weight = row['selected_weight']
-        selected_column = f'VAF_PSEUDO_{selected_weight}'
+        selected_column = f'VAF_AM_PSEUDO_{selected_weight}'
         selected_vafpseudo_columns.append((sample_id, selected_column, selected_weight))
 
     # Create a new DataFrame with the selected VAF_PSEUDO columns
