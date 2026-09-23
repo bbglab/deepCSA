@@ -12,15 +12,16 @@ process OMEGA_COVARIATES_RUN {
     tuple val (meta2), path(consensus_panel)
     path(context_counts)
     path(covariates)
-    path(groups)
+    path(grouping_files)
+    val(group)
     
 
 
     output:
-    path("data.tsv")          , emit: data
-    path("omega.tsv")         , emit: omega, optional: true
-    path("omega.grouped.tsv") , emit: omega_grouped
-    path "versions.yml"       , topic: versions
+    path("data.${group}.tsv")           , emit: data_grouped
+    path("omega.${group}.tsv")          , emit: omega, optional: true
+    path("omega.${group}.grouped.tsv")  , emit: omega_grouped
+    path "versions.yml"                 , topic: versions
 
     script:
     def args = task.ext.args ?: ""
@@ -49,7 +50,7 @@ process OMEGA_COVARIATES_RUN {
         "deepcsa_output_path": ".",
         "context_counts_path": "${context_counts}",
         "covariates_path": "${covariates}",
-        "samples_path": "samples.json"
+        "samples_path": "groups.json"
       }
     }
     EOF
@@ -57,6 +58,7 @@ process OMEGA_COVARIATES_RUN {
     omega_covariates_run.py \\
         --config omega_covariates_config.json \\
         --outfolder . \\
+        --group ${group} \\
         ${args}
 
     cat <<-END_VERSIONS > versions.yml

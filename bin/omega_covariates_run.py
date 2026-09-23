@@ -125,18 +125,19 @@ def fit_omega(data, grouped=False, test=False):
 @click.option('--roadmap-covariates', is_flag=True, help="flag: use the first 20 PCs from the Roadmap of Epigenomics as covariates in the background model")
 @click.option('--samples-as-covariates', is_flag=True, help="flag: use samples as covariates in the background model")
 @click.option('--all-samples', is_flag=True, help="flag: conduct only the analysis grouping all samples")
+@click.option('--group', type=click.STRING, default=None, help="name of the group to analyze (if not specified, all samples are analyzed)")
 @click.option('--verb', is_flag=True, help="flag: prints out summary output of background model")
 @click.option('--test', is_flag=True, help="flag: run in test mode: limited gene-samples, loading cached data")
-def cli(config, outfolder, roadmap_covariates, samples_as_covariates, all_samples, verb, test):
+def cli(config, outfolder, roadmap_covariates, samples_as_covariates, all_samples, group, verb, test):
 
-    data_fn = os.path.join(outfolder, 'data.tsv')
+    data_fn = f"{outfolder}/data.{group}.tsv"
 
     if not test:
 
         # parse granular data
         print('Parsing data...')
 
-        parser = deepCSAparser(config)
+        parser = deepCSAparser(config, group)
         data = parser.parse_dataset()
         data.to_csv(data_fn, sep='\t', index=False)
 
@@ -169,7 +170,7 @@ def cli(config, outfolder, roadmap_covariates, samples_as_covariates, all_sample
 
         output = fit_omega(augmented_data, test=test)
 
-        output.to_csv(os.path.join(outfolder, 'omega.tsv'), sep='\t', index=False)
+        output.to_csv(f"{outfolder}/omega.{group}.tsv", sep='\t', index=False)
 
     # grouped data
 
@@ -207,7 +208,7 @@ def cli(config, outfolder, roadmap_covariates, samples_as_covariates, all_sample
 
     output = fit_omega(augmented_data, grouped=True, test=test)
 
-    output.to_csv(os.path.join(outfolder, 'omega.grouped.tsv'), sep='\t', index=False)
+    output.to_csv(f"{outfolder}/omega.{group}.grouped.tsv", sep='\t', index=False)
 
 
 if __name__ == '__main__':

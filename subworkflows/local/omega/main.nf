@@ -39,6 +39,7 @@ workflow OMEGA_ANALYSIS{
     json_subgenic
     wgs_counts
     exons_consensus_panel
+    groups
 
 
     main:
@@ -87,7 +88,8 @@ workflow OMEGA_ANALYSIS{
                             exons_consensus_panel,
                             wgs_counts,
                             omega_covariates_file,
-                            grouping_defs
+                            grouping_defs,
+                            groups
                             )
         omega_covariates_results = ESTIMATOROMEGACOVARIATES.out.omega_grouped
     }

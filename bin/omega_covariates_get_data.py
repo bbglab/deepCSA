@@ -92,7 +92,7 @@ class deepCSAparser:
     def samples_list(self):
         if self._from_json[3] is not None:
             with open(self._from_json[3], "r") as f:
-                samples = list(json.load(f).keys())
+                samples = list(json.load(f).get(self.group if self.group is not None else "all_samples", []))
             return samples
         return None
 
@@ -101,9 +101,11 @@ class deepCSAparser:
         return self._from_json[4]
 
 
-    def __init__(self, config_path):
+
+    def __init__(self, config_path, group=None):
 
         self.config_path = config_path
+        self.group = group
 
         # deepCSA output
         self.depths_path = lambda sample_id: os.path.join(self.deepcsa_output_path, f'depths/individual/{sample_id}.subset_depths.tsv.gz')  # CHROM, POS, CONTEXT, SAMPLE1, SAMPLE2, ...
