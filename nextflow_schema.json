@@ -387,24 +387,26 @@
                 },
                 "omega_covariates": {
                     "type": "boolean",
-                    "description": "Do you want to run the omega covariates model as an additional output?",
+                    "description": "Run the covariate-aware omega dN/dS model as an additional output.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "Runs assets/omega-covariates as an additional omega output. Requires omega=true."
+                    "help_text": "Fits a negative-binomial background model to the synonymous counts (using gene-level epigenomic covariates and, optionally, sample identity) to obtain a gene-specific neutral mutation rate, then estimates dN/dS for missense and truncating mutations with four complementary methods (dndscv, map, posmar, loc). Requires omega=true. Outputs are written to selection/omega_covariates/."
                 },
                 "omega_covariates_cov_file": {
                     "type": "string",
-                    "description": "Path to gene-level covariates table for omega_covariates.",
+                    "description": "Path to the gene-level covariates table (one row per gene, columns PC1-PC20) used by the omega_covariates background model.",
                     "fa_icon": "fas fa-book",
-                    "default": "assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv"
+                    "default": "assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv",
+                    "help_text": "Defaults to the bundled Roadmap of Epigenomics file. Set to null to fit a covariate-free background model."
                 },
                 "omega_covariates_samples_as_covariates": {
                     "type": "boolean",
-                    "description": "Use sample IDs as covariates in the omega_covariates background model.",
-                    "fa_icon": "fas fa-book"
+                    "description": "Use sample IDs as fixed effects in the omega_covariates background model.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Absorbs sample-level differences in mutation rate so that the gene-level signal is not confounded by which samples contribute mutations."
                 },
                 "omega_covariates_all_samples": {
                     "type": "boolean",
-                    "description": "For omega_covariates, only compute grouped outputs across all samples.",
+                    "description": "For omega_covariates, only compute the pooled (grouped) per-gene outputs and skip the per-sample table.",
                     "fa_icon": "fas fa-book"
                 },
                 "site_comparison_grouping": {

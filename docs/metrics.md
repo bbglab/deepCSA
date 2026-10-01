@@ -133,6 +133,53 @@ An optional covariate model (`selection/omega_covariates/`) regresses omega agai
 - Use `omega` for sample-specific signals and `omegagloballoc` for conservative cohort-level estimates (see [Tools — Interpreting outputs](tools.md#interpreting-outputs-sanity-checks-and-key-metrics)).
 - Genes with very few mutations produce wide confidence intervals; treat non-significant estimates in low-burden samples as "no evidence" rather than "no selection".
 
+#### Omega with covariates (`omega_covariates`)
+
+**What is computed.** An additional, covariate-aware dN/dS model, enabled with `omega_covariates = true` (requires `omega = true`). Rather than assuming a single neutral mutation rate, it first fits a **negative-binomial background model** to the synonymous counts across all genes — the same idea as dNdScv — using gene-level covariates to explain why some genes mutate faster than others. The fitted background then sources a **gene-specific gamma prior** on the neutral (synonymous) mutation density, and dN/dS is estimated for missense and truncating mutations against that prior.
+
+**Covariates.** The background model can be conditioned on, jointly:
+
+- **Gene-level epigenomic covariates** — the first 20 principal components of the Roadmap of Epigenomics (PC1–PC20), read from `omega_covariates_cov_file` (default `assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv`, one row per gene). Note that this is **on by default** because `omega_covariates_cov_file` ships with a default path; set it to `null` to fit a covariate-free background.
+- **Sample identity** — each sample as a fixed effect, enabled with `omega_covariates_samples_as_covariates = true`. This absorbs sample-level differences in mutation rate (e.g. depth, overall burden) so that the gene-level signal is not confounded by which samples contribute mutations.
+
+**Fitting methods.** For each gene (and for the all-samples pooled estimate), dN/dS is computed with four complementary methods, each reported under its own suffix:
+
+| Suffix | Method | Model |
+|---|---|---|
+| `dndscv` | `fit_dndscv` | Poisson penalised LRT; the MAP neutral density plays a pivotal role. Closest to a verbatim dNdScv. |
+| `map` | `fit_map` | Gamma–Poisson (negative-binomial) LRT with the MAP neutral density. |
+| `posmar` | `fit_posterior_marginal` | Gamma–Poisson LRT where the gamma component is the *posterior* of the background gamma per gene (a posterior-marginal model). |
+| `loc` | `fit_loc` | Poisson model using only `n_syn` and `offset_syn` (local; ignores the background model). |
+
+**Where to find it.** `selection/omega_covariates/` — one set of files **per group** (the group name is taken from your `features_groups_list`):
+
+| Output | Content |
+|---|---|
+| `data.<group>.tsv` | Parsed and augmented sample–gene table (counts, offsets, PC1–PC20). |
+| `omega.<group>.tsv` | Per sample–gene dN/dS estimates (skipped when `omega_covariates_all_samples = true`). |
+| `omega.<group>.grouped.tsv` | Per-gene dN/dS estimates with all samples in the group pooled. |
+
+**Key columns** (in `omega.<group>.tsv` / `omega.<group>.grouped.tsv`). For each method suffix `<m>` ∈ {`dndscv`, `map`, `posmar`, `loc`} and each consequence `<c>` ∈ {`mis`, `trunc`}:
+
+| Column | Meaning |
+|---|---|
+| `omega_<c>_<m>` | Point estimate of the dN/dS ratio. |
+| `low_<c>_<m>` / `high_<c>_<m>` | Profile-likelihood confidence interval. |
+| `pval_<c>_<m>` | Likelihood-ratio-test p-value for `omega > 1` (positive selection). |
+| `qval_<c>_<m>` | Benjamini–Hochberg FDR-adjusted p-value. |
+| `pneg_<c>_<m>` | p-value for negative selection (`omega < 1`). |
+| `pcum_<c>_<m>` | Cumulative probability `P(n ≤ n_obs \| omega = 1)` under neutrality. |
+| `syn_density_<m>` (+ `_low` / `_high`) | Estimated neutral synonymous mutation density and its CI. |
+
+Shared columns: `gene_id`, `sample_id` (per-sample files only), `n_syn` / `n_mis` / `n_trunc` (observed counts), `offset_syn` / `offset_mis` / `offset_trunc` (expected counts), `mean_prior` (background-model mean synonymous count), `alpha` / `beta` (gamma prior shape / rate).
+
+**How to interpret it.**
+
+- Read it the same way as standard omega: `omega ≈ 1` is neutral, `omega > 1` with a significant `qval` is positive selection, `omega < 1` is purifying selection or low power.
+- Because the neutral rate is now **gene-specific** (borrowing strength across genes via the covariates), this model is more robust than plain omega when mutation rates vary systematically across genes (e.g. by chromatin state).
+- The four methods make different assumptions; **concordance** across `dndscv`, `map`, `posmar`, and `loc` for the same gene is the strongest evidence. `loc` is the most conservative (no background model) and `dndscv` the closest to the published dNdScv.
+- Compare the per-sample (`omega.<group>.tsv`) and pooled (`omega.<group>.grouped.tsv`) results: the pooled estimate has more power for low-burden genes, while the per-sample one can reveal sample-specific selection.
+
 ### 5.2 Site comparison
 
 **What is computed.** For each site (or amino-acid residue / residue change), the observed number of mutations is compared to the expected number from the mutability model.
@@ -240,7 +287,7 @@ A quick map from biological question to the outputs you should look at:
 | Is my data of good quality? | `depths/summary/`, `qc/` (all) | `plots/mutations_summary/` (filter stats) |
 | How many mutations does each sample carry? | `mutdensity/individual_vals/` | `plots/mutations_summary/` (per-sample counts) |
 | Which mutational processes are active? | `mutational_profile/`, `signatures/sigprofilerassignment/` | `qc/mutational_profiles_comparison/` |
-| Which genes show positive selection? | `selection/omega/` + `selection/omegagloballoc/` | `selection/dndscv/cv/`, `selection/oncodrivefml/` |
+| Which genes show positive selection? | `selection/omega/` + `selection/omegagloballoc/` | `selection/omega_covariates/`, `selection/dndscv/cv/`, `selection/oncodrivefml/` |
 | Which specific sites/residues are selected? | `selection/sitecomparison/` | `plots/selection/oncodrive3d/chimerax/` |
 | What is the clonal architecture of each sample? | Mutated-genomes outputs under `selection/` | `plots/needle_plots/` |
 | Does a covariate (age, smoking, ...) explain variation? | `regressions/` | `plots/interindividual_variability/` |

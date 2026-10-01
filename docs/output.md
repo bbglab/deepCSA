@@ -31,7 +31,7 @@ A typical analysis workflow over the outputs looks like this:
 1. **Check quality first.** Open `depths/summary/` and the `qc/` directory. If a sample has low or uneven depth, or shows up in `qc/contamination/` or `qc/omega_flagged/`, treat its downstream metrics with caution.
 2. **Quantify the burden.** Use `mutdensity/individual_vals/` (flat) or `mutdensity_adjusted/individual_vals/` (trinucleotide-adjusted) to compare mutation burden across samples, genes, and region types.
 3. **Characterise the processes.** Look at `mutational_profile/` and `signatures/sigprofilerassignment/` to see which mutational processes (e.g. age, smoking) drive the burden.
-4. **Call selection.** Start from `selection/omega/` and `selection/omegagloballoc/` (gene-level dN/dS), cross-check with `selection/dndscv/cv/` and `selection/oncodrivefml/`, and drill down to individual sites with `selection/sitecomparison/`. Genes that are significant in several independent metrics are the most robust selection candidates.
+4. **Call selection.** Start from `selection/omega/` and `selection/omegagloballoc/` (gene-level dN/dS), cross-check with `selection/omega_covariates/` (covariate-aware dN/dS), `selection/dndscv/cv/` and `selection/oncodrivefml/`, and drill down to individual sites with `selection/sitecomparison/`. Genes that are significant in several independent metrics are the most robust selection candidates.
 5. **Describe clonal architecture.** Use the mutated-genomes outputs and `plots/needle_plots/` to see how mutations are distributed across clones in each sample.
 6. **Relate to covariates.** If you provided a feature groups table, use `regressions/` to test whether sample-level variables (age, sex, smoking, ...) explain variation in the metrics above.
 
@@ -78,10 +78,10 @@ The directory tree below shows the maximum diversity of outputs the pipeline can
 │   ├── omega
 │   │   ├── preprocessing          # syn_muts.<sample>, mutabilities.<sample>
 │   │   └── estimator              # all_omegas.tsv, output_mle.<sample>.tsv
-│   ├── omega_covariates                   # omega-covariates additional model output
-│   │   ├── data.tsv               # parsed and augmented sample-gene table
-│   │   ├── omega.tsv              # per sample-gene estimates (unless --omega_covariates_all_samples)
-│   │   └── omega.grouped.tsv      # grouped per-gene estimates
+│   ├── omega_covariates                   # covariate-aware dN/dS model (one set of files per group)
+│   │   ├── data.<group>.tsv       # parsed and augmented sample-gene table (counts, offsets, PC1-PC20)
+│   │   ├── omega.<group>.tsv      # per sample-gene dN/dS estimates (unless omega_covariates_all_samples)
+│   │   └── omega.<group>.grouped.tsv  # pooled per-gene dN/dS estimates (all samples in the group)
 │   ├── omegagloballoc
 │   │   ├── preprocessing
 │   │   └── estimator

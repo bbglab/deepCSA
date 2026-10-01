@@ -436,6 +436,27 @@ params {
 
 When enabled, outputs will be labeled with the `.non_prot_aff` suffix in the corresponding selection directories (e.g., `omega/`, `omegagloballoc/`).
 
+### Omega with covariates
+
+deepCSA can run an additional, covariate-aware dN/dS model alongside the standard omega. It fits a negative-binomial background model to the synonymous counts (using gene-level epigenomic covariates and, optionally, sample identity) to obtain a gene-specific neutral mutation rate, then estimates dN/dS for missense and truncating mutations against that rate. See [Computed metrics — Omega with covariates](metrics.md#omega-with-covariates-omega_covariates) for the full explanation of the outputs and how to interpret them.
+
+```console
+params {
+    omega                      = true   // required: the covariates model reuses omega preprocessing
+    omega_covariates           = true   // enable the covariate-aware dN/dS model
+    // omega_covariates_cov_file = "assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv"  // default; set to null to fit a covariate-free background
+    // omega_covariates_samples_as_covariates = true  // use sample IDs as fixed effects in the background model
+    // omega_covariates_all_samples = true            // only compute the pooled (grouped) outputs, skip per-sample
+}
+```
+
+- `omega_covariates` — enable the model. **Requires `omega = true`** (the pipeline stops with an error otherwise), because it reuses the omega preprocessing outputs.
+- `omega_covariates_cov_file` — path to the gene-level covariates table (one row per gene, columns `PC1`–`PC20`). Defaults to the bundled Roadmap of Epigenomics file; set to `null` to fit a background model without gene-level covariates.
+- `omega_covariates_samples_as_covariates` — add each sample as a fixed effect in the background model, absorbing sample-level differences in mutation rate.
+- `omega_covariates_all_samples` — only compute the pooled (grouped) per-gene outputs and skip the per-sample table.
+
+Outputs are written to `selection/omega_covariates/` (one set of files per group from your `features_groups_list`).
+
 ## Custom mutation calls -- option 1 (building input VCFs and providing them via normal input)
 
 If you want to run deepCSA with your own mutation calls, this is also possible. Reasons behind this would be:
@@ -573,7 +594,7 @@ Once the pipeline has your mutations and depths, it computes the following layer
 | Mutation filtering | Which mutations are somatic and trustworthy? | `mutations/`, `plots/mutations_summary/` |
 | Mutation burden | How many mutations per Mb, per sample/gene/region? | `mutdensity/`, `mutdensity_adjusted/` |
 | Mutational processes | Which mutational processes are active? | `mutational_profile/`, `signatures/` |
-| Positive selection | Which genes/sites are under selection? | `selection/` (omega, dndscv, oncodrivefml, oncodrive3d, sitecomparison) |
+| Positive selection | Which genes/sites are under selection? | `selection/` (omega, omega_covariates, dndscv, oncodrivefml, oncodrive3d, sitecomparison) |
 | Clonal structure | How many genomes/cells carry each mutation? | mutated-genomes outputs under `selection/` |
 | Interindividual variability | Do covariates explain variation in the metrics? | `regressions/` |
 | Quality control | Is the data reliable? | `qc/` |
