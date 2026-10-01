@@ -1,5 +1,6 @@
 process CUSTOM_DUMPSOFTWAREVERSIONS {
-    label 'process_single'
+
+    label 'mem_low'
 
     // Requires `pyyaml` which does not have a dedicated container but is in the MultiQC container
     conda "bioconda::multiqc=1.18"

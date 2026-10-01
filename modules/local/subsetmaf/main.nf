@@ -3,6 +3,7 @@ process SUBSET_MAF {
     tag "$meta.id"
 
     label 'deepcsa_core'
+    label 'mem_low'
 
     input:
     tuple val(meta), path(mut_files)

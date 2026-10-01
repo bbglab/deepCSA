@@ -5,7 +5,7 @@
 
 process SIGPROFILEREXTRACTOR {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/ferriolcalvet/sigprofilerassignment'
 

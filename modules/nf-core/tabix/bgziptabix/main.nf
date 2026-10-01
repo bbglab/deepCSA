@@ -3,7 +3,8 @@ process TABIX_BGZIPTABIX {
     // cache false
 
     tag "$meta.id"
-    label 'process_single'
+
+    label 'mem_low'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

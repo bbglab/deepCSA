@@ -6,6 +6,7 @@
 
 - [Introduction](#introduction)
 - [How to run the pipeline](#how-to-run-the-pipeline)
+- [Input scenarios](#input-scenarios)
 - [Samplesheet input](#samplesheet-input)
 - [Available genomes](#available-genomes)
 - [Proposed run modes](#proposed-run-modes)
@@ -17,10 +18,31 @@
 - [Additional customizable parameters](#additional-customizable-parameters)
 - [Custom mutation calls](#custom-mutation-calls)
 - [MAF file as input (alternative input mode)](#maf-file-as-input-alternative-input-mode)
+- [What deepCSA computes](#what-deepcsa-computes)
 
 ## Introduction
 
-<!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
+deepCSA is a pipeline for the analysis of **clonal structure** from targeted (or genome-wide) **ultradeep** DNA sequencing data. Given a set of somatic mutations and the sequencing depth at which they were observed, it computes:
+
+- **Mutation burden** — mutation density (flat and trinucleotide-adjusted) per sample, gene, and genomic region.
+- **Mutational processes** — mutational profiles and mutational signature assignment/extraction.
+- **Positive selection** — a battery of complementary dN/dS-style metrics (omega, dNdScv, OncodriveFML, Oncodrive3D, site comparison) to detect genes and sites under selection.
+- **Clonal structure** — estimates of the number of mutated genomes/cells per mutation from VAF distributions.
+- **Interindividual variability** — linear regressions of the above metrics against sample covariates.
+
+A full explanation of every metric and how to interpret its outputs is in [Computed metrics](metrics.md).
+
+### What you need to provide: mutations + depth
+
+The single most important requirement for deepCSA is that **every mutation carries depth information**: the total number of reads sequenced at its position (`DEPTH`) and the number of reads supporting the alternate allele (`ALT_DEPTH`). This is what allows the pipeline to compute VAFs, correct mutation counts for coverage, and estimate clonal structure.
+
+**The format of the mutation file itself is flexible.** deepCSA can receive mutations from any caller or any project, as long as the file can be converted to the per-sample VCF (or cohort MAF) layout described in [Input scenarios](input_scenarios.md) and contains the depth columns:
+
+- Mutations called with [deepUMIcaller](https://github.com/bbglab/deepUMIcaller) work out of the box (VCF + BAM).
+- Mutations called with **any other tool** (or a manually curated set) can be used by converting them with `assets/useful_scripts/deepcsa_maf2samplevcfs.py` — see [Custom mutation calls](#custom-mutation-calls). The only hard requirement is the presence of `DEPTH` and `ALT_DEPTH` per mutation.
+- A cohort-level MAF with `CHROM, POS, REF, ALT, DEPTH, ALT_DEPTH, SAMPLE_ID` is accepted directly via `--input_maf` — see [MAF file as input](#maf-file-as-input-alternative-input-mode).
+
+The only other mandatory input is the **sequencing depth per position**: either the BAM files used for calling (Scenario 1), or a precomputed depths table (Scenarios 2 and 3). See [Input scenarios](input_scenarios.md) for the three supported combinations.
 
 ## How to run the pipeline
 
@@ -31,6 +53,10 @@ nextflow run bbglab/deepCSA --outdir <OUTDIR> -profile <DESIRED PROFILE> --input
 ```
 
 For more information on how to run Nextflow pipelines check a more detailed explanation [below](#running-the-pipeline) in this same document or check the [Nextflow](https://www.nextflow.io/docs/latest/index.html) or [nf-core](https://nf-co.re) community documentations.
+
+## Input scenarios
+
+deepCSA accepts three different input combinations: per-sample VCF + BAM (default), per-sample VCF + a precomputed depths table, or a cohort-level MAF + a precomputed depths table. The sections below describe each piece in detail; for a concise summary of the three modes and when to use each, see [Input scenarios](input_scenarios.md).
 
 ## Samplesheet input
 
@@ -55,6 +81,18 @@ sample2,sample2.high.filtered.vcf,sample2.sorted.bam
 | `bam` | Full path to BAM file containing the duplex aligned reads that were used for the variant calling.                                                             |
 
 An [example samplesheet](../assets/example_inputs/input_example.csv) has been provided with the pipeline.
+
+### Input files from deepUMIcaller
+
+If your mutations were called with [deepUMIcaller](https://github.com/bbglab/deepUMIcaller), use the **final** per-sample outputs produced by that pipeline:
+
+- **VCF**: the filtered duplex VCF for each sample (commonly named `*.duplex.filtered.vcf` or `*.high.filtered.vcf`), typically found under the `mutations_vcf/` output directory. The VCF should be uncompressed.
+- **BAM**: the **duplex-consensus** BAM used for calling those variants (commonly named `*.sorted.bam` in `sortbamduplexcons/`). This BAM must be aligned to the same reference genome as the VCF.
+
+Batch/sample guidance:
+
+- **One row per library/run**: if you have multiple sequencing libraries for the same biological sample and want to **aggregate** them, keep the same `sample` name across rows and list each matching VCF/BAM pair.
+- **Separate batches**: if you want to compare batches or runs, keep distinct sample names and (optionally) add a `BATCH` or `RUN_ID` column in the feature groups table to stratify the analysis.
 
 ## Available genomes
 
@@ -183,19 +221,49 @@ params {
 }
 ```
 
+### Feature toggles (turning steps on/off)
+
+All pipeline parameters are defined in `nextflow_schema.json` and exposed via `--help`. Most analysis steps can be enabled/disabled with boolean flags such as `mutationdensity`, `omega`, `oncodrive3d`, `signatures`, and `regressions`. If a step is turned off, its output directories are not produced. For a full list of parameters run:
+
+```bash
+nextflow run bbglab/deepCSA --help
+```
+
 ## Definition of structural parameters
 
-- Container pulling (either prior to running the pipeline or directly as the pipeline runs)
-- Generation of Oncodrive3D datasets (see: [Oncodrive3D repo datasets building process](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets))
+Before running, ensure container images can be pulled (or are already available) and that all reference datasets are accessible from your execution environment.
 
-- Download of additional specific datasets
-  - Ensembl VEP (see: [Ensembl VEP docs](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html#cache)). Modify accordingly your `nextflow.config` vep parameters, `vep_cache`, `vep_cache_version`, etc.
-  <!-- TODO we should revise if we can provide more specific information on how to download the cache -->
-  - CADD scores (see: [CADD downloads page](https://cadd.gs.washington.edu/download) "All possible SNVs of GRCh38/hg38" file)
-  - COSMIC signatures (i.e. [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/) (select context size = 96 and your desired species of interest))
+### Data sources and reference downloads
 
-- Provide custom domain definition file.
-  <!-- * dNdScv datasets (see: ) -->
+- **Ensembl VEP cache**  
+  Download from the [Ensembl VEP cache](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html#cache) page and set `vep_cache`, `vep_cache_version`, `vep_species`, and `vep_genome` accordingly.
+
+- **CADD scores**  
+  Use the ["All possible SNVs" GRCh38/hg38 file](https://cadd.gs.washington.edu/download). Provide both the compressed TSV (`cadd_scores`) and its tabix index (`cadd_scores_ind`).
+
+- **COSMIC signatures**  
+  Download the SBS signatures (context size = 96) for your genome build from the [COSMIC signatures downloads page](https://cancer.sanger.ac.uk/signatures/downloads/). Set `cosmic_ref_signatures`.
+
+- **dNdScv reference data**  
+  Download `covariates_hg19_hg38_epigenome_pcawg.rda` from the [dNdScv](https://github.com/im3sanger/dndscv) reference data (also mirrored by [IntOGen](https://intogen.org/download)). Set `dnds_covariates`.
+  Run the scripts for the generation of the dNdScv required reference input that you can find here: https://github.com/bbglab/deepCSA/tree/dev/assets/build_datasets/dndscv
+
+- **Oncodrive3D datasets**  
+  Build datasets and annotations following the [Oncodrive3D dataset instructions](https://github.com/bbglab/oncodrive3d?tab=readme-ov-file#building-datasets). Provide the resulting `datasets3d` and `annotations3d` directories.
+
+- **Trinucleotide counts**  
+  Provide a `wgs_trinuc_counts` file with the total count of each trinucleotide in your reference genome (see `assets/trinucleotide_counts/` for the expected format).
+
+- **DNA2PROTEINMAPPING GFF3 (optional)**  
+  By default, the pipeline fetches a GFF3 file from Ensembl FTP at runtime. For local/offline use, download the matching file from  
+  `https://ftp.ensembl.org/pub/release-<release>/gff3/<species>/`  
+  (e.g., `Homo_sapiens.GRCh38.111.gff3.gz`) and provide it via `gff3_file`.
+
+- **Domain definitions**  
+  Supply a Pfam/InterPro domain file (see [file formatting](file_formatting.md#domain-definition-file)).
+
+- **NanoSeq masks (optional)**  
+  See [Nanoseq genomic masks](#nanoseq-genomic-masks) below.
 
 ### Mandatory parameter configuration
 
@@ -214,8 +282,15 @@ params {
     cadd_scores_ind            = "CADD/v1.7/hg38/whole_genome_SNVs.tsv.gz.tbi"
 
     // dnds
-    dnds_ref_transcripts       = "RefCDS_human_latest_intogen.rda"
+    // dnds_biomart_ref is a biomart TSV; deepCSA dynamically builds a per-run RefCDS_custom.rda
+    // by intersecting it with the panel BED (replaces the previously required static
+    // RefCDS_*.rda transcripts file). See assets/build_datasets/dndscv/instructions.txt
+    // for how to regenerate the biomart export.
+    dnds_biomart_ref           = "biomart_export.tsv"
     dnds_covariates            = "covariates_hg19_hg38_epigenome_pcawg.rda"
+
+    // GFF3 annotation for the genome assembly, consumed when building exon/domain panels
+    gff3_file                  = "Homo_sapiens.GRCh38.111.gff3.gz"
 
     // oncodrive3d + fancy plots
     datasets3d                 = "oncodrive3d/datasets"
@@ -275,6 +350,15 @@ These files identify sites overlapping common SNPs and noisy or variable genomic
 - Nanoseq SNP: Common SNP positions that should be excluded from analysis
 - Nanoseq Noise: Regions with high noise or variability
 
+Enable them with:
+
+```console
+params {
+    nanoseq_snp   = "SNP_GRCh38.wgns.bed.gz"
+    nanoseq_noise = "NOISE_GRCh38.wgns.bed.gz"
+}
+```
+
 Both files are available for GRCh38 at the [shared folder](https://drive.google.com/drive/folders/1wqkgpRTuf4EUhqCGSLA4fIg9qEEw3ZcL) from Iñigo Martincorena's group, at the Wellcome Sanger Institute.
 
 ## Additional customizable parameters
@@ -301,6 +385,12 @@ This value is used for filtering the mutations by depth. Meaning that if a mutat
 
 This value is the less stringent depth threshold and is used in the first step of computing the positions that may be part of the so called "panels". This value indicates the minimum average depth at a given position for this position to be kept for the posterior depth analysis and definition on panels. The main use of this value should be to reduce the size of the files that are being processed afterwards. This can be set to 20 or more very safely.
 
+### VAF-distortion filter
+
+- vaf_distortion_threshold   = 3
+
+Mutations whose ratio `VAF_AM / VAF` (all-molecules VAF over duplex VAF) exceeds this threshold are flagged as VAF-distorted during mutation filtering. Lower values are more conservative.
+
 ### Using a precomputed depths table
 
 If you already have a precomputed table with per-position depths for your cohort (for example produced by a previous run or an external tool), you can instruct the pipeline to use that table instead of re-computing depths from the BAM files. This can save time and compute resources when depth computation has been performed once and re-used.
@@ -322,12 +412,59 @@ Notes and requirements:
   - If your input.csv file contains `sample`, vcf and bam columns, the columns of the depths table have to be the same as the name of the BAM files of each sample in the input.csv file.
 - Make sure that you remove the column CONTEXT from the table in case you are starting with the all_samples individual depths table that is outputted by deepCSA. Check out the assets/useful_scripts/downsample_depths.ipynb file for an example on how to prepare the input for this parameter.
 
+### Plotting controls
+
+If you are running with sample groups (see [Feature groups](file_formatting.md#feature-groups)), you can control whether plotting steps generate cohort-only outputs or include all group-level plots:
+
+```console
+params {
+    plot_only_allsamples = true  // only cohort-level plots
+}
+```
+
+Set `plot_only_allsamples = false` to generate per-group plots alongside the cohort summaries.
+
+### Positive selection with non-protein-affecting profiles
+
+deepCSA can compute positive selection metrics using a **non-protein-affecting** mutational profile (synonymous + intronic + intergenic mutations). This is useful to compare selection metrics against a background that excludes protein-altering events.
+
+```console
+params {
+    positive_selection_non_protein_affecting = true
+}
+```
+
+When enabled, outputs will be labeled with the `.non_prot_aff` suffix in the corresponding selection directories (e.g., `omega/`, `omegagloballoc/`).
+
+### Omega with covariates
+
+deepCSA can run an additional, covariate-aware dN/dS model alongside the standard omega. It fits a negative-binomial background model to the synonymous counts (using gene-level epigenomic covariates and, optionally, sample identity) to obtain a gene-specific neutral mutation rate, then estimates dN/dS for missense and truncating mutations against that rate. See [Computed metrics — Omega with covariates](metrics.md#omega-with-covariates-omega_covariates) for the full explanation of the outputs and how to interpret them.
+
+```console
+params {
+    omega                      = true   // required: the covariates model reuses omega preprocessing
+    omega_covariates           = true   // enable the covariate-aware dN/dS model
+    // omega_covariates_cov_file = "assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv"  // default; set to null to fit a covariate-free background
+    // omega_covariates_samples_as_covariates = true  // use sample IDs as fixed effects in the background model
+    // omega_covariates_all_samples = true            // only compute the pooled (grouped) outputs, skip per-sample
+}
+```
+
+- `omega_covariates` — enable the model. **Requires `omega = true`** (the pipeline stops with an error otherwise), because it reuses the omega preprocessing outputs.
+- `omega_covariates_cov_file` — path to the gene-level covariates table (one row per gene, columns `PC1`–`PC20`). Defaults to the bundled Roadmap of Epigenomics file; set to `null` to fit a background model without gene-level covariates.
+- `omega_covariates_samples_as_covariates` — add each sample as a fixed effect in the background model, absorbing sample-level differences in mutation rate.
+- `omega_covariates_all_samples` — only compute the pooled (grouped) per-gene outputs and skip the per-sample table.
+
+Outputs are written to `selection/omega_covariates/` (one set of files per group from your `features_groups_list`).
+
 ## Custom mutation calls -- option 1 (building input VCFs and providing them via normal input)
 
 If you want to run deepCSA with your own mutation calls, this is also possible. Reasons behind this would be:
 
 - the variant calling was not done using deepUMIcaller.
 - you came up with a set of mutations that you trust and want to force them as the ones to be used for the analysis.
+
+> **The only hard requirement is depth information.** Your mutations can come from any caller or any format, as long as each mutation carries `DEPTH` (total reads at the position) and `ALT_DEPTH` (reads supporting the alternate allele). These two columns are what deepCSA uses to compute VAFs, correct for coverage, and estimate clonal structure. If your file lacks them, they must be added (e.g. by pileup-ing the BAMs) before running the pipeline.
 
 ### Step 1: Generate properly formatted input VCFs
 
@@ -446,3 +583,20 @@ params {
 3. The rest of the pipeline proceeds identically to a standard run using per-sample VCFs.
 
 > **Note:** If `--input_maf` is provided without `--use_custom_depths true`, the pipeline will stop immediately with an error message rather than silently ignoring the MAF file.
+
+## What deepCSA computes
+
+Once the pipeline has your mutations and depths, it computes the following layers of analysis (each can be toggled on/off with the parameters in [Proposed run modes](#proposed-run-modes)):
+
+| Layer | What it answers | Main outputs |
+|---|---|---|
+| Depth & panels | Which positions are well covered? | `depths/`, `regions/` |
+| Mutation filtering | Which mutations are somatic and trustworthy? | `mutations/`, `plots/mutations_summary/` |
+| Mutation burden | How many mutations per Mb, per sample/gene/region? | `mutdensity/`, `mutdensity_adjusted/` |
+| Mutational processes | Which mutational processes are active? | `mutational_profile/`, `signatures/` |
+| Positive selection | Which genes/sites are under selection? | `selection/` (omega, omega_covariates, dndscv, oncodrivefml, oncodrive3d, sitecomparison) |
+| Clonal structure | How many genomes/cells carry each mutation? | mutated-genomes outputs under `selection/` |
+| Interindividual variability | Do covariates explain variation in the metrics? | `regressions/` |
+| Quality control | Is the data reliable? | `qc/` |
+
+For a detailed explanation of every metric, the meaning of its columns, and how to interpret the results, see [Computed metrics and how to interpret them](metrics.md). For the full directory layout of the outputs, see [Output](output.md).

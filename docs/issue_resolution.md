@@ -100,8 +100,27 @@ This becomes a problem when subgenic elements that are not fully covered by the 
 
 The solution is to include the covered portions of a region in the expanded panel even if the region is only partially covered. This ensures representation of all elements in downstream analyses, but it does not guarantee full comparability between runs because different sample groups may yield different panel and subgenic-region definitions.
 
+## 4. CDKN2A missing in dNdScv covariates file <a name="issue-4"></a>
 
-## 4. Issue 4: Description of the issue <a name="issue-4"></a>
+When trying to match CDKN2A to the gene names in the dNdScv covariates file it is missing. This is because there are the two isoforms of it corresponding to two different proteins:
+
+- "ENSP00000462950" ~ "CDKN2A.p14arf",
+
+- "ENSP00000307101" ~ "CDKN2A.p16INK4a" <---- This one!
+
+### Processes affected:
+
+- `DNDSRUN`
+
+### GitHub tracking
+
+- **GitHub PR (Resolution):** [https://github.com/bbglab/deepCSA/pull/465](https://github.com/bbglab/deepCSA/pull/465)
+
+### Resolution <a name="resolution"></a>
+
+What we did in this PR is to rename the row of `CDKN2A.p16INK4a` in the covariates file to CDKN2A and we removed the row for `CDKN2A.p14arf` this way we avoid the ambiguity, but at the expenses of losing information from these second protein version of CDKN2A.
+
+## 5. Issue 5: Description of the issue <a name="issue-5"></a>
 
 Description of the issue, including its impact and context.
 
@@ -115,7 +134,6 @@ Description of the issue, including its impact and context.
 - **GitHub PR (Resolution):** [Link to GitHub PR](link_to_pr)
 
 ### Resolution <a name="resolution"></a>
-
 
 ## Conclusion
 

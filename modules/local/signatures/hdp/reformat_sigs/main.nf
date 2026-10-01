@@ -1,7 +1,7 @@
 
 process SIGNATURES_HDP_TO_SIGPROFILER {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
     label 'deepcsa_core'
 
 

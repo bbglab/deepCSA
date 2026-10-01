@@ -1,7 +1,7 @@
 process EDITCONFIG {
 
     tag "regressions"
-    label 'process_low'
+    label 'cpu_low'
 
     label "bbgregressions"
 

@@ -14,6 +14,7 @@ workflow PLOTTING_SUMMARY {
     positive_selection_results_ready
     all_mutations
     all_mutdensities
+    all_mutdensities_adjusted
     site_comparison
     all_samples_depth
     samples
@@ -80,7 +81,7 @@ workflow PLOTTING_SUMMARY {
     // ? plot saturation kinetics curves
 
 
-    PLOTINTERINDIVIDUALVARIABILITY(samples, all_groups, panel,  all_mutdensities)
+    PLOTINTERINDIVIDUALVARIABILITY(samples, all_groups, panel,  all_mutdensities, all_mutdensities_adjusted)
     // heatmaps:
     //     mutations per gene/sample (total, SNV only, INDEL only, per consequence type)
     //     driver mutations per gene/sample

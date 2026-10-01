@@ -98,8 +98,9 @@ def compile_profiles(mutation_profile_files, groups_json):
 
     if len(keys_sizegt1) > 1:
         plot_similarity_heatmaps(mut_profile_matrix, mode, keys_sizegt1, "groups")
-
-    plot_similarity_heatmaps(mut_profile_matrix, mode, all_keys, "all")
+    
+    if len(all_keys) > 1:
+        plot_similarity_heatmaps(mut_profile_matrix, mode, all_keys, "all")
 
 
 @click.command()

@@ -4,7 +4,7 @@ process DOWNSAMPLE_MUTATIONS {
     cache false
 
     tag "$meta.id"
-    label 'process_high'
+    label 'cpu_high'
 
     label 'deepcsa_core'
 

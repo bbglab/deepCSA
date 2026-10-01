@@ -18,7 +18,8 @@ from read_utils import custom_na_values
 def read_from_vardict_VCF_all(sample,
                                 name,
                                 columns_to_keep = ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'REF_DEPTH', 'ALT_DEPTH', 'VAF',
-                                                    'vd_DEPTH', 'vd_REF_DEPTH', 'vd_ALT_DEPTH']):
+                                                    'vd_DEPTH', 'vd_REF_DEPTH', 'vd_ALT_DEPTH'],
+                                vaf_distortion_threshold = 3):
     """
     Read VCF file coming from Vardict2
     Note that the file can only contain one sample
@@ -33,6 +34,7 @@ def read_from_vardict_VCF_all(sample,
 
     Optional arguments:
         columns_to_keep = ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH', 'VAF'], # add 'PID' for phased mutations
+        vaf_distortion_threshold = 3
     """
 
     print(f"Processing {sample}")
@@ -180,7 +182,7 @@ def read_from_vardict_VCF_all(sample,
     dat_full["VAF_distortion"] = dat_full["VAF_AM"] / dat_full["VAF"]
     dat_full["VAF_distortion_sq"] = np.log10(dat_full["VAF"]) / np.log10(dat_full["VAF_AM"])
 
-    dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > 3
+    dat_full["VAF_distorted_expanded"] = dat_full["VAF_distortion"] > vaf_distortion_threshold
     dat_full["VAF_distorted_expanded_sq"] = dat_full["VAF"] < ( dat_full["VAF_AM"] ** 1.5 )
 
     dat_full["VAF_distorted_expanded"] = dat_full["VAF_distorted_expanded"].fillna(True)
@@ -331,7 +333,8 @@ def update_indel_info(df):
 @click.option('--sampleid', type=str, required=True, help='Sample ID.')
 @click.option('--level', type=str, default = 'med', help='Level of confidence of the mutations.')
 @click.option('--annotation_file', type=click.Path(exists=True), required=True, help='Path to the annotation file.')
-def main(vcf, sampleid, level, annotation_file):
+@click.option('--vaf_distortion_threshold', type=float, default=3, show_default=True, help='Threshold for defining VAF distortion outliers.')
+def main(vcf, sampleid, level, annotation_file, vaf_distortion_threshold):
     keep_all_columns = [
         "CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT",
         "SAMPLE", "DEPTH", "ALT_DEPTH", "REF_DEPTH", "VAF",
@@ -353,7 +356,8 @@ def main(vcf, sampleid, level, annotation_file):
     sample_muts = read_from_vardict_VCF_all(
         sampleid,
         vcf,
-        columns_to_keep=keep_all_columns
+        columns_to_keep=keep_all_columns,
+        vaf_distortion_threshold=vaf_distortion_threshold
     )
 
     sample_muts["SAMPLE_ID"] = sampleid
@@ -376,4 +380,3 @@ def main(vcf, sampleid, level, annotation_file):
 
 if __name__ == '__main__':
     main()
-

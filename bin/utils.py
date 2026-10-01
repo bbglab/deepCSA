@@ -2,6 +2,8 @@
 import json
 import pandas as pd
 
+MIN_NONZERO_PVALUE = 1.17e-38
+
 
 def add_filter(old_filt, add_filt, filt_name):
     """

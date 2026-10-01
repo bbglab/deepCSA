@@ -3,6 +3,7 @@ process POSTPROCESS_VEP_ANNOTATION {
     tag "${meta.id}"
 
     label 'deepcsa_core'
+    label 'cpu_low'
 
 
     input:

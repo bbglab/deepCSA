@@ -1,6 +1,6 @@
 process EXPECTED_MUTATED_CELLS {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
     container 'docker.io/axelrosendahlhuber/expected_mutrate:latest'
 

@@ -21,6 +21,39 @@ def filter_data_from_config(dataa, config):
         # print(filtered_data.shape)
     return filtered_data
 
+def plot_mutdensity_per_sample(data, samples_list, value, title, sample_column_name = "SAMPLE_ID"):
+    print("Plotting mutation density per sample for:", title, value)
+
+    muts_per_sample = data[(data["SAMPLE_ID"].isin(samples_list))
+                           & (data["GENE"] == 'ALL_GENES')
+                           ]
+
+    # Calculate the length of the longest sample name
+    max_label_length = muts_per_sample[sample_column_name].astype(str).str.len().max()
+
+    # Determine the rotation angle and adjust figure size accordingly
+    rotation_angle = 90 if (max_label_length > 7) or (samples_list > 30) else 30  # Adjust threshold as needed
+    # fig_height = 4 + (max_label_length / 10) * 2  # Adjust multiplier as needed
+    # # Calculate the figure width based on the number of samples
+    # fig_width = min(18, max(2, len(muts_per_sample) * 0.5))
+
+    # # Create the figure and axis
+    # fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    fig, ax = plt.subplots(figsize=(max(12, 0.1*len(samples_list)), 4))
+    sns.barplot(data = muts_per_sample, x = "SAMPLE_ID",
+                y = value, order=samples_list,
+                ax = ax, palette = ["salmon"], dodge = False)
+    plt.xticks(rotation = rotation_angle)
+    plt.xlabel("")
+    plt.ylabel("Mutation density\n(muts per Mb)")
+    plt.title(title)
+
+    plt.tight_layout()
+
+    return fig
+
+
 def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
                             config_datasets = {
                                 "all" : ({"MUTTYPES": 'all_types', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
@@ -51,8 +84,11 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
 
         for title, (config, value) in config_datasets.items():
             print("Creating heatmap for:", title, config, value)
-            filtered_data = filter_data_from_config(data, config)
-            # print(filtered_data[['GENE', 'SAMPLE_ID', value]].head())
+            filtered_data = filter_data_from_config(data, config) # filtered_data[['GENE', 'SAMPLE_ID', value]]
+            fig = plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
+            pdf.savefig(fig)
+            plt.close(fig)
+
             # Create a pivot table for the heatmap
             heatmap_data = filtered_data.pivot_table(index='GENE', columns='SAMPLE_ID', values=value)
             heatmap_data = heatmap_data.reindex(index=genes_list, columns=samples_list)
@@ -82,17 +118,16 @@ def mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
 
 
 
+
 def adj_mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = '',
                                 config_datasets = {
-                                    "all" : ({"MUTTYPES": 'all_types', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
-                                    "all protein-affecting" : ({"MUTTYPES": 'all_types', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "all non-protein-affecting" : ({"MUTTYPES": 'all_types', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "SNVs" : ({"MUTTYPES": 'SNV', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
-                                    "SNVs protein-affecting" : ({"MUTTYPES": 'SNV', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "SNVs non-protein-affecting" : ({"MUTTYPES": 'SNV', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "INDELs" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'all'}, 'MUTDENSITY_MB'),
-                                    "INDELs protein-affecting" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'protein_affecting'}, 'MUTDENSITY_MB'),
-                                    "INDELs non-protein-affecting" : ({"MUTTYPES": 'DELETION-INSERTION', "REGIONS": 'non_protein_affecting'}, 'MUTDENSITY_MB')
+                                    "synonymous" : "synonymous",
+                                    "missense" : "missense",
+                                    "nonsense" : "nonsense",
+                                    "essential_splice" : "essential_splice",
+                                    "truncating" : "truncating",
+                                    "nonsynonymous_splice" : "nonsynonymous_splice",
+                                    "all_impacts" : "all_impacts",
                                 }
                             ):
     """
@@ -105,13 +140,16 @@ def adj_mut_density_heatmaps(data, genes_list, samples_list, outdir, prefix = ''
         print("No data available for the selected samples/groups")
         return
     
-    pdf_filename = f"{outdir}/{prefix}mut_density_heatmaps.pdf"
+    pdf_filename = f"{outdir}/{prefix}_adjusted_mut_density_heatmaps.pdf"
     with PdfPages(pdf_filename) as pdf:
 
-        for title, (config, value) in config_datasets.items():
-            print("Creating heatmap for:", title, config, value)
-            filtered_data = filter_data_from_config(data, config)
-            # print(filtered_data[['GENE', 'SAMPLE_ID', value]].head())
+        for title, value in config_datasets.items():
+            print("Creating heatmap for:", title)
+            filtered_data = data[["GENE", "SAMPLE_ID", value]]
+            fig = plot_mutdensity_per_sample(filtered_data, samples_list, value, title)
+            pdf.savefig(fig)
+            plt.close(fig)
+
             # Create a pivot table for the heatmap
             heatmap_data = filtered_data.pivot_table(index='GENE', columns='SAMPLE_ID', values=value)
             heatmap_data = heatmap_data.reindex(index=genes_list, columns=samples_list)
@@ -208,12 +246,11 @@ def main(outdir, panel_regions, samples_json, all_groups_json, mutdensities, adj
         plotting_manager(outdir, genes_list, samples_list, "samples.", data_string, data_objects)
     except Exception as e:
         print("Error in the process", e)
-    
+
     try:
         plotting_manager(outdir, genes_list, groups_names, "groups.", data_string, data_objects)
     except Exception as e:
         print("Error in the process", e)
-
 
 if __name__ == '__main__':
     main()

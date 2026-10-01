@@ -1,6 +1,7 @@
 process CONCAT_PROFILES {
     tag "${meta.id}"
-    label 'process_medium'
+    label 'cpu_medium'
+    label 'mem_low'
     label 'deepcsa_core'
 
     input:
@@ -8,10 +9,10 @@ process CONCAT_PROFILES {
     path (all_groups)
 
     output:
-    path("*_heatmap*.png")               , emit: heatmap
-    path("*_clustermap*.png")            , emit: clustermap
-    path("*.cosine_similarity*.tsv")     , emit: cosine_similarity
-    path("*.compiled_profiles.tsv")      , emit: compiled_profiles
+    path("*_heatmap*.png")               , optional:true, emit: heatmap
+    path("*_clustermap*.png")            , optional:true, emit: clustermap
+    path("*.cosine_similarity*.tsv")     , optional:true, emit: cosine_similarity
+    tuple val(meta), path("*.compiled_profiles.tsv")    , emit: compiled_profiles
     path "versions.yml"                  , topic: versions
 
     script:

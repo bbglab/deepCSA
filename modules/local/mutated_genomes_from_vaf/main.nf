@@ -1,7 +1,5 @@
 process MUTATED_GENOMES_FROM_VAF {
     tag "$meta.id"
-    label 'process_single'
-    label 'memory_medium'
 
     container 'docker.io/ferranmuinos/test_mutated_genomes'
 

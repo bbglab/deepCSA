@@ -81,9 +81,9 @@ def group_mutations(df, mode="aminoacid", count_mutations=True):
     mode: 'aminoacid', 'protein_position', 'nucleotide_change', 'nucleotide_position'
     count_mutations: if True, count mutations (for mutation tables); if False, just group (for panel tables)
 
-    ## define these as different options within a function:
-    # this should be coupled with a proper processing of the consensus_enriched_expanded table
-    # so that it is also grouped by in the same way, there is no need for counting in there
+    define these as different options within a function:
+    this should be coupled with a proper processing of the consensus_enriched_expanded table
+    so that it is also grouped by in the same way, there is no need for counting in there
 
     """
     if mode == "aminoacid":
@@ -221,12 +221,15 @@ def plot_genes(df, mode=None):
     g.savefig(plot_path, bbox_inches='tight', dpi=300)
     plt.close(g.fig)
 
-def plot_domains(df, mode=None):
+def plot_domains(df, genes = None, mode=None):
+    if genes is None:
+        genes = df["GENE_NAME"].unique()
+
     seg_type = 'domain'
     suffix = f"_{mode}" if mode else ""
     pdf_path = f"{plots_dir}/saturation_domains_all{suffix}.pdf"
     with PdfPages(pdf_path) as pdf:
-        for gene in df["GENE_NAME"].unique():
+        for gene in genes:
             df_gene = df[(df["GENE_NAME"] == gene) & (df["SEGMENT_TYPE"] == "domain")]
             if df_gene.empty:
                 continue
@@ -254,12 +257,15 @@ def plot_domains(df, mode=None):
             pdf.savefig(g.fig, bbox_inches='tight', dpi=300)
             plt.close(g.fig)
 
-def plot_exons(df, mode=None):
+def plot_exons(df, genes = None, mode=None):
+    if genes is None:
+        genes = df["GENE_NAME"].unique()
+
     seg_type = 'exon'
     suffix = f"_{mode}" if mode else ""
     pdf_path = f"{plots_dir}/saturation_exons_all{suffix}.pdf"
     with PdfPages(pdf_path) as pdf:
-        for gene in df["GENE_NAME"].unique():
+        for gene in genes:
             df_gene = df[(df["GENE_NAME"] == gene) & (df["SEGMENT_TYPE"] == "exon")]
             if df_gene.empty:
                 continue
@@ -289,13 +295,16 @@ def plot_exons(df, mode=None):
 
 
 # Frequency-stratified domain plot
-def plot_domains_by_freq(df, mode=None):
+def plot_domains_by_freq(df, genes = None, mode=None):
+    if genes is None:
+        genes = df["GENE_NAME"].unique()
+
     freq_bin_order = ['3+', '2', '1']
     seg_type = 'domain'
     suffix = f"_{mode}" if mode else ""
     pdf_path = f"{plots_dir}/saturation_domains_byfreq_all{suffix}.pdf"
     with PdfPages(pdf_path) as pdf:
-        for gene in df["GENE_NAME"].unique():
+        for gene in genes:
             df_gene = df[(df["GENE_NAME"] == gene) & (df["SEGMENT_TYPE"] == "domain")]
             if df_gene.empty:
                 continue
@@ -335,13 +344,15 @@ def plot_domains_by_freq(df, mode=None):
             plt.close(fig)
 
 # Frequency-stratified exon plot
-def plot_exons_by_freq(df, mode=None):
+def plot_exons_by_freq(df, genes = None, mode=None):
+    if genes is None:
+        genes = df["GENE_NAME"].unique()
     freq_bin_order = ['3+', '2', '1']
     seg_type = 'exon'
     suffix = f"_{mode}" if mode else ""
     pdf_path = f"{plots_dir}/saturation_exons_byfreq_all{suffix}.pdf"
     with PdfPages(pdf_path) as pdf:
-        for gene in df["GENE_NAME"].unique():
+        for gene in genes:
             df_gene = df[(df["GENE_NAME"] == gene) & (df["SEGMENT_TYPE"] == "exon")]
             if df_gene.empty:
                 continue
@@ -385,14 +396,20 @@ def plot_exons_by_freq(df, mode=None):
 # Call all three plotting functions from the same table
 def plot_all_saturation_tables(df, mode=None):
     plot_genes(df, mode)
-    plot_domains(df, mode)
-    plot_exons(df, mode)
+
+    genes_list = df["GENE_NAME"].unique()
+    genes_list = genes_list[:200]
+    plot_domains(df, genes=genes_list, mode=mode)
+    plot_exons(df, genes=genes_list, mode=mode)
 
 
 # Call all three frequency-stratified plotting functions from the same table
 def plot_all_saturation_tables_by_freq(df, mode=None):
-    plot_domains_by_freq(df, mode)
-    plot_exons_by_freq(df, mode)
+    genes_list = df["GENE_NAME"].unique()
+    genes_list = genes_list[:200]
+    
+    plot_domains_by_freq(df, genes=genes_list, mode=mode)
+    plot_exons_by_freq(df, genes=genes_list, mode=mode)
 
 
 def generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean,

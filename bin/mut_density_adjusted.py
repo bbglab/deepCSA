@@ -31,6 +31,8 @@ def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, f
     triplet_counts = np.array(l)
 
     # genome length in Mb
+    #   accounting for the fact that each position contributes:
+    #   3*depth because of the 3 mutations available at each position
     genome_length = sum(triplet_counts) / (3 * 1e6)
 
     # vector of relative mutabilities in 96-channel canonical sorting
@@ -61,13 +63,17 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
 
     for csqn, csqn_set in broadimpact_grouping_dict_with_synonymous.items():
         
-        for gene in panel_df['GENE'].unique():
+        for gene in list(panel_df['GENE'].unique()) + ["ALL_GENES"]:
             
             # compute vector of sum of depths per trinucleotide context
             # tailored to the specific gene-impact target
-            region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)].copy()
+            if gene == 'ALL_GENES':
+                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set))][['CHROM', 'POS', 'REF', 'ALT']].drop_duplicates()
+            else:
+                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)][['CHROM', 'POS', 'REF', 'ALT']].drop_duplicates()
 
-            # counting every position once
+            # counting every position as many times as the number of possible
+            # mutations of the selected consequences at that position (1,2 or 3)
             dh = pd.merge(region_df[['CHROM', 'POS']],
                           depths_df[['CHROM', 'POS', 'CONTEXT', sample_name]],
                           on=['CHROM', 'POS'], how='left')
@@ -88,10 +94,13 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
             except AssertionError:
                 res.loc[gene, csqn] = None
                 continue
-            
-            # observed somatic mutations
 
-            n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set)) & (somatic_mutations_df['GENE'] == gene)].shape[0]
+
+            # observed somatic mutations
+            if gene == 'ALL_GENES':
+                n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set))].shape[0]
+            else:
+                n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set)) & (somatic_mutations_df['GENE'] == gene)].shape[0]
 
             res.loc[gene, csqn] = n / effective_length
     
@@ -149,12 +158,12 @@ def main(sample_name, depths_file, somatic_mutations_file, mutability_file, pane
     logfoldchange_plot(sample_name, res, res_flat)
 
     # save results
-    res["SAMPLE"] = sample_name
-    res_flat["SAMPLE"] = sample_name
+    res["SAMPLE_ID"] = sample_name
+    res_flat["SAMPLE_ID"] = sample_name
     res.index.name = 'GENE'
     res_flat.index.name = 'GENE'
-    res[['SAMPLE'] + [col for col in res.columns if col != 'SAMPLE']].to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
-    res_flat[['SAMPLE'] + [col for col in res_flat.columns if col != 'SAMPLE']].to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
+    res[['SAMPLE_ID'] + [col for col in res.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
+    res_flat[['SAMPLE_ID'] + [col for col in res_flat.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
 
 
 

@@ -1,8 +1,8 @@
 process ONCODRIVE3D_PLOT {
     tag "$meta.id"
-    label 'process_medium'
+    label 'cpu_medium'
 
-    container 'docker.io/bbglab/oncodrive3d:1.0.5'
+    container 'docker.io/spellegrini87/oncodrive3d:1.0.9-light'
 
 
     input:
@@ -11,13 +11,13 @@ process ONCODRIVE3D_PLOT {
     path(annotations)
 
     output:
-    tuple val(meta), path("**.summary_plot.png")                               , emit: summary_plot, optional: true
-    tuple val(meta), path("**.genes_plots/**.png")                             , emit: genes_plot, optional: true
-    tuple val(meta), path("**.associations_plots/**.logodds_plot.png")         , emit: logodds_plot, optional: true
-    tuple val(meta), path("**.associations_plots/**.volcano_plot.png")         , emit: volcano_plot, optional: true
-    tuple val(meta), path("**.associations_plots/**.volcano_plot_gene.png")    , emit: volcano_plot_gene, optional: true
-    tuple val(meta), path("**.3d_clustering_pos.annotated.csv")                , emit: pos_annotated_csv, optional: true
-    tuple val(meta), path("**plot_*.log")                                      , emit: log
+    tuple val(meta), path("${meta.id}**.summary_plot.png")                               , emit: summary_plot, optional: true
+    tuple val(meta), path("${meta.id}**.genes_plots/**.png")                             , emit: genes_plot, optional: true
+    tuple val(meta), path("${meta.id}**.associations_plots/**.logodds_plot.png")         , emit: logodds_plot, optional: true
+    tuple val(meta), path("${meta.id}**.associations_plots/**.volcano_plot.png")         , emit: volcano_plot, optional: true
+    tuple val(meta), path("${meta.id}**.associations_plots/**.volcano_plot_gene.png")    , emit: volcano_plot_gene, optional: true
+    tuple val(meta), path("${meta.id}**.3d_clustering_pos.annotated.csv")                , emit: pos_annotated_csv, optional: true
+    tuple val(meta), path("${meta.id}**plot_*.log")                                      , emit: log
     path "versions.yml"                                                        , topic: versions
 
 
