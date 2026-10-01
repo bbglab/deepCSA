@@ -335,18 +335,18 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         del bed6_probesByGene_df_per_sample
 
 
-        ######
-        ## Depth per gene per sample boxplots
-        ######
+        # ######
+        # ## Depth per gene per sample boxplots
+        # ######
 
-        sns.set_theme(style='white')
-        g = sns.FacetGrid(data = bed6_probesByGene_df, col = "SAMPLE_ID", col_wrap = 4, height = 4, col_order = samples_list)
-        g.map(sns.boxplot, "GENE", "MEAN_GENE_DEPTH", showfliers = False, order = genes_list)
-        g.map(sns.stripplot, "GENE", "MEAN_GENE_DEPTH", jitter = True, order = genes_list, alpha = 0.5)
-        g.tick_params('x', labelrotation = 90)
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
+        # sns.set_theme(style='white')
+        # g = sns.FacetGrid(data = bed6_probesByGene_df, col = "SAMPLE_ID", col_wrap = 4, height = 4, col_order = samples_list)
+        # g.map(sns.boxplot, "GENE", "MEAN_GENE_DEPTH", showfliers = False, order = genes_list)
+        # g.map(sns.stripplot, "GENE", "MEAN_GENE_DEPTH", jitter = True, order = genes_list, alpha = 0.5)
+        # g.tick_params('x', labelrotation = 90)
+        # plt.tight_layout()
+        # pdf.savefig()
+        # plt.close()
 
         # Add a heatmap: MEAN_GENE_DEPTH per gene per sample
         heatmap_data = bed6_probesByGene_df.pivot(index="GENE", columns="SAMPLE_ID", values="MEAN_GENE_DEPTH")
@@ -418,52 +418,51 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
 
 
             # Depth per REGION normalized by the sample's average depth
-            if avgdepth_per_sample_names is not None:
-                regions_norm = regions_per_sample.merge(avgdepth_per_sample_names, on="SAMPLE_ID", how="left")
-                regions_norm["MEAN_REGION_DEPTH_NORM"] = regions_norm["MEAN_REGION_DEPTH"] / regions_norm["avg_depth_sample"]
+            regions_norm = regions_per_sample.merge(avgdepth_per_sample_names, on="SAMPLE_ID", how="left")
+            regions_norm["MEAN_REGION_DEPTH_NORM"] = regions_norm["MEAN_REGION_DEPTH"] / regions_norm["avg_depth_sample"]
 
-                # Boxplot + stripplot of the normalized depth per region
-                fig, ax = plt.subplots(1, 1)
-                fig.set_size_inches(min(max(0.5*len(regions_list), 10), 20), 5)
-                sns.boxplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, showfliers = False)
-                sns.stripplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, jitter = True,
-                            alpha = 0.5, size = 4)
-                ax.set_title("Depth per REGION (normalized by sample's average depth)")
-                ax.tick_params(axis = 'x', labelrotation = 90)
-                plt.tight_layout()
-                pdf.savefig()
-                plt.close()
-
-
-                # Mean normalized depth per REGION (lineplot per sample)
-                plt.figure(figsize = (14,6))
-                regions_norm_plot = regions_norm.copy()
-                regions_norm_plot["REGION"] = pd.Categorical(regions_norm_plot["REGION"], categories=regions_list, ordered=True)
-                ax = sns.lineplot(data = regions_norm_plot, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", alpha = .7,
-                                hue = "SAMPLE_ID",
-                                hue_order = samples_list,
-                                legend = False
-                                )
-                ax.set_title("Mean DEPTH per REGION (normalized by sample's average depth)")
-                ax.tick_params(axis = 'x', labelrotation = 90)
-                plt.tight_layout()
-                pdf.savefig()
-                plt.close()
-                del regions_norm_plot
+            # Boxplot + stripplot of the normalized depth per region
+            fig, ax = plt.subplots(1, 1)
+            fig.set_size_inches(min(max(0.5*len(regions_list), 10), 20), 5)
+            sns.boxplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, showfliers = False)
+            sns.stripplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, jitter = True,
+                        alpha = 0.5, size = 4)
+            ax.set_title("Depth per REGION (normalized by sample's average depth)")
+            ax.tick_params(axis = 'x', labelrotation = 90)
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
 
 
-                # Heatmap: normalized MEAN_REGION_DEPTH per region per sample
-                region_norm_heatmap_data = regions_norm.pivot(index="REGION", columns="SAMPLE_ID", values="MEAN_REGION_DEPTH_NORM")
-                region_norm_heatmap_data = region_norm_heatmap_data.reindex(index=regions_list, columns=samples_list)
-                region_norm_heatmap_data = region_norm_heatmap_data.astype(float)
-                plt.figure(figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(regions_list))))
-                sns.heatmap(data = region_norm_heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Region Depth (normalized)"})
-                plt.title("Mean Region Depth per Region per Sample (normalized by sample's average depth)")
-                plt.xlabel("Sample ID")
-                plt.ylabel("Region")
-                plt.tight_layout()
-                pdf.savefig()
-                plt.close()
+            # Mean normalized depth per REGION (lineplot per sample)
+            plt.figure(figsize = (14,6))
+            regions_norm_plot = regions_norm.copy()
+            regions_norm_plot["REGION"] = pd.Categorical(regions_norm_plot["REGION"], categories=regions_list, ordered=True)
+            ax = sns.lineplot(data = regions_norm_plot, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", alpha = .7,
+                            hue = "SAMPLE_ID",
+                            hue_order = samples_list,
+                            legend = False
+                            )
+            ax.set_title("Mean DEPTH per REGION (normalized by sample's average depth)")
+            ax.tick_params(axis = 'x', labelrotation = 90)
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
+            del regions_norm_plot
+
+
+            # Heatmap: normalized MEAN_REGION_DEPTH per region per sample
+            region_norm_heatmap_data = regions_norm.pivot(index="REGION", columns="SAMPLE_ID", values="MEAN_REGION_DEPTH_NORM")
+            region_norm_heatmap_data = region_norm_heatmap_data.reindex(index=regions_list, columns=samples_list)
+            region_norm_heatmap_data = region_norm_heatmap_data.astype(float)
+            plt.figure(figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(regions_list))))
+            sns.heatmap(data = region_norm_heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Region Depth (normalized)"})
+            plt.title("Mean Region Depth per Region per Sample (normalized by sample's average depth)")
+            plt.xlabel("Sample ID")
+            plt.ylabel("Region")
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
 
 
 def process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names):
