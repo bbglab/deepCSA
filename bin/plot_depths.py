@@ -8,6 +8,25 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
+# Plotting size limits to keep the PDF tractable for large panels / cohorts.
+# Any section that exceeds these limits is skipped (a message is printed to the log).
+MAX_CATEGORIES_PER_PLOT = 30     # max samples/genes in a single boxplot/stripplot page
+MAX_REGIONS_PER_PLOT = 200       # max regions in a single region boxplot/stripplot page
+MAX_LINES_PER_PLOT = 100         # max lines (hue categories) in a lineplot
+MAX_LINEPLOT_POINTS = 50000      # max total points (lines x categories) in a lineplot
+MAX_HEATMAP_CELLS = 25000        # max cells (rows x cols) in a heatmap
+MAX_CLUSTERMAP_DIM = 300         # max matrix dimension for a clustermap
+MAX_FIG_WIDTH = 40               # cap on figure width (inches)
+MAX_FIG_HEIGHT = 30              # cap on figure height (inches)
+
+
+def _section_allowed(ok, section, reason):
+    """Return True if a plot section should be drawn; otherwise log why it is skipped."""
+    if not ok:
+        print(f"[plot_depths] Skipping plot section '{section}': {reason}")
+    return ok
+
+
 def annotate_depth_region(row, dp_df):
 
     # look in the DEPTH file for the positions whithin this region
@@ -155,37 +174,43 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         ######
         ## Depth per sample
         ######
-        fig, ax1 = plt.subplots(1, 1)
-        fig.set_size_inches(min(max(0.5*len(samples_list), 10), 20), 5)
-        sns.boxplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", ax = ax1, order = samples_list, showfliers = False)
-        sns.stripplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", ax = ax1, order = samples_list, jitter = True,
-                    alpha = 0.5, size = 4)
-        ax1.set_title("Depth per SAMPLE_ID")
-        ax1.tick_params(axis = 'x', labelrotation = 90)
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
+        if _section_allowed(len(samples_list) <= MAX_CATEGORIES_PER_PLOT,
+                            "Depth per sample (boxplot)",
+                            f"{len(samples_list)} samples > {MAX_CATEGORIES_PER_PLOT}"):
+            fig, ax1 = plt.subplots(1, 1)
+            fig.set_size_inches(min(max(0.5*len(samples_list), 10), 20), 5)
+            sns.boxplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", ax = ax1, order = samples_list, showfliers = False)
+            sns.stripplot(data = bed6_probesByGene_df, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", ax = ax1, order = samples_list, jitter = True,
+                        alpha = 0.5, size = 4)
+            ax1.set_title("Depth per SAMPLE_ID")
+            ax1.tick_params(axis = 'x', labelrotation = 90)
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
 
 
         ######
         ## Depth per gene
         ######
-        fig, ax2 = plt.subplots(1, 1)
-        fig.set_size_inches(10, 5)
-        sns.boxplot(data = bed6_probesByGene_df,
-                    x = "GENE", y = "MEAN_GENE_DEPTH",
-                    ax = ax2, showfliers = False,
-                )
-        sns.stripplot(data = bed6_probesByGene_df,
-                    x = "GENE", y = "MEAN_GENE_DEPTH",
-                    ax = ax2,
-                    jitter = True,
-                    alpha = 0.5, size = 4)
-        ax2.set_title("Depth per GENE")
-        ax2.tick_params(axis = 'x', labelrotation = 90)
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
+        if _section_allowed(len(genes_list) <= MAX_CATEGORIES_PER_PLOT,
+                            "Depth per gene (boxplot)",
+                            f"{len(genes_list)} genes > {MAX_CATEGORIES_PER_PLOT}"):
+            fig, ax2 = plt.subplots(1, 1)
+            fig.set_size_inches(10, 5)
+            sns.boxplot(data = bed6_probesByGene_df,
+                        x = "GENE", y = "MEAN_GENE_DEPTH",
+                        ax = ax2, showfliers = False,
+                    )
+            sns.stripplot(data = bed6_probesByGene_df,
+                        x = "GENE", y = "MEAN_GENE_DEPTH",
+                        ax = ax2,
+                        jitter = True,
+                        alpha = 0.5, size = 4)
+            ax2.set_title("Depth per GENE")
+            ax2.tick_params(axis = 'x', labelrotation = 90)
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
 
 
         ####
@@ -300,39 +325,47 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         ######
         ## Mean depth per gene
         ######
-        plt.figure(figsize = (14,6))
-        bed6_probesByGene_df_per_gene = bed6_probesByGene_df.copy()
-        bed6_probesByGene_df_per_gene["GENE"] = pd.Categorical(bed6_probesByGene_df_per_gene["GENE"], categories=genes_list, ordered=True)
-        ax = sns.lineplot(data = bed6_probesByGene_df_per_gene, x = "GENE", y = "MEAN_GENE_DEPTH", alpha = .7,
-                        hue = "SAMPLE_ID",
-                        hue_order = samples_list,
-                        legend = False
-                        )
-        ax.set_title("Mean DEPTH per GENE")
-        ax.tick_params(axis = 'x', labelrotation = 90)
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
-        del bed6_probesByGene_df_per_gene
+        if _section_allowed(len(samples_list) <= MAX_LINES_PER_PLOT and
+                            len(samples_list) * len(genes_list) <= MAX_LINEPLOT_POINTS,
+                            "Mean depth per gene (lineplot)",
+                            f"{len(samples_list)} lines / {len(samples_list)*len(genes_list)} points too large"):
+            plt.figure(figsize = (14,6))
+            bed6_probesByGene_df_per_gene = bed6_probesByGene_df.copy()
+            bed6_probesByGene_df_per_gene["GENE"] = pd.Categorical(bed6_probesByGene_df_per_gene["GENE"], categories=genes_list, ordered=True)
+            ax = sns.lineplot(data = bed6_probesByGene_df_per_gene, x = "GENE", y = "MEAN_GENE_DEPTH", alpha = .7,
+                            hue = "SAMPLE_ID",
+                            hue_order = samples_list,
+                            legend = False
+                            )
+            ax.set_title("Mean DEPTH per GENE")
+            ax.tick_params(axis = 'x', labelrotation = 90)
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
+            del bed6_probesByGene_df_per_gene
 
 
         ######
         ## Mean depth per sample
         ######
-        plt.figure(figsize = (14,6))
-        bed6_probesByGene_df_per_sample = bed6_probesByGene_df.copy()
-        bed6_probesByGene_df_per_sample["SAMPLE_ID"] = pd.Categorical(bed6_probesByGene_df_per_sample["SAMPLE_ID"], categories=samples_list, ordered=True)
-        ax = sns.lineplot(data = bed6_probesByGene_df_per_sample, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", alpha = .7,
-                        hue = "GENE",
-                        hue_order = genes_list,
-                        legend = False
-                        )
-        ax.set_title("Mean DEPTH per SAMPLE_ID")
-        ax.tick_params(axis = 'x', labelrotation = 90)
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
-        del bed6_probesByGene_df_per_sample
+        if _section_allowed(len(genes_list) <= MAX_LINES_PER_PLOT and
+                            len(genes_list) * len(samples_list) <= MAX_LINEPLOT_POINTS,
+                            "Mean depth per sample (lineplot)",
+                            f"{len(genes_list)} lines / {len(genes_list)*len(samples_list)} points too large"):
+            plt.figure(figsize = (14,6))
+            bed6_probesByGene_df_per_sample = bed6_probesByGene_df.copy()
+            bed6_probesByGene_df_per_sample["SAMPLE_ID"] = pd.Categorical(bed6_probesByGene_df_per_sample["SAMPLE_ID"], categories=samples_list, ordered=True)
+            ax = sns.lineplot(data = bed6_probesByGene_df_per_sample, x = "SAMPLE_ID", y = "MEAN_GENE_DEPTH", alpha = .7,
+                            hue = "GENE",
+                            hue_order = genes_list,
+                            legend = False
+                            )
+            ax.set_title("Mean DEPTH per SAMPLE_ID")
+            ax.tick_params(axis = 'x', labelrotation = 90)
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
+            del bed6_probesByGene_df_per_sample
 
 
         # ######
@@ -349,23 +382,30 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         # plt.close()
 
         # Add a heatmap: MEAN_GENE_DEPTH per gene per sample
-        heatmap_data = bed6_probesByGene_df.pivot(index="GENE", columns="SAMPLE_ID", values="MEAN_GENE_DEPTH")
-        heatmap_data = heatmap_data.reindex(index=genes_list, columns=samples_list)
-        heatmap_data = heatmap_data.astype(float)
-        plt.figure(figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(genes_list))))
-        sns.heatmap(data = heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Gene Depth"})
-        plt.title("Mean Gene Depth per Gene per Sample")
-        plt.xlabel("Sample ID")
-        plt.ylabel("Gene")
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
-
-        if heatmap_data.shape[0] > 1 and heatmap_data.shape[1] > 1:
-            # Clustermap
-            sns.clustermap(data=heatmap_data, cmap="viridis", figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(genes_list))))
+        if _section_allowed(len(genes_list) * len(samples_list) <= MAX_HEATMAP_CELLS,
+                            "Mean gene depth heatmap",
+                            f"{len(genes_list)}x{len(samples_list)} cells > {MAX_HEATMAP_CELLS}"):
+            heatmap_data = bed6_probesByGene_df.pivot(index="GENE", columns="SAMPLE_ID", values="MEAN_GENE_DEPTH")
+            heatmap_data = heatmap_data.reindex(index=genes_list, columns=samples_list)
+            heatmap_data = heatmap_data.astype(float)
+            plt.figure(figsize=(min(max(10, 0.4*len(samples_list)), MAX_FIG_WIDTH),
+                                min(max(8, 0.3*len(genes_list)), MAX_FIG_HEIGHT)))
+            sns.heatmap(data = heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Gene Depth"})
+            plt.title("Mean Gene Depth per Gene per Sample")
+            plt.xlabel("Sample ID")
+            plt.ylabel("Gene")
+            plt.tight_layout()
             pdf.savefig()
             plt.close()
+
+            if (heatmap_data.shape[0] > 1 and heatmap_data.shape[1] > 1
+                    and max(heatmap_data.shape) <= MAX_CLUSTERMAP_DIM):
+                # Clustermap
+                sns.clustermap(data=heatmap_data, cmap="viridis",
+                               figsize=(min(max(10, 0.4*len(samples_list)), MAX_FIG_WIDTH),
+                                        min(max(8, 0.3*len(genes_list)), MAX_FIG_HEIGHT)))
+                pdf.savefig()
+                plt.close()
 
 
         ######
@@ -374,47 +414,58 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
         if regions_per_sample is not None and regions_list is not None and len(regions_list) > 0:
 
             # Depth per REGION (boxplot + stripplot)
-            fig, ax = plt.subplots(1, 1)
-            fig.set_size_inches(min(max(0.5*len(regions_list), 10), 20), 5)
-            sns.boxplot(data = regions_per_sample, x = "REGION", y = "MEAN_REGION_DEPTH", ax = ax, order = regions_list, showfliers = False)
-            sns.stripplot(data = regions_per_sample, x = "REGION", y = "MEAN_REGION_DEPTH", ax = ax, order = regions_list, jitter = True,
-                        alpha = 0.5, size = 4)
-            ax.set_title("Depth per REGION")
-            ax.tick_params(axis = 'x', labelrotation = 90)
-            plt.tight_layout()
-            pdf.savefig()
-            plt.close()
+            if _section_allowed(len(regions_list) <= MAX_REGIONS_PER_PLOT,
+                                "Depth per region (boxplot)",
+                                f"{len(regions_list)} regions > {MAX_REGIONS_PER_PLOT}"):
+                fig, ax = plt.subplots(1, 1)
+                fig.set_size_inches(min(max(0.5*len(regions_list), 10), 20), 5)
+                sns.boxplot(data = regions_per_sample, x = "REGION", y = "MEAN_REGION_DEPTH", ax = ax, order = regions_list, showfliers = False)
+                sns.stripplot(data = regions_per_sample, x = "REGION", y = "MEAN_REGION_DEPTH", ax = ax, order = regions_list, jitter = True,
+                            alpha = 0.5, size = 4)
+                ax.set_title("Depth per REGION")
+                ax.tick_params(axis = 'x', labelrotation = 90)
+                plt.tight_layout()
+                pdf.savefig()
+                plt.close()
 
 
             # Mean depth per REGION (lineplot per sample)
-            plt.figure(figsize = (14,6))
-            regions_per_sample_plot = regions_per_sample.copy()
-            regions_per_sample_plot["REGION"] = pd.Categorical(regions_per_sample_plot["REGION"], categories=regions_list, ordered=True)
-            ax = sns.lineplot(data = regions_per_sample_plot, x = "REGION", y = "MEAN_REGION_DEPTH", alpha = .7,
-                            hue = "SAMPLE_ID",
-                            hue_order = samples_list,
-                            legend = False
-                            )
-            ax.set_title("Mean DEPTH per REGION")
-            ax.tick_params(axis = 'x', labelrotation = 90)
-            plt.tight_layout()
-            pdf.savefig()
-            plt.close()
-            del regions_per_sample_plot
+            if _section_allowed(len(samples_list) <= MAX_LINES_PER_PLOT and
+                                len(samples_list) * len(regions_list) <= MAX_LINEPLOT_POINTS,
+                                "Mean depth per region (lineplot)",
+                                f"{len(samples_list)} lines / {len(samples_list)*len(regions_list)} points too large"):
+                plt.figure(figsize = (14,6))
+                regions_per_sample_plot = regions_per_sample.copy()
+                regions_per_sample_plot["REGION"] = pd.Categorical(regions_per_sample_plot["REGION"], categories=regions_list, ordered=True)
+                ax = sns.lineplot(data = regions_per_sample_plot, x = "REGION", y = "MEAN_REGION_DEPTH", alpha = .7,
+                                hue = "SAMPLE_ID",
+                                hue_order = samples_list,
+                                legend = False
+                                )
+                ax.set_title("Mean DEPTH per REGION")
+                ax.tick_params(axis = 'x', labelrotation = 90)
+                plt.tight_layout()
+                pdf.savefig()
+                plt.close()
+                del regions_per_sample_plot
 
 
             # Heatmap: MEAN_REGION_DEPTH per region per sample
-            region_heatmap_data = regions_per_sample.pivot(index="REGION", columns="SAMPLE_ID", values="MEAN_REGION_DEPTH")
-            region_heatmap_data = region_heatmap_data.reindex(index=regions_list, columns=samples_list)
-            region_heatmap_data = region_heatmap_data.astype(float)
-            plt.figure(figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(regions_list))))
-            sns.heatmap(data = region_heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Region Depth"})
-            plt.title("Mean Region Depth per Region per Sample")
-            plt.xlabel("Sample ID")
-            plt.ylabel("Region")
-            plt.tight_layout()
-            pdf.savefig()
-            plt.close()
+            if _section_allowed(len(regions_list) * len(samples_list) <= MAX_HEATMAP_CELLS,
+                                "Mean region depth heatmap",
+                                f"{len(regions_list)}x{len(samples_list)} cells > {MAX_HEATMAP_CELLS}"):
+                region_heatmap_data = regions_per_sample.pivot(index="REGION", columns="SAMPLE_ID", values="MEAN_REGION_DEPTH")
+                region_heatmap_data = region_heatmap_data.reindex(index=regions_list, columns=samples_list)
+                region_heatmap_data = region_heatmap_data.astype(float)
+                plt.figure(figsize=(min(max(10, 0.4*len(samples_list)), MAX_FIG_WIDTH),
+                                    min(max(8, 0.3*len(regions_list)), MAX_FIG_HEIGHT)))
+                sns.heatmap(data = region_heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Region Depth"})
+                plt.title("Mean Region Depth per Region per Sample")
+                plt.xlabel("Sample ID")
+                plt.ylabel("Region")
+                plt.tight_layout()
+                pdf.savefig()
+                plt.close()
 
 
             # Depth per REGION normalized by the sample's average depth
@@ -422,47 +473,58 @@ def general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list
             regions_norm["MEAN_REGION_DEPTH_NORM"] = regions_norm["MEAN_REGION_DEPTH"] / regions_norm["avg_depth_sample"]
 
             # Boxplot + stripplot of the normalized depth per region
-            fig, ax = plt.subplots(1, 1)
-            fig.set_size_inches(min(max(0.5*len(regions_list), 10), 20), 5)
-            sns.boxplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, showfliers = False)
-            sns.stripplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, jitter = True,
-                        alpha = 0.5, size = 4)
-            ax.set_title("Depth per REGION (normalized by sample's average depth)")
-            ax.tick_params(axis = 'x', labelrotation = 90)
-            plt.tight_layout()
-            pdf.savefig()
-            plt.close()
+            if _section_allowed(len(regions_list) <= MAX_REGIONS_PER_PLOT,
+                                "Depth per region normalized (boxplot)",
+                                f"{len(regions_list)} regions > {MAX_REGIONS_PER_PLOT}"):
+                fig, ax = plt.subplots(1, 1)
+                fig.set_size_inches(min(max(0.5*len(regions_list), 10), 20), 5)
+                sns.boxplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, showfliers = False)
+                sns.stripplot(data = regions_norm, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", ax = ax, order = regions_list, jitter = True,
+                            alpha = 0.5, size = 4)
+                ax.set_title("Depth per REGION (normalized by sample's average depth)")
+                ax.tick_params(axis = 'x', labelrotation = 90)
+                plt.tight_layout()
+                pdf.savefig()
+                plt.close()
 
 
             # Mean normalized depth per REGION (lineplot per sample)
-            plt.figure(figsize = (14,6))
-            regions_norm_plot = regions_norm.copy()
-            regions_norm_plot["REGION"] = pd.Categorical(regions_norm_plot["REGION"], categories=regions_list, ordered=True)
-            ax = sns.lineplot(data = regions_norm_plot, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", alpha = .7,
-                            hue = "SAMPLE_ID",
-                            hue_order = samples_list,
-                            legend = False
-                            )
-            ax.set_title("Mean DEPTH per REGION (normalized by sample's average depth)")
-            ax.tick_params(axis = 'x', labelrotation = 90)
-            plt.tight_layout()
-            pdf.savefig()
-            plt.close()
-            del regions_norm_plot
+            if _section_allowed(len(samples_list) <= MAX_LINES_PER_PLOT and
+                                len(samples_list) * len(regions_list) <= MAX_LINEPLOT_POINTS,
+                                "Mean depth per region normalized (lineplot)",
+                                f"{len(samples_list)} lines / {len(samples_list)*len(regions_list)} points too large"):
+                plt.figure(figsize = (14,6))
+                regions_norm_plot = regions_norm.copy()
+                regions_norm_plot["REGION"] = pd.Categorical(regions_norm_plot["REGION"], categories=regions_list, ordered=True)
+                ax = sns.lineplot(data = regions_norm_plot, x = "REGION", y = "MEAN_REGION_DEPTH_NORM", alpha = .7,
+                                hue = "SAMPLE_ID",
+                                hue_order = samples_list,
+                                legend = False
+                                )
+                ax.set_title("Mean DEPTH per REGION (normalized by sample's average depth)")
+                ax.tick_params(axis = 'x', labelrotation = 90)
+                plt.tight_layout()
+                pdf.savefig()
+                plt.close()
+                del regions_norm_plot
 
 
             # Heatmap: normalized MEAN_REGION_DEPTH per region per sample
-            region_norm_heatmap_data = regions_norm.pivot(index="REGION", columns="SAMPLE_ID", values="MEAN_REGION_DEPTH_NORM")
-            region_norm_heatmap_data = region_norm_heatmap_data.reindex(index=regions_list, columns=samples_list)
-            region_norm_heatmap_data = region_norm_heatmap_data.astype(float)
-            plt.figure(figsize=(max(10, 0.4*len(samples_list)), max(8, 0.3*len(regions_list))))
-            sns.heatmap(data = region_norm_heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Region Depth (normalized)"})
-            plt.title("Mean Region Depth per Region per Sample (normalized by sample's average depth)")
-            plt.xlabel("Sample ID")
-            plt.ylabel("Region")
-            plt.tight_layout()
-            pdf.savefig()
-            plt.close()
+            if _section_allowed(len(regions_list) * len(samples_list) <= MAX_HEATMAP_CELLS,
+                                "Mean region depth normalized heatmap",
+                                f"{len(regions_list)}x{len(samples_list)} cells > {MAX_HEATMAP_CELLS}"):
+                region_norm_heatmap_data = regions_norm.pivot(index="REGION", columns="SAMPLE_ID", values="MEAN_REGION_DEPTH_NORM")
+                region_norm_heatmap_data = region_norm_heatmap_data.reindex(index=regions_list, columns=samples_list)
+                region_norm_heatmap_data = region_norm_heatmap_data.astype(float)
+                plt.figure(figsize=(min(max(10, 0.4*len(samples_list)), MAX_FIG_WIDTH),
+                                    min(max(8, 0.3*len(regions_list)), MAX_FIG_HEIGHT)))
+                sns.heatmap(data = region_norm_heatmap_data, cmap="viridis", cbar_kws={"label": "Mean Region Depth (normalized)"})
+                plt.title("Mean Region Depth per Region per Sample (normalized by sample's average depth)")
+                plt.xlabel("Sample ID")
+                plt.ylabel("Region")
+                plt.tight_layout()
+                pdf.savefig()
+                plt.close()
 
 
 def process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names):
@@ -680,15 +742,14 @@ def process_depths(sample_name, depth_file, panel_bed6_file, panel_name, plot_wi
     if region_file:
         _, regions_per_sample, regions_list = load_regions_and_compute_depths(sample_name, depth_df, region_file, bed6_probes_df)
 
-    if len(samples_list) < 200 and len(genes_list) < 200:
-        general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list, regions_per_sample, regions_list, avgdepth_per_sample_names)
+    general_plotting(sample_name, samples_list, bed6_probesByGene_df, genes_list, regions_per_sample, regions_list, avgdepth_per_sample_names)
 
-        ####
-        ## Until here all the plots and all the information was at the gene or sample level.
-        # Now it starts to contain within gene information, exons, normalized scores, ...
-        ####
-        if plot_within_gene:
-            process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names)
+    ####
+    ## Until here all the plots and all the information was at the gene or sample level.
+    # Now it starts to contain within gene information, exons, normalized scores, ...
+    ####
+    if plot_within_gene:
+        process_within_gene_depths(sample_name, depth_df, bed6_probes_df, bed6_probesByGene_df, genes_list, samples_list, avgdepth_per_sample_names)
 
 
 
