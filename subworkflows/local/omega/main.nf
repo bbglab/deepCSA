@@ -200,6 +200,7 @@ workflow OMEGA_ANALYSIS{
     results_global          = global_loc_results
     expanded_panel          = expanded_panel
     site_comparison         = site_comparison_results_flattened
+    preprocessing_mutab     = PREPROCESSING.out.mutabs_n_mutations_tsv.map{ it -> [it[0], it[1]]}
 
     all_compiled            = all_results
     all_globalloc_compiled  = all_gloc_results
