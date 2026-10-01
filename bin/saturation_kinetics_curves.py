@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -143,7 +144,7 @@ def empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict,
 
 def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites='genomic',
                              impact="protein_affecting",
-                             output_folder=None):
+                             output_folder=None, empirical_pdf=None):
     click.echo("Plotting empirical discovery")
     x, mean, err_low, err_high = empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict, subsampling_rates, sites = sites)
     fig, ax1 = plt.subplots(figsize=(2,2))
@@ -162,9 +163,11 @@ def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_ra
     ax1.spines['top'].set_visible(False)
     ax1.spines['right'].set_visible(False)
     ax1.set_ylim(0, max(err_high) * 1.1)
-    plt.title(gene + " (" + impact + ")")
+    plt.title(f"{gene} ({impact}, {sites})")
     if output_folder:
         plt.savefig(f"{output_folder}/{gene}_empirical_discovery.png", bbox_inches='tight', dpi=100)
+    if empirical_pdf is not None:
+        empirical_pdf.savefig(fig, bbox_inches='tight', dpi=300)
     plt.show()
     plt.close()
 
@@ -178,7 +181,8 @@ def main_empirical(sample,
                    omega_mutability_file, relative_mutability_file,
                    subsampling_rates,
                    output_folder,
-                   sites='genomic', impact = "protein_affecting", logscale=False, genes_list = None):
+                   sites='genomic', impact = "protein_affecting", logscale=False, genes_list = None,
+                   empirical_pdf=None, combined_pdf=None):
 
     # retrieve relative mutability
     mutability_raw = pd.read_csv(relative_mutability_file, sep='\t',
@@ -194,9 +198,11 @@ def main_empirical(sample,
     mutations_lite['VAF'] = mutations_lite.apply(lambda r: r['ALT_DEPTH']/r['DEPTH'], axis=1)
 
     # for gene in tqdm.tqdm(genes_list):
+
     for gene in genes_list:
         try:
-            plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites=sites, impact=impact, output_folder=output_folder)
+            plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites=sites,
+                                     impact=impact, output_folder=output_folder, empirical_pdf=empirical_pdf)
 
             synonymous_mutation_rate = pd.read_csv(omega_mutability_file, sep='\t')
             synonymous_mutation_rate = synonymous_mutation_rate[synonymous_mutation_rate['GENE'] == gene]
@@ -272,11 +278,12 @@ def main_empirical(sample,
             ax1.spines['top'].set_visible(False)
             ax1.spines['right'].set_visible(False)
 
+            ax1.set_ylim(0,1)
             ax1.set_xlim(x_theoretical[0], x_theoretical[-1])
 
             # ax1.legend(loc=(1,0))
 
-            plt.title(gene + " (" + impact + ")")
+            plt.title(f"{gene} ({impact}, {sites})")
 
             if logscale:
                 plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_logscale_{gene}.{impact}.pdf', bbox_inches='tight', dpi=300)
@@ -285,7 +292,11 @@ def main_empirical(sample,
                 plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_{gene}.{impact}.pdf', bbox_inches='tight', dpi=300)
                 print(f"Plot saved to {output_folder}")
 
+            if combined_pdf is not None:
+                combined_pdf.savefig(fig, bbox_inches='tight', dpi=300)
+
             plt.show()
+            plt.close(fig)
 
         except Exception as e:
             print(f"Error occurred while processing {gene}: {e}")
@@ -347,6 +358,11 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
     df_panel_orig = load_panel(consensus_panel_file, depths_file, group_name, vep)
     click.echo(f"Panel loaded with {df_panel_orig.shape[0]} sites")
 
+    curves_folder = f'{group_name}.curves'
+    os.makedirs(curves_folder, exist_ok=True)
+    empirical_pdf = PdfPages(f'{curves_folder}/empirical_discovery_all.pdf')
+    combined_pdf = PdfPages(f'{curves_folder}/theoretical_empirical_all.pdf')
+
     # df_panel represents the total number of mutable sites,
     # either genomic or residue sites
     for impact in CONSEQUENCES_CATEGORIES.keys():
@@ -391,6 +407,8 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
                         sites='residue',
                         impact = impact,
                         logscale=False,
+                        empirical_pdf=empirical_pdf,
+                        combined_pdf=combined_pdf,
                         # genes_list = ["TP53","RBM10"]
                         )
 
@@ -405,8 +423,13 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
                         sites='genomic',
                         impact = impact,
                         logscale=False,
+                        empirical_pdf=empirical_pdf,
+                        combined_pdf=combined_pdf,
                         # genes_list = ["TP53","RBM10"]
                         )
+
+    empirical_pdf.close()
+    combined_pdf.close()
 
 
 
