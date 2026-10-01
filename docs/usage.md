@@ -18,10 +18,31 @@
 - [Additional customizable parameters](#additional-customizable-parameters)
 - [Custom mutation calls](#custom-mutation-calls)
 - [MAF file as input (alternative input mode)](#maf-file-as-input-alternative-input-mode)
+- [What deepCSA computes](#what-deepcsa-computes)
 
 ## Introduction
 
-<!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
+deepCSA is a pipeline for the analysis of **clonal structure** from targeted (or genome-wide) **ultradeep** DNA sequencing data. Given a set of somatic mutations and the sequencing depth at which they were observed, it computes:
+
+- **Mutation burden** — mutation density (flat and trinucleotide-adjusted) per sample, gene, and genomic region.
+- **Mutational processes** — mutational profiles and mutational signature assignment/extraction.
+- **Positive selection** — a battery of complementary dN/dS-style metrics (omega, dNdScv, OncodriveFML, Oncodrive3D, site comparison) to detect genes and sites under selection.
+- **Clonal structure** — estimates of the number of mutated genomes/cells per mutation from VAF distributions.
+- **Interindividual variability** — linear regressions of the above metrics against sample covariates.
+
+A full explanation of every metric and how to interpret its outputs is in [Computed metrics](metrics.md).
+
+### What you need to provide: mutations + depth
+
+The single most important requirement for deepCSA is that **every mutation carries depth information**: the total number of reads sequenced at its position (`DEPTH`) and the number of reads supporting the alternate allele (`ALT_DEPTH`). This is what allows the pipeline to compute VAFs, correct mutation counts for coverage, and estimate clonal structure.
+
+**The format of the mutation file itself is flexible.** deepCSA can receive mutations from any caller or any project, as long as the file can be converted to the per-sample VCF (or cohort MAF) layout described in [Input scenarios](input_scenarios.md) and contains the depth columns:
+
+- Mutations called with [deepUMIcaller](https://github.com/bbglab/deepUMIcaller) work out of the box (VCF + BAM).
+- Mutations called with **any other tool** (or a manually curated set) can be used by converting them with `assets/useful_scripts/deepcsa_maf2samplevcfs.py` — see [Custom mutation calls](#custom-mutation-calls). The only hard requirement is the presence of `DEPTH` and `ALT_DEPTH` per mutation.
+- A cohort-level MAF with `CHROM, POS, REF, ALT, DEPTH, ALT_DEPTH, SAMPLE_ID` is accepted directly via `--input_maf` — see [MAF file as input](#maf-file-as-input-alternative-input-mode).
+
+The only other mandatory input is the **sequencing depth per position**: either the BAM files used for calling (Scenario 1), or a precomputed depths table (Scenarios 2 and 3). See [Input scenarios](input_scenarios.md) for the three supported combinations.
 
 ## How to run the pipeline
 
@@ -422,6 +443,8 @@ If you want to run deepCSA with your own mutation calls, this is also possible. 
 - the variant calling was not done using deepUMIcaller.
 - you came up with a set of mutations that you trust and want to force them as the ones to be used for the analysis.
 
+> **The only hard requirement is depth information.** Your mutations can come from any caller or any format, as long as each mutation carries `DEPTH` (total reads at the position) and `ALT_DEPTH` (reads supporting the alternate allele). These two columns are what deepCSA uses to compute VAFs, correct for coverage, and estimate clonal structure. If your file lacks them, they must be added (e.g. by pileup-ing the BAMs) before running the pipeline.
+
 ### Step 1: Generate properly formatted input VCFs
 
 For this, you will need to generate a VCF file per sample with the same format as that expected by deepCSA using the following script that you can find in the deepCSA repository in the following relative path:
@@ -539,3 +562,20 @@ params {
 3. The rest of the pipeline proceeds identically to a standard run using per-sample VCFs.
 
 > **Note:** If `--input_maf` is provided without `--use_custom_depths true`, the pipeline will stop immediately with an error message rather than silently ignoring the MAF file.
+
+## What deepCSA computes
+
+Once the pipeline has your mutations and depths, it computes the following layers of analysis (each can be toggled on/off with the parameters in [Proposed run modes](#proposed-run-modes)):
+
+| Layer | What it answers | Main outputs |
+|---|---|---|
+| Depth & panels | Which positions are well covered? | `depths/`, `regions/` |
+| Mutation filtering | Which mutations are somatic and trustworthy? | `mutations/`, `plots/mutations_summary/` |
+| Mutation burden | How many mutations per Mb, per sample/gene/region? | `mutdensity/`, `mutdensity_adjusted/` |
+| Mutational processes | Which mutational processes are active? | `mutational_profile/`, `signatures/` |
+| Positive selection | Which genes/sites are under selection? | `selection/` (omega, dndscv, oncodrivefml, oncodrive3d, sitecomparison) |
+| Clonal structure | How many genomes/cells carry each mutation? | mutated-genomes outputs under `selection/` |
+| Interindividual variability | Do covariates explain variation in the metrics? | `regressions/` |
+| Quality control | Is the data reliable? | `qc/` |
+
+For a detailed explanation of every metric, the meaning of its columns, and how to interpret the results, see [Computed metrics and how to interpret them](metrics.md). For the full directory layout of the outputs, see [Output](output.md).
