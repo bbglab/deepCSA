@@ -317,6 +317,14 @@
                     "description": "Do you want to plot the depths within each gene?",
                     "fa_icon": "fas fa-book"
                 },
+                "chromosome_region_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "description": "Optional TSV file defining chromosomal regions (CHROM, START, END, REGION, no header) to compute the mean depth per region. When not provided, the per-region depth outputs are skipped.",
+                    "help_text": "Optional TSV file defining chromosomal regions (CHROM, START, END, REGION, no header) to compute the mean depth per region.",
+                    "fa_icon": "far fa-file-code"
+                },
                 "plot_mutation_specific_qc": {
                     "type": "boolean",
                     "description": "Do you want to generate mutation-specific QC plots (VAF vs depth)?",
