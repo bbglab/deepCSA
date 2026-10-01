@@ -12,7 +12,9 @@ Find the documentation ([link to docs](https://github.com/bbglab/deepCSA/tree/ma
 
 We are working to provide the biggest possible detail on the [usage](docs/usage.md) and explanation of the rationale and [tools](docs/tools.md).
 
-You can also find an explanation with examples on the [output](docs/output.md).
+You can also find an explanation with examples on the [output](docs/output.md), and a dedicated guide on [what the pipeline computes and how to interpret each metric](docs/metrics.md).
+
+> **Any mutation format works, as long as it has depth.** deepCSA can receive mutations from any caller or project (VCF, MAF/TSV, or a manually curated set) as long as each mutation carries the total depth at its position (`DEPTH`) and the number of reads supporting the alternate allele (`ALT_DEPTH`). See [Usage — What you need to provide](docs/usage.md#what-you-need-to-provide-mutations--depth) and [Input scenarios](docs/input_scenarios.md).
 
 For more examples and description of the entire process, you can check the publications listed below.
 
@@ -68,19 +70,19 @@ The input can be provided by the `--input` option but it is more recommended to 
 
 ## Credits
 
-bbglab/deepCSA was originally written by Ferriol Calvet.
+bbglab/deepCSA was originally written by [Ferriol Calvet](https://github.com/FerriolCalvet).
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-* @rblancomi
-* @FedericaBrando
-* @koszulordie
-* @St3451
-* @AxelRosendahlHuber
-* @andrianovam
-* @migrau
-* @rochamorro1
-* @m-huertasp
+* [Raquel Blanco Martinez-Illescas](https://github.com/rblancomi)
+* [Federica Brando](https://github.com/FedericaBrando)
+* [Ferran Muiños](https://github.com/koszulordie)
+* [Stefano Pellegrini](https://github.com/St3451)
+* [Axel Rosendahl Huber](https://github.com/AxelRosendahlHuber)
+* [Maria Andrianova](https://github.com/andrianovam)
+* [Miguel L. Grau](https://github.com/migrau)
+* [Rocío Chamorro González](https://github.com/rochamorro1)
+* [Marta Huertas](https://github.com/m-huertasp)
 
 ## Citations
 
