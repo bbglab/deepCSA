@@ -3,6 +3,14 @@ nextflow_process {
     script "modules/local/filterbed/main.nf"
     process "FILTERBED"
 
+    config {
+        process {
+            withName: 'FILTERBED' {
+                ext.filtername = 'not_in_panel'
+            }
+        }
+    }
+
     test("Should run and annotate mutations in panel context") {
         when {
             process {
@@ -20,13 +28,6 @@ nextflow_process {
         }
 
         then {
-            config {
-                process {
-                    withName: 'FILTERBED' {
-                        ext.filtername = 'not_in_panel'
-                    }
-                }
-            }
             assert process.success
             assert snapshot(process.out).match()
         }

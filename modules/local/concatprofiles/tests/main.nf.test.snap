@@ -1,0 +1,62 @@
+{
+    "Should run and reproduce expected mutational profile comparisons": {
+        "content": [
+            {
+                "0": [
+                    [
+                        "all.cosine_similarity_heatmap_all.png:md5,1de4ad40b47175cdc0a0b42919a40d5b",
+                        "all.cosine_similarity_heatmap_samples.png:md5,1f416343ec6852e18f12fdc0676abb85"
+                    ]
+                ],
+                "1": [
+                    [
+                        "all.cosine_similarity_clustermap_all.png:md5,f5b1acf1d6e344f6ac54558897a5efef",
+                        "all.cosine_similarity_clustermap_samples.png:md5,fc6377c2d7c7591a38e1dc26467c3400"
+                    ]
+                ],
+                "2": [
+                    "all.cosine_similarity_all.tsv:md5,f8659e1b36373972517312943a3dd75c"
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "all_profiles"
+                        },
+                        "all.compiled_profiles.tsv:md5,76b30a3a79d65ad5c12aa31f00e9d875"
+                    ]
+                ],
+                "4": [
+                    "versions.yml:md5,db222420576e67cb9dbb5ab2116e5000"
+                ],
+                "clustermap": [
+                    [
+                        "all.cosine_similarity_clustermap_all.png:md5,f5b1acf1d6e344f6ac54558897a5efef",
+                        "all.cosine_similarity_clustermap_samples.png:md5,fc6377c2d7c7591a38e1dc26467c3400"
+                    ]
+                ],
+                "compiled_profiles": [
+                    [
+                        {
+                            "id": "all_profiles"
+                        },
+                        "all.compiled_profiles.tsv:md5,76b30a3a79d65ad5c12aa31f00e9d875"
+                    ]
+                ],
+                "cosine_similarity": [
+                    "all.cosine_similarity_all.tsv:md5,f8659e1b36373972517312943a3dd75c"
+                ],
+                "heatmap": [
+                    [
+                        "all.cosine_similarity_heatmap_all.png:md5,1de4ad40b47175cdc0a0b42919a40d5b",
+                        "all.cosine_similarity_heatmap_samples.png:md5,1f416343ec6852e18f12fdc0676abb85"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T14:19:36.969496728",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
