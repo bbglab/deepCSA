@@ -4,6 +4,8 @@ nextflow_process {
     process "MATRIX_CONCAT"
 
     test("Should run and reproduce expected concatenated WGS matrices") {
+        config "./nextflow.config"
+
         when {
             process {
                 """
@@ -22,13 +24,6 @@ nextflow_process {
         }
 
         then {
-            config {
-                process {
-                    withName: 'MATRIX_CONCAT' {
-                        ext.prefix = '.all'
-                    }
-                }
-            }
             assert process.success
             assert snapshot(process.out).match()
         }

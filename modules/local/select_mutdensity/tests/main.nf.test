@@ -22,6 +22,8 @@ nextflow_process {
     }
 
     test("Should run in mutated_reads mode and match expected output") {
+        config "./nextflow.mutated_reads.config"
+
         when {
             process {
                 """
@@ -34,13 +36,6 @@ nextflow_process {
         }
 
         then {
-            config {
-                process {
-                    withName: 'SELECT_MUTDENSITIES' {
-                        ext.mode = 'mutated_reads'
-                    }
-                }
-            }
             assert process.success
             assert snapshot(process.out).match()
         }

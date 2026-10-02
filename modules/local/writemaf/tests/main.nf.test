@@ -9,7 +9,7 @@ nextflow_process {
                 """
                 input[0] = tuple(
                     [id: 'all_samples'],
-                    file("${projectDir}/test_data/modules/add_tests/processing_files/sumannotation/all_samples.vep.summary.tab.gz")
+                    file("${projectDir}/test_data/modules/add_tests/mutations/germline_somatic/all_samples.filtered.tsv.gz")
                 )
                 input[1] = file("${projectDir}/test_data/modules/add_tests/group_definition/samples/all_groups.json")
                 """

@@ -1,6 +1,6 @@
 nextflow_process {
     name "Test MUTATION_DENSITY process"
-    script "modules/local/computemutdensity/main.nf"
+    script "modules/local/mut_density/simple/main.nf"
     process "MUTATION_DENSITY"
 
     test("Should run and reproduce expected all-panel mutation densities") {

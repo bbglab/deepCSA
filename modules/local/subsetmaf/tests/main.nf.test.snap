@@ -1,0 +1,32 @@
+{
+    "Should run with somatic-like filtering and emit expected subset": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.somatic.mutations.tsv:md5,54da53bbd95148c72c3a3c4d519b9747"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,ab1e49adbfb10454bddf5121b0c2aca6"
+                ],
+                "mutations": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.somatic.mutations.tsv:md5,54da53bbd95148c72c3a3c4d519b9747"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T15:43:20.761898346",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

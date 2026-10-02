@@ -1,0 +1,50 @@
+{
+    "Should run and emit grouped MAFs plus flagged positions": {
+        "content": [
+            {
+                "0": [
+                    [
+                        "P19_0002_BDO_01.filtered.tsv.gz:md5,8d018b90a0f891a299d2249dcdfcb31e",
+                        "P19_0002_BTR_01.filtered.tsv.gz:md5,2f71924ee1ed0e57cf40fd7692a58d81",
+                        "P19_0003_BDO_01.filtered.tsv.gz:md5,65bf2798a45d2fed5954b6b643faf187"
+                    ]
+                ],
+                "1": [
+                    [
+                        "P19_0002_BDO_01.flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "P19_0002_BTR_01.flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "P19_0003_BDO_01.flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    "all_samples.all-flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "3": [
+                    "all_samples.cohort-wide-flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ],
+                "4": [
+                    "versions.yml:md5,152e0d4593980d9b1b6959f058df57f0"
+                ],
+                "mafs": [
+                    [
+                        "P19_0002_BDO_01.filtered.tsv.gz:md5,8d018b90a0f891a299d2249dcdfcb31e",
+                        "P19_0002_BTR_01.filtered.tsv.gz:md5,2f71924ee1ed0e57cf40fd7692a58d81",
+                        "P19_0003_BDO_01.filtered.tsv.gz:md5,65bf2798a45d2fed5954b6b643faf187"
+                    ]
+                ],
+                "sample_flagged_beds": [
+                    [
+                        "P19_0002_BDO_01.flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "P19_0002_BTR_01.flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                        "P19_0003_BDO_01.flagged-pos.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T16:17:20.197125137",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

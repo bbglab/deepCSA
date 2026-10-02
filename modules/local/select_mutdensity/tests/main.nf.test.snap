@@ -23,10 +23,40 @@
                 ]
             }
         ],
+        "timestamp": "2026-04-17T15:22:18.714204194",
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.10.4"
-        },
-        "timestamp": "2026-04-17T15:22:18.714204194"
+        }
+    },
+    "Should run in mutated_reads mode and match expected output": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.gene_mutdensities.tsv:md5,7715ea0370b3663e82545b33d0d263a8"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,174f34cafb43f495182368a89e789531"
+                ],
+                "mutdensity": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.gene_mutdensities.tsv:md5,7715ea0370b3663e82545b33d0d263a8"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T15:40:30.458825403",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
     }
 }
