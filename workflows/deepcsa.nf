@@ -685,7 +685,8 @@ workflow DEEPCSA {
                         group_keys_ch,
                         annotated_depths,
                         relative_mutabilities,
-                        omega_mutabilities
+                        omega_mutabilities,
+                        MUT_PREPROCESSING.out.clean_maf_all_samples
                         )
     }
 

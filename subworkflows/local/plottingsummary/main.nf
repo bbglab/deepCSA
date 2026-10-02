@@ -29,6 +29,7 @@ workflow PLOTTING_SUMMARY {
     depths_indv
     relative_mutability
     omega_mutabilities
+    all_clean_mutations
 
 
     main:

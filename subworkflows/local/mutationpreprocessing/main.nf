@@ -126,6 +126,9 @@ workflow MUTATION_PREPROCESSING {
 
     // Clean mutations based on artifact filtering decisions
     CLEANMUTATIONS(all_clean_mutations)
+    channel.of([["id": "all_samples"]])
+    .join(CLEANMUTATIONS.out.mutations).first()
+    .set{clean_muts_all_samples}
 
     // Keep only somatic mutations
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
@@ -180,5 +183,6 @@ workflow MUTATION_PREPROCESSING {
     mutations_all_samples   = muts_all_samples
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
     bedfile_clean           = bedfile_updated
+    clean_maf_all_samples   = clean_muts_all_samples
 
 }
