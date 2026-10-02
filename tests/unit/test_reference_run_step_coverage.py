@@ -7,15 +7,18 @@ import unittest
 from pathlib import Path
 
 
-DEFAULT_RUN_DIR = Path("scratchhhh/2026-04-17_add_tests")
+# Committed, self-contained fixture (a deduplicated execution trace plus minimal
+# output-evidence files) so this test runs in any environment without a real run.
+FIXTURE_RUN_DIR = Path(__file__).resolve().parent / "fixtures" / "reference_run"
 TRACE_GLOB = "pipeline_info/execution_trace_*.txt"
 
 
 def _get_reference_run_dir() -> Path:
+    # A real run directory can be supplied to validate against actual outputs.
     env_value = os.environ.get("DEEPCSA_REFERENCE_RUN_DIR")
     if env_value:
         return Path(env_value)
-    return DEFAULT_RUN_DIR
+    return FIXTURE_RUN_DIR
 
 
 def _extract_families(trace_file: Path) -> set[str]:
