@@ -592,6 +592,11 @@
                     "type": "boolean",
                     "description": "Do you want to apply smoothing to the mutational profile when having low numbers of mutations?",
                     "fa_icon": "fas fa-book"
+                },
+                "profile_expanded": {
+                    "type": "boolean",
+                    "description": "Do you want to compute the mutational profile counting each mutation weighted by its ALT_DEPTH (expanded) instead of counting each mutation only once (unique)?",
+                    "fa_icon": "fas fa-book"
                 }
             }
         },
