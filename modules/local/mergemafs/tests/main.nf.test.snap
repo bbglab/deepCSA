@@ -1,0 +1,32 @@
+{
+    "Should run and merge per-sample MAF files": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.cohort.tsv.gz:md5,d08f45cf63c76422558434f3f13855cb"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,a0452d1dec70270f65660c5a18d39ab1"
+                ],
+                "cohort_maf": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.cohort.tsv.gz:md5,d08f45cf63c76422558434f3f13855cb"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T14:26:28.700766684",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

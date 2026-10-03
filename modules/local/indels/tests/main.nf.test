@@ -1,0 +1,23 @@
+nextflow_process {
+    name "Test INDELS_COMPARISON process"
+    script "modules/local/indels/main.nf"
+    process "INDELS_COMPARISON"
+
+    test("Should run and summarize indel classes") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/clean_somatic/all_samples.somatic.mutations.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

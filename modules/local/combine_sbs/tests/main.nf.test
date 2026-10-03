@@ -1,0 +1,26 @@
+nextflow_process {
+    name "Test SIGNATURES_PROBABILITIES process"
+    script "modules/local/combine_sbs/main.nf"
+    process "SIGNATURES_PROBABILITIES"
+
+    test("Should run and reproduce expected decomposed signature probabilities") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    [
+                        file("${projectDir}/test_data/modules/add_tests/signatures/sigprofilerassignment/output_samples_matrix.all.96/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.samples_matrix.all.96.txt"),
+                        file("${projectDir}/test_data/modules/add_tests/signatures/sigprofilerassignment/output_groups_matrix.all.96/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.groups_matrix.all.96.txt")
+                    ]
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

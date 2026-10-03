@@ -1,0 +1,6 @@
+chr12	49026325	49026325	FILTER.not_covered
+chr12	49032849	49032849	FILTER.not_covered
+chr22	41160653	41160653	FILTER.not_covered
+chrX	45063591	45063591	FILTER.not_covered
+chrX	45089841	45089841	FILTER.not_covered
+chrX	47179127	47179127	FILTER.cohort_n_rich_threshold,FILTER.cohort_n_rich,FILTER.not_covered

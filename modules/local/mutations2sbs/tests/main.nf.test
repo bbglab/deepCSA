@@ -1,0 +1,24 @@
+nextflow_process {
+    name "Test MUTATIONS_2_SIGNATURES process"
+    script "modules/local/mutations2sbs/main.nf"
+    process "MUTATIONS_2_SIGNATURES"
+
+    test("Should run and reproduce expected MAF-with-signatures annotation") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/clean_somatic/all_samples.somatic.mutations.tsv"),
+                    file("${projectDir}/test_data/modules/add_tests/processing_files/sigprobs/all_samples.decomposed_probabilities.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

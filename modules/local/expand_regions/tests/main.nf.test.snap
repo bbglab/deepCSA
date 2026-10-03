@@ -8,7 +8,7 @@
                             "id": "test2",
                             "single_end": false
                         },
-                        "exons_consensus_panel_with_hotspots.tsv:md5,6ad5da1066446d8112d94529a872a89a"
+                        "consensus.exons_splice_sites.PPM1D_with_subgenic.tsv:md5,6ad5da1066446d8112d94529a872a89a"
                     ]
                 ],
                 "1": [
@@ -17,7 +17,7 @@
                             "id": "test2",
                             "single_end": false
                         },
-                        "hotspot_names.json:md5,13e7c63d0a00bdeee27b0846620369dc"
+                        "subgenic_names.json:md5,13e7c63d0a00bdeee27b0846620369dc"
                     ]
                 ],
                 "2": [
@@ -29,7 +29,7 @@
                             "id": "test2",
                             "single_end": false
                         },
-                        "hotspot_names.json:md5,13e7c63d0a00bdeee27b0846620369dc"
+                        "subgenic_names.json:md5,13e7c63d0a00bdeee27b0846620369dc"
                     ]
                 ],
                 "panel_increased": [
@@ -38,7 +38,7 @@
                             "id": "test2",
                             "single_end": false
                         },
-                        "exons_consensus_panel_with_hotspots.tsv:md5,6ad5da1066446d8112d94529a872a89a"
+                        "consensus.exons_splice_sites.PPM1D_with_subgenic.tsv:md5,6ad5da1066446d8112d94529a872a89a"
                     ]
                 ]
             }

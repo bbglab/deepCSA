@@ -1,0 +1,32 @@
+{
+    "Should run and reproduce expected decomposed signature probabilities": {
+        "content": [
+            {
+                "0": [
+                    [
+                        "P19_0002_BDO_01.decomposed_probabilities.tsv:md5,20f59a79afc27c8d5460e30d231c7ba9",
+                        "P19_0002_BTR_01.decomposed_probabilities.tsv:md5,f416573b8315bccd30c16ff7b43357ce",
+                        "P19_0003_BDO_01.decomposed_probabilities.tsv:md5,f3b15819fc437bd609344e6b4ba69d30",
+                        "all_samples.decomposed_probabilities.tsv:md5,c9c5b16544d6d67ff45a239035c23b4d"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,d6a7e84122c7553168109e535606b342"
+                ],
+                "signature_probs": [
+                    [
+                        "P19_0002_BDO_01.decomposed_probabilities.tsv:md5,20f59a79afc27c8d5460e30d231c7ba9",
+                        "P19_0002_BTR_01.decomposed_probabilities.tsv:md5,f416573b8315bccd30c16ff7b43357ce",
+                        "P19_0003_BDO_01.decomposed_probabilities.tsv:md5,f3b15819fc437bd609344e6b4ba69d30",
+                        "all_samples.decomposed_probabilities.tsv:md5,c9c5b16544d6d67ff45a239035c23b4d"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-04-17T16:32:00.654596775"
+    }
+}

@@ -1,10 +1,9 @@
 process GROUP_GENES {
     tag "groups"
-
     label 'deepcsa_core'
 
     input:
-    tuple val(meta), path(mutations_table)
+    tuple val(meta), path(expanded_panel)
     path (features_table)
     tuple val(meta2), path(hotspots_file)
 
@@ -20,7 +19,7 @@ process GROUP_GENES {
     def grouping_info = "--table-file ${features_table} --separator ${separator} --output-json-groups pathway_groups_out.json"
     def custom_groups = task.ext.custom ? "${grouping_info}" : ""
     """
-    awk 'NR>1 {print \$6}' ${mutations_table} | sort -u  > gene_list.txt
+    awk 'NR>1 {print \$6}' ${expanded_panel} | sort -u  > gene_list.txt
 
     features_2group_genes.py \\
         --panel-genes-file gene_list.txt \\
@@ -45,4 +44,3 @@ process GROUP_GENES {
     END_VERSIONS
     """
 }
-    // features_1table2groups.py ${features_table} ${separator} features_table_information.json
