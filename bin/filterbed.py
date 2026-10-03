@@ -63,9 +63,9 @@ def main(sample_maf_file, bedfile, filtername, positive):
     positions_df = remove_non_canonical_chromosomes(positions_df)
 
     # adjust the CHROM field to adapt to the way it is being represented in the mutations list
-    if sample_maf.iloc[0,0].startswith("chr") and not positions_df.iloc[0,0].startswith("chr"):
+    if str(sample_maf.iloc[0,0]).startswith("chr") and not str(positions_df.iloc[0,0]).startswith("chr"):
         positions_df["CHROM"] = "chr" + positions_df["CHROM"]
-    elif not sample_maf.iloc[0,0].startswith("chr") and positions_df.iloc[0,0].startswith("chr"):
+    elif not str(sample_maf.iloc[0,0]).startswith("chr") and str(positions_df.iloc[0,0]).startswith("chr"):
         positions_df["CHROM"] = positions_df["CHROM"].str.replace("chr", "")
     
     filtered_maf = filter_panel(sample_maf, positions_df, filtername, positive = positive)
