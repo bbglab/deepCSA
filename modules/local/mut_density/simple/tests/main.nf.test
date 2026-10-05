@@ -9,7 +9,7 @@ nextflow_process {
                 """
                 input[0] = tuple(
                     [id: 'all_samples'],
-                    file("${projectDir}/test_data/modules/add_tests/mutations/clean_somatic/all_samples.somatic.mutations.tsv"),
+                    file("${projectDir}/test_data/modules/add_tests/mutations/clean_somatic/all_samples.somatic.mutations.tsv"), // FIXME this needs to be a different file, containing the column GENE
                     file("${projectDir}/test_data/modules/add_tests/depths/individual/all_samples.depths.annotated.tsv.gz")
                 )
                 input[1] = tuple(

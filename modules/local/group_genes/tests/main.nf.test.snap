@@ -3,7 +3,7 @@
         "content": [
             {
                 "0": [
-                    "genes2group_out.json:md5,69f696cb7ae450be12dd9afc2989010e"
+                    "genes2group_out.json:md5,44fadcc209639b5079e4d359ed012287"
                 ],
                 "1": [
                     
@@ -12,17 +12,17 @@
                     "versions.yml:md5,012b9dc205918529c884fc156f1660a9"
                 ],
                 "json_genes": [
-                    "genes2group_out.json:md5,69f696cb7ae450be12dd9afc2989010e"
+                    "genes2group_out.json:md5,44fadcc209639b5079e4d359ed012287"
                 ],
                 "json_pathways": [
                     
                 ]
             }
         ],
+        "timestamp": "2026-10-05T14:58:55.635875148",
         "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "25.10.4"
-        },
-        "timestamp": "2026-04-17T15:20:24.324421364"
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
     }
 }

@@ -3,12 +3,11 @@ nextflow_process {
     script "modules/local/filtermaf/main.nf"
     process "FILTER_BATCH"
 
+    config "./nextflow.config"
+
     test("Should run and emit cohort filtered mutations") {
         when {
             process {
-                ext.repetitive_variant = 5
-                ext.germline_threshold = 0.3
-                ext.prop_samples_nrich = 0.1
                 """
                 input[0] = tuple(
                     [id: 'all_samples'],
