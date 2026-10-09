@@ -2,7 +2,9 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline.
+This document describes the output produced by the pipeline: what each directory contains and how the pieces fit together.
+
+> **Looking for how to interpret a specific metric?** The [Computed metrics](metrics.md) document explains what each analysis computes, the meaning of its columns, and how to read the results — including a question-by-question [interpretation guide](metrics.md#interpretation-guide-where-to-start). Use this document to find *where* an output lives, and that document to understand *what it means*.
 
 ## Pipeline overview 
 
@@ -21,6 +23,19 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 - [Plotting functionalities](#plotting-functionalities)
 - [QC outputs](#qc-outputs)
 - [Additional outputs](#additional-outputs)
+
+## How to read the results (quick guide)
+
+A typical analysis workflow over the outputs looks like this:
+
+1. **Check quality first.** Open `depths/summary/` and the `qc/` directory. If a sample has low or uneven depth, or shows up in `qc/contamination/` or `qc/omega_flagged/`, treat its downstream metrics with caution.
+2. **Quantify the burden.** Use `mutdensity/individual_vals/` (flat) or `mutdensity_adjusted/individual_vals/` (trinucleotide-adjusted) to compare mutation burden across samples, genes, and region types.
+3. **Characterise the processes.** Look at `mutational_profile/` and `signatures/sigprofilerassignment/` to see which mutational processes (e.g. age, smoking) drive the burden.
+4. **Call selection.** Start from `selection/omega/` and `selection/omegagloballoc/` (gene-level dN/dS), cross-check with `selection/omega_covariates/` (covariate-aware dN/dS), `selection/dndscv/cv/` and `selection/oncodrivefml/`, and drill down to individual sites with `selection/sitecomparison/`. Genes that are significant in several independent metrics are the most robust selection candidates.
+5. **Describe clonal architecture.** Use the mutated-genomes outputs and `plots/needle_plots/` to see how mutations are distributed across clones in each sample.
+6. **Relate to covariates.** If you provided a feature groups table, use `regressions/` to test whether sample-level variables (age, sex, smoking, ...) explain variation in the metrics above.
+
+For the meaning of every column and metric, see [Computed metrics](metrics.md).
 
 ## Directory Structure
 
@@ -63,6 +78,10 @@ The directory tree below shows the maximum diversity of outputs the pipeline can
 │   ├── omega
 │   │   ├── preprocessing          # syn_muts.<sample>, mutabilities.<sample>
 │   │   └── estimator              # all_omegas.tsv, output_mle.<sample>.tsv
+│   ├── omega_covariates                   # covariate-aware dN/dS model (one set of files per group)
+│   │   ├── data.<group>.tsv       # parsed and augmented sample-gene table (counts, offsets, PC1-PC20)
+│   │   ├── omega.<group>.tsv      # per sample-gene dN/dS estimates (unless omega_covariates_all_samples)
+│   │   └── omega.<group>.grouped.tsv  # pooled per-gene dN/dS estimates (all samples in the group)
 │   ├── omegagloballoc
 │   │   ├── preprocessing
 │   │   └── estimator
@@ -153,6 +172,13 @@ Each version provides slightly different information, as shown below:
 - `exons` — average depth in all the exonic regions sequenced, regardless of consensus coverage.
 - `exons_cons` — average depth in exonic regions reaching the minimum consensus depth threshold (i.e. exons within the well-covered regions).
 - `all_cons` — average depth of all well-covered sequenced regions across the cohort, with no exonic/intronic distinction.
+
+In addition to the per-gene and per-sample summaries, the mean depth is also computed per **chromosomal region** (cytoband-like arm regions, e.g. `chr1p3`, `chr1q2`, ...). The regions are defined in a TSV file (columns `CHROM`, `START`, `END`, `REGION`, no header) provided via the `--chromosome_region_file` parameter (an example is bundled at `assets/chromosome_bands/chromosome_arms_region.tsv`). For each region, the mean depth is computed over the covered (sequenced) positions that fall within the region. When no region file is provided, the per-region outputs are skipped. This produces two extra TSVs per version:
+
+- `*.avgdepth_per_region.tsv` — mean depth per region across all samples.
+- `*.depth_per_region_per_sample.tsv` — mean depth per region per sample.
+
+The corresponding plots (boxplot/stripplot per region, mean-depth lineplot per region, and a region × sample heatmap) are appended to the `*.depths.pdf` file. In addition, the same set of plots is produced for the **sample-normalized** region depth, i.e. each sample's mean depth per region divided by that sample's overall average depth (values around 1 indicate a region covered at the sample's average depth).
 
 ### Outputs
 

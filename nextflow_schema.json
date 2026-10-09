@@ -182,7 +182,6 @@
                 "remove_chrM": {
                     "type": "boolean",
                     "description": "Whether to remove chrM from the depths table.",
-                    "default": true,
                     "help_text": "If true, any positions on chrM will be removed from the computed depths table. This is useful if you want to exclude mitochondrial DNA from downstream analyses.",
                     "fa_icon": "fas fa-ban"
                 }
@@ -317,6 +316,14 @@
                     "description": "Do you want to plot the depths within each gene?",
                     "fa_icon": "fas fa-book"
                 },
+                "chromosome_region_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "description": "Optional TSV file defining chromosomal regions (CHROM, START, END, REGION, no header) to compute the mean depth per region. When not provided, the per-region depth outputs are skipped.",
+                    "help_text": "Optional TSV file defining chromosomal regions (CHROM, START, END, REGION, no header) to compute the mean depth per region.",
+                    "fa_icon": "far fa-file-code"
+                },
                 "plot_mutation_specific_qc": {
                     "type": "boolean",
                     "description": "Do you want to generate mutation-specific QC plots (VAF vs depth)?",
@@ -384,6 +391,30 @@
                     "description": "Do you want to get omega mutabilities per site and a per site comparison with the observed?",
                     "fa_icon": "fas fa-book",
                     "help_text": "Do you want to get omega mutabilities per site and a per site comparison with the observed?"
+                },
+                "omega_covariates": {
+                    "type": "boolean",
+                    "description": "Run the covariate-aware omega dN/dS model as an additional output.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Fits a negative-binomial background model to the synonymous counts (using gene-level epigenomic covariates and, optionally, sample identity) to obtain a gene-specific neutral mutation rate, then estimates dN/dS for missense and truncating mutations with four complementary methods (dndscv, map, posmar, loc). Requires omega=true. Outputs are written to selection/omega_covariates/."
+                },
+                "omega_covariates_cov_file": {
+                    "type": "string",
+                    "description": "Path to the gene-level covariates table (one row per gene, columns PC1-PC20) used by the omega_covariates background model.",
+                    "fa_icon": "fas fa-book",
+                    "default": "assets/omega-covariates/covariates_hg19_hg38_epigenome_pcawg.tsv",
+                    "help_text": "Defaults to the bundled Roadmap of Epigenomics file. Set to null to fit a covariate-free background model."
+                },
+                "omega_covariates_samples_as_covariates": {
+                    "type": "boolean",
+                    "description": "Use sample IDs as fixed effects in the omega_covariates background model.",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Absorbs sample-level differences in mutation rate so that the gene-level signal is not confounded by which samples contribute mutations."
+                },
+                "omega_covariates_all_samples": {
+                    "type": "boolean",
+                    "description": "For omega_covariates, only compute the pooled (grouped) per-gene outputs and skip the per-sample table.",
+                    "fa_icon": "fas fa-book"
                 },
                 "site_comparison_grouping": {
                     "type": "string",
@@ -560,6 +591,11 @@
                 "profile_smoothing": {
                     "type": "boolean",
                     "description": "Do you want to apply smoothing to the mutational profile when having low numbers of mutations?",
+                    "fa_icon": "fas fa-book"
+                },
+                "profile_expanded": {
+                    "type": "boolean",
+                    "description": "Do you want to compute the mutational profile counting each mutation weighted by its ALT_DEPTH (expanded) instead of counting each mutation only once (unique)?",
                     "fa_icon": "fas fa-book"
                 }
             }
@@ -998,7 +1034,7 @@
                 "max_memory": {
                     "type": "string",
                     "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "256 GB",
+                    "default": "256.GB",
                     "fa_icon": "fas fa-memory",
                     "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
                     "hidden": true,
@@ -1007,7 +1043,7 @@
                 "max_time": {
                     "type": "string",
                     "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "10d",
+                    "default": "10.d",
                     "fa_icon": "far fa-clock",
                     "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
                     "hidden": true,

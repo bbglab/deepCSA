@@ -161,6 +161,17 @@ independently for gene-level and subgenic regions. The corrected values are repo
 `pvalue_adj` column. P-values equal to 0 are set to `1.17e-38` (minimum non-zero float32) before
 correction to avoid underflow.
 
+### Omega with covariates
+
+The `omega_covariates` model (enabled with `omega_covariates = true`, requires `omega = true`) is an additional, covariate-aware dN/dS estimator implemented in `bin/omega_covariates_definitions.py` (model classes `Background` and `Omega`) and `bin/omega_covariates_get_data.py` (parsing of deepCSA outputs). It runs in the `ESTIMATOROMEGACOVARIATES` process (`modules/local/omega_covariates/run/main.nf`) using the `docker.io/ferriolcalvet/omegacovariates` container.
+
+The approach mirrors dNdScv's use of a gene-specific neutral rate:
+
+1. **Background model** — a negative-binomial regression is fit to the synonymous counts across all genes, with an offset for the expected synonymous count. Gene-level covariates (the first 20 Roadmap of Epigenomics principal components, from `omega_covariates_cov_file`) and, optionally, sample identity (`omega_covariates_samples_as_covariates`) are included as fixed effects. The fitted overdispersion and per-gene mean source a **gamma prior** (shape `alpha`, rate `beta`) on the neutral synonymous mutation density per gene.
+2. **dN/dS estimation** — for each gene (and for the all-samples pooled estimate), dN/dS is estimated for missense and truncating mutations against that gene-specific neutral rate, using four complementary methods: `fit_dndscv` (Poisson penalised LRT), `fit_map` (gamma–Poisson LRT with the MAP neutral density), `fit_posterior_marginal` (gamma–Poisson LRT with the posterior gamma), and `fit_loc` (Poisson, local, no background model). Each method reports a point estimate, profile-likelihood CI, LRT p-value (with Benjamini–Hochberg FDR correction), a negative-selection p-value, and a cumulative probability under neutrality.
+
+Outputs are written to `selection/omega_covariates/` (one set of files per group). See [Computed metrics — Omega with covariates](metrics.md#omega-with-covariates-omega_covariates) for the meaning of each column and how to interpret the results.
+
 ## Site comparison
 
 The site comparison step takes advantage of the computation of mutabilities in [omega](https://github.com/bbglab/omega), and then compares these mutabilities either by residue, residue change or nucleotide change.
@@ -218,6 +229,7 @@ Key images used by the pipeline:
 | Core utilities | `docker.io/bbglab/deepcsa-core:0.1.0` |
 | Panel BED tools | `docker.io/bbglab/deepcsa_bed:latest` |
 | Omega | `docker.io/bbglab/omega:0.2.1` |
+| Omega with covariates | `docker.io/ferriolcalvet/omegacovariates:v0.1.0` |
 | Oncodrive3D | `docker.io/bbglab/oncodrive3d:1.0.5` |
 | Oncodrive3D (ChimeraX plots) | `docker.io/spellegrini87/oncodrive3d_chimerax:latest` |
 | OncodriveFML | `docker.io/ferriolcalvet/oncodrivefml:latest` |

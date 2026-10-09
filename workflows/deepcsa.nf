@@ -192,6 +192,10 @@ workflow DEEPCSA {
               "Please set '--use_custom_depths true' and provide '--custom_depths_table <path>'."
     }
 
+    if (params.omega_covariates && !params.omega) {
+        error "ERROR: '--omega_covariates' requires '--omega true' because it reuses omega preprocessing outputs."
+    }
+
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     if ( params.input_maf && params.use_custom_depths ) {
         channel.fromPath( params.input_maf, checkIfExists: true)
@@ -496,7 +500,10 @@ workflow DEEPCSA {
                 CREATEPANELS.out.panel_annotated_rich,
                 "",
                 grouping_definitions,
-                ENRICHPANELS.out.exons_json_subgenic
+                ENRICHPANELS.out.exons_json_subgenic,
+                wgs_trinucs,
+                CREATEPANELS.out.exons_consensus_panel,
+                group_keys_ch
                 )
         omega_mutabilities = OMEGA.out.preprocessing_mutab
         positive_selection_results = positive_selection_results.join(OMEGA.out.results, remainder: true)
@@ -527,7 +534,10 @@ workflow DEEPCSA {
                           CREATEPANELS.out.panel_annotated_rich,
                           ".multi",
                           grouping_definitions,
-                          ENRICHPANELS.out.exons_json_subgenic
+                          ENRICHPANELS.out.exons_json_subgenic,
+                          wgs_trinucs,
+                          CREATEPANELS.out.exons_consensus_panel,
+                          group_keys_ch
                           )
               positive_selection_results = positive_selection_results.join(OMEGAMULTI.out.results, remainder: true)
               if (params.omega_globalloc){
@@ -549,7 +559,10 @@ workflow DEEPCSA {
                             CREATEPANELS.out.panel_annotated_rich,
                             ".non_protein_affecting",
                             grouping_definitions,
-                            ENRICHPANELS.out.exons_json_subgenic
+                            ENRICHPANELS.out.exons_json_subgenic,
+                            wgs_trinucs,
+                            CREATEPANELS.out.exons_consensus_panel,
+                            group_keys_ch
                             )
 
             if (params.omega_multi){
@@ -563,7 +576,10 @@ workflow DEEPCSA {
                                     CREATEPANELS.out.panel_annotated_rich,
                                     ".multi.non_protein_affecting",
                                     grouping_definitions,
-                                    ENRICHPANELS.out.exons_json_subgenic
+                                    ENRICHPANELS.out.exons_json_subgenic,
+                                    wgs_trinucs,
+                                    CREATEPANELS.out.exons_consensus_panel,
+                                    group_keys_ch
                                     )
             }
 
