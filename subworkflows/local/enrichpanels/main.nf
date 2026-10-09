@@ -80,4 +80,5 @@ workflow ENRICHPANELS {
 
     dna2protein_mapping_depth_exons     = DNA2PROTEINMAPPING.out.depths_exons_positions.first()
     dna2protein_mapping_panel_exons     = DNA2PROTEINMAPPING.out.panel_exons_bed.first()
+    dna2protein_mapping_panel_exons_protein = DNA2PROTEINMAPPING.out.panel_exons_protein_intervals.first()
 }
