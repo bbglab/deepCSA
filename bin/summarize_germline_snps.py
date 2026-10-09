@@ -12,7 +12,8 @@ Outputs (written to the current working directory):
     {output_prefix}.germline.mutations.tsv        Germline mutations with their genotype bin and pathogenic flag.
     {output_prefix}.pathogenic_snps.tsv           Candidate pathogenic germline SNPs with their annotation.
     {output_prefix}.pathogenic_snps_summary.tsv   Number of candidate pathogenic germline SNPs per sample.
-    {output_prefix}.germline_snps_summary.pdf     VAF bins, pathogenic SNPs per sample, PCA elbow and PC1 vs PC2 scatter.
+    {output_prefix}.ancestry_inference.tsv        Mean gnomAD population AF profile per sample and most likely ethnic group.
+    {output_prefix}.germline_snps_summary.pdf     VAF bins, pathogenic SNPs per sample, ancestry heatmap, PCA elbow and PC1 vs PC2 scatter.
 """
 
 import click
@@ -28,14 +29,43 @@ from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+from utils_filter import germline_mask
+
 # VAF cuts separating the genotype bins: (0, 0.25], (0.25, 0.75], (0.75, 1]
 GENOTYPE_BINS = [0, 0.25, 0.75, 1]
 # Genotype bins kept for the PCA (heterozygous-like VAF ranges)
 GENOTYPE_BINS_FOR_PCA = [1, 2]
 NUMBER_OF_COMPONENTS = 6
+# Minimum VAF for a germline variant to be considered a SNP at all
+MIN_SNP_VAF = 0.25
 # gnomAD allele frequency columns used to assess rarity; all the available ones
 # must be below the threshold for a variant to be considered rare
 GNOMAD_AF_COLUMNS = ["gnomADg_AF", "gnomADe_AF"]
+# Population-specific gnomAD allele frequency columns used to infer the most
+# likely ethnic group of each sample; the genome columns are preferred and the
+# exome ones are used as fallback
+GNOMAD_GENOME_POP_COLUMNS = {
+    "AFR": "gnomADg_AFR_AF",
+    "AMI": "gnomADg_AMI_AF",
+    "AMR": "gnomADg_AMR_AF",
+    "ASJ": "gnomADg_ASJ_AF",
+    "EAS": "gnomADg_EAS_AF",
+    "FIN": "gnomADg_FIN_AF",
+    "MID": "gnomADg_MID_AF",
+    "NFE": "gnomADg_NFE_AF",
+    "OTH": "gnomADg_OTH_AF",
+    "SAS": "gnomADg_SAS_AF",
+}
+GNOMAD_EXOME_POP_COLUMNS = {
+    "AFR": "gnomADe_AFR_AF",
+    "AMR": "gnomADe_AMR_AF",
+    "ASJ": "gnomADe_ASJ_AF",
+    "EAS": "gnomADe_EAS_AF",
+    "FIN": "gnomADe_FIN_AF",
+    "NFE": "gnomADe_NFE_AF",
+    "OTH": "gnomADe_OTH_AF",
+    "SAS": "gnomADe_SAS_AF",
+}
 # Value of the canonical_Protein_affecting column for protein-affecting variants
 # (nonsense, missense and essential splice consequences)
 PROTEIN_AFFECTING_VALUE = "protein_affecting"
@@ -45,7 +75,7 @@ PATHOGENIC_SNP_COLUMNS = [
     "MUT_ID",
     "canonical_SYMBOL",
     "canonical_Consequence_broader",
-    "AACHANGE",
+    "canonical_Amino_acids",
     "VAF",
     "gnomADg_AF",
     "gnomADe_AF",
@@ -201,10 +231,13 @@ def flag_pathogenic_snps(germline_mutations, gnomad_af_threshold):
     """
     Flag candidate pathogenic germline SNPs based on the available annotation.
 
-    A germline SNP is considered a candidate pathogenic variant when it is
-    protein-affecting (nonsense, missense or essential splice according to the
-    canonical_Protein_affecting column) and rare in the population (all the
-    available gnomAD allele frequencies below the threshold).
+    A germline SNP is considered a candidate pathogenic variant when it complies
+    with the germline criteria (VAF, vd_VAF and VAF_AM above the germline
+    threshold), has a VAF greater than 0.25 (otherwise it is not a SNP in any
+    sense), is protein-affecting (nonsense, missense or essential splice
+    according to the canonical_Protein_affecting column) and rare in the
+    population (all the available gnomAD allele frequencies below the
+    threshold).
 
     Parameters
     ----------
@@ -233,7 +266,9 @@ def flag_pathogenic_snps(germline_mutations, gnomad_af_threshold):
         print("No gnomAD allele frequency columns found; the rarity criterion is skipped")
         is_rare = pd.Series(True, index=germline_mutations.index)
 
-    germline_mutations["IS_PATHOGENIC"] = is_protein_affecting & is_rare
+    # The germline criteria and the minimum SNP VAF are hard requirements
+    is_snp = germline_mask(germline_mutations, 0) & (germline_mutations["VAF"] > MIN_SNP_VAF)
+    germline_mutations["IS_PATHOGENIC"] = is_protein_affecting & is_rare & is_snp
     return germline_mutations
 
 
@@ -269,6 +304,72 @@ def plot_pathogenic_snps(pathogenic_snps_summary, pdf):
     ax.set_title("Candidate pathogenic germline SNPs per sample")
     ax.set_xticks(range(len(pathogenic_snps_summary)))
     ax.set_xticklabels(pathogenic_snps_summary["SAMPLE_ID"], rotation=90, fontsize=6)
+    plt.tight_layout()
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
+def infer_sample_ancestry(germline_mutations):
+    """
+    Infer the most likely ethnic group of each sample from the gnomAD
+    population-specific allele frequencies.
+
+    For each sample, the mean population-specific gnomAD allele frequency of its
+    confident germline SNPs (VAF greater than 0.25) is computed per population;
+    the population with the highest mean allele frequency is reported as the
+    most likely ethnic group. The rationale is that a sample carrying variants
+    that are common in a given population is more likely to come from that
+    population. The OTH (other) population is reported but excluded from the
+    most likely group assignment since it is not an actual ethnic group.
+
+    Returns
+    -------
+    ancestry_profiles : pd.DataFrame
+        One row per sample with the mean population-specific gnomAD allele
+        frequency per population and the MOST_LIKELY_POPULATION column.
+    """
+    population_columns = {
+        population: column
+        for population, column in GNOMAD_GENOME_POP_COLUMNS.items()
+        if column in germline_mutations.columns
+    }
+    if not population_columns:
+        population_columns = {
+            population: column
+            for population, column in GNOMAD_EXOME_POP_COLUMNS.items()
+            if column in germline_mutations.columns
+        }
+    if not population_columns:
+        print("No gnomAD population-specific allele frequency columns found; skipping the ancestry inference")
+        return pd.DataFrame()
+
+    confident_snps = germline_mutations[germline_mutations["VAF"] > MIN_SNP_VAF]
+    if confident_snps.empty:
+        print("No confident germline SNPs (VAF > 0.25) found; skipping the ancestry inference")
+        return pd.DataFrame()
+
+    af_profiles = confident_snps[list(population_columns.values())].apply(pd.to_numeric, errors="coerce")
+    ancestry_profiles = (
+        af_profiles.assign(SAMPLE_ID=confident_snps["SAMPLE_ID"])
+        .groupby("SAMPLE_ID", as_index=False)
+        .mean()
+        .rename(columns={column: population for population, column in population_columns.items()})
+    )
+
+    assignable_populations = [pop for pop in population_columns if pop != "OTH"]
+    ancestry_profiles["MOST_LIKELY_POPULATION"] = ancestry_profiles[assignable_populations].idxmax(axis="columns")
+    return ancestry_profiles
+
+
+def plot_ancestry_heatmap(ancestry_profiles, pdf):
+    """Heatmap of the mean population-specific gnomAD AF per sample."""
+    populations = [col for col in ancestry_profiles.columns if col not in ("SAMPLE_ID", "MOST_LIKELY_POPULATION")]
+    heatmap_data = ancestry_profiles.set_index("SAMPLE_ID")[populations]
+    fig, ax = plt.subplots(figsize=(1.0 + 0.5 * len(populations), 1.0 + 0.4 * len(heatmap_data)))
+    sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="viridis", ax=ax, cbar_kws={"label": "Mean gnomAD population AF"})
+    ax.set_xlabel("gnomAD population")
+    ax.set_ylabel("Sample")
+    ax.set_title("Ancestry inference from gnomAD population AFs")
     plt.tight_layout()
     pdf.savefig(fig)
     plt.close(fig)
@@ -320,6 +421,11 @@ def main(clean_maf, somatic_maf, output_prefix, gnomad_af_threshold):
     pathogenic_snps_summary.to_csv(f"{output_prefix}.pathogenic_snps_summary.tsv", sep="\t", index=False)
     print(f"Candidate pathogenic germline SNPs: {pathogenic_snps.shape[0]}")
 
+    ancestry_profiles = infer_sample_ancestry(germline_mutations)
+    if not ancestry_profiles.empty:
+        ancestry_profiles.to_csv(f"{output_prefix}.ancestry_inference.tsv", sep="\t", index=False)
+        print(f"Most likely population per sample:\n{ancestry_profiles[['SAMPLE_ID', 'MOST_LIKELY_POPULATION']].to_string(index=False)}")
+
     with PdfPages(f"{output_prefix}.germline_snps_summary.pdf") as pdf:
         if germline_mutations.empty:
             print("No germline mutations left after subtracting the somatic calls; skipping the plots")
@@ -327,6 +433,8 @@ def main(clean_maf, somatic_maf, output_prefix, gnomad_af_threshold):
         plot_vaf_bins(germline_mutations, pdf)
         if not pathogenic_snps_summary.empty:
             plot_pathogenic_snps(pathogenic_snps_summary, pdf)
+        if not ancestry_profiles.empty:
+            plot_ancestry_heatmap(ancestry_profiles, pdf)
 
         pca_data = build_pca_matrix(germline_mutations)
         if pca_data.empty:

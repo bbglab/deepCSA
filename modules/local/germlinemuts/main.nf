@@ -10,6 +10,7 @@ process GERMLINE_MUTATIONS {
     output:
     tuple val(meta), path("*.germline.mutations.tsv"), emit: germline_mutations
     tuple val(meta), path("*pathogenic_snps*.tsv")   , emit: pathogenic_snps
+    tuple val(meta), path("*.ancestry_inference.tsv"), emit: ancestry
     tuple val(meta), path("*.pdf")                   , emit: plots
     path "versions.yml"                              , topic: versions
 
@@ -37,6 +38,7 @@ process GERMLINE_MUTATIONS {
     touch ${prefix}.germline.mutations.tsv
     touch ${prefix}.pathogenic_snps.tsv
     touch ${prefix}.pathogenic_snps_summary.tsv
+    touch ${prefix}.ancestry_inference.tsv
     touch ${prefix}.germline_snps_summary.pdf
 
     cat <<-END_VERSIONS > versions.yml
