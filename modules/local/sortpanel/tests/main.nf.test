@@ -1,0 +1,41 @@
+nextflow_process {
+    name "Test SORT_MERGED_PANEL process"
+    script "modules/local/sortpanel/main.nf"
+    process "SORT_MERGED_PANEL"
+
+    test("Should sort compact panel and match expected sorted output") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'captured_panel_compact'],
+                    file("${projectDir}/test_data/modules/add_tests/custom_inputs/captured_panel.vep.annotation.unsorted.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+
+    test("Should sort rich panel and match expected sorted output") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'captured_panel_rich'],
+                    file("${projectDir}/test_data/modules/add_tests/custom_inputs/captured_panel.vep.annotation.rich.unsorted.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

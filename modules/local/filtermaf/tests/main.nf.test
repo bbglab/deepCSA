@@ -1,0 +1,25 @@
+nextflow_process {
+    name "Test FILTER_BATCH process"
+    script "modules/local/filtermaf/main.nf"
+    process "FILTER_BATCH"
+
+    config "./nextflow.config"
+
+    test("Should run and emit cohort filtered mutations") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/germline_somatic/all_samples.filtered.tsv.gz")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

@@ -1,0 +1,27 @@
+nextflow_process {
+    name "Test MERGE_BATCH process"
+    script "modules/local/mergemafs/main.nf"
+    process "MERGE_BATCH"
+
+    test("Should run and merge per-sample MAF files") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    [
+                        file("${projectDir}/test_data/modules/add_tests/mutations/germline_somatic/P19_0002_BDO_01.filtered.tsv.gz"),
+                        file("${projectDir}/test_data/modules/add_tests/mutations/germline_somatic/P19_0002_BTR_01.filtered.tsv.gz"),
+                        file("${projectDir}/test_data/modules/add_tests/mutations/germline_somatic/P19_0003_BDO_01.filtered.tsv.gz")
+                    ]
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

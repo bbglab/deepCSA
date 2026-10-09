@@ -1,0 +1,43 @@
+nextflow_process {
+    name "Test SELECT_MUTDENSITIES process"
+    script "modules/local/select_mutdensity/main.nf"
+    process "SELECT_MUTDENSITIES"
+
+    test("Should run in mutations mode and match expected output") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutdensity/individual_vals/all_samples.synonymous.mutdensities.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+
+    test("Should run in mutated_reads mode and match expected output") {
+        config "./nextflow.mutated_reads.config"
+
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutdensity/individual_vals/all_samples.synonymous.mutdensities.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

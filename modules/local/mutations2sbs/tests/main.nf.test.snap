@@ -1,0 +1,32 @@
+{
+    "Should run and reproduce expected MAF-with-signatures annotation": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.sigs.annotated.tsv.gz:md5,e0110e496958caa310ef1fd84638ff02"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,047e0937ffd851061337d93330738602"
+                ],
+                "mafs_sigs_info": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.sigs.annotated.tsv.gz:md5,e0110e496958caa310ef1fd84638ff02"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T14:27:23.277961941",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

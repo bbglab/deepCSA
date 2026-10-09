@@ -1,0 +1,32 @@
+{
+    "Should run and remove blacklisted MUT_ID entries": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.bk.filtered.mutations.tsv:md5,c3838b26afedad3e8e20edb9f2e4832e"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,ebf1188f57ac2d70b8c6b4735120b711"
+                ],
+                "mutations": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.bk.filtered.mutations.tsv:md5,c3838b26afedad3e8e20edb9f2e4832e"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T14:18:30.889535698",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

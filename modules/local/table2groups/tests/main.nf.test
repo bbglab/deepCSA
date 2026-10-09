@@ -1,0 +1,21 @@
+nextflow_process {
+    name "Test TABLE_2_GROUP process"
+    script "modules/local/table2groups/main.nf"
+    process "TABLE_2_GROUP"
+
+    test("Should run and reproduce expected grouping JSON outputs") {
+        when {
+            process {
+                """
+                input[0] = file("${projectDir}/tests/test_data/input_no_bam.csv")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}
+// TODO add tests with grouping scenario

@@ -1,0 +1,23 @@
+nextflow_process {
+    name "Test MAF_2_VCF process"
+    script "modules/local/maf2vcf/main.nf"
+    process "MAF_2_VCF"
+
+    test("Should run and reproduce expected per-sample VCF files") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/clean_somatic/all_samples.somatic.mutations.tsv")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

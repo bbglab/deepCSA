@@ -1,0 +1,32 @@
+{
+    "Should run and reproduce expected panel sites chunk": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "captured_positions.sites4VEP.chunk0.tsv:md5,9f2aed433f1cbd2a4568b1a265b43306"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,70ab81e04c861920330f997a9c5a15ea"
+                ],
+                "annotated_panel_reg": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "captured_positions.sites4VEP.chunk0.tsv:md5,9f2aed433f1cbd2a4568b1a265b43306"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-05T15:02:15.372189437",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

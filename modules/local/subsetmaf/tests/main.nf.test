@@ -1,0 +1,25 @@
+nextflow_process {
+    name "Test SUBSET_MAF process"
+    script "modules/local/subsetmaf/main.nf"
+    process "SUBSET_MAF"
+
+    test("Should run with somatic-like filtering and emit expected subset") {
+        config "./nextflow.config"
+
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/mutations/germline_somatic/all_samples.filtered.tsv.gz")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

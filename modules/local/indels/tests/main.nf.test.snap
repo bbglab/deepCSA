@@ -1,0 +1,32 @@
+{
+    "Should run and summarize indel classes": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.sample.indels.tsv:md5,f02b332f2500fddb3fc14dee748b20d8"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,3d1fa242d18d7146e06560be67cc5744"
+                ],
+                "indels": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.sample.indels.tsv:md5,f02b332f2500fddb3fc14dee748b20d8"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T14:25:58.861225772",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

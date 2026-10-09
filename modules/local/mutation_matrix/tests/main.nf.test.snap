@@ -1,0 +1,80 @@
+{
+    "Should run and reproduce expected mutation matrix": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv:md5,a247e6ad60d16eb5d79620887ed10a39"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv.single.sigprofiler:md5,ddf18a832f7bf884f8179bfdd75e4444"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv.per_sample:md5,8792b922eb96f3dd0983cf65782017e2"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv.per_sample.sigprofiler:md5,186509d5d7d73e3e5697d7396ec1c9c8"
+                    ]
+                ],
+                "4": [
+                    "versions.yml:md5,2606b18edded42d0ace91a2070808906"
+                ],
+                "matrix": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv:md5,a247e6ad60d16eb5d79620887ed10a39"
+                    ]
+                ],
+                "per_sample": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv.per_sample:md5,8792b922eb96f3dd0983cf65782017e2"
+                    ]
+                ],
+                "per_sample_sigprof": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv.per_sample.sigprofiler:md5,186509d5d7d73e3e5697d7396ec1c9c8"
+                    ]
+                ],
+                "single_sigprof": [
+                    [
+                        {
+                            "id": "all_samples.all"
+                        },
+                        "all_samples.all.matrix.tsv.single.sigprofiler:md5,ddf18a832f7bf884f8179bfdd75e4444"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-04-17T15:07:34.597097986"
+    }
+}

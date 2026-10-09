@@ -1,0 +1,23 @@
+nextflow_process {
+    name "Test SITESFROMPOSITIONS process"
+    script "modules/local/sitesfrompositions/main.nf"
+    process "SITESFROMPOSITIONS"
+
+    test("Should run and reproduce expected panel sites chunk") {
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id: 'all_samples'],
+                    file("${projectDir}/test_data/modules/add_tests/depths/all_samples_indv.depths.tsv.gz")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+}

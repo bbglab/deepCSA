@@ -1,0 +1,32 @@
+{
+    "Should run and preserve depths when no minimum depth is set": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.depths.tsv.gz:md5,de4c770cf50f7158d8b9a5d249c0f227"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,c552600345a86f944219c4d698f5e856"
+                ],
+                "depths": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.depths.tsv.gz:md5,de4c770cf50f7158d8b9a5d249c0f227"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-04-17T15:20:04.10621488"
+    }
+}

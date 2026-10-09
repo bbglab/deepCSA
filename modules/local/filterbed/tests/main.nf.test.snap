@@ -1,0 +1,32 @@
+{
+    "Should run and annotate mutations in panel context": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.somatic.filtered.tsv.gz:md5,0821c7cc9a10d87deacb035517b22dbe"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,21dd373f0795ef6ca5807d16406883ea"
+                ],
+                "maf": [
+                    [
+                        {
+                            "id": "all_samples"
+                        },
+                        "all_samples.somatic.filtered.tsv.gz:md5,0821c7cc9a10d87deacb035517b22dbe"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T15:35:51.590379904",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

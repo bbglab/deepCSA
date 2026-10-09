@@ -1,0 +1,28 @@
+{
+    "Should run and reproduce expected genes-to-groups JSON": {
+        "content": [
+            {
+                "0": [
+                    "genes2group_out.json:md5,44fadcc209639b5079e4d359ed012287"
+                ],
+                "1": [
+                    
+                ],
+                "2": [
+                    "versions.yml:md5,012b9dc205918529c884fc156f1660a9"
+                ],
+                "json_genes": [
+                    "genes2group_out.json:md5,44fadcc209639b5079e4d359ed012287"
+                ],
+                "json_pathways": [
+                    
+                ]
+            }
+        ],
+        "timestamp": "2026-10-05T14:58:55.635875148",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
