@@ -12,7 +12,7 @@ This repo has **three test layers**:
 
 1. **Pipeline-level integration tests** — nf-test `nextflow_pipeline` (whole `main.nf` on SLURM)
 2. **Module-level process tests** — nf-test `nextflow_process` (single local module; currently only `expand_regions`)
-3. **Script-level unit tests** — Python `unittest` (stdlib, no pytest)
+3. **Script-level unit tests** — Python `unittest` (stdlib, no pytest) (legacy, these type of tests should not be added, nf-test tests are much preferred in most of the cases)
 
 **Runner (pipeline):**
 - nf-test >= 0.9.2 with plugin `nft-utils@0.0.3` (loaded in `nf-test.config`)
