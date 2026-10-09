@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: 3c83c5b8aa313077e0ce43239a7b818b281b32ea
+last_mapped_commit: e7b4ed7374de1197b1c7bcde526d062730c9bd43
 last_mapped_at: 2026-10-09
 ---
 # Testing Patterns
@@ -8,10 +8,11 @@ last_mapped_at: 2026-10-09
 
 ## Test Framework
 
-This repo has **two independent test layers**:
+This repo has **three test layers**:
 
-1. **Pipeline-level integration tests** — nf-test (Nextflow test framework)
-2. **Script-level unit tests** — Python `unittest` (stdlib, no pytest)
+1. **Pipeline-level integration tests** — nf-test `nextflow_pipeline` (whole `main.nf` on SLURM)
+2. **Module-level process tests** — nf-test `nextflow_process` (single local module; currently only `expand_regions`)
+3. **Script-level unit tests** — Python `unittest` (stdlib, no pytest)
 
 **Runner (pipeline):**
 - nf-test >= 0.9.2 with plugin `nft-utils@0.0.3` (loaded in `nf-test.config`)
@@ -32,6 +33,10 @@ This repo has **two independent test layers**:
 nf-test test tests/deepcsa.nf.test                    # whole suite
 nf-test test tests/deepcsa.nf.test --tag normal       # single test by tag
 nf-test test tests/deepcsa.nf.test --tag omega
+
+# Module-level process tests (single module, fast — NOT auto-discovered)
+
+nf-test test modules/local/expand_regions/tests/main.nf.test
 
 # Python unit tests (run anywhere)
 
@@ -62,6 +67,12 @@ tests/
 ├── test_data/             # committed local inputs (input.csv, input_maf.csv,
 │                          #   input_no_bam.csv, test_mutations.maf)
 └── README.md              # how to run, snapshot policy, debugging guide
+modules/local/expand_regions/tests/
+├── main.nf.test           # module-level nf-test (nextflow_process)
+└── main.nf.test.snap      # MD5 snapshots of process outputs
+test_data/                 # repo-root fixtures for module tests
+├── dummy_file.tsv
+└── modules/               # PPM1D BED/TSV fixtures for expand_regions
 bin/test/
 └── test_*.py              # unittest files
 ```
@@ -154,6 +165,98 @@ cat .command.out .command.err .command.sh
 bash .command.run          # reproduce exact environment
 cat <workDir>/tests/<TEST_ID>/meta/nextflow.log
 ```
+
+## Module Tests (nf-test `nextflow_process`)
+
+**Current state:** exactly **one** module-level test exists — `modules/local/expand_regions/tests/main.nf.test` for the `EXPAND_REGIONS` process (`modules/local/expand_regions/main.nf`). The other ~45 local modules in `modules/local/` have no module tests.
+
+**Test file convention** (follows the nf-core module test layout):
+
+```
+modules/local/<module_name>/
+├── main.nf
+├── meta.yml
+└── tests/
+    ├── main.nf.test        # nextflow_process block
+    └── main.nf.test.snap   # snapshots of process output channels
+```
+
+**Structure** (`modules/local/expand_regions/tests/main.nf.test`):
+
+```groovy
+nextflow_process {
+    name "Test EXPAND_REGIONS process"
+    script "modules/local/expand_regions/main.nf"   // path relative to repo root
+    process "EXPAND_REGIONS"                        // process name inside main.nf
+
+    test("Testing a run without autoexons and autodomains, it should fail") {
+        when {
+            params {
+                autoexons = false
+                autodomains = false
+                subgenic_bedfile = false
+            }
+            process {
+                """
+                // Groovy heredoc: set each input channel of the process
+                input[0] = tuple(
+                    [ id:'test', single_end:false ],
+                    file("${projectDir}/test_data/modules/consensus.exons_splice_sites.PPM1D.tsv")
+                )
+                input[1] = file("${projectDir}/test_data/modules/PPM1D_domains.bed4.bed")
+                input[2] = file("${projectDir}/test_data/modules/PPM1D_exons.bed4.bed")
+                input[3] = file("${projectDir}/test_data/dummy_file.tsv")
+                """
+            }
+        }
+
+        then {
+            assert !process.success          // negative test: process must fail
+        }
+    }
+
+    test("Should run with autoexons and autodomains") {
+        when {
+            params { autoexons = true; autodomains = true; subgenic_bedfile = false }
+            process { """ input[0] = ...; input[1] = ... """ }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()   // snapshot ALL output channels
+        }
+    }
+}
+```
+
+**Key differences from pipeline tests:**
+
+| Aspect | `nextflow_pipeline` (tests/deepcsa.nf.test) | `nextflow_process` (module tests) |
+|---|---|---|
+| Scope | whole `main.nf`, all workflows | one process from one module file |
+| Inputs | `params {}` (samplesheet, flags) | `process {}` heredoc assigning `input[N]` channels |
+| Assertions | `workflow.success/failed`, published dirs | `process.success`, `process.out` channels |
+| Snapshots | published output files | `snapshot(process.out).match()` — MD5 per channel element |
+| Fixtures | `tests/test_data/` + remote HTTP URLs | repo-root `test_data/` (e.g. `test_data/modules/`) |
+| Snapshot file | `tests/deepcsa.nf.test.snap` | `modules/local/<mod>/tests/main.nf.test.snap` |
+| Runtime | SLURM + Singularity, minutes–hours | still uses `tests/nextflow.config` (SLURM), but seconds–minutes |
+
+**Snapshot format** (`main.nf.test.snap`): JSON keyed by test name → `content` (per-channel MD5 hashes, e.g. `"panel_increased": [["...tsv:md5,6ad5da..."]]`) → `meta` (nf-test/Nextflow versions) → `timestamp`. The `meta` block records tool versions, so snapshots are regenerated when nf-test/Nextflow versions change.
+
+**⚠️ Discovery caveat:** `nf-test.config` sets `testsDir "tests"` and `ignore 'modules/nf-core/**/*', 'subworkflows/nf-core/**/*'`. This means:
+- Running bare `nf-test test` discovers only `tests/deepcsa.nf.test` — module tests under `modules/local/**/tests/` are **not** auto-discovered and must be run by explicit path.
+- The `ignore` patterns exclude nf-core modules/subworkflows from testing (they have their own CI upstream), but local modules are *not* ignored — they're just outside `testsDir`.
+- Module tests still load `tests/nextflow.config` (via `configFile` in `nf-test.config`), so they submit to SLURM and use Singularity like pipeline tests. They are not runnable on a laptop.
+
+**Stub-run pattern:** the expand_regions test file contains a commented-out `stub = true` test template (`config { stub = true }` inside `then {}`) — the standard nf-core pattern for testing module stub blocks without executing the real script. Revive it when `main.nf` gains a `stub:` block.
+
+**Adding a module test (checklist):**
+1. Create `modules/local/<module>/tests/main.nf.test` with a `nextflow_process` block; `script` path is relative to repo root, `process` is the process name in `main.nf`
+2. Add small fixtures under repo-root `test_data/modules/` (keep them tiny — they're committed)
+3. In `when { process { """...""" } }`, assign every declared input channel (`input[0]`, `input[1]`, ...) using `file("${projectDir}/...")`
+4. Assert `process.success` (or `!process.success` for expected-failure cases) and `snapshot(process.out).match()`
+5. Generate the snapshot: `nf-test test modules/local/<module>/tests/main.nf.test --update-snapshot` (from the cluster)
+6. Commit both `main.nf.test` and `main.nf.test.snap`
 
 ## Python Unit Tests (unittest)
 
@@ -309,6 +412,7 @@ then {
 
 - **No CI:** `.github/` does not exist — neither test layer runs automatically on push/PR
 - **~71 of 80 `bin/` scripts have no unit tests** — only 5 modules are covered
+- **~45 of 46 local Nextflow modules have no module tests** — only `expand_regions` has a `nextflow_process` test; module tests are also not auto-discovered by `nf-test.config` (`testsDir "tests"`)
 - **No pytest config / coverage gate** — coverage is unmeasured
 - **nf-test requires SLURM + Singularity** — cannot run the integration suite on a laptop or in plain CI without a cluster runner
 - **Commented-out test templates** at the bottom of `tests/deepcsa.nf.test` (MAF + precomputed depths integration test, trace-based process-count assertions) are ready-made patterns to revive when test assets improve
