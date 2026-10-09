@@ -157,6 +157,12 @@ def interval_midpoints(x):
     return np.sqrt(x[:-1] * x[1:])
 
 
+def interval_mid_values(y):
+    """Average of the two endpoint values of each consecutive interval."""
+    y = np.asarray(y, dtype=float)
+    return 0.5 * (y[:-1] + y[1:])
+
+
 def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites='genomic',
                              impact="protein_affecting",
                              pdf=None):
@@ -184,31 +190,51 @@ def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_ra
     plt.close(fig)
 
 
-def plot_slope_comparison(gene, x_empirical, slopes_empirical, slopes_theoretical,
+def plot_slope_comparison(gene, x_empirical, y_empirical, y_theoretical,
+                          slopes_empirical, slopes_theoretical,
                           sites='genomic', impact="protein_affecting", pdf=None):
     """
     Compare the rate of change (log-space slope) of the empirical curve against
     the theoretical neutral curve, computed over the same intervals.
+
+    Two pages are added to the PDF: the slope against depth (log-scale) and the
+    slope against the proportion of positions covered at the middle of each
+    interval.
     """
     click.echo(f"Plotting slope comparison for {gene}")
-    fig, ax1 = plt.subplots(figsize=(3, 2.5))
 
     midpoints = interval_midpoints(x_empirical)
+    proportions_empirical = interval_mid_values(y_empirical)
+    proportions_theoretical = interval_mid_values(y_theoretical)
 
-    ax1.scatter(midpoints, slopes_empirical, color='brown', s=25, label='empirical')
-    ax1.plot(midpoints, slopes_theoretical, color='grey', lw=2, alpha=0.5, label='neutral theoretical')
+    if sites == 'residue':
+        proportion_label = 'proportion of\nmutated residues'
+    else:
+        proportion_label = 'proportion of\nmutated nucleotides'
 
-    ax1.set_xscale('log')
-    ax1.set_xlabel('depth per residue')
-    ax1.set_ylabel('rate of change\n(Δ proportion / Δ log10 depth)')
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['right'].set_visible(False)
-    ax1.legend(loc='best', fontsize=6)
+    panels = [
+        ('depth per residue', midpoints, midpoints, True),
+        (proportion_label, proportions_empirical, proportions_theoretical, False),
+    ]
 
-    plt.title(f"{gene} ({impact}, {sites})")
-    if pdf is not None:
-        pdf.savefig(fig, bbox_inches='tight', dpi=300)
-    plt.close()
+    for xlabel, x_emp, x_theo, logx in panels:
+        fig, ax1 = plt.subplots(figsize=(3, 2.5))
+
+        ax1.scatter(x_emp, slopes_empirical, color='brown', s=25, label='empirical')
+        ax1.plot(x_theo, slopes_theoretical, color='grey', lw=2, alpha=0.5, label='neutral theoretical')
+
+        if logx:
+            ax1.set_xscale('log')
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel('rate of change\n(Δ proportion / Δ log10 depth)')
+        ax1.spines['top'].set_visible(False)
+        ax1.spines['right'].set_visible(False)
+        ax1.legend(loc='best', fontsize=6)
+
+        plt.title(f"{gene} ({impact}, {sites})")
+        if pdf is not None:
+            pdf.savefig(fig, bbox_inches='tight', dpi=300)
+        plt.close(fig)
 
 
 
@@ -230,7 +256,7 @@ def main_empirical(sample,
     mutability_raw = mutability_raw.rename(columns={sample: "MUTABILITY"})
 
     if genes_list is None:
-        genes_list = panel_df['GENE'].unique()
+        genes_list = sorted(panel_df['GENE'].unique())
 
     mutations_lite = mutations_dict[sites]
     mutations_lite = mutations_lite.assign(
@@ -294,12 +320,14 @@ def main_empirical(sample,
             y_theoretical_at_empirical = np.interp(np.log10(x_empirical), np.log10(x_theoretical), y_unique_neutral)
             midpoints, slopes_empirical = compute_interval_slopes(x_empirical, mean)
             _, slopes_theoretical = compute_interval_slopes(x_empirical, y_theoretical_at_empirical)
+            mid_proportions = interval_mid_values(mean)
 
             slope_records = [
                 {
                     'GENE': gene, 'SITES': sites, 'IMPACT': impact,
                     'DEPTH_LOW': x_empirical[i], 'DEPTH_HIGH': x_empirical[i + 1],
                     'DEPTH_MID': midpoints[i],
+                    'PROPORTION_COVERED': mid_proportions[i],
                     'SLOPE_EMPIRICAL': slopes_empirical[i],
                     'SLOPE_THEORETICAL': slopes_theoretical[i],
                     'SLOPE_RATIO': (slopes_empirical[i] / slopes_theoretical[i]
@@ -346,7 +374,8 @@ def main_empirical(sample,
             plt.close(fig)
 
             # slope comparison plot
-            plot_slope_comparison(gene, x_empirical, slopes_empirical, slopes_theoretical,
+            plot_slope_comparison(gene, x_empirical, mean, y_theoretical_at_empirical,
+                                  slopes_empirical, slopes_theoretical,
                                   sites=sites, impact=impact, pdf=slope_pdf)
 
         except Exception as e:

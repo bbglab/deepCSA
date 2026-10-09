@@ -349,7 +349,7 @@ For each group and each (resolution, impact) combination — genomic/residue × 
 - `{group}.curves/{sites}_{impact}_theoretical_empirical.pdf` — the same empirical curves overlaid with the theoretical neutral saturation curve.
 - `{group}.curves/{sites}_{impact}_slopes.pdf` — per-gene comparison of the rate of change (Δ proportion / Δ log10 depth) of the empirical curve against the theoretical neutral curve, computed over identical depth intervals (the theoretical curve is interpolated at the empirical depths in log-space).
 - `{group}_mutations_{sites}_rates.{impact}.tsv` — per-gene/per-site unique-mutation probabilities at each subsampling depth.
-- `{group}_slopes_{sites}.{impact}.tsv` — per-gene interval slopes (`SLOPE_EMPIRICAL`, `SLOPE_THEORETICAL`, `SLOPE_RATIO`) with the depth bounds of each interval, intended for cross-run comparison.
+- `{group}_slopes_{sites}.{impact}.tsv` — per-gene interval slopes (`SLOPE_EMPIRICAL`, `SLOPE_THEORETICAL`, `SLOPE_RATIO`) with the depth bounds of each interval and the proportion of positions covered at its midpoint (`PROPORTION_COVERED`), intended for cross-run comparison.
 
 ### Examples
 
