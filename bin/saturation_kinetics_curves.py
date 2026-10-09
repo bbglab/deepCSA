@@ -4,22 +4,19 @@
 
 import os
 
-import warnings
-# warnings.filterwarnings("ignore")
-
-# import tqdm
 import click
 
 import numpy as np
 import pandas as pd
 
+import matplotlib
+matplotlib.use("Agg")  # headless execution inside containers
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 import tensorflow as tf
 import tensorflow_probability as tfp
 tfd = tfp.distributions
-tfb = tfp.bijectors
 
 
 CONSEQUENCES_CATEGORIES = {
@@ -29,13 +26,6 @@ CONSEQUENCES_CATEGORIES = {
     'missense' : { 'missense' },
     'synonymous' : { 'synonymous' }
 }
-
-def prob_min_uniform_sample_below_cut(N, n, cut):
-    """
-    Probability that the minimum of a sampling of n elements from [N] is lower or equal than cut
-    """
-    arr = np.array([np.log(N - cut - k) - np.log(N - k) for k in range(n)])
-    return 1 - np.exp(np.sum(arr))
 
 def prob_min_uniform_sample_below_cut_vec(N, n, cut):
     """
@@ -124,11 +114,9 @@ def empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict,
     
     x, mean, err_low, err_high = [], [], [], []
     
-    unique_dict = {}
-    # for i, p in tqdm.tqdm(enumerate(subsampling_rates)):
     for i, p in enumerate(subsampling_rates):
         dist_bernoulli = tfd.Bernoulli(probs=df[f'UNIQUE_RATE_{i}'].values)
-        unique_mutations = np.sum(dist_bernoulli.sample(sample_shape=(100,)), axis=1)
+        unique_mutations = np.sum(dist_bernoulli.sample(sample_shape=(replicates,)), axis=1)
         y = list(unique_mutations / size)
         mean += [np.mean(y)]
         err_low += [np.percentile(y, 2.5)]
@@ -159,8 +147,14 @@ def compute_interval_slopes(x, y):
     slopes = np.full(d_y.shape, np.nan)
     valid = np.isfinite(d_log) & (d_log > 0) & np.isfinite(d_y)
     slopes[valid] = d_y[valid] / d_log[valid]
-    midpoints = np.sqrt(x[:-1] * x[1:])
+    midpoints = interval_midpoints(x)
     return midpoints, slopes
+
+
+def interval_midpoints(x):
+    """Geometric mean of the two depth bounds of each consecutive interval."""
+    x = np.asarray(x, dtype=float)
+    return np.sqrt(x[:-1] * x[1:])
 
 
 def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites='genomic',
@@ -187,8 +181,7 @@ def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_ra
     plt.title(f"{gene} ({impact}, {sites})")
     if pdf is not None:
         pdf.savefig(fig, bbox_inches='tight', dpi=300)
-    plt.show()
-    plt.close()
+    plt.close(fig)
 
 
 def plot_slope_comparison(gene, x_empirical, slopes_empirical, slopes_theoretical,
@@ -200,7 +193,7 @@ def plot_slope_comparison(gene, x_empirical, slopes_empirical, slopes_theoretica
     click.echo(f"Plotting slope comparison for {gene}")
     fig, ax1 = plt.subplots(figsize=(3, 2.5))
 
-    midpoints = np.sqrt(np.asarray(x_empirical[:-1]) * np.asarray(x_empirical[1:]))
+    midpoints = interval_midpoints(x_empirical)
 
     ax1.scatter(midpoints, slopes_empirical, color='brown', s=25, label='empirical')
     ax1.plot(midpoints, slopes_theoretical, color='grey', lw=2, alpha=0.5, label='neutral theoretical')
@@ -215,7 +208,6 @@ def plot_slope_comparison(gene, x_empirical, slopes_empirical, slopes_theoretica
     plt.title(f"{gene} ({impact}, {sites})")
     if pdf is not None:
         pdf.savefig(fig, bbox_inches='tight', dpi=300)
-    plt.show()
     plt.close()
 
 
@@ -241,11 +233,10 @@ def main_empirical(sample,
         genes_list = panel_df['GENE'].unique()
 
     mutations_lite = mutations_dict[sites]
-    mutations_lite['VAF'] = mutations_lite.apply(lambda r: r['ALT_DEPTH']/r['DEPTH'], axis=1)
+    mutations_lite = mutations_lite.assign(
+        VAF=mutations_lite['ALT_DEPTH'] / mutations_lite['DEPTH'])
 
     all_slope_records = []
-
-    # for gene in tqdm.tqdm(genes_list):
 
     for gene in genes_list:
         try:
@@ -265,7 +256,6 @@ def main_empirical(sample,
             mutability_gene = mutability_gene[mutability_gene["IMPACT"].isin(CONSEQUENCES_CATEGORIES[impact])]
 
             mutability_gene['RESIDUE'] = mutability_gene['AACHANGE'].apply(lambda s: s[:-1])
-            print(mutability_gene.head())
 
             if sites == 'residue':
                 mutability_gene = mutability_gene.groupby(['GENE', 'RESIDUE']).agg({'MUTRATE': 'sum', 'DEPTH': 'mean'}).reset_index()
@@ -282,7 +272,6 @@ def main_empirical(sample,
 
             # neutral rate
             mutability_gene['RATE_NEUTRAL'] = mutability_gene['MUTABILITY']
-            total_neutral_rate = mutability_gene['RATE_NEUTRAL'].sum()
 
             # compute saturation theoretical
             y_unique_neutral = []
@@ -303,14 +292,14 @@ def main_empirical(sample,
             # (theoretical curve interpolated at the empirical depths so both
             # slopes are computed over identical intervals)
             y_theoretical_at_empirical = np.interp(np.log10(x_empirical), np.log10(x_theoretical), y_unique_neutral)
-            _, slopes_empirical = compute_interval_slopes(x_empirical, mean)
+            midpoints, slopes_empirical = compute_interval_slopes(x_empirical, mean)
             _, slopes_theoretical = compute_interval_slopes(x_empirical, y_theoretical_at_empirical)
 
             slope_records = [
                 {
                     'GENE': gene, 'SITES': sites, 'IMPACT': impact,
                     'DEPTH_LOW': x_empirical[i], 'DEPTH_HIGH': x_empirical[i + 1],
-                    'DEPTH_MID': np.sqrt(x_empirical[i] * x_empirical[i + 1]),
+                    'DEPTH_MID': midpoints[i],
                     'SLOPE_EMPIRICAL': slopes_empirical[i],
                     'SLOPE_THEORETICAL': slopes_theoretical[i],
                     'SLOPE_RATIO': (slopes_empirical[i] / slopes_theoretical[i]
@@ -336,14 +325,12 @@ def main_empirical(sample,
             # theoretical
 
             ax1.plot(x_theoretical, y_unique_neutral, color='grey', lw=2, label='neutral theoretical', alpha=0.5)  # neutral
-            # ax1.tick_params(axis='y', labelcolor=color)
             if sites == 'residue':
                 ax1.set_ylabel('proportion of\nmutated residues')
             elif sites == 'genomic':
                 ax1.set_ylabel('proportion of\nmutated nucleotides')
             
             ax1.set_xlabel('depth per residue')
-            # ax1.vlines(5e5, 0, 1., linestyles='dashed', color='maroon', label='cohort', alpha=0.3)
 
             ax1.spines['top'].set_visible(False)
             ax1.spines['right'].set_visible(False)
@@ -351,14 +338,11 @@ def main_empirical(sample,
             ax1.set_ylim(0,1)
             ax1.set_xlim(x_theoretical[0], x_theoretical[-1])
 
-            # ax1.legend(loc=(1,0))
-
             plt.title(f"{gene} ({impact}, {sites})")
 
             if combined_pdf is not None:
                 combined_pdf.savefig(fig, bbox_inches='tight', dpi=300)
 
-            plt.show()
             plt.close(fig)
 
             # slope comparison plot
@@ -366,7 +350,7 @@ def main_empirical(sample,
                                   sites=sites, impact=impact, pdf=slope_pdf)
 
         except Exception as e:
-            print(f"Error occurred while processing {gene}: {e}")
+            click.echo(f"Error occurred while processing {gene}: {e}")
             continue
 
     # save the slope table for all genes
@@ -375,8 +359,9 @@ def main_empirical(sample,
         slope_table_file = f"{sample}_slopes_{sites}.{impact}.tsv"
         df_slopes.to_csv(slope_table_file, sep="\t", index=False)
         click.echo(f"Slope table saved to {slope_table_file}")
+        return df_slopes
 
-    return df_slopes if all_slope_records else None
+    return None
 
 def compute_mutation_rates(mutations, name, impact, subsampling_rates_list, residue=False):
     """Compute mutation rates for a given set of mutations."""
@@ -390,10 +375,7 @@ def compute_mutation_rates(mutations, name, impact, subsampling_rates_list, resi
     alt_depth = mutations_lite["ALT_DEPTH"].to_numpy()
 
     click.echo(f"Computing mutation rates for {name}")
-    print(mutations_lite.shape)
-    print(depth.shape, alt_depth.shape)
 
-    # for i, p in tqdm.tqdm(enumerate(subsampling_rates_list), total=len(subsampling_rates_list)):
     for i, p in enumerate(subsampling_rates_list):
         n = np.floor(p * depth).astype(int)
         mutations_lite[f"UNIQUE_RATE_{i}"] = prob_min_uniform_sample_below_cut_vec(depth, n, alt_depth)
@@ -484,7 +466,6 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
                             empirical_pdf=empirical_pdf,
                             combined_pdf=combined_pdf,
                             slope_pdf=slope_pdf,
-                            # genes_list = ["TP53","RBM10"]
                             )
 
         if 'genomic' in resolution:
@@ -501,7 +482,6 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
                             empirical_pdf=empirical_pdf,
                             combined_pdf=combined_pdf,
                             slope_pdf=slope_pdf,
-                            # genes_list = ["TP53","RBM10"]
                             )
 
     # no per-gene files are written anymore; PDFs are closed by their context managers
