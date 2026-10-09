@@ -15,7 +15,7 @@ Initial release of bbglab/deepCSA, created with the [nf-core](https://nf-co.re/)
   - `{group}.curves/{sites}_{impact}_theoretical_empirical.pdf` — the same empirical curves overlaid with the theoretical neutral saturation curve derived from the per-site relative mutability and the synonymous mutation rate.
   - `{group}.curves/{sites}_{impact}_slopes.pdf` — per-gene comparison of the rate of change (Δ proportion / Δ log10 depth) of the empirical curve against the theoretical neutral curve over identical depth intervals.
   - `{group}_mutations_{sites}_rates.{impact}.tsv` — per-gene/per-site unique-mutation probabilities at each subsampling depth.
-  - `{group}_slopes_{sites}.{impact}.tsv` — per-gene interval slopes (empirical, theoretical and their ratio) for cross-run comparison.
+  - `{group}_slopes_{sites}.{impact}.tsv` — per-gene interval slopes (empirical, theoretical and their ratio) together with the depth bounds and the proportion of covered positions at the middle of each interval, for cross-run comparison.
   - Requires both `--omega` and one of the mutability-driven analyses (`--oncodrivefml`, `--oncodriveclustl` or `--oncodrive3d`) to be enabled, since it consumes the omega preprocessing mutability table and the relative mutability per site.
 
 ### `Fixed`

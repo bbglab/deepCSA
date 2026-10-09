@@ -21,6 +21,7 @@ include { PLOT_MUTATIONS                as PLOTSOMATICMAF   }   from '../../../m
 include { PLOT_NEEDLES                  as PLOTNEEDLES      }   from '../../../modules/local/plot/needles/main'
 include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   }   from '../../../modules/local/downsample/mutations/main'
 include { COMPUTE_CONTAMINATION         as CONTAMINATION    }   from '../../../modules/local/contamination/main'
+include { GERMLINE_MUTATIONS            as GERMLINEMUTATIONS }  from '../../../modules/local/germlinemuts/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -160,6 +161,8 @@ workflow MUTATION_PREPROCESSING {
     }
     PLOTNEEDLES(muts_for_plotting, sequence_information_df)
 
+
+    GERMLINEMUTATIONS(clean_muts_all_samples, muts_all_samples)
 
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
