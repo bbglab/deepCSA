@@ -144,7 +144,7 @@ def empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict,
 
 def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites='genomic',
                              impact="protein_affecting",
-                             output_folder=None, empirical_pdf=None):
+                             pdf=None):
     click.echo("Plotting empirical discovery")
     x, mean, err_low, err_high = empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict, subsampling_rates, sites = sites)
     fig, ax1 = plt.subplots(figsize=(2,2))
@@ -164,10 +164,8 @@ def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_ra
     ax1.spines['right'].set_visible(False)
     ax1.set_ylim(0, max(err_high) * 1.1)
     plt.title(f"{gene} ({impact}, {sites})")
-    if output_folder:
-        plt.savefig(f"{output_folder}/{gene}_empirical_discovery.png", bbox_inches='tight', dpi=100)
-    if empirical_pdf is not None:
-        empirical_pdf.savefig(fig, bbox_inches='tight', dpi=300)
+    if pdf is not None:
+        pdf.savefig(fig, bbox_inches='tight', dpi=300)
     plt.show()
     plt.close()
 
@@ -180,7 +178,6 @@ def main_empirical(sample,
                    df_panel_dict,
                    omega_mutability_file, relative_mutability_file,
                    subsampling_rates,
-                   output_folder,
                    sites='genomic', impact = "protein_affecting", logscale=False, genes_list = None,
                    empirical_pdf=None, combined_pdf=None):
 
@@ -202,7 +199,7 @@ def main_empirical(sample,
     for gene in genes_list:
         try:
             plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites=sites,
-                                     impact=impact, output_folder=output_folder, empirical_pdf=empirical_pdf)
+                                     impact=impact, pdf=empirical_pdf)
 
             synonymous_mutation_rate = pd.read_csv(omega_mutability_file, sep='\t')
             synonymous_mutation_rate = synonymous_mutation_rate[synonymous_mutation_rate['GENE'] == gene]
@@ -285,13 +282,6 @@ def main_empirical(sample,
 
             plt.title(f"{gene} ({impact}, {sites})")
 
-            if logscale:
-                plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_logscale_{gene}.{impact}.pdf', bbox_inches='tight', dpi=300)
-                print(f"Plot saved to {output_folder}")
-            else:
-                plt.savefig(f'{output_folder}/proportion_mutated_sites_{sites}_{gene}.{impact}.pdf', bbox_inches='tight', dpi=300)
-                print(f"Plot saved to {output_folder}")
-
             if combined_pdf is not None:
                 combined_pdf.savefig(fig, bbox_inches='tight', dpi=300)
 
@@ -360,8 +350,6 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
 
     curves_folder = f'{group_name}.curves'
     os.makedirs(curves_folder, exist_ok=True)
-    empirical_pdf = PdfPages(f'{curves_folder}/empirical_discovery_all.pdf')
-    combined_pdf = PdfPages(f'{curves_folder}/theoretical_empirical_all.pdf')
 
     # df_panel represents the total number of mutable sites,
     # either genomic or residue sites
@@ -398,41 +386,35 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
 
         if 'residue' in resolution:
             click.echo("Plotting empirical discovery for residue sites")
-            output_folder = f'{group_name}.curves/residue/{impact}'
-            os.makedirs(output_folder, exist_ok=True)
-            main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
-                        omega_mutability_file, relative_mutability_file,
-                        subsampling_rates,
-                        output_folder,
-                        sites='residue',
-                        impact = impact,
-                        logscale=False,
-                        empirical_pdf=empirical_pdf,
-                        combined_pdf=combined_pdf,
-                        # genes_list = ["TP53","RBM10"]
-                        )
+            with PdfPages(f'{curves_folder}/residue_{impact}_empirical.pdf') as empirical_pdf, \
+                 PdfPages(f'{curves_folder}/residue_{impact}_theoretical_empirical.pdf') as combined_pdf:
+                main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
+                            omega_mutability_file, relative_mutability_file,
+                            subsampling_rates,
+                            sites='residue',
+                            impact = impact,
+                            logscale=False,
+                            empirical_pdf=empirical_pdf,
+                            combined_pdf=combined_pdf,
+                            # genes_list = ["TP53","RBM10"]
+                            )
 
         if 'genomic' in resolution:
             click.echo("Plotting empirical discovery for genomic sites")
-            output_folder = f'{group_name}.curves/genomic/{impact}'
-            os.makedirs(output_folder, exist_ok=True)
-            main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
-                        omega_mutability_file, relative_mutability_file,
-                        subsampling_rates,
-                        output_folder,
-                        sites='genomic',
-                        impact = impact,
-                        logscale=False,
-                        empirical_pdf=empirical_pdf,
-                        combined_pdf=combined_pdf,
-                        # genes_list = ["TP53","RBM10"]
-                        )
+            with PdfPages(f'{curves_folder}/genomic_{impact}_empirical.pdf') as empirical_pdf, \
+                 PdfPages(f'{curves_folder}/genomic_{impact}_theoretical_empirical.pdf') as combined_pdf:
+                main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
+                            omega_mutability_file, relative_mutability_file,
+                            subsampling_rates,
+                            sites='genomic',
+                            impact = impact,
+                            logscale=False,
+                            empirical_pdf=empirical_pdf,
+                            combined_pdf=combined_pdf,
+                            # genes_list = ["TP53","RBM10"]
+                            )
 
-    empirical_pdf.close()
-    combined_pdf.close()
-
-
-
+    # no per-gene files are written anymore; PDFs are closed by their context managers
 
 
 if __name__ == '__main__':

@@ -14,7 +14,6 @@ process COMPUTE_SATURATION_KINETICS {
     output:
     tuple val(meta), path("**.tsv"), emit: table
     tuple val(meta), path("**.pdf"), emit: plots
-    tuple val(meta), path("**.png"), emit: plots_png
     path "versions.yml"            , topic: versions
 
 
