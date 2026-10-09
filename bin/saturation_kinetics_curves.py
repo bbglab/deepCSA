@@ -142,6 +142,27 @@ def empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict,
     return x, mean, err_low, err_high
 
 
+def compute_interval_slopes(x, y):
+    """
+    Rate of change of y across each consecutive interval of x, in log-space:
+
+        slope_i = (y[i+1] - y[i]) / (log10(x[i+1]) - log10(x[i]))
+
+    Returns (midpoints, slopes), where midpoints is the geometric mean of the
+    two depth bounds of each interval. Intervals with non-increasing or
+    non-finite depths get a NaN slope.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    d_log = np.diff(np.log10(x))
+    d_y = np.diff(y)
+    slopes = np.full(d_y.shape, np.nan)
+    valid = np.isfinite(d_log) & (d_log > 0) & np.isfinite(d_y)
+    slopes[valid] = d_y[valid] / d_log[valid]
+    midpoints = np.sqrt(x[:-1] * x[1:])
+    return midpoints, slopes
+
+
 def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_rates, sites='genomic',
                              impact="protein_affecting",
                              pdf=None):
@@ -170,6 +191,34 @@ def plot_empirical_discovery(gene, mutations_dict, df_panel_dict, subsampling_ra
     plt.close()
 
 
+def plot_slope_comparison(gene, x_empirical, slopes_empirical, slopes_theoretical,
+                          sites='genomic', impact="protein_affecting", pdf=None):
+    """
+    Compare the rate of change (log-space slope) of the empirical curve against
+    the theoretical neutral curve, computed over the same intervals.
+    """
+    click.echo(f"Plotting slope comparison for {gene}")
+    fig, ax1 = plt.subplots(figsize=(3, 2.5))
+
+    midpoints = np.sqrt(np.asarray(x_empirical[:-1]) * np.asarray(x_empirical[1:]))
+
+    ax1.scatter(midpoints, slopes_empirical, color='brown', s=25, label='empirical')
+    ax1.plot(midpoints, slopes_theoretical, color='grey', lw=2, alpha=0.5, label='neutral theoretical')
+
+    ax1.set_xscale('log')
+    ax1.set_xlabel('depth per residue')
+    ax1.set_ylabel('rate of change\n(Δ proportion / Δ log10 depth)')
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.legend(loc='best', fontsize=6)
+
+    plt.title(f"{gene} ({impact}, {sites})")
+    if pdf is not None:
+        pdf.savefig(fig, bbox_inches='tight', dpi=300)
+    plt.show()
+    plt.close()
+
+
 
 # theoretical neutral vs empirical discovery curves
 # Create a PDF to save the plots
@@ -179,7 +228,7 @@ def main_empirical(sample,
                    omega_mutability_file, relative_mutability_file,
                    subsampling_rates,
                    sites='genomic', impact = "protein_affecting", logscale=False, genes_list = None,
-                   empirical_pdf=None, combined_pdf=None):
+                   empirical_pdf=None, combined_pdf=None, slope_pdf=None):
 
     # retrieve relative mutability
     mutability_raw = pd.read_csv(relative_mutability_file, sep='\t',
@@ -193,6 +242,8 @@ def main_empirical(sample,
 
     mutations_lite = mutations_dict[sites]
     mutations_lite['VAF'] = mutations_lite.apply(lambda r: r['ALT_DEPTH']/r['DEPTH'], axis=1)
+
+    all_slope_records = []
 
     # for gene in tqdm.tqdm(genes_list):
 
@@ -248,6 +299,28 @@ def main_empirical(sample,
             x_empirical, mean, err_low, err_high = empirical_discovery_index_curve(gene, mutations_dict, df_panel_dict,
                                                                                    subsampling_rates, sites=sites)
 
+            # rate of change per interval: empirical vs theoretical
+            # (theoretical curve interpolated at the empirical depths so both
+            # slopes are computed over identical intervals)
+            y_theoretical_at_empirical = np.interp(np.log10(x_empirical), np.log10(x_theoretical), y_unique_neutral)
+            _, slopes_empirical = compute_interval_slopes(x_empirical, mean)
+            _, slopes_theoretical = compute_interval_slopes(x_empirical, y_theoretical_at_empirical)
+
+            slope_records = [
+                {
+                    'GENE': gene, 'SITES': sites, 'IMPACT': impact,
+                    'DEPTH_LOW': x_empirical[i], 'DEPTH_HIGH': x_empirical[i + 1],
+                    'DEPTH_MID': np.sqrt(x_empirical[i] * x_empirical[i + 1]),
+                    'SLOPE_EMPIRICAL': slopes_empirical[i],
+                    'SLOPE_THEORETICAL': slopes_theoretical[i],
+                    'SLOPE_RATIO': (slopes_empirical[i] / slopes_theoretical[i]
+                                    if np.isfinite(slopes_theoretical[i]) and slopes_theoretical[i] != 0
+                                    else np.nan),
+                }
+                for i in range(len(x_empirical) - 1)
+            ]
+            all_slope_records.extend(slope_records)
+
             # plot
             fig, ax1 = plt.subplots(figsize=(2,2))
             ax1.set_xscale('log')
@@ -288,9 +361,22 @@ def main_empirical(sample,
             plt.show()
             plt.close(fig)
 
+            # slope comparison plot
+            plot_slope_comparison(gene, x_empirical, slopes_empirical, slopes_theoretical,
+                                  sites=sites, impact=impact, pdf=slope_pdf)
+
         except Exception as e:
             print(f"Error occurred while processing {gene}: {e}")
             continue
+
+    # save the slope table for all genes
+    if all_slope_records:
+        df_slopes = pd.DataFrame(all_slope_records)
+        slope_table_file = f"{sample}_slopes_{sites}.{impact}.tsv"
+        df_slopes.to_csv(slope_table_file, sep="\t", index=False)
+        click.echo(f"Slope table saved to {slope_table_file}")
+
+    return df_slopes if all_slope_records else None
 
 def compute_mutation_rates(mutations, name, impact, subsampling_rates_list, residue=False):
     """Compute mutation rates for a given set of mutations."""
@@ -387,7 +473,8 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
         if 'residue' in resolution:
             click.echo("Plotting empirical discovery for residue sites")
             with PdfPages(f'{curves_folder}/residue_{impact}_empirical.pdf') as empirical_pdf, \
-                 PdfPages(f'{curves_folder}/residue_{impact}_theoretical_empirical.pdf') as combined_pdf:
+                 PdfPages(f'{curves_folder}/residue_{impact}_theoretical_empirical.pdf') as combined_pdf, \
+                 PdfPages(f'{curves_folder}/residue_{impact}_slopes.pdf') as slope_pdf:
                 main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
                             omega_mutability_file, relative_mutability_file,
                             subsampling_rates,
@@ -396,13 +483,15 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
                             logscale=False,
                             empirical_pdf=empirical_pdf,
                             combined_pdf=combined_pdf,
+                            slope_pdf=slope_pdf,
                             # genes_list = ["TP53","RBM10"]
                             )
 
         if 'genomic' in resolution:
             click.echo("Plotting empirical discovery for genomic sites")
             with PdfPages(f'{curves_folder}/genomic_{impact}_empirical.pdf') as empirical_pdf, \
-                 PdfPages(f'{curves_folder}/genomic_{impact}_theoretical_empirical.pdf') as combined_pdf:
+                 PdfPages(f'{curves_folder}/genomic_{impact}_theoretical_empirical.pdf') as combined_pdf, \
+                 PdfPages(f'{curves_folder}/genomic_{impact}_slopes.pdf') as slope_pdf:
                 main_empirical(group_name, mutations_dict, df_panel, df_panel_dict,
                             omega_mutability_file, relative_mutability_file,
                             subsampling_rates,
@@ -411,6 +500,7 @@ def cli(somatic_mutations_file, vep_file, consensus_panel_file,
                             logscale=False,
                             empirical_pdf=empirical_pdf,
                             combined_pdf=combined_pdf,
+                            slope_pdf=slope_pdf,
                             # genes_list = ["TP53","RBM10"]
                             )
 
