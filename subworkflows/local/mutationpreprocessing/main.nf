@@ -21,6 +21,7 @@ include { PLOT_MUTATIONS                as PLOTSOMATICMAF   }   from '../../../m
 include { PLOT_NEEDLES                  as PLOTNEEDLES      }   from '../../../modules/local/plot/needles/main'
 include { DOWNSAMPLE_MUTATIONS          as DOWNSAMPLEMUTS   }   from '../../../modules/local/downsample/mutations/main'
 include { COMPUTE_CONTAMINATION         as CONTAMINATION    }   from '../../../modules/local/contamination/main'
+include { GERMLINE_MUTATIONS            as GERMLINEMUTATIONS }  from '../../../modules/local/germlinemuts/main'
 
 
 workflow MUTATION_PREPROCESSING {
@@ -126,6 +127,9 @@ workflow MUTATION_PREPROCESSING {
 
     // Clean mutations based on artifact filtering decisions
     CLEANMUTATIONS(all_clean_mutations)
+    channel.of([["id": "all_samples"]])
+    .join(CLEANMUTATIONS.out.mutations).first()
+    .set{clean_muts_all_samples}
 
     // Keep only somatic mutations
     SOMATICMUTATIONS(CLEANMUTATIONS.out.mutations)
@@ -158,6 +162,8 @@ workflow MUTATION_PREPROCESSING {
     PLOTNEEDLES(muts_for_plotting, sequence_information_df)
 
 
+    GERMLINEMUTATIONS(clean_muts_all_samples, muts_all_samples)
+
     // Compile a BED file with all the mutations that are discarded due to:
     // Other sample SNP
     //     All sites with this filter should be remove from the background.
@@ -180,5 +186,6 @@ workflow MUTATION_PREPROCESSING {
     mutations_all_samples   = muts_all_samples
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all
     bedfile_clean           = bedfile_updated
+    clean_maf_all_samples   = clean_muts_all_samples
 
 }

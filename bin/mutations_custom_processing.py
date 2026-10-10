@@ -14,8 +14,32 @@ def customize_annotations(mutation_summary_file, custom_regions_file,
                             simple = True
                             ):
     """
-    # TODO explain what this function does
+    Override the gene and consequence annotations of the mutations falling in
+    custom regions.
 
+    The custom regions file provides, per pyrimidine mutation ID (MUT_ID_pyr),
+    a replacement gene and consequence. Mutations matching a custom region get
+    their SYMBOL and Consequence (and the canonical_ counterparts) replaced by
+    the custom values; the VEP-derived positional annotations (Feature,
+    Protein_position, Amino_acids, ...) are blanked since they no longer apply,
+    and the derived consequence columns (Consequence_single,
+    Consequence_broader, Protein_affecting and their canonical_ versions) are
+    recomputed from the new consequence. Mutations not present in the custom
+    regions file keep their original annotation untouched. If the custom
+    regions file is empty or no mutation matches it, the input is copied to
+    the output unchanged.
+
+    Parameters
+    ----------
+    mutation_summary_file : str
+        Path to the annotated mutation summary table (TSV).
+    custom_regions_file : str
+        Path to the custom regions table (TSV) with at least the columns
+        MUT_ID_pyr, GENE and IMPACT.
+    customized_mutations_output : str
+        Path where the customized mutation summary is written (TSV).
+    simple : bool, optional
+        Unused; kept for backwards compatibility.
     """
     # simple = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID'          , 'GENE', 'IMPACT'                                              , 'CONTEXT_MUT', 'CONTEXT']
     # rich   = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'STRAND', 'GENE', 'IMPACT', 'Feature', 'Protein_position', 'Amino_acids', 'CONTEXT_MUT', 'CONTEXT']

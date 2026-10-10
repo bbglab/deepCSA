@@ -22,7 +22,6 @@ process ONCODRIVEFML {
     def args = task.ext.args ?: "" // "-s ${params.seed}"
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
-    // TODO: See if we can provide the entire json as an input parameter
     """
     cat > oncodrivefml_v2.mutability.conf << EOF
     [genome]

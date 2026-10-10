@@ -1,11 +1,12 @@
 
 
 
+
 include { PLOT_SELECTION_METRICS            as PLOTSELECTION                    } from '../../../modules/local/plot/selection_metrics/main'
-include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/saturation/main'
+include { PLOT_SATURATION                   as PLOTSATURATION                   } from '../../../modules/local/plot/saturation/gene_distribution/main'
 include { PLOT_SATURATION_PROPORTIONS       as PLOTSATURATIONPROPORTIONS        } from '../../../modules/local/plot/saturation/proportions/main'
 include { PLOT_INTERINDIVIDUAL_VARIABILITY  as PLOTINTERINDIVIDUALVARIABILITY   } from '../../../modules/local/plot/interindividual_variability/main'
-
+include { COMPUTE_SATURATION_KINETICS       as SATURATIONKINETICS               } from '../../../modules/local/saturation_kinetics/compute/main'
 
 
 workflow PLOTTING_SUMMARY {
@@ -26,6 +27,10 @@ workflow PLOTTING_SUMMARY {
     domain_df
     exons_depths_df
     groups_channel
+    depths_indv
+    relative_mutability
+    omega_mutabilities
+    all_clean_mutations
 
 
     main:
@@ -68,17 +73,21 @@ workflow PLOTTING_SUMMARY {
     .set{ groups_results_sites }
 
     PLOTSELECTION(groups_results, seqinfo_df)
-    // needles with consequence type
-    // plot selection at cohort/group level, all the different methods available
-    // plot selection per domain at cohort level
+
 
     PLOTSATURATION(groups_results_sites, all_samples_depth, panel, seqinfo_df, pdb_tool_df, domain_df, exons_depths_df)
 
 
     PLOTSATURATIONPROPORTIONS(groups_mutations, panel, full_panel_rich, expanded_panel)
-    // plot gene + site selection
-    // omega selection per domain in gene
-    // ? plot saturation kinetics curves
+
+
+    // plot saturation kinetics curves
+    groups_mutations
+    .join(depths_indv)
+    .join(omega_mutabilities)
+    .join(relative_mutability)
+    .set{ groups_mutations_depths_n_mutability }
+    SATURATIONKINETICS(groups_mutations_depths_n_mutability, full_panel_rich, expanded_panel)
 
 
     PLOTINTERINDIVIDUALVARIABILITY(samples, all_groups, panel,  all_mutdensities, all_mutdensities_adjusted)
