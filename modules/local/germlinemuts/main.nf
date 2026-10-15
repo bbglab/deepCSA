@@ -8,11 +8,11 @@ process GERMLINE_MUTATIONS {
     tuple val(meta2), path(somatic_maf)
 
     output:
-    tuple val(meta), path("*.germline.mutations.tsv"), emit: germline_mutations
-    tuple val(meta), path("*pathogenic_snps*.tsv")   , emit: pathogenic_snps
-    tuple val(meta), path("*.ancestry_inference.tsv"), emit: ancestry
-    tuple val(meta), path("*.pdf")                   , emit: plots
-    path "versions.yml"                              , topic: versions
+    tuple val(meta), path("*.germline.mutations.tsv"), optional: true   , emit: germline_mutations
+    tuple val(meta), path("*pathogenic_snps*.tsv")   , optional: true   , emit: pathogenic_snps
+    tuple val(meta), path("*.ancestry_inference.tsv"), optional: true   , emit: ancestry
+    tuple val(meta), path("*.pdf")                   , optional: true   , emit: plots
+    path "versions.yml"                                                 , topic: versions
 
     script:
     def prefix = task.ext.prefix ?: ""
