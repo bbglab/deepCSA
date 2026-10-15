@@ -68,7 +68,7 @@ def main(panel_file, autoexons, autodomains, custom, subgenic_regions_complement
 
             # If you reach ths point, ind_start is defined and valid
             # Search for END position starting from ind_start
-            search_end = chr_data.iloc[ind_start:,:]
+            search_end = chr_data.iloc[ind_start:]
             end_matches = np.where(search_end["POS"] == row["END"])[0]
 
             end_found = len(end_matches) > 0
@@ -117,7 +117,7 @@ def main(panel_file, autoexons, autodomains, custom, subgenic_regions_complement
             upd_end = ind_end
 
             # Extract subgenic data and modify gene names
-            subgenic_data = chr_data.iloc[upd_start: upd_end + 1, :].copy()
+            subgenic_data = chr_data.iloc[upd_start: upd_end + 1].copy()
             subgenic_data["GENE"] = region_name
 
             new_data = pd.concat((new_data, subgenic_data))

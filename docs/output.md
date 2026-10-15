@@ -119,6 +119,7 @@ The directory tree below shows the maximum diversity of outputs the pipeline can
 │   │       └── chimerax
 │   ├── gene_subgenic_selection
 │   ├── saturation_proportions
+│   ├── saturation_kinetics
 │   └── interindividual_variability
 ├── qc
 │   ├── trinucleotide_proportions
@@ -323,6 +324,7 @@ Optional (subgenic / domain expansion):
 
 - Plot basic statistics on numbers and distribution of mutations in genes.
 - Plot selection results (omega, OncodriveFML, Oncodrive3D, gene/subgenic saturation, interindividual variability).
+- Plot saturation kinetics curves: empirical discovery index curves (proportion of mutated sites vs sequencing depth, obtained by downsampling the observed mutations) compared against the theoretical neutral saturation curve expected from the per-site relative mutability and the synonymous mutation rate.
 
 Plotting scope can be controlled with `plot_only_allsamples`: when `true`, only cohort-level plots are generated; when `false`, plots are also produced for each defined subgroup.
 
@@ -334,7 +336,20 @@ Plotting scope can be controlled with `plot_only_allsamples`: when `true`, only 
 - `plots/selection/{omega,omegagloballoc,oncodrive3d}/`
 - `plots/gene_subgenic_selection/`
 - `plots/saturation_proportions/`
+- `plots/saturation_kinetics/`
 - `plots/interindividual_variability/`
+
+### Saturation kinetics curves
+
+The `COMPUTE_SATURATION_KINETICS` step quantifies how the fraction of uniquely mutated sites in a gene approaches saturation as sequencing depth increases, and whether the observed approach is faster or slower than expected under neutrality. It requires both `--omega` and one of the mutability-driven analyses (`--oncodrivefml`, `--oncodriveclustl` or `--oncodrive3d`), since it consumes the omega preprocessing mutability table and the relative mutability per site.
+
+For each group and each (resolution, impact) combination — genomic/residue × protein_affecting/nonsense/truncating/missense/synonymous — it produces:
+
+- `{group}.curves/{sites}_{impact}_empirical.pdf` — empirical discovery index curves for all genes: proportion of mutated sites as a function of depth, with 95% intervals across downsampling replicates.
+- `{group}.curves/{sites}_{impact}_theoretical_empirical.pdf` — the same empirical curves overlaid with the theoretical neutral saturation curve.
+- `{group}.curves/{sites}_{impact}_slopes.pdf` — per-gene comparison of the rate of change (Δ proportion / Δ log10 depth) of the empirical curve against the theoretical neutral curve, computed over identical depth intervals (the theoretical curve is interpolated at the empirical depths in log-space).
+- `{group}_mutations_{sites}_rates.{impact}.tsv` — per-gene/per-site unique-mutation probabilities at each subsampling depth.
+- `{group}_slopes_{sites}.{impact}.tsv` — per-gene interval slopes (`SLOPE_EMPIRICAL`, `SLOPE_THEORETICAL`, `SLOPE_RATIO`) with the depth bounds of each interval and the proportion of positions covered at its midpoint (`PROPORTION_COVERED`), intended for cross-run comparison.
 
 ### Examples
 
