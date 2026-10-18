@@ -60,6 +60,7 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
     consequences = list(broadimpact_grouping_dict_with_synonymous.keys())
 
     res = pd.DataFrame(index=genes, columns=consequences)
+    eff_len = pd.DataFrame(index=genes, columns=consequences)
 
     for csqn, csqn_set in broadimpact_grouping_dict_with_synonymous.items():
         
@@ -103,8 +104,9 @@ def mutation_density(sample_name, depths_file, somatic_mutations_file, mutabilit
                 n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set)) & (somatic_mutations_df['GENE'] == gene)].shape[0]
 
             res.loc[gene, csqn] = n / effective_length
+            eff_len.loc[gene, csqn] = effective_length
     
-    return res
+    return res, eff_len
 
 
 def logfoldchange_plot(sample_name, df, df_flat):
@@ -153,17 +155,28 @@ def main(sample_name, depths_file, somatic_mutations_file, mutability_file, pane
     click.echo(f"Running the mutability adjusted mutation density estimation...")
     
     # main calculations
-    res = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False)
-    res_flat = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=True)
-    logfoldchange_plot(sample_name, res, res_flat)
+    res, eff_len = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False)
+    res_flat, eff_len_flat = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=True)
+    
+    if res.shape[0] <= 300:
+        logfoldchange_plot(sample_name, res, res_flat)
 
     # save results
     res["SAMPLE_ID"] = sample_name
-    res_flat["SAMPLE_ID"] = sample_name
-    res.index.name = 'GENE'
     res_flat.index.name = 'GENE'
     res[['SAMPLE_ID'] + [col for col in res.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
+    
+    res_flat["SAMPLE_ID"] = sample_name
+    res.index.name = 'GENE'
     res_flat[['SAMPLE_ID'] + [col for col in res_flat.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
+    
+    eff_len["SAMPLE_ID"] = sample_name
+    eff_len.index.name = 'GENE'
+    eff_len[['SAMPLE_ID'] + [col for col in eff_len.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.effective_length.tsv', sep='\t')
+    
+    eff_len_flat["SAMPLE_ID"] = sample_name
+    eff_len_flat.index.name = 'GENE'
+    eff_len_flat[['SAMPLE_ID'] + [col for col in eff_len_flat.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.effective_length_flat.tsv', sep='\t')
 
 
 
