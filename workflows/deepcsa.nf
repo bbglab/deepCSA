@@ -335,9 +335,9 @@ workflow DEEPCSA {
 
             // all_adjusted_mutdensities = MUTDENSITYADJUSTED.out.all_adjusted_mutdensities
             // all_adjusted_mutdensities_flat = MUTDENSITYADJUSTED.out.all_adjusted_mutdensities_flat
-            // all_samples_adj_mutdensity = MUTDENSITYADJUSTED.out.all_samples_adj_mutdensity
+            // all_samples_adj_mutdensity = MUTDENSITYADJUSTED.out.all_samples_mutdensity
 
-            UPDSYNMUTDENSITY(MUTDENSITYADJUSTED.out.all_samples_adj_mutdensity)
+            UPDSYNMUTDENSITY(MUTDENSITYADJUSTED.out.all_samples_mutdensity)
             // UPDSYNMUTREADSDENSITY(all_samples_adj_mutdensity)
 
             all_adjusted_mutdensities_file = MUTDENSITYADJUSTED.out.all_adj_mutdens_file

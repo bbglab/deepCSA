@@ -163,11 +163,11 @@ def main(sample_name, depths_file, somatic_mutations_file, mutability_file, pane
 
     # save results
     res["SAMPLE_ID"] = sample_name
-    res_flat.index.name = 'GENE'
+    res.index.name = 'GENE'
     res[['SAMPLE_ID'] + [col for col in res.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
     
     res_flat["SAMPLE_ID"] = sample_name
-    res.index.name = 'GENE'
+    res_flat.index.name = 'GENE'
     res_flat[['SAMPLE_ID'] + [col for col in res_flat.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
     
     eff_len["SAMPLE_ID"] = sample_name

@@ -33,6 +33,10 @@ workflow MUTATION_DENSITY {
     .set{ all_adjusted_mutdensities }
     all_adjusted_mutdensities.collectFile(name: "all_adjusted_mutdensities.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true).first().set{ all_adjusted_mutdensities_file }
 
+    MUTDENSITYADJ.out.effective_length.map{ it -> it[1]}.flatten()
+    .set{ all_adjusted_mutdensities_effective }
+    all_adjusted_mutdensities_effective.collectFile(name: "all_adjusted_mutdensities.effective_length.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true)
+
     MUTDENSITYADJ.out.mutdensities_flat.map{ it -> it[1]}.flatten()
     .set{ all_adjusted_mutdensities_flat }
     all_adjusted_mutdensities_flat.collectFile(name: "all_adjusted_mutdensities_flat.tsv", storeDir:"${params.outdir}/mutdensity_adjusted", skip: 1, keepHeader: true)

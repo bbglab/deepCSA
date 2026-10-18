@@ -225,6 +225,7 @@ Optional (subgenic / domain expansion):
 
 - `mutdensity/individual_vals/`
 - `mutdensity_adjusted/individual_vals/` (trinucleotide-adjusted; see [Tools — Adjusted mutation density](tools.md#adjusted-mutation-density))
+<!-- TODO explain the effective length output -->
 - `mutational_profile/`
 - `processing_files/mutations_matrix/` (per-sample SBS matrix)
 
@@ -383,6 +384,16 @@ A `qc/` umbrella collects all the quality-control views; `qc/metrics_vs_depth/` 
 
 ![VAFmutationQC](images/VAF_qc.png)
 
+## Mutation filtering outputs
+<!-- TODO explain properly the createmaskmatrix output and the flagged positions one, because these two might need to be taken into account later-->
+
+### Outputs
+
+### Examples
+
+These are some examples of it:
+<!-- TODO add example on how these look like-->
+
 ## Additional outputs
 
 ### Key role
@@ -397,3 +408,4 @@ A `qc/` umbrella collects all the quality-control views; `qc/metrics_vs_depth/` 
 - `multiqc/`
 - `pipeline_info/`
 - `processing_files/input_vcfs/` (when `--input_maf` is used)
+
