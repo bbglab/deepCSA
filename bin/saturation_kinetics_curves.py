@@ -19,6 +19,9 @@ import tensorflow_probability as tfp
 tfd = tfp.distributions
 
 
+
+## FIXME right now, truncating and nonsense contain exactly the same sites as we are filtering
+# for the Amino_acids column to be different from "-" which is the case in most essential splice positions
 CONSEQUENCES_CATEGORIES = {
     'protein_affecting' : { 'nonsense', 'missense', 'essential_splice', 'protein_altering_variant'},
     'nonsense': {'nonsense'},
@@ -50,12 +53,12 @@ def prob_min_uniform_sample_below_cut_vec(N, n, cut):
 
 def load_mutations(somatic_mutations_file):
     somatic_mutations = pd.read_csv(somatic_mutations_file, sep='\t', low_memory=False)
-    mutations = somatic_mutations[
-        ~(somatic_mutations['FILTER'].str.contains("not_in_exons"))
-        & (somatic_mutations['TYPE'] == 'SNV')
-    ]
+    mutations = somatic_mutations[(somatic_mutations['TYPE'] == 'SNV')]
 
     mutations_lite = mutations[['CHROM', 'POS', 'REF', 'ALT', 'SAMPLE_ID', 'ALT_DEPTH', 'ALT_DEPTH_AM']]
+
+    # this means we are counting all the mutated reads as sort of independent mutation events
+    # ALT_DEPTH_AM is not used
     mutations_lite = mutations_lite.groupby(by=['CHROM', 'POS', 'REF', 'ALT']
                                             ).agg({'ALT_DEPTH_AM': 'sum', 'ALT_DEPTH': 'sum'}).reset_index()
     return mutations_lite
@@ -65,12 +68,12 @@ def get_aachange_format(r):
 
     if r['Protein_position'] == '-':
         return '-'
-    elif len(r['Amino_acids']) == 1:
+    elif len(r['Amino_acids']) == 1: # synonymous
         return r['Amino_acids'] + r['Protein_position'] + r['Amino_acids']
     else:
         return r['Amino_acids'].split('/')[0] + r['Protein_position'] + r['Amino_acids'].split('/')[1]
 
-        
+
 def collect_vep(vep_filename):
     vep_panel = pd.read_csv(vep_filename, sep='\t')
     dg = vep_panel[['CHROM', 'POS', 'REF', 'ALT', 'Protein_position', 'Amino_acids', 'GENE']].copy()
@@ -82,16 +85,25 @@ def collect_vep(vep_filename):
 def load_panel(consensus_panel_file, depths_file, samples_group, vep_annotations):
 
     df_panel = pd.read_csv(consensus_panel_file, sep='\t')
+
+    # remove subgenic regions
+    df_panel = df_panel[~df_panel['GENE'].str.contains("--")]
+
     df_depth = pd.read_csv(depths_file, sep='\t')
 
-    df_panel = pd.merge(df_panel, df_depth[['CHROM', 'POS', samples_group]], on=['CHROM', 'POS'], how='left')
+    df_panel = df_panel.merge(df_depth[['CHROM', 'POS', samples_group]], on=['CHROM', 'POS'], how='left')
     df_panel.rename(columns={samples_group: 'DEPTH'}, inplace=True)
-    df_panel = pd.merge(df_panel, vep_annotations[['CHROM', 'POS', 'REF', 'ALT', 'AACHANGE', 'GENE']], 
-                              left_on=['CHROM', 'POS', 'REF', 'ALT', 'GENE'], 
-                              right_on=['CHROM', 'POS', 'REF', 'ALT', 'GENE'],
+    df_panel = df_panel.merge(vep_annotations[['CHROM', 'POS', 'REF', 'ALT', 'AACHANGE', 'GENE']], 
+                              on=['CHROM', 'POS', 'REF', 'ALT', 'GENE'],
                               how='left')
     
+    # FIXME
+    # this results in a loss of several sites that could be essential_splice sites,
+    # since those are not necessaarily mapped to protein coordinates or residues
     df_panel = df_panel[df_panel['AACHANGE'] != '-']
+
+    # TODO
+    # Why should there be any NA?
     df_panel.dropna(inplace=True)
     df_panel['RESIDUE'] = df_panel['AACHANGE'].apply(lambda s: s[:-1])
     return df_panel
