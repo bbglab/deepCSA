@@ -219,8 +219,8 @@ def calc_vaf_distance_summary(
     target_col="VAF_AM",
     pseudo_prefix="VAF_PSEUDO",
     depth_col="DEPTH",
-    depth_quantile=0.1,
-    large_clone_quantile=0.95,
+    depth_quantile=0.2,
+    large_clone_quantile=0.9,
     output_pdf=None
     ):
     """
