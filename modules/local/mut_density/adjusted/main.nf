@@ -12,10 +12,12 @@ process MUTATION_DENSITY {
 
 
     output:
-    tuple val(meta), path("*.mutdensities.tsv")         , emit: mutdensities
-    tuple val(meta), path("*.mutdensities_flat.tsv")    , emit: mutdensities_flat   
-    path("*.logfoldchangeplot.pdf")                     , emit: mutdensities_plots
-    path "versions.yml" ,                            topic: versions
+    tuple val(meta), path("*.mutdensities.tsv")             , emit: mutdensities
+    tuple val(meta), path("*.mutdensities_flat.tsv")        , emit: mutdensities_flat
+    tuple val(meta), path("*.effective_length.tsv")         , emit: effective_length
+    tuple val(meta), path("*.effective_length_flat.tsv")    , emit: effective_length_flat
+    path("*.logfoldchangeplot.pdf")         , optional: true, emit: mutdensities_plots
+    path "versions.yml"                                     , topic: versions
 
     script:
     def sample_name = "${meta.id}"

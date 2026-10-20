@@ -56,10 +56,18 @@ def apply_correction_per_sample(mutations_table, priors_per_sample,
     mutation_tables_versions = []
 
     for sample_id in samples:
-        prior_vaf = priors_per_sample.loc[priors_per_sample['SAMPLE_ID'] == sample_id, 'prior'].values[0]
+        try:
+            prior_vaf = priors_per_sample.loc[priors_per_sample['SAMPLE_ID'] == sample_id, 'prior'].values[0]
+        except IndexError: # documentation: if no prior is found for the sample, use the mean prior across all samples as a fallback
+            click.echo(f"Warning: No prior found for sample {sample_id}. Using default prior.")
+            prior_vaf = priors_per_sample['prior'].median()
+
         sample_mutations = mutations_table[mutations_table['SAMPLE_ID'] == sample_id][
             ['SAMPLE_ID', 'MUT_ID', 'ALT_DEPTH', 'DEPTH', 'VAF', 'ALT_DEPTH_AM', 'DEPTH_AM', 'VAF_AM']
         ].copy()
+        if sample_mutations.empty:
+            click.echo(f"Warning: No mutations found for sample {sample_id}. Skipping.")
+            continue
         sample_mutations["avg_depth_mutations"] = sample_mutations["DEPTH"].mean()
         sample_mutations["avg_depth_am_mutations"] = sample_mutations["DEPTH_AM"].mean()
         for weight_prop in weights_list:
@@ -219,8 +227,8 @@ def calc_vaf_distance_summary(
     target_col="VAF_AM",
     pseudo_prefix="VAF_PSEUDO",
     depth_col="DEPTH",
-    depth_quantile=0.1,
-    large_clone_quantile=0.95,
+    depth_quantile=0.2,
+    large_clone_quantile=0.9,
     output_pdf=None
     ):
     """
