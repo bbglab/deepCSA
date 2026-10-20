@@ -91,6 +91,9 @@ def downsample_mutations(file, proportion, samplename):
 
         # Use Poisson distribution to decide if mutation remains
         df['ALT_DEPTH_AM'] = df.apply(uniform_sampling, suffix='_AM', axis=1)
+        
+        # the AM counts cannot be lower than the original counts, so we take the max of the two
+        df['ALT_DEPTH_AM'] = df[['ALT_DEPTH', 'ALT_DEPTH_AM']].max(axis=1)
 
         # Filter to retain only mutations
         filtered_df = df.drop(columns=['orig_DEPTH_AM'])
