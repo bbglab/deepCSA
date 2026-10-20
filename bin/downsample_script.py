@@ -7,10 +7,10 @@ import numpy as np
 
 
 # Perform uniform sampling without replacement from a pool of 0s and 1s
-def uniform_sampling(row):
-    ref_depth = row['orig_DEPTH'] - row['ALT_DEPTH']
-    pool = [1] * row['ALT_DEPTH'] + [0] * ref_depth
-    sampled = np.random.choice(pool, size=row['DEPTH'], replace=False)
+def uniform_sampling(row, suffix=''):
+    ref_depth = row[f'orig_DEPTH{suffix}'] - row[f'ALT_DEPTH{suffix}']
+    pool = [1] * row[f'ALT_DEPTH{suffix}'] + [0] * ref_depth
+    sampled = np.random.choice(pool, size=row[f'DEPTH{suffix}'], replace=False)
     return sampled.sum()
 
 @click.group()
@@ -71,12 +71,30 @@ def downsample_mutations(file, proportion, samplename):
 
     # Use Poisson distribution to decide if mutation remains
     #df['upd_ALT_DEPTH'] = df.apply(lambda row: np.random.poisson(row['VAF'], row['DEPTH']).sum(), axis=1)
-    df['ALT_DEPTH'] = df.apply(uniform_sampling, axis=1)
+    df['ALT_DEPTH'] = df.apply(uniform_sampling, suffix='', axis=1)
     df['retain_mutation'] = df['ALT_DEPTH'] > 0
 
     # Filter to retain only mutations
     filtered_df = df[df['retain_mutation']].drop(columns=['retain_mutation', 'orig_DEPTH'])
     filtered_df["VAF"] = df['ALT_DEPTH'] / df["DEPTH"]
+
+    if filtered_df.empty:
+        click.echo("No mutations retained after downsampling.")
+        return
+
+    if "DEPTH_AM" in filtered_df.columns and "ALT_DEPTH_AM" in filtered_df.columns:
+        # Downsample the all-molecules counts as well
+        df = filtered_df.rename(columns={"DEPTH_AM": "orig_DEPTH_AM"})
+
+        # Downsample the depth values by multiplying and rounding
+        df["DEPTH_AM"] = ((df["orig_DEPTH_AM"] * proportion) // 1).astype(int)
+
+        # Use Poisson distribution to decide if mutation remains
+        df['ALT_DEPTH_AM'] = df.apply(uniform_sampling, suffix='_AM', axis=1)
+
+        # Filter to retain only mutations
+        filtered_df = df.drop(columns=['orig_DEPTH_AM'])
+        filtered_df["VAF_AM"] = df['ALT_DEPTH_AM'] / df["DEPTH_AM"]
 
     # Output the downsampled data
     output_file = f"{samplename}.downsampled.mutations.tsv"
