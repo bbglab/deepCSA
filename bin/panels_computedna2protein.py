@@ -544,6 +544,45 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
     return dna_prot_df, exons_coord_df_final
 
 
+def get_exons_protein_intervals(exons_depth: pd.DataFrame) -> pd.DataFrame:
+    """
+    Derive the interval of protein coordinates covered by each exon of the panel transcripts,
+    using the same structure as the domains info file:
+        'Ens_Transcr_ID', 'Begin', 'End', 'NAME', 'GENE', 'DOMAIN_ID'
+
+    Parameters
+    ------------
+    exons_depth : pandas.DataFrame
+        DataFrame containing the per-position DNA to protein mapping with depth information,
+        as produced by `get_dna2prot_depth`. It must contain the 'GENE', 'PROT_POS',
+        'EXON_ID' and 'TRANSCRIPT_ID' columns.
+
+    Returns
+    ------------
+    pandas.DataFrame
+        A DataFrame with one row per exon containing coding positions, with the transcript ID,
+        the interval of protein coordinates it covers ('Begin', 'End', 1-based inclusive),
+        the gene-prefixed exon name ('NAME', as used in the panel files), the gene,
+        and the bare exon identifier ('DOMAIN_ID').
+    """
+    cds_positions = exons_depth[exons_depth["PROT_POS"].notna() & exons_depth["EXON_ID"].notna()]
+    exons_protein = cds_positions.groupby("EXON_ID").agg(Ens_Transcr_ID=("TRANSCRIPT_ID", "first"),
+                                                        GENE=("GENE", "first"),
+                                                        Begin=("PROT_POS", "min"),
+                                                        End=("PROT_POS", "max")
+                                                        ).reset_index()
+    exons_protein[["Begin", "End"]] = exons_protein[["Begin", "End"]].astype(int)
+
+    # Mirror the domains file structure: 'NAME' is the gene-prefixed exon id
+    # (as used in the panel files) and 'DOMAIN_ID' is the bare exon identifier.
+    exons_protein["NAME"] = exons_protein["EXON_ID"]
+    exons_protein["DOMAIN_ID"] = exons_protein["EXON_ID"].str.split("--").str[-1]
+    exons_protein = exons_protein[["Ens_Transcr_ID", "Begin", "End", "NAME", "GENE", "DOMAIN_ID"]]
+    exons_protein = exons_protein.sort_values(by = ["GENE", "Begin", "NAME"]).reset_index(drop = True)
+
+    return exons_protein
+
+
 # Plots
 # ----------------------------------------------------------
 def plot_coverage_per_gene(depths_df: pd.DataFrame) -> None:
@@ -672,6 +711,9 @@ def main(mutations_file, consensus_file, depths_file, ensembl_species, ensembl_g
 
     exons_coordinates_bed_like = exons_coord_id[['Chr', 'Start', 'End', 'ID']]
     exons_coordinates_bed_like.to_csv("panel_exons.bed4.bed", header = False, index = False, sep = '\t')
+
+    exons_protein_intervals = get_exons_protein_intervals(exons_depth)
+    exons_protein_intervals.to_csv("panel_exons_protein_intervals.tsv", header = True, index = False, sep = '\t')
 
     plot_coverage_per_gene(exons_depth)
 

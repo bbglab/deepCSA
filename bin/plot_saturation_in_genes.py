@@ -69,6 +69,7 @@ def create_regions_df(rich_panel_file, expanded_panel_file, consensus_panel_file
     consensus_enriched = consensus_df.merge(rich_panel_df, how = 'left')
     expanded_panel_df = pd.read_table(expanded_panel_file)
     
+    ## TODO: revise what is this sort based on
     return consensus_enriched.drop(['GENE'], axis = 1).merge(expanded_panel_df, how = 'inner')
 
 
