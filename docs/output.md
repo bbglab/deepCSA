@@ -419,9 +419,7 @@ A `qc/` umbrella collects all the quality-control views; `qc/metrics_vs_depth/` 
 
 **Note 1:** The BED files have no header and four columns: `CHROM`, `START`, `END`, `FILTERS` (comma-separated filters that flagged the position). Like the rest of the pipeline, they use 1-based coordinates with `START` = `END`, so they are not standard BED files. Files are empty when nothing was flagged.
 
-**Note 2:** Only the per-sample BED files are used downstream. The two `all_samples.*` files are provided for reference only.
-
-**Note 3:** The mask is applied when annotating the depths: the depth of each sample is multiplied by its mask value. A flagged position gets depth 0 only in the samples where it was flagged; positions not in the matrix keep their depth.
+**Note 2:** The mask is applied when annotating the depths: the depth of each sample is multiplied by its mask value. A flagged position gets depth 0 only in the samples where it was flagged; positions not in the matrix keep their depth.
 
 ### Examples
 
