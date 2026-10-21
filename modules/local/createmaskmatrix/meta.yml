@@ -26,8 +26,8 @@ output:
       type: file
       description: |
         Position × sample mask matrix (TSV, gzipped). Contains CHROM, POS columns
-        followed by one boolean column per sample indicating whether the position
-        should be masked (TRUE) or not (FALSE).
+        followed by one column per sample indicating whether the position
+        should be kept (1) or masked (0).
       pattern: "*.mask.tsv.gz"
   - versions:
       type: file
