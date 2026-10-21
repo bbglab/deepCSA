@@ -139,7 +139,8 @@ The directory tree below shows the maximum diversity of outputs the pipeline can
 │   ├── mutations_matrix
 │   │   └── per_sample             # SBS matrices for signature analysis
 │   ├── relativemutability
-│   ├── flagged_positions
+│   ├── flagged_positions          # BED files with the positions of discarded mutations
+│   ├── createmaskmatrix           # position × sample mask applied to the depths
 │   └── multiqc
 ├── regressions
 ├── pipeline_info
@@ -213,7 +214,8 @@ Optional (subgenic / domain expansion):
 - `mutations/germline_somatic/`
 - `mutations/clean_somatic/`
 - `mutations/clean_germline_somatic/`
-- `processing_files/sumannotation/`, `processing_files/flagged_positions/`
+- `processing_files/sumannotation/`
+- `processing_files/flagged_positions/`, `processing_files/createmaskmatrix/` (see [Mutation filtering outputs](#mutation-filtering-outputs))
 
 ## Basic analysis
 
@@ -400,14 +402,43 @@ A `qc/` umbrella collects all the quality-control views; `qc/metrics_vs_depth/` 
 ![VAFmutationQC](images/VAF_qc.png)
 
 ## Mutation filtering outputs
-<!-- TODO explain properly the createmaskmatrix output and the flagged positions one, because these two might need to be taken into account later-->
+
+### Key role
+
+- Keep track of the positions where mutations were discarded by `filter_criteria` and `filter_criteria_somatic`.
+- Mask these positions in the depths of the affected samples, so that depths and mutations stay consistent in all downstream analyses.
 
 ### Outputs
 
+- `processing_files/flagged_positions/`
+  - `<SAMPLE>.flagged-pos.bed` — positions where a mutation of that sample was discarded. These are the files used to build the mask matrix.
+  - `all_samples.all-flagged-pos.bed` — positions flagged in any sample by any filter.
+  - `all_samples.cohort-wide-flagged-pos.bed` — positions flagged only by cohort-level filters (`cohort_n_rich`, `cohort_n_rich_uni`, `repetitive_variant`, `gnomAD_SNP`, `nanoseq_snp`, `nanoseq_noise`, `not_covered`, `not_in_exons`), which apply to all samples equally.
+- `processing_files/createmaskmatrix/`
+  - `flagged_positions.mask.tsv.gz` — position × sample mask matrix built from the per-sample BED files: `CHROM`, `POS` and one column per sample, with `1` = keep and `0` = mask. Only positions flagged in at least one sample are included.
+
+**Note 1:** The BED files have no header and four columns: `CHROM`, `START`, `END`, `FILTERS` (comma-separated filters that flagged the position). Like the rest of the pipeline, they use 1-based coordinates with `START` = `END`, so they are not standard BED files. Files are empty when nothing was flagged.
+
+**Note 2:** Only the per-sample BED files are used downstream. The two `all_samples.*` files are provided for reference only.
+
+**Note 3:** The mask is applied when annotating the depths: the depth of each sample is multiplied by its mask value. A flagged position gets depth 0 only in the samples where it was flagged; positions not in the matrix keep their depth.
+
 ### Examples
 
-These are some examples of it:
-<!-- TODO add example on how these look like-->
+`<SAMPLE>.flagged-pos.bed`:
+
+```
+chr17	7675088	7675088	n_rich,NM20
+chr17	7676154	7676154	not_covered
+```
+
+`flagged_positions.mask.tsv.gz`:
+
+```
+CHROM	POS	sample1	sample2
+chr17	7675088	0	1
+chr17	7676154	1	0
+```
 
 ## Additional outputs
 
