@@ -10,7 +10,7 @@ process PLOT_MUTATION_SPECIFIC {
 
     output:
     path("**.pdf")      , optional : true, emit: plots
-    path("**.tsv")      , optional : true,  emit: tables
+    path("**.tsv")      , optional : true, emit: tables
     path "versions.yml" , topic: versions
 
     when:
@@ -21,7 +21,7 @@ process PLOT_MUTATION_SPECIFIC {
     prefix = "${meta.id}${prefix}"
     def max_n = task.ext.max_n ?: 10
     """
-    plot_qc_mutations_vaf.py \\
+    qc_mutations_vaf.py \\
                 --sample_name ${prefix} \\
                 --maf_file ${all_mutations} \\
                 --output_prefix ${prefix} \\
@@ -38,6 +38,7 @@ process PLOT_MUTATION_SPECIFIC {
     def prefix = task.ext.prefix ?: "all_samples"
     """
     touch ${prefix}.pdf
+    touch ${prefix}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for check_contamination.py
+Unit tests for qc_check_contamination.py
 
 Tests the functionality of checking contamination in genomic data.
 """
@@ -13,7 +13,7 @@ import numpy as np
 
 # Add the bin directory to the path to import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from check_contamination import compute_shared_variants
+from bin.qc_check_contamination import compute_shared_variants
 
 class TestComputeSharedVariants(unittest.TestCase):
     """Test suite for compute_shared_variants function."""

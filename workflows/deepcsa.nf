@@ -285,7 +285,7 @@ workflow DEEPCSA {
         all_samples_indv_annotated_depths = ANNOTATEDEPTHS.out.all_samples_depths
     }
 
-    if (params.plot_depths){
+    if (params.extended_depths_summary){
         PLOTDEPTHSALLCONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.all_consensus_bed, CREATEPANELS.out.all_consensus_panel)
         PLOTDEPTHSEXONS(ANNOTATEDEPTHS.out.all_samples_depths, CREATEPANELS.out.exons_bed, CREATEPANELS.out.exons_panel)
     }

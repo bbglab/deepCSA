@@ -30,7 +30,7 @@ process PLOT_DEPTHS {
     // Only pass the region file when a real one is provided (a placeholder is used when none is set)
     def region_arg = params.chromosome_region_file ? "--region_file ${region_file}" : ""
     """
-    plot_depths.py \\
+    depths_summary.py \\
                 --sample_name ${prefix} \\
                 --depth_file ${depth} \\
                 --panel_bed6_file ${panel} \\
@@ -50,6 +50,9 @@ process PLOT_DEPTHS {
     """
     touch ${prefix}.${panel_version}.depths_info.tsv
     touch ${prefix}.avgdepth_per_region.tsv
+    touch ${prefix}.avgdepth_per_gene.tsv
+    touch ${prefix}.avgdepth_per_sample.tsv
+    touch ${prefix}.depth_per_gene_per_sample.tsv
     touch ${prefix}.depth_per_region_per_sample.tsv
     touch ${prefix}.genes_per_region.tsv
 

@@ -25,7 +25,7 @@ process WG_SCALED_MUTATION_DENSITY {
     prefix = "${meta.id}${prefix}"
     def panel_version = task.ext.panel_version ?: "${meta2.id}"
     """
-    mutrate_genome_trinuc_corrected.R \\
+    mut_density_wgs.R \\
         --samplename ${meta.id} \\
         --mutations ${mutations_file} \\
         --depths ${depths_file} \\

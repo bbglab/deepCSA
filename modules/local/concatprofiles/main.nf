@@ -18,7 +18,7 @@ process CONCAT_PROFILES {
     script:
     """
     ls ${mutation_profiles_list} > mutation_profiles_list.txt
-    concat_profiles.py \\
+    mutprof_4concat_profiles.py \\
             --mutation-profiles-list mutation_profiles_list.txt \\
             --groups-json ${all_groups}
 

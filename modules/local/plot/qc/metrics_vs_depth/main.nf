@@ -23,7 +23,7 @@ process PLOT_METRICS_VS_DEPTH_QC {
     def omega_arg = task.ext.all_omegas_globalloc ? "--omegas-file ${all_omegas_globalloc}" : ""
     """
     mkdir ${group_name}.metrics_depth_qc
-    metrics_vs_depth_qc.py \\
+    qc_metrics_vs_depth.py \\
                     --mutdensity-file ${all_mutdensities} \\
                     --depth-gene-sample-file ${depth_gene_sample} \\
                     --group-definition ${groups_json} \\

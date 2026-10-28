@@ -19,7 +19,7 @@ process GERMLINE_MUTATIONS {
     prefix = "${meta.id}${prefix}"
     def gnomad_af_threshold = task.ext.gnomad_af_threshold ? "--gnomad-af-threshold ${task.ext.gnomad_af_threshold}" : ""
     """
-    summarize_germline_snps.py \\
+    germline_snps_summary.py \\
         --clean_maf ${clean_maf} \\
         --somatic_maf ${somatic_maf} \\
         --output_prefix ${prefix} \\

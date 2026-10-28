@@ -17,13 +17,13 @@ process PREPROCESS_DNDS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    dNdS_preprocess.py \\
+    dNdScv_preprocess.py \\
         --depths-path ${depths} \\
         --annot-panel-path ${annotated_panel} \\
         --output ${prefix}.depths_input.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
 
@@ -31,11 +31,11 @@ process PREPROCESS_DNDS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    touch ${prefix}.tsv
+    touch ${prefix}.depths_input.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        omega: 1.0
+        python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
     """
 }

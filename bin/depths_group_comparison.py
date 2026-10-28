@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
 '''
 Example usage:
-python depth_group_comparison.py \
+python depths_group_comparison.py \
        --table-filename metadata_table_all_with_bacterial_signatures.tsv \
         --depth-table all_samples.exons_cons.depth_per_gene_per_sample.tsv \
         --depth-sample all_samples.exons_cons.depth_per_sample.tsv \

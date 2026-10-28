@@ -27,7 +27,7 @@ process DNA_2_PROTEIN_MAPPING {
     def gff3_local = task.ext.gff3_provided ? "--gff3-file \"${gff3_file}\"" : ""
     """
     cut -f 1,2,6 ${panel_file} | uniq > ${meta2.id}.panel.unique.tsv
-    panels_computedna2protein.py \\
+    panel_computedna2protein.py \\
                 --mutations-file ${mutations_file} \\
                 --consensus-file ${meta2.id}.panel.unique.tsv \\
                 --depths-file ${all_samples_depths} \\
@@ -47,6 +47,11 @@ process DNA_2_PROTEIN_MAPPING {
     def prefix = task.ext.prefix ?: "all_samples"
     """
     touch ${prefix}.mapping.tsv
+    touch depths_per_position_exon_gene.tsv
+    touch panel_exons.bed4.bed
+    touch panel_exons_protein_intervals.tsv
+    touch ${prefix}.pdf
+    touch coverage.${prefix}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

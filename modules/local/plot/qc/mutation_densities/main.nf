@@ -20,7 +20,7 @@ process PLOT_MUTDENSITY_QC {
     script:
     """
     mkdir ${group_name}.plots
-    mutation_densities_qc.py \\
+    qc_mutation_densities.py \\
                     --input-file ${all_mutdensities} \\
                     --output-dir ${group_name}.plots \\
                     --panel ${panel_file} \\

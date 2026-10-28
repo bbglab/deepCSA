@@ -18,7 +18,7 @@ process FILTERBED {
     def positive_flag = task.ext.positive ? "--positive" : ""
 
     """
-    filterbed.py \\
+    filter_bed.py \\
         --sample-maf-file ${maf} \\
         --bedfile ${bedfile} \\
         --filtername ${filtername} \\

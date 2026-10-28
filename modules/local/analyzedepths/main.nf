@@ -6,8 +6,7 @@ process ANALYZE_DEPTHS_GROUPS {
 
     input:
     path(features_table)
-    // note that these input depth files are generated in another step and defined in /deepCSA/subworkflows/local/plotdepths/main.nf
-    tuple val(meta)     , path(average_depth_gene_sample) // needs to be added as a tupple since in PLOT_DEPTHS module (/modules/plot/depths_summary/main.nf) the output is set up as a tupple to"track" to which metadata belongs to this file
+    tuple val(meta)     , path(average_depth_gene_sample)
     tuple val(meta2)    , path(average_depth_sample) 
     
     output:
@@ -21,7 +20,7 @@ process ANALYZE_DEPTHS_GROUPS {
     def custom_genes = task.ext.features_genes ? "--custom-genes \"${task.ext.features_genes}\" " : ""
     def unique_identifier = task.ext.unique_identifier ? "--unique-identifier ${task.ext.unique_identifier}" : ""
     """
-    depth_group_comparison.py \\
+    depths_group_comparison.py \\
                 --table-filename ${features_table} \\
                 --depth-gene-sample ${average_depth_gene_sample} \\
                 --depth-sample ${average_depth_sample} \\
@@ -38,7 +37,7 @@ process ANALYZE_DEPTHS_GROUPS {
 
     stub:
     """
-    touch depth_group_comparison.plot_depth_per_group.pdf
+    touch depths_group_comparison.plot_depth_per_group.pdf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -115,7 +115,6 @@ It will provide:
 
 ```console
 params {
-    plot_depths   = true
     signatures    = true
     profileall    = true
 }

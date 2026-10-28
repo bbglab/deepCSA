@@ -64,7 +64,6 @@ nextflow_pipeline {
                 input_maf           = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/maf/all_samples.somatic.mutations.maf'
                 use_custom_depths   = true
                 custom_depths_table = 'https://raw.githubusercontent.com/bbglab/DeepClone_protocol/main/test_datasets/deepCSA/testdata/depth/all_samples_indv.depths.tsv.gz'
-                plot_depths = true
                 profileall  = true
                 signatures = false
             }

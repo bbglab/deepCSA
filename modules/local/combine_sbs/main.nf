@@ -16,7 +16,7 @@ process SIGNATURES_PROBABILITIES {
     script:
     """
     ls ${signature_probabilities} > signature_probs_files.txt
-    concat_sbs_probs.py --signature-probabilities signature_probs_files.txt
+    signatures_sbs2mutations.py --signature-probabilities signature_probs_files.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

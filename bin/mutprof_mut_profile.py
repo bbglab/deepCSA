@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 
 
+####
+## TODO this file contains the functions for both, creating the mutational matrix
+# and then computing the mutational profile.
+#
+# We could try to fix this or at least be consistent also with the trinucleotide counts
+####
+
+
 import sys
 import click
 import pandas as pd

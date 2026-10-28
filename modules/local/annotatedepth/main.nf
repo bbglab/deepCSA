@@ -19,7 +19,7 @@ process ANNOTATE_DEPTHS {
     script:
     """
     cut -f 1,2,9 ${panel_all} | uniq > ${panel_all}.contexts
-    merge_annotation_depths.py \\
+    depths_merge_annotation.py \\
         --annotation ${panel_all}.contexts \\
         --depths ${depths} \\
         --json_file ${json_groups} \\

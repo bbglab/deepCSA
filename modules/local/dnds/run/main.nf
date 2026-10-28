@@ -21,7 +21,7 @@ process RUN_DNDS {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    dNdS_run.R --inputfile ${mutations_table} \\
+    dNdScv_run.R --inputfile ${mutations_table} \\
                 --outputprefix ${prefix} \\
                 --samplename ${prefix} \\
                 --covariates ${covariates} \\

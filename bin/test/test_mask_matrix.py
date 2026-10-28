@@ -16,7 +16,7 @@ import polars as pl
 # Add the bin directory to the path to import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from create_mask_matrix import create_mask_matrix
-from merge_annotation_depths import apply_mask_matrix
+from bin.depths_merge_annotation import apply_mask_matrix
 
 
 class TestCreateMaskMatrix(unittest.TestCase):

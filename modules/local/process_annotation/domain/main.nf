@@ -17,7 +17,7 @@ process DOMAIN_ANNOTATION {
 
     script:
     """
-    panels_dna2domain.py \\
+    panel_dna2domain.py \\
                     --consensus-panel-rich ${panel_annotated} \\
                     --domains ${domains_file} \\
                     --output seq_panel.domains.bed4.bed;

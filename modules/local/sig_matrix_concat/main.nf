@@ -19,7 +19,7 @@ process MATRIX_CONCAT {
     def prefix = task.ext.prefix ?: "" // type of profile. e.g. all, nonproteinaffecting, ...
     """
     ls ${matrix_files} > all_files.txt;
-    concat_sigprot_matrices.py \\
+    signatures_concat_matrices.py \\
                 --filename_of_matrices all_files.txt \\
                 --samples_json_file ${json_samples} \\
                 --type_of_profile ${prefix}
@@ -36,6 +36,8 @@ process MATRIX_CONCAT {
     """
     touch samples_matrix.${prefix}.sp.tsv
     touch groups_matrix.${prefix}.sp.tsv
+    touch samples_matrix.${prefix}.sp.round.tsv
+    touch groups_matrix.${prefix}.sp.round.tsv
     touch samples_matrix.${prefix}.hdp.tsv
     touch groups_matrix.${prefix}.hdp.tsv
     touch samples_matrix.${prefix}.msa.csv

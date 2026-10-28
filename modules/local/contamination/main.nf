@@ -18,7 +18,7 @@ process COMPUTE_CONTAMINATION {
     script:
     def somatic_vaf_boundary = task.ext.germline_threshold ? "--somatic-vaf-boundary ${task.ext.germline_threshold}" : ""
     """
-    check_contamination.py \\
+    qc_check_contamination.py \\
                         --maf_path ${maf} \\
                         --somatic_maf ${somatic_maf} \\
                         ${somatic_vaf_boundary}

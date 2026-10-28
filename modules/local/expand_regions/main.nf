@@ -23,7 +23,7 @@ process EXPAND_REGIONS {
     def custom_regions = params.subgenic_bedfile ? "--custom ${custom}" : ""
     def subgenic_regions_complement = params.subgenic_regions_complement ? "--subgenic-regions-complement" : ""
     """
-    add_subgenicregions.py --panel_file ${panel} \\
+    panel_add_subgenicregions.py --panel_file ${panel} \\
                         ${autoexons} \\
                         ${autodomains} \\
                         ${custom_regions} \\

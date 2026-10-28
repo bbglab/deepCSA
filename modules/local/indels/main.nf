@@ -15,7 +15,7 @@ process INDELS_COMPARISON {
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
     """
-    indels_comparison.py \\
+    selection_indels_method.py \\
                 --sample ${prefix} \\
                 --filename ${mutations} ;
 

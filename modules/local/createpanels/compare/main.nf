@@ -1,5 +1,5 @@
 process COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS {
-    tag "1"
+    tag "panels"
 
     label 'deepcsa_core'
 
@@ -16,7 +16,7 @@ process COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS {
 
     script:
     """
-    compare_trinucleotide_proportions.py --wgs-trinucleotide ${wgs_trinucleotides}
+    qc_trinucleotide_proportions.py --wgs-trinucleotide ${wgs_trinucleotides}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -27,7 +27,7 @@ process COMPARE_TRINUCLEOTIDE_PROPORTIONS_PANELS {
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
     """
-    touch ${prefix}.mapping.tsv
+    touch ${prefix}.mapping.png
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

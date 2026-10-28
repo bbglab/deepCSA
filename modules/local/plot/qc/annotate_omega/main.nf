@@ -21,7 +21,7 @@ process ANNOTATE_OMEGA_QC {
     """
     ls ${compiled_flagged_cases} > compiled_flagging_cases.txt;
 
-    annotate_omega_failing.py \\
+    qc_flagging_omega.py \\
                     --omegas-file ${all_omegas} \\
                     --compiled-flagged-files compiled_flagging_cases.txt \\
                     --output omega.flagged_annotated.tsv
@@ -35,7 +35,7 @@ process ANNOTATE_OMEGA_QC {
     stub:
     def prefix = task.ext.prefix ?: "all_samples"
     """
-    touch ${prefix}.pdf
+    touch ${prefix}.png
     touch omega.flagged_annotated.tsv
 
     cat <<-END_VERSIONS > versions.yml

@@ -311,9 +311,10 @@
                     "description": "Do you want to run mutationdensity?",
                     "fa_icon": "fas fa-book"
                 },
-                "plot_depths": {
+                "extended_depths_summary": {
                     "type": "boolean",
-                    "description": "Do you want to plot the depths within each gene?",
+                    "description": "Do you want to generate an extended summary of the depths within each gene?",
+                    "help_text": "Turning on this option increases substantially the runtime of the depths summary step and is not recommended by default.",
                     "fa_icon": "fas fa-book"
                 },
                 "chromosome_region_file": {

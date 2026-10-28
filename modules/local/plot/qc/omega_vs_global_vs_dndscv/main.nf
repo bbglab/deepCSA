@@ -19,7 +19,7 @@ process PLOT_OMEGA_VS_GLOBAL_VS_DNDSCV {
     script:
     def dndscv_flag = params.dnds ? "--input-dndscv-file ${dndscv_cv}" : ""
     """
-    omega_vs_global_vs_dndscv_qc.py \\
+    qc_omega_vs_globalloc_vs_dndscv.py \\
                     --input-omega-file ${all_omegas} \\
                     --input-omegaglobal-file ${all_omegas_globalloc} \\
                     ${dndscv_flag} \\

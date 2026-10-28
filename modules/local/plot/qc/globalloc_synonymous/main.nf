@@ -26,7 +26,7 @@ process PLOT_OMEGASYN_QC {
     mkdir ${name}.plots
     ls -1 ${all_obs_syn_muts} > observed.txt
     ls -1 ${all_syn_muts_gloc} > estimated.txt
-    omega_syn_qc.py \\
+    qc_omega_syn.py \\
                     --observed-syn observed.txt \\
                     --estimated-syn estimated.txt \\
                     --output-prefix ${name}.plots/${name}
