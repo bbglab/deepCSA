@@ -20,7 +20,7 @@ process PLOT_SELECTION_METRICS {
     prefix = "${meta.id}${prefix}"
     """
     mkdir -p ${prefix}.plots/side_figures
-    plot_selectionsideplots.py \\
+    plot_selection_summary.py \\
                     --sample_name ${prefix} \\
                     --outdir ${prefix}.plots
 

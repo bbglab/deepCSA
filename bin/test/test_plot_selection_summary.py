@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for plot_selectionsideplots.py
+Unit tests for plot_selection_summary.py
 
 Tests the functionality of dynamic track selection and graceful handling of missing data files.
 """
@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 class TestPlotSelectionSidePlots(unittest.TestCase):
-    """Test suite for plot_selectionsideplots.py"""
+    """Test suite for plot_selection_summary.py"""
 
     def setUp(self):
         """Set up test fixtures"""
@@ -78,7 +78,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
 
     def test_file_existence_check(self):
         """Test that the script checks for file existence"""
-        from plot_selectionsideplots import get_all_data
+        from bin.plot_selection_summary import get_all_data
         
         sample_name = "test_sample"
         
@@ -90,7 +90,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
 
     def test_with_only_omega_data(self):
         """Test plotting with only Omega data available"""
-        from plot_selectionsideplots import get_all_data
+        from bin.plot_selection_summary import get_all_data
         
         sample_name = "test_sample"
         self.create_mock_maf_file(sample_name)
@@ -107,7 +107,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
     @patch('plot_selectionsideplots.sns.barplot')
     def test_dynamic_track_selection(self, mock_barplot, mock_subplots):
         """Test that tracks are dynamically selected based on available data"""
-        from plot_selectionsideplots import get_all_data
+        from bin.plot_selection_summary import get_all_data
         
         # Mock matplotlib to avoid actual plotting
         mock_fig = MagicMock()
@@ -128,7 +128,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
 
     def test_all_files_available(self):
         """Test with all data files available (backward compatibility)"""
-        from plot_selectionsideplots import get_all_data
+        from bin.plot_selection_summary import get_all_data
         
         sample_name = "test_sample"
         self.create_mock_maf_file(sample_name)
@@ -146,7 +146,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
 
     def test_generate_side_figures_no_maf(self):
         """Test that generate_all_side_figures returns early when MAF file is missing"""
-        from plot_selectionsideplots import generate_all_side_figures
+        from bin.plot_selection_summary import generate_all_side_figures
         
         sample_name = "test_sample"
         
@@ -158,7 +158,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
 
     def test_generate_side_figures_with_partial_data(self):
         """Test generate_all_side_figures with partial data"""
-        from plot_selectionsideplots import generate_all_side_figures
+        from bin.plot_selection_summary import generate_all_side_figures
         
         sample_name = "test_sample"
         self.create_mock_maf_file(sample_name)
@@ -175,7 +175,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
     @patch('plot_selectionsideplots.plot_all_positive_selection')
     def test_plot_all_positive_selection_called_with_available_tracks(self, mock_plot):
         """Test that plot_all_positive_selection is called with only available tracks"""
-        from plot_selectionsideplots import get_all_data
+        from bin.plot_selection_summary import get_all_data
         
         # Mock the plotting function to avoid actual plot generation
         mock_plot.return_value = None
@@ -193,7 +193,7 @@ class TestPlotSelectionSidePlots(unittest.TestCase):
 
     def test_empty_gene_list_handling(self):
         """Test handling of empty gene lists"""
-        from plot_selectionsideplots import plot_all_positive_selection
+        from bin.plot_selection_summary import plot_all_positive_selection
         
         # Test with empty gene order
         result = plot_all_positive_selection(
