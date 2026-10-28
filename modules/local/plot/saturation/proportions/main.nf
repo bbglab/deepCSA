@@ -12,7 +12,8 @@ process PLOT_SATURATION_PROPORTIONS {
     tuple val(meta3), path(expanded_panel, stageAs: "expanded_panel.tsv")
 
     output:
-    tuple val(meta), path("**.pdf"), optional : true    ,  emit: plots
+    tuple val(meta), path("**.pdf")   , optional : true ,  emit: plots
+    tuple val(meta), path("**.tsv.gz"), optional : true ,  emit: saturation_tables
     path "versions.yml"                                 , topic: versions
 
 
@@ -21,7 +22,7 @@ process PLOT_SATURATION_PROPORTIONS {
     prefix = "${meta.id}${prefix}"
     """
     mkdir ${prefix}.plots
-    plot_saturation_in_genes.py \\
+    plot_gene_saturation_percentage.py \\
                     --rich-panel ${captured_panel_rich} \\
                     --expanded-panel ${expanded_panel} \\
                     --consensus-panel ${panel_file} \\

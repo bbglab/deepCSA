@@ -13,33 +13,10 @@ from matplotlib.lines import Line2D
 import click
 import os
 
+from utils_plot import metrics_colors_dictionary
+
 
 pd.set_option('display.max_columns', None)
-
-
-
-metrics_colors_dictionary = {"ofml"        : "viridis_r",
-                                "ofml_score"  : "#6A33E0",
-                                "omega_trunc" : "#FA5E32",
-                                "omega_synon" : "#89E4A2",
-                                "omega_miss"  : "#FABE4A",
-                                "o3d_score"   : "#6DBDCC",
-                                "o3d_cluster" : "skyblue",
-                                "o3d_prob"    : "darkgray",
-                                "frameshift"  : "#E4ACF4",
-                                "inframe"     : "C5",
-                                "hv_lines"    : "lightgray", # horizontal and vertical lines,
-                                "hv_lines_needle" : "gray",
-                                "needle_obs"  : "#003366",
-                                "omega_miss_tert" : "#f5840c",
-                                "omega_synon_tert": "#378c12",
-                                "nonsense" : "#FA5E32",
-                                "synonymous" : "#89E4A2",
-                                "missense"  : "#FABE4A",
-                                "indel"       : "#ECC4F7",
-                                "splicing"    : "#A1C5DF",
-                                }
-
 
 # Define consistent order and base colors
 consequence_order = ['nonsense', 'missense']
@@ -69,17 +46,17 @@ def create_regions_df(rich_panel_file, expanded_panel_file, consensus_panel_file
     consensus_enriched = consensus_df.merge(rich_panel_df, how = 'left')
     expanded_panel_df = pd.read_table(expanded_panel_file)
     
-    ## TODO: revise what is this sort based on
+    ## TODO: revise what is this merge based on
     return consensus_enriched.drop(['GENE'], axis = 1).merge(expanded_panel_df, how = 'inner')
 
 
 
 
 # Grouping logic as a function
-def group_mutations(df, mode="aminoacid", count_mutations=True):
+def group_mutations(df, mode="aminoacid_change", count_mutations=True):
     """
     Group the input DataFrame by the specified mode.
-    mode: 'aminoacid', 'protein_position', 'nucleotide_change', 'nucleotide_position'
+    mode: 'protein_position', 'aminoacid_change', 'nucleotide_change'
     count_mutations: if True, count mutations (for mutation tables); if False, just group (for panel tables)
 
     define these as different options within a function:
@@ -87,14 +64,12 @@ def group_mutations(df, mode="aminoacid", count_mutations=True):
     so that it is also grouped by in the same way, there is no need for counting in there
 
     """
-    if mode == "aminoacid":
+    if mode == "aminoacid_change":
         group_cols = ["GENE", "IMPACT", "Protein_position", "Amino_acids"]
     elif mode == "protein_position":
         group_cols = ["GENE", "IMPACT", "Protein_position"]
     elif mode == "nucleotide_change":
         group_cols = ["GENE", "IMPACT", "CHROM", "POS", "REF", "ALT"]
-    elif mode == "nucleotide_position":
-        group_cols = ["GENE", "IMPACT", "CHROM", "POS"]
     else:
         raise ValueError(f"Unknown grouping mode: {mode}")
 
@@ -196,8 +171,8 @@ def plot_genes(df, mode=None):
         data=df_genes,
         x="GENE_NAME",
         y="PROPORTION_MUTATED",
-        row="IMPACT",
-        hue  ='IMPACT',
+        row ="IMPACT",
+        hue ='IMPACT',
         kind="bar",
         order=sorted(df_genes["GENE_NAME"].unique()),
         palette=base_colors,
@@ -211,7 +186,7 @@ def plot_genes(df, mode=None):
     g.set(ylim=(0, 1))
 
     g._legend.remove()
-    g.fig.text(0, 0.5, "Proportion mutated", va='center', rotation='vertical')
+    g.fig.text(0, 0.5, f"Proportion mutated\n{mode}", va='center', rotation='vertical')
 
     for ax in g.axes.flatten():
         ax.tick_params(axis='x', rotation=45)
@@ -252,7 +227,7 @@ def plot_domains(df, genes = None, mode=None):
             g.set_titles("")
             g.set(ylim=(0, 1))
             g._legend.remove()
-            g.fig.text(0, 0.5, "Proportion mutated", va='center', rotation='vertical')
+            g.fig.text(0, 0.5, f"Proportion mutated\n{mode}", va='center', rotation='vertical')
             for ax in g.axes.flatten():
                 ax.tick_params(axis='x', rotation=45)
             pdf.savefig(g.fig, bbox_inches='tight', dpi=300)
@@ -288,7 +263,7 @@ def plot_exons(df, genes = None, mode=None):
             g.set_titles("")
             g.set(ylim=(0, 1))
             g._legend.remove()
-            g.fig.text(0.05, 0.5, "Proportion mutated", va='center', rotation='vertical')
+            g.fig.text(0.05, 0.5, f"Proportion mutated\n{mode}", va='center', rotation='vertical')
             for ax in g.axes.flatten():
                 ax.tick_params(axis='x', rotation=0)
             pdf.savefig(g.fig, bbox_inches='tight', dpi=300)
@@ -349,7 +324,6 @@ def plot_exons_by_freq(df, genes = None, mode=None):
     if genes is None:
         genes = df["GENE_NAME"].unique()
     freq_bin_order = ['3+', '2', '1']
-    seg_type = 'exon'
     suffix = f"_{mode}" if mode else ""
     pdf_path = f"{plots_dir}/saturation_exons_byfreq_all{suffix}.pdf"
     with PdfPages(pdf_path) as pdf:
@@ -414,7 +388,7 @@ def plot_all_saturation_tables_by_freq(df, mode=None):
 
 
 def generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean,
-                                    grouping_modes=["aminoacid", "protein_position", "nucleotide_change", "nucleotide_position"]):
+                                    grouping_modes=["aminoacid", "protein_position", "nucleotide_change"]):
     """
     Generate plots for each grouping mode. Accepts pre-loaded consensus regions table and cleaned somatic maf.
     """
@@ -430,7 +404,10 @@ def generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean
 
         # Compute proportions
         proportion_results = compute_proportion_per_consequence_type(consensus_with_mutations_info)
+        proportion_results.to_csv(f"{plots_dir}/proportion_of_mutated.{mode}.tsv.gz", sep = '\t', index = False)
+
         proportion_results_by_freq = compute_proportion_per_consequence_type_by_frequency(consensus_with_mutations_info)
+        proportion_results_by_freq.to_csv(f"{plots_dir}/proportion_of_mutated.{mode}.by_freq.tsv.gz", sep = '\t', index = False)
 
         # Plot original (non-frequency) plots
         plot_all_saturation_tables(proportion_results, mode)
@@ -446,7 +423,7 @@ def generate_all_saturation_plots(consensus_enriched_expanded, somatic_maf_clean
 @click.option('--maf', default='all_samples.somatic.mutations.tsv', help='Somatic MAF TSV')
 @click.option('--plots-dir', default='plot', help='Output directory for plots')
 @click.option('--genes', default='', help='Comma-separated list of genes to include (optional)')
-@click.option('--grouping-modes', default='aminoacid,protein_position,nucleotide_change,nucleotide_position', help='Comma-separated grouping modes to run')
+@click.option('--grouping-modes', default='protein_position,aminoacid_change,nucleotide_change', help='Comma-separated grouping modes to run')
 def cli(rich_panel, expanded_panel, consensus_panel, maf, plots_dir, genes, grouping_modes):
     """CLI entry point to generate saturation plots."""
     os.makedirs(plots_dir, exist_ok=True)
@@ -458,6 +435,10 @@ def cli(rich_panel, expanded_panel, consensus_panel, maf, plots_dir, genes, grou
     consensus_enriched_expanded = create_regions_df(rich_panel, expanded_panel, consensus_panel, genes_list=genes_list)
 
     somatic_maf = pd.read_table(maf)
+    
+    # TODO: revise that we are OK with this filtering of the mutations for this computation,
+    # it should match the same operations in the consensus panel
+    # and we should be aware of it when reporting it
     somatic_maf_clean = somatic_maf[(somatic_maf["TYPE"] == 'SNV')
                                     & (~somatic_maf["FILTER.not_in_exons"]) 
                                     & (somatic_maf['canonical_Protein_position'] != '-')].reset_index(drop=True)
