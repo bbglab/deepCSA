@@ -29,7 +29,7 @@ def filter_mutdensities(mutdensity_df, region, sample_name, mode = 'per_gene', s
         filt_mutden_df = mutdensity_df[
                          (mutdensity_df['SAMPLE_ID'] == sample_name)
                        & (mutdensity_df['MUTTYPES'] == 'SNV') 
-                       & (mutdensity_df['REGIONS'] == region)
+                       & (mutdensity_df['REGIONS'].isin(region))
                        & (mutdensity_df['GENE'] != 'ALL_GENES')
         ].reset_index(drop=True)
     
@@ -37,13 +37,19 @@ def filter_mutdensities(mutdensity_df, region, sample_name, mode = 'per_gene', s
         filt_mutden_df = mutdensity_df[
                          (mutdensity_df['GENE'] == 'ALL_GENES')
                        & (mutdensity_df['MUTTYPES'] == 'SNV')
-                       & (mutdensity_df['REGIONS'] == region)
+                       & (mutdensity_df['REGIONS'].isin(region))
                        & (mutdensity_df['SAMPLE_ID'].isin(samples))
         ].reset_index(drop=True)
     
     elif mode == 'per_sample' and samples is None :
         raise ValueError("For mode 'per_sample', a list of samples must be provided.")
-    
+
+    elif mode == 'per_gene_n_sample':
+        filt_mutden_df = mutdensity_df[
+                               (mutdensity_df['MUTTYPES'] == 'SNV')
+                               & (mutdensity_df['REGIONS'].isin(region))
+                               & (mutdensity_df['SAMPLE_ID'].isin(samples))
+                ].reset_index(drop=True)
     else : 
         raise ValueError(
             f"Invalid mode: {mode} - Expected value: 'per_sample' or 'per_gene'"
@@ -148,6 +154,52 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
     
     return(fig)
 
+def plot_comparison_npa_syn(mutdensities_orig, min_points = 3, filename = None):
+
+    mutdensities_merged = mutdensities_orig[mutdensities_orig["REGIONS"] == 'non_protein_affecting'].drop(columns = 'REGIONS').merge(
+        mutdensities_orig[mutdensities_orig["REGIONS"] == 'synonymous'].drop(columns = 'REGIONS'),
+        on = ["GENE", "SAMPLE_ID"],
+        how = 'left',
+        suffixes = ("_npa", "_syn")
+    )
+
+    # If the dataset is too small to produce meaningful plots (e.g. a single
+    # sample/group), skip plotting and return None. The caller in `main` already
+    # handles a None return (it will continue to the next loop iteration).
+    if mutdensities_merged is None or len(mutdensities_merged) < min_points:
+        n = 0 if mutdensities_merged is None else len(mutdensities_merged)
+        print(f"Skipping plotting: dataset too small (n={n})")
+        return None
+
+    if filename is not None:
+            mutdensities_merged.to_csv(filename, sep = ',', index = False)
+
+    # Setup subplots
+    fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=False)
+
+    sns.scatterplot(data = mutdensities_merged,
+                    x = 'MUTDENSITY_MB_syn',
+                    y = 'MUTDENSITY_MB_npa',
+                    hue='SAMPLE_ID',
+                    legend = False,
+                    ax = axes[0]
+                    )
+    axes[0].set_xlabel("Synonymous\nmutation density")
+    axes[0].set_ylabel("Non-protein affecting\nmutation density")
+
+    sns.scatterplot(data = mutdensities_merged,
+                    x = 'MUTDENSITY_MB_syn',
+                    y = 'MUTDENSITY_MB_npa',
+                    hue='GENE',
+                    legend = False,
+                    ax = axes[1]
+                    )
+    axes[1].set_xlabel("Synonymous\nmutation density")
+    axes[1].set_ylabel("Non-protein affecting\nmutation density")
+    
+    return(fig)
+
+
 # main function
 
 @click.command()
@@ -184,7 +236,7 @@ def main(input_file, output_dir, panel, group_definition, group_name):
 
     for reg in regions : 
         for mod in mode_list: 
-            filt_mutden = filter_mutdensities(mutden_df_panel, reg, group_name, mod, sample_names)
+            filt_mutden = filter_mutdensities(mutden_df_panel, [reg], group_name, mod, sample_names)
             if filt_mutden.shape[0] < 2:
                 continue
             zero_cases_flag, mutden_zscore = z_score_log10(filt_mutden, mod)
@@ -231,7 +283,27 @@ def main(input_file, output_dir, panel, group_definition, group_name):
 
                 # Close to free memory before next loop
                 plt.close(fig)
-    
+
+    # Scatter plots synonymous vs non-protein-affecting
+    with PdfPages(f"{output_dir}/neutral_mutation_densities_comparison.pdf") as pdf:
+        filt_mutden = filter_mutdensities(mutden_df_panel, regions , group_name, 'per_gene_n_sample', sample_names)
+        fig = plot_comparison_npa_syn(filt_mutden, filename = f"{output_dir}/neutral_mutation_densities_comparison.csv")
+        if fig is not None:
+            pdf.savefig(fig)
+        plt.close(fig)
+
+        filt_mutden = filter_mutdensities(mutden_df_panel, regions, group_name, 'per_gene', sample_names)
+        fig = plot_comparison_npa_syn(filt_mutden)
+        if fig is not None:
+            pdf.savefig(fig)
+        plt.close(fig)
+
+        filt_mutden = filter_mutdensities(mutden_df_panel, regions, group_name, 'per_sample', sample_names)
+        fig = plot_comparison_npa_syn(filt_mutden)
+        if fig is not None:
+            pdf.savefig(fig)
+        plt.close(fig)
+
     if compile_all_flagged.empty:
         print("No flagged cases found across all regions and modes.")
         compile_all_flagged = pd.DataFrame(columns=['ID', 'reason_exclusion', 'cohort', 'regions', 'criteria'])
