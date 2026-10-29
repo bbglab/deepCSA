@@ -23,7 +23,7 @@ process COMPUTE_MATRIX {
     prefix = "${meta.id}${prefix}"
     def method = task.ext.method ?: "unique"
     """
-    mut_profile.py matrix \\
+    mutprof_mut_profile.py matrix \\
                     --sample_name ${prefix} \\
                     --mut_file ${mut_files} \\
                     --out_matrix ${prefix}.matrix.tsv \\

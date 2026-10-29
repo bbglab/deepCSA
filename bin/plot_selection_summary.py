@@ -757,6 +757,14 @@ def get_all_data(sample, outdir,
 
     print(f"Generating plot with available tracks: {available_tracks}")
     
+    # TODO add lists from the other methods in case they are available, for now we only have the global omega decreasing list
+    methods_list = []
+    for option in [global_omega_decreasing]:
+        if len(option) > 0:
+            methods_list = option
+            break
+
+
     # Generate plot with available tracks
     figuree = plot_all_positive_selection(omega_truncating,
                                             omega_missense,
@@ -764,7 +772,7 @@ def get_all_data(sample, outdir,
                                             oncodrive3d_data_scores,
                                             oncodrivefml_data,
                                             dndscv_df,
-                                            global_omega_decreasing if gene_order is None else gene_order,
+                                            methods_list if gene_order is None else gene_order,
                                             title = sample,
                                             pvalue_thres = pvaluee,
                                             tracks = tuple(available_tracks))

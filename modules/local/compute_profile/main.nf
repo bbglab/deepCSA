@@ -32,7 +32,7 @@ process COMPUTE_PROFILE {
     def wgs_trinuc = wgs_trinucleotides ? "--wgs --wgs_trinucleotide_counts ${wgs_trinucleotides}" : ""
     def smoothing_args = task.ext.smoothing ? "--smoothed --prior_profile ${cohort_profile}" : ""
     """
-    mut_profile.py profile \\
+    mutprof_mut_profile.py profile \\
                     --sample_name ${prefix} \\
                     --mutation_matrix ${matrix} \\
                     --trinucleotide_counts ${trinucleotide} \\
