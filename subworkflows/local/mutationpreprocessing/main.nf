@@ -144,7 +144,7 @@ workflow MUTATION_PREPROCESSING {
     .join(SOMATICMUTATIONS.out.mutations).first()
     .set{somatic_muts_all_samples}
 
-    EFFECTIVEDEPTH( SOMATICMUTATIONS.out.mutations, somatic_muts_all_samples)
+    EFFECTIVEDEPTH( SOMATICMUTATIONS.out.mutations, somatic_muts_all_samples.map{ it -> it[1] }.first() )
 
     channel.of([["id": "all_samples"]])
     .join(EFFECTIVEDEPTH.out.mutations).first()
