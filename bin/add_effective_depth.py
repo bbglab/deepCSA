@@ -12,7 +12,7 @@ from read_utils import custom_na_values
 @click.option("--output-file", required=True, type=click.Path())
 @click.option("--percentile", default=0.995, type=click.FloatRange(0.0, 1.0))
 def main(all_samples_file, mutations_file, output_file, percentile):
-    """Add cohort-capped ALT_DEPTH as EFFECTIVE_DEPTH to a mutations TSV."""
+    """Add cohort-capped ALT_DEPTH as EFFECTIVE_ALT_DEPTH to a mutations TSV."""
     all_samples = pd.read_csv(
         all_samples_file, sep="\t", header=0, na_values=custom_na_values
     )

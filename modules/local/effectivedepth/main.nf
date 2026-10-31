@@ -1,4 +1,4 @@
-process EFFECTIVE_DEPTH {
+process EFFECTIVE_ALT_DEPTH {
 
     tag "$meta.id"
     label 'deepcsa_core'

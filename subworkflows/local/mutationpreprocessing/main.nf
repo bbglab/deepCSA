@@ -15,7 +15,7 @@ include { FILTER_BATCH                  as FILTERBATCH      }   from '../../../m
 include { WRITE_MAFS                    as WRITEMAF         }   from '../../../modules/local/writemaf/main'
 include { SUBSET_MAF                    as SOMATICMUTATIONS }   from '../../../modules/local/subsetmaf/main'
 include { SUBSET_MAF                    as CLEANMUTATIONS   }   from '../../../modules/local/subsetmaf/main'
-include { EFFECTIVE_DEPTH               as EFFECTIVEDEPTH   }   from '../../../modules/local/effectivedepth/main'
+include { EFFECTIVE_ALT_DEPTH           as EFFECTIVEDEPTH   }   from '../../../modules/local/effectivedepth/main'
 include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    }   from '../../../modules/local/blacklistmuts/main'
 include { PLOT_MUTATIONS                as PLOTMAF          }   from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_MUTATIONS                as PLOTSOMATICMAF   }   from '../../../modules/local/plot/mutations_summary/main'
