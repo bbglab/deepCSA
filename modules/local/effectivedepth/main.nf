@@ -6,7 +6,8 @@ process EFFECTIVE_ALT_DEPTH {
 
     input:
     tuple val(meta) , path(mutations_file)
-    tuple val(meta2), path (all_samples_mutations)
+    tuple val(meta2), path (all_samples_mutations), stageAs: "all_samples_mutations.global.tsv"
+
 
 
     output:
