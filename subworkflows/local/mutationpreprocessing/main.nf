@@ -15,6 +15,7 @@ include { FILTER_BATCH                  as FILTERBATCH      }   from '../../../m
 include { WRITE_MAFS                    as WRITEMAF         }   from '../../../modules/local/writemaf/main'
 include { SUBSET_MAF                    as SOMATICMUTATIONS }   from '../../../modules/local/subsetmaf/main'
 include { SUBSET_MAF                    as CLEANMUTATIONS   }   from '../../../modules/local/subsetmaf/main'
+include { EFFECTIVE_DEPTH               as EFFECTIVEDEPTH   }   from '../../../modules/local/effectivedepth/main'
 include { BLACKLIST_MUTATIONS           as BLACKLISTMUTS    }   from '../../../modules/local/blacklistmuts/main'
 include { PLOT_MUTATIONS                as PLOTMAF          }   from '../../../modules/local/plot/mutations_summary/main'
 include { PLOT_MUTATIONS                as PLOTSOMATICMAF   }   from '../../../modules/local/plot/mutations_summary/main'
@@ -141,6 +142,12 @@ workflow MUTATION_PREPROCESSING {
 
     channel.of([["id": "all_samples"]])
     .join(SOMATICMUTATIONS.out.mutations).first()
+    .set{somatic_muts_all_samples}
+
+    EFFECTIVEDEPTH( SOMATICMUTATIONS.out.mutations, somatic_muts_all_samples)
+
+    channel.of([["id": "all_samples"]])
+    .join(EFFECTIVEDEPTH.out.mutations).first()
     .set{muts_all_samples}
 
     if ( params.contamination ) {
@@ -152,8 +159,8 @@ workflow MUTATION_PREPROCESSING {
     if ( params.plot_only_allsamples ) {
         muts_for_plotting = muts_all_samples
     } else {
-        // Filter SOMATICMUTATIONS.out.mutations by meta.id in group_keys
-        SOMATICMUTATIONS.out.mutations
+        // Filter EFFECTIVEDEPTH.out.mutations by meta.id in group_keys
+        EFFECTIVEDEPTH.out.mutations
         .map { mut -> tuple(mut[0].id, mut) }
         .join(groups)
         .map { it -> it[1] }
@@ -181,7 +188,7 @@ workflow MUTATION_PREPROCESSING {
     emit:
     mafs                    = named_mafs
     mask_matrix             = CREATEMASKMATRIX.out.mask_matrix
-    somatic_mafs            = SOMATICMUTATIONS.out.mutations
+    somatic_mafs            = EFFECTIVEDEPTH.out.mutations
     clean_mafs              = CLEANMUTATIONS.out.mutations
     mutations_all_samples   = muts_all_samples
     all_raw_vep_annotation  = SUMANNOTATION.out.tab_all

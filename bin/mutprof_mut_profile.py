@@ -62,18 +62,12 @@ def compute_mutation_matrix(sample_name, mutations_file, mutation_matrix, method
         counts_x_sample_context_long.columns = ["SAMPLE_ID", "CONTEXT_MUT", "COUNT"]
 
     elif method == 'multiple':
-        # make sure to count each mutation only once (avoid annotation issues)
-        annotated_minimal_maf = annotated_maf[["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID", "ALT_DEPTH"]].drop_duplicates().reset_index(drop = True)
-        annotated_minimal_maf.columns = ["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID", "ALT_DEPTH"]
-
-        # cut ALT_DEPTH to 99th percentile to avoid outliers
-        alt_depth_995th_percentile = annotated_minimal_maf["ALT_DEPTH"].quantile(0.995)
-        print(f"995th percentile of ALT_DEPTH: {alt_depth_995th_percentile}.\nAny mutations with a count higher than this will be set to this value")
-        print(annotated_minimal_maf.loc[annotated_minimal_maf["ALT_DEPTH"] > alt_depth_995th_percentile, "ALT_DEPTH"].value_counts())
-        annotated_minimal_maf.loc[annotated_minimal_maf["ALT_DEPTH"] > alt_depth_995th_percentile, "ALT_DEPTH"] = alt_depth_995th_percentile
+        # we count every mutation as a separate event
+        # but only up to a reasonable expanded number
+        annotated_minimal_maf = annotated_maf[["SAMPLE_ID", "CONTEXT_MUT", "MUT_ID", "EFFECTIVE_ALT_DEPTH"]].drop_duplicates().reset_index(drop = True)
 
         # count the mutations per sample and per context
-        counts_x_sample_context_long = annotated_minimal_maf.groupby(by = ["SAMPLE_ID", "CONTEXT_MUT"])["ALT_DEPTH"].sum().reset_index()
+        counts_x_sample_context_long = annotated_minimal_maf.groupby(by = ["SAMPLE_ID", "CONTEXT_MUT"])["EFFECTIVE_ALT_DEPTH"].sum().reset_index()
         counts_x_sample_context_long.columns = ["SAMPLE_ID", "CONTEXT_MUT", "COUNT"]
 
     # here we group the counts of all the samples
@@ -393,4 +387,3 @@ def main(mode, sample_name, mut_file, out_matrix, method, pseud, sigprofiler, pe
 
 if __name__ == '__main__':
     main()
-

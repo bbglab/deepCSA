@@ -423,4 +423,3 @@ These are some examples of it:
 - `multiqc/`
 - `pipeline_info/`
 - `processing_files/input_vcfs/` (when `--input_maf` is used)
-
