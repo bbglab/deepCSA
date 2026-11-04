@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 
+import json
+
 import click
 import pandas as pd
-import json
+
 from read_utils import custom_na_values
 
-separator2character = {
-    'tab' : '\t',
-    'comma' : ','
-}
+separator2character = {"tab": "\t", "comma": ","}
+
 
 def reformatnames(name):
-    return str(name).lower().replace(' ','').replace('_','').replace('.','').capitalize()
+    return str(name).lower().replace(" ", "").replace("_", "").replace(".", "").capitalize()
 
 
 @click.command()
-@click.option('--table-filename', required=True, type=click.Path(exists=True), help='Input features table file')
-@click.option('--separator', required=True, type=click.Choice(['tab', 'comma']), help='Separator: tab or comma')
-@click.option('--unique-identifier', default=None, type=str, help='Unique identifier column name')
-@click.option('--groups', default=None, type=str, help='List of columns with grouping information')
+@click.option("--table-filename", required=True, type=click.Path(exists=True), help="Input features table file")
+@click.option("--separator", required=True, type=click.Choice(["tab", "comma"]), help="Separator: tab or comma")
+@click.option("--unique-identifier", default=None, type=str, help="Unique identifier column name")
+@click.option("--groups", default=None, type=str, help="List of columns with grouping information")
 def main(table_filename, separator, unique_identifier, groups):
 
     sep_char = separator2character[separator]
@@ -27,27 +27,31 @@ def main(table_filename, separator, unique_identifier, groups):
     uniq_name = unique_identifier if unique_identifier else "sample"
 
     # groups may contain lists of lists, but all formatted into a string
-    groups_of_interest_init = [group.strip().strip(",").split(",") for group in groups.replace("[", ";;;").replace("]", "").split(";;;")] if groups else []
+    groups_of_interest_init = (
+        [group.strip().strip(",").split(",") for group in groups.replace("[", ";;;").replace("]", "").split(";;;")]
+        if groups
+        else []
+    )
 
     groups_of_interest = []
     for comparison in groups_of_interest_init:
         comparison_group_clean = [item.strip() for item in comparison]
-        comparison_group = [item for item in comparison_group_clean if item != '']
+        comparison_group = [item for item in comparison_group_clean if item != ""]
         if len(comparison_group) > 0:
             groups_of_interest.append(comparison_group)
 
     print(f"Unique identifier: {uniq_name}")
-    print(f"Groups of interest: ")
+    print("Groups of interest: ")
     for group in groups_of_interest:
         print(f"{group}", type(group))
 
-    samples_json = { str(name) : [str(name)] for name in features_table[uniq_name] }
+    samples_json = {str(name): [str(name)] for name in features_table[uniq_name]}
     json_groups = {}
 
     for col_names2group in groups_of_interest:
-        dict_sample_groups = features_table.groupby(by=col_names2group).agg({uniq_name : list}).reset_index().to_dict()
+        dict_sample_groups = features_table.groupby(by=col_names2group).agg({uniq_name: list}).reset_index().to_dict()
         for category in list(dict_sample_groups[uniq_name].keys()):
-            dict_sample_groups[uniq_name][category] = [ str(x) for x in dict_sample_groups[uniq_name][category] ]
+            dict_sample_groups[uniq_name][category] = [str(x) for x in dict_sample_groups[uniq_name][category]]
         for i in dict_sample_groups[col_names2group[0]].keys():
             sample_batch_name = ""
             for cat in col_names2group:
@@ -76,5 +80,5 @@ def main(table_filename, separator, unique_identifier, groups):
         json.dump(json_groups, outfile)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

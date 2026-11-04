@@ -10,68 +10,65 @@ Usage:
     python create_panel_versions.py --compact-annot-panel-path <input_tsv> --output <output_prefix>
 """
 
-import polars as pl
-import click
 import sys
 
+import click
+import polars as pl
+
 PANEL_IMPACT_DICT = {
-
-    "protein_affecting": ["nonsense", "missense",
-                            "essential_splice",
-                            "protein_altering_variant",     # probably not appear
-                            "transcript_amplification",     # probably not appear
-                            # "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
-                            # "splice_region_variant",
-                            # "splice_donor_region_variant",
-                            # "splice_polypyrimidine_tract_variant",
-                            ],
-
-    "non_protein_affecting": ["synonymous", "intron_variant",
-                                "non_coding_exon_region",
-                                "non_genic_variant", "non_coding_transcript_variant",
-                                # "splice_region_variant",
-                                # "splice_donor_region_variant",
-                                # "splice_polypyrimidine_tract_variant",
-                                ],
-
-    "exons_splice_sites": ["nonsense", "missense",
-                            "essential_splice",
-                            "synonymous",
-                            "coding_sequence_variant",
-                            "splice_region_variant",
-                            "splice_donor_region_variant",
-                            "splice_polypyrimidine_tract_variant",
-                        #    "protein_altering_variant", # unclear   # probably not appear
-                        #    "transcript_amplification",             # probably not appear
-                        #    "non_coding_exon_region", # unclear
-                        #    "non_coding_transcript_variant"   # unclear
-                            ],
-
-    "introns_intergenic": ["intron_variant",
-                            "non_genic_variant",
-                            # "splice_donor_region_variant",
-                            # "splice_polypyrimidine_tract_variant",
-                            ],
-
-    "synonymous": ["synonymous"]
-
-## CONTENT of the kidney regions
-#       1 IMPACT
-#    2787 essential_splice
-#    7276 nonsense
-#  119061 missense
-
-#   36745 synonymous
-
-#  174240 non_coding_exon_region
-
-#  685875 intron_variant
-
-#   74913 non_coding_transcript_variant
-#  436551 non_genic_variant
-
-#   14662 splice_region
-
+    "protein_affecting": [
+        "nonsense",
+        "missense",
+        "essential_splice",
+        "protein_altering_variant",  # probably not appear
+        "transcript_amplification",  # probably not appear
+        # "coding_sequence_variant",       # probably not appear AMBIGUOUS TODO
+        # "splice_region_variant",
+        # "splice_donor_region_variant",
+        # "splice_polypyrimidine_tract_variant",
+    ],
+    "non_protein_affecting": [
+        "synonymous",
+        "intron_variant",
+        "non_coding_exon_region",
+        "non_genic_variant",
+        "non_coding_transcript_variant",
+        # "splice_region_variant",
+        # "splice_donor_region_variant",
+        # "splice_polypyrimidine_tract_variant",
+    ],
+    "exons_splice_sites": [
+        "nonsense",
+        "missense",
+        "essential_splice",
+        "synonymous",
+        "coding_sequence_variant",
+        "splice_region_variant",
+        "splice_donor_region_variant",
+        "splice_polypyrimidine_tract_variant",
+        #    "protein_altering_variant", # unclear   # probably not appear
+        #    "transcript_amplification",             # probably not appear
+        #    "non_coding_exon_region", # unclear
+        #    "non_coding_transcript_variant"   # unclear
+    ],
+    "introns_intergenic": [
+        "intron_variant",
+        "non_genic_variant",
+        # "splice_donor_region_variant",
+        # "splice_polypyrimidine_tract_variant",
+    ],
+    "synonymous": ["synonymous"],
+    ## CONTENT of the kidney regions
+    #       1 IMPACT
+    #    2787 essential_splice
+    #    7276 nonsense
+    #  119061 missense
+    #   36745 synonymous
+    #  174240 non_coding_exon_region
+    #  685875 intron_variant
+    #   74913 non_coding_transcript_variant
+    #  436551 non_genic_variant
+    #   14662 splice_region
 }
 
 
@@ -104,13 +101,19 @@ def create_panel_versions(input_path: str, output_prefix: str) -> None:
 
 
 @click.command()
-@click.option('--compact-annot-panel-path', required=True, type=click.Path(exists=True), help='Input compact annotation panel file (TSV)')
-@click.option('--output', required=True, type=click.Path(), help='Output path prefix for panel versions')
+@click.option(
+    "--compact-annot-panel-path",
+    required=True,
+    type=click.Path(exists=True),
+    help="Input compact annotation panel file (TSV)",
+)
+@click.option("--output", required=True, type=click.Path(), help="Output path prefix for panel versions")
 def main(compact_annot_panel_path, output):
     """
     Create panel versions from a compact annotation panel file.
     """
     create_panel_versions(compact_annot_panel_path, output)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

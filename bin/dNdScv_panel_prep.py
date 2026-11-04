@@ -45,12 +45,12 @@ class Exon:
     A single CDS exon with genomic and transcript-relative coordinates.
     """
 
-    start: int          # CDS region genomic start (1-based, closed)
-    end: int            # CDS region genomic end (1-based, closed)
-    cds_start: int      # first position within transcript CDS (1-based)
-    cds_end: int        # last position within transcript CDS (1-based)
-    exon_chr_start: int # full exon genomic start (may extend into UTR)
-    exon_chr_end: int   # full exon genomic end (may extend into UTR)
+    start: int  # CDS region genomic start (1-based, closed)
+    end: int  # CDS region genomic end (1-based, closed)
+    cds_start: int  # first position within transcript CDS (1-based)
+    cds_end: int  # last position within transcript CDS (1-based)
+    exon_chr_start: int  # full exon genomic start (may extend into UTR)
+    exon_chr_end: int  # full exon genomic end (may extend into UTR)
 
 
 @dataclass
@@ -187,7 +187,11 @@ class PanelGene:
                 ov_end = min(p_end, exon.end)
 
                 is_junction = cls._check_5prime_junction(
-                    last_fragment, ov_start, ov_end, exon, gene.strand,
+                    last_fragment,
+                    ov_start,
+                    ov_end,
+                    exon,
+                    gene.strand,
                 )
 
                 if gene.strand == 1:
@@ -198,7 +202,8 @@ class PanelGene:
                 if result is None:
                     logger.debug(
                         "Discarded fragment: overlap (%d, %d) collapsed after alignment",
-                        ov_start, ov_end,
+                        ov_start,
+                        ov_end,
                     )
                     continue
                 exon_fragments.append(Fragment(start=result[0], end=result[1], exon=exon))
@@ -623,34 +628,44 @@ class SpliceClassifier:
 
             boundary_desc_donor = f"{prev_frag.end}|{next_frag.start}"
             for pos in donor_positions:
-                records.append({
-                    "CHR": "chr" + gene.chrom,
-                    "POSITION": pos,
-                    "GENE_SYMBOL": gene.symbol,
-                    "GENE_ID": gene.gene_id,
-                    "JUNCTION_TYPE": junction_type,
-                    "SPLICE_TYPE": "donor",
-                    "FRAGMENT_BOUNDARY": boundary_desc_donor,
-                })
+                records.append(
+                    {
+                        "CHR": "chr" + gene.chrom,
+                        "POSITION": pos,
+                        "GENE_SYMBOL": gene.symbol,
+                        "GENE_ID": gene.gene_id,
+                        "JUNCTION_TYPE": junction_type,
+                        "SPLICE_TYPE": "donor",
+                        "FRAGMENT_BOUNDARY": boundary_desc_donor,
+                    }
+                )
             for pos in acceptor_positions:
-                records.append({
-                    "CHR": "chr" + gene.chrom,
-                    "POSITION": pos,
-                    "GENE_SYMBOL": gene.symbol,
-                    "GENE_ID": gene.gene_id,
-                    "JUNCTION_TYPE": junction_type,
-                    "SPLICE_TYPE": "acceptor",
-                    "FRAGMENT_BOUNDARY": boundary_desc_donor,
-                })
+                records.append(
+                    {
+                        "CHR": "chr" + gene.chrom,
+                        "POSITION": pos,
+                        "GENE_SYMBOL": gene.symbol,
+                        "GENE_ID": gene.gene_id,
+                        "JUNCTION_TYPE": junction_type,
+                        "SPLICE_TYPE": "acceptor",
+                        "FRAGMENT_BOUNDARY": boundary_desc_donor,
+                    }
+                )
         return records
+
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"], "show_default": True})
 @click.version_option(version="0.1.0", prog_name="panel_reformat")
 @click.option("-b", "--bed", type=click.Path(exists=True), required=True, help="Panel BED file (CHR, START, END).")
 @click.option("-g", "--genes", type=click.Path(exists=True), required=True, help="Gene annotation TSV file.")
 @click.option("-o", "--output", type=click.Path(), default="-", help="Output TSV path.")
-@click.option("-s", "--splice-report", type=click.Path(), default="splice_sites.tsv",
-              help="Output TSV with splice site classification (real vs artificial).")
+@click.option(
+    "-s",
+    "--splice-report",
+    type=click.Path(),
+    default="splice_sites.tsv",
+    help="Output TSV with splice site classification (real vs artificial).",
+)
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Enable debug logging.")
 def cli(bed: str, genes: str, output: str, splice_report: str | None, verbose: bool) -> None:
     """Align panel BED regions to codon boundaries for dndscv build_refCDS.R."""
@@ -665,8 +680,9 @@ def cli(bed: str, genes: str, output: str, splice_report: str | None, verbose: b
     # Only process genes on chromosomes covered by the panel.
     panel_chroms = set(panel_by_chr)
     candidate_genes = {gid: g for gid, g in gene_map.items() if g.chrom in panel_chroms}
-    logger.info("Genes on panel chromosomes: %d (skipping %d).",
-                len(candidate_genes), len(gene_map) - len(candidate_genes))
+    logger.info(
+        "Genes on panel chromosomes: %d (skipping %d).", len(candidate_genes), len(gene_map) - len(candidate_genes)
+    )
 
     builder = TranscriptBuilder(CodonAligner())
     splice_classifier = SpliceClassifier()
@@ -688,9 +704,7 @@ def cli(bed: str, genes: str, output: str, splice_report: str | None, verbose: b
                 gene_count += 1
                 fragment_count += len(rows)
                 if splice_report:
-                    all_splice_records.extend(
-                        splice_classifier.classify(gene, fragments)
-                    )
+                    all_splice_records.extend(splice_classifier.classify(gene, fragments))
 
         logger.info("Wrote %d fragment(s) across %d gene(s).", fragment_count, gene_count)
     finally:
@@ -702,7 +716,9 @@ def cli(bed: str, genes: str, output: str, splice_report: str | None, verbose: b
         artificial_count = len(all_splice_records) - real_count
         logger.info(
             "Splice report: %d positions (%d real, %d artificial).",
-            len(all_splice_records), real_count, artificial_count,
+            len(all_splice_records),
+            real_count,
+            artificial_count,
         )
         with open(splice_report, "w", encoding="utf-8") as sfh:
             sw = csv.DictWriter(sfh, fieldnames=SPLICE_REPORT_FIELDS, delimiter="\t")
@@ -712,4 +728,4 @@ def cli(bed: str, genes: str, output: str, splice_report: str | None, verbose: b
 
 
 if __name__ == "__main__":
-    cli() # pylint: disable=no-value-for-parameter
+    cli()  # pylint: disable=no-value-for-parameter

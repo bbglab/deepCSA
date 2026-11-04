@@ -3,7 +3,6 @@
 
 """Provide a command line tool to validate and transform tabular samplesheets."""
 
-
 import argparse
 import csv
 import logging
@@ -25,9 +24,7 @@ class RowChecker:
 
     """
 
-    VALID_FORMATS_BAM = (
-        ".bam",
-    )
+    VALID_FORMATS_BAM = (".bam",)
     VALID_FORMATS_VCF = (
         ".vcf",
         ".vcf.gz",
@@ -79,25 +76,25 @@ class RowChecker:
         """Assert that the sample name exists and convert spaces to underscores."""
         if len(row[self._sample_col]) <= 0:
             raise AssertionError("Sample input is required.")
-        
+
         sample_name = row[self._sample_col]
-        
+
         # Validate that sample name only contains safe characters
         # Allow alphanumeric, underscores, hyphens, and dots
-        if not re.match(r'^[a-zA-Z0-9._-]+$', sample_name):
+        if not re.match(r"^[a-zA-Z0-9._-]+$", sample_name):
             raise AssertionError(
                 f"Sample name '{sample_name}' contains invalid characters. "
                 "Only alphanumeric characters, underscores (_), hyphens (-), and dots (.) are allowed. "
                 "This prevents potential shell injection vulnerabilities."
             )
-        
+
         # Additional check: ensure sample name doesn't start with a hyphen (could be interpreted as a flag)
-        if sample_name.startswith('-'):
+        if sample_name.startswith("-"):
             raise AssertionError(
                 f"Sample name '{sample_name}' cannot start with a hyphen (-). "
                 "This prevents potential command-line flag injection."
             )
-        
+
         row[self._sample_col] = sample_name
 
     def _validate_vcf(self, row):
@@ -126,7 +123,6 @@ class RowChecker:
                 f"The BAM file has an unrecognized extension: {filename}\n"
                 f"It should be one of: {', '.join(self.VALID_FORMATS_BAM)}"
             )
-
 
     def validate_unique_samples(self):
         """

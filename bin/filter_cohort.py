@@ -3,7 +3,7 @@
 """
 Filter Cohort - MAF Processing and Flagging Script
 
-This script processes a Mutation Annotation Format (MAF) file to filter variants by specific criteria and 
+This script processes a Mutation Annotation Format (MAF) file to filter variants by specific criteria and
 generates a final filtered MAF.
 
 Command-line Arguments
@@ -40,10 +40,12 @@ python filter_cohort.py \\
     --n-rich-cohort-proportion 0.1
 
 """
+
 import logging
 
 import click
 import pandas as pd
+
 from read_utils import custom_na_values
 from utils import add_filter
 from utils_filter import expand_filter_column, germline_mask, somatic_mask

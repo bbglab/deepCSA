@@ -5,7 +5,7 @@
 #######
 
 #######
-# Usage: 
+# Usage:
 #######
 ## If your sample names are NOT in a column called SAMPLE_ID,
 ## you can use the --sample-name-column option to specify it.
@@ -17,9 +17,8 @@
 # usage: python deepcsa_maf2samplevcfs.py --mutations-file all_samples.somatic.mutations.tsv --output-dir ./test/
 
 
-
 #######
-# Mandatory columns in input mutations: 
+# Mandatory columns in input mutations:
 #######
 
 # if the maf is from deepCSA, it must contain the following columns, as they were originally generated
@@ -30,8 +29,6 @@
 # where:
 #     DEPTH indicates the total number of duplex reads sequenced at the position where the mutation occurs
 #     ALT_DEPTH indicates the total number of duplex reads supporting the variant at the same position
-
-
 
 
 import click
@@ -48,10 +45,10 @@ def build_vcf_like_dataframe(mutations_dataframe, samplee):
     output needs to have:
         ['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']
     """
-    for col in ['CHROM', 'POS', 'REF', 'ALT', 'DEPTH', 'ALT_DEPTH']:
+    for col in ["CHROM", "POS", "REF", "ALT", "DEPTH", "ALT_DEPTH"]:
         if col not in mutations_dataframe.columns:
             raise ValueError(f"Column {col} is missing from the mutations dataframe.")
-    
+
     # fill FILTER and INFO columns with default values
     if "FILTER" not in mutations_dataframe.columns:
         print("WARNING: FILTER column is missing from the mutations dataframe. Setting it to 'PASS' for all mutations")
@@ -60,45 +57,50 @@ def build_vcf_like_dataframe(mutations_dataframe, samplee):
         print(f"WARNING: INFO column is missing from the mutations dataframe. Setting it to 'SAMPLE={samplee};'")
         mutations_dataframe["INFO"] = f"SAMPLE={samplee};"
 
-    if 'ALT_DEPTH_AM' not in mutations_dataframe.columns or 'DEPTH_AM' not in mutations_dataframe.columns:
+    if "ALT_DEPTH_AM" not in mutations_dataframe.columns or "DEPTH_AM" not in mutations_dataframe.columns:
         print("WARNING: Optional columns: ALT_DEPTH_AM and DEPTH_AM are missing from the mutations dataframe.")
         print("         These are being initialized as its duplex values.")
-        mutations_dataframe['ALT_DEPTH_AM'] = mutations_dataframe['ALT_DEPTH']
-        mutations_dataframe['DEPTH_AM'] = mutations_dataframe['DEPTH']
+        mutations_dataframe["ALT_DEPTH_AM"] = mutations_dataframe["ALT_DEPTH"]
+        mutations_dataframe["DEPTH_AM"] = mutations_dataframe["DEPTH"]
 
     # Create a new dataframe with the required columns
-    vcf_like_df = mutations_dataframe[['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'DEPTH', 'ALT_DEPTH', 'ALT_DEPTH_AM', 'DEPTH_AM']].copy()    
+    vcf_like_df = mutations_dataframe[
+        ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "DEPTH", "ALT_DEPTH", "ALT_DEPTH_AM", "DEPTH_AM"]
+    ].copy()
     vcf_like_df["FORMAT"] = "GT:DP:VD:AD:AF:RD:ALD:CDP:CAD:NDP:CDPAM:CADAM:NDPAM"
-    vcf_like_df["SAMPLE"] = vcf_like_df[['DEPTH', 'ALT_DEPTH', 'ALT_DEPTH_AM', 'DEPTH_AM']].apply(
+    vcf_like_df["SAMPLE"] = vcf_like_df[["DEPTH", "ALT_DEPTH", "ALT_DEPTH_AM", "DEPTH_AM"]].apply(
         lambda x: "{GT}:{DP}:{VD}:{AD}:{AF}:{RD}:{ALD}:{CDP}:{CAD}:{NDP}:{CDPAM}:{CADAM}:{NDPAM}".format(
             GT="0/1",
-            DP=x['DEPTH'],
-            VD=x['ALT_DEPTH'],
+            DP=x["DEPTH"],
+            VD=x["ALT_DEPTH"],
             AD=f"{x['DEPTH'] - x['ALT_DEPTH']},{x['ALT_DEPTH']}",
-            AF=round(x['ALT_DEPTH'] / x['DEPTH'] , 5),
+            AF=round(x["ALT_DEPTH"] / x["DEPTH"], 5),
             RD=f"{(x['DEPTH'] - x['ALT_DEPTH'])//2},{(x['DEPTH'] - x['ALT_DEPTH'])//2 if (x['DEPTH'] - x['ALT_DEPTH']) % 2 == 0 else (x['DEPTH'] - x['ALT_DEPTH'])//2 + 1}",
             ALD=f"{x['ALT_DEPTH']//2},{x['ALT_DEPTH']//2 if x['ALT_DEPTH'] % 2 == 0 else x['ALT_DEPTH']//2 + 1}",
-            CDP=x['DEPTH'],
+            CDP=x["DEPTH"],
             CAD=f"{x['DEPTH'] - x['ALT_DEPTH']},{x['ALT_DEPTH']}",
             NDP="0",
-            CDPAM=x['DEPTH_AM'],
+            CDPAM=x["DEPTH_AM"],
             CADAM=f"{x['DEPTH_AM'] - x['ALT_DEPTH_AM']},{x['ALT_DEPTH_AM']}",
-            NDPAM="0" 
+            NDPAM="0",
         ),
-        axis=1
+        axis=1,
     )
     return vcf_like_df
 
+
 filters_to_remove = ["not_in_exons", "not_covered"]
+
+
 def remove_deepcsa_filters(old_filt, filters_to_removee):
     """
     Remove deepCSA filters from the FILTER field of the VCF file.
-    """    
-    filter_result = sorted([ x for x in str(old_filt).split(";") if x not in filters_to_removee ])
+    """
+    filter_result = sorted([x for x in str(old_filt).split(";") if x not in filters_to_removee])
     return ";".join(filter_result) if filter_result != [] else "PASS"
 
 
-vardict_vcf_header = '''##fileformat=VCFv4.2
+vardict_vcf_header = """##fileformat=VCFv4.2
 ##source=artificially_generated_vcf_VarDict_v1.8.2-like
 ##FILTER=<ID=AMPBIAS,Description="Indicate the variant has amplicon bias.">
 ##FILTER=<ID=AM_no_pileup_support,Description="Variant not supported when inspecting the BAM with mpileup. deepUMIcaller.">
@@ -174,14 +176,20 @@ vardict_vcf_header = '''##fileformat=VCFv4.2
 ##INFO=<ID=TYPE,Number=1,Type=String,Description="Variant Type: SNV Insertion Deletion Complex">
 ##INFO=<ID=VARBIAS,Number=1,Type=String,Description="Variant depth by strand">
 ##INFO=<ID=VD,Number=1,Type=Integer,Description="Variant Depth">
-'''
+"""
 
 
 @click.command()
-@click.option('--mutations-file', required=True, type=click.Path(exists=True), help="Path to the mutations file (TSV format).")
-@click.option('--output-dir', required=True, type=click.Path(), help="Directory to save the output VCF files.")
-@click.option('--maf-from-deepcsa', is_flag=True, default=False, help="Flag to indicate if the MAF file is from deepCSA.")
-@click.option('--sample-name-column', default="SAMPLE_ID", type=str, help="Column name for sample names in the mutations file.")
+@click.option(
+    "--mutations-file", required=True, type=click.Path(exists=True), help="Path to the mutations file (TSV format)."
+)
+@click.option("--output-dir", required=True, type=click.Path(), help="Directory to save the output VCF files.")
+@click.option(
+    "--maf-from-deepcsa", is_flag=True, default=False, help="Flag to indicate if the MAF file is from deepCSA."
+)
+@click.option(
+    "--sample-name-column", default="SAMPLE_ID", type=str, help="Column name for sample names in the mutations file."
+)
 def main(mutations_file, output_dir, maf_from_deepcsa, sample_name_column):
     """
     Convert a mutations file to one or multiple VCF-formatted files.
@@ -190,12 +198,14 @@ def main(mutations_file, output_dir, maf_from_deepcsa, sample_name_column):
     mutations = pd.read_table(mutations_file)
     mutations[sample_name_column] = mutations[sample_name_column].astype(str)
     for sample in mutations[sample_name_column].unique():
-        
+
         # filter the dataframe for the current sample
         sample_mutations = mutations[mutations[sample_name_column] == sample]
 
         if maf_from_deepcsa:
-            vcf_info_sample = sample_mutations[['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE']].copy()
+            vcf_info_sample = sample_mutations[
+                ["CHROM", "POS", "REF", "ALT", "FILTER", "INFO", "FORMAT", "SAMPLE"]
+            ].copy()
         else:
             vcf_info_sample = build_vcf_like_dataframe(sample_mutations, sample)
             # mandatory columns should be: [['CHROM', 'POS', 'REF', 'ALT', 'FILTER', 'DEPTH', 'ALT_DEPTH']]
@@ -203,27 +213,30 @@ def main(mutations_file, output_dir, maf_from_deepcsa, sample_name_column):
 
         # clean FILTER field of all deepCSA annotations
         if len(filters_to_remove) > 0:
-            vcf_info_sample["FILTER"] = vcf_info_sample["FILTER"].apply(remove_deepcsa_filters, filters_to_removee = filters_to_remove)
-        
+            vcf_info_sample["FILTER"] = vcf_info_sample["FILTER"].apply(
+                remove_deepcsa_filters, filters_to_removee=filters_to_remove
+            )
+
         # add other necessary columns
-        vcf_info_sample["ID"] = '.'
+        vcf_info_sample["ID"] = "."
         vcf_info_sample["QUAL"] = 100
 
         # rename sample column
         vcf_info_sample.rename(columns={"SAMPLE": sample}, inplace=True)
-        
+
         cols = ["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", sample]
-        
+
         sample_file = f"{output_dir}/{sample}.vcf"
-        
+
         with open(sample_file, "w") as f:
             f.write(vardict_vcf_header)
             f.write("#" + "\t".join(cols) + "\n")
-            
+
             # write the data
             vcf_info_sample.to_csv(f, sep="\t", columns=cols, index=False, header=False)
-            
+
         print(f"VCF file for {sample} : {sample_file}")
+
 
 if __name__ == "__main__":
     main()

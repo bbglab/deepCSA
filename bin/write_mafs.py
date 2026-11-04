@@ -36,24 +36,35 @@ python write_mafs.py \\
     --filters "filter1,filter2,filter3" \\
     --somatic-filters "somatic_filter1,somatic_filter2"
 """
+
+import json
 import logging
+
 import click
 import pandas as pd
-import json
+
 from read_utils import custom_na_values
 from utils_filter import extract_flagged_regions_bed, load_filter_criteria
 
 # Logging
 logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s",
-    level=logging.INFO,
-    datefmt="%m/%d/%Y %I:%M:%S %p"
+    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.INFO, datefmt="%m/%d/%Y %I:%M:%S %p"
 )
 LOG = logging.getLogger("write_mafs")
 
 # Constants
 # Define flags that are applied for all samples equally.
-COHORT_FLAGS = ["cohort_n_rich", "cohort_n_rich_uni", "repetitive_variant", "gnomAD_SNP", "nanoseq_snp", "nanoseq_noise", "not_covered", "not_in_exons"]
+COHORT_FLAGS = [
+    "cohort_n_rich",
+    "cohort_n_rich_uni",
+    "repetitive_variant",
+    "gnomAD_SNP",
+    "nanoseq_snp",
+    "nanoseq_noise",
+    "not_covered",
+    "not_in_exons",
+]
+
 
 def create_group_mafs(maf_df: pd.DataFrame, group_name: str, samples: list[str]) -> None:
     """
@@ -71,8 +82,9 @@ def create_group_mafs(maf_df: pd.DataFrame, group_name: str, samples: list[str])
     # Create MAF for the group by filtering the samples
     group_maf = maf_df[maf_df["SAMPLE_ID"].isin(samples)].sort_values(by=["CHROM", "POS"])
     # Generate output file
-    group_maf.to_csv(f"{group_name}.filtered.tsv.gz", sep="\t", header=True, index=False, compression='gzip')
+    group_maf.to_csv(f"{group_name}.filtered.tsv.gz", sep="\t", header=True, index=False, compression="gzip")
     LOG.info(f"Written MAF for group '{group_name}' with {len(group_maf)} records.")
+
 
 def create_sample_flagged_bed(maf_df: pd.DataFrame, samples: list[str], filter_criteria: list[str]) -> None:
     """
@@ -90,20 +102,24 @@ def create_sample_flagged_bed(maf_df: pd.DataFrame, samples: list[str], filter_c
     for sample in samples:
         sample_maf = maf_df[maf_df["SAMPLE_ID"] == sample]
         LOG.info(f"Extracting flagged positions from {sample}.")
-        extract_flagged_regions_bed(sample_maf, sample, filter_criteria)  
+        extract_flagged_regions_bed(sample_maf, sample, filter_criteria)
 
 
 @click.command()
-@click.option('--maf-file', required=True, type=click.Path(exists=True), help='Input gzipped MAF file (TSV)')
-@click.option('--groups-json', required=True, type=click.Path(exists=True), help='Optional JSON file with group/sample mapping')
-@click.option('--filters', required=False, type=str, default='', help='Comma-separated list of filter criteria')
-@click.option('--somatic-filters', required=False, type=str, default='', help='Comma-separated list of somatic filter criteria')
+@click.option("--maf-file", required=True, type=click.Path(exists=True), help="Input gzipped MAF file (TSV)")
+@click.option(
+    "--groups-json", required=True, type=click.Path(exists=True), help="Optional JSON file with group/sample mapping"
+)
+@click.option("--filters", required=False, type=str, default="", help="Comma-separated list of filter criteria")
+@click.option(
+    "--somatic-filters", required=False, type=str, default="", help="Comma-separated list of somatic filter criteria"
+)
 def main(maf_file, groups_json, filters: str, somatic_filters: str):
-    maf_df = pd.read_csv(maf_file, compression='gzip', header=0, sep='\t', na_values=custom_na_values)
+    maf_df = pd.read_csv(maf_file, compression="gzip", header=0, sep="\t", na_values=custom_na_values)
     maf_df["SAMPLE_ID"] = maf_df["SAMPLE_ID"].astype(str)
     filter_criteria = load_filter_criteria(filters, somatic_filters)
-    
-    with open(groups_json, 'r') as file:
+
+    with open(groups_json, "r") as file:
         groups_info = json.load(file)
 
     # Obtain the set of all samples to be analyzed
@@ -119,7 +135,7 @@ def main(maf_file, groups_json, filters: str, somatic_filters: str):
         error = f"Some SAMPLE_IDs listed in the features table have no matching entries in the MAF file. Missing SAMPLE_IDs: {', '.join(missing_samples)}"
         LOG.error(error)
         raise ValueError(error)
-        
+
     for group_name, samples in groups_info.items():
         samples = [str(x) for x in samples]
         # Extract group-specific MAFs
@@ -137,5 +153,6 @@ def main(maf_file, groups_json, filters: str, somatic_filters: str):
     cohort_wide_filters = [f for f in COHORT_FLAGS if f in filter_criteria]
     extract_flagged_regions_bed(maf_df, "all_samples", cohort_wide_filters, "cohort-wide-")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

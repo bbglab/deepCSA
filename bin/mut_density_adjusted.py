@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 
 import click
-import pandas as pd
-import numpy as np
-
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+import numpy as np
+import pandas as pd
 import seaborn as sns
+from matplotlib.backends.backend_pdf import PdfPages
 
 from utils_context import triplet_context_iterator
 from utils_impacts import broadimpact_grouping_dict_with_synonymous
-
 
 # Utils
 # define canonical order for trinucleotide contexts
@@ -26,7 +24,7 @@ def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, f
     """
 
     # vector of triplet count in 96-channel canonical sorting
-    triplet_counts_dict = dict(zip(trinucleotide_counts_df['CONTEXT'].values, trinucleotide_counts_df['COUNT'].values))
+    triplet_counts_dict = dict(zip(trinucleotide_counts_df["CONTEXT"].values, trinucleotide_counts_df["COUNT"].values))
     l = [triplet_counts_dict[c[:3]] for c in triplet_contexts]
     triplet_counts = np.array(l)
 
@@ -39,73 +37,83 @@ def get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, f
     if flat:
         relative_mutability = (1 / 96) * np.ones(96)
     else:
-        d = dict(zip(mutability_df['CONTEXT_MUT'], mutability_df[f'{sample_name}.all']))
+        d = dict(zip(mutability_df["CONTEXT_MUT"], mutability_df[f"{sample_name}.all"]))
         relative_mutability = np.array([d.get(k, 0) for k in triplet_contexts])
 
     # return correction factor a.k.a. "alpha hat"
     correction_factor = genome_length / np.dot(relative_mutability, triplet_counts)
-    
+
     return correction_factor, relative_mutability
 
 
-def mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False):
+def mutation_density(
+    sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False
+):
 
-    depths_df = pd.read_csv(depths_file, sep='\t')
-    somatic_mutations_df = pd.read_csv(somatic_mutations_file, sep='\t')
-    mutability_df = pd.read_csv(mutability_file, sep='\t')
-    panel_df = pd.read_csv(panel_file, sep='\t')
-    trinucleotide_counts_df = pd.read_csv(trinucleotide_counts_file, sep='\t')
+    depths_df = pd.read_csv(depths_file, sep="\t")
+    somatic_mutations_df = pd.read_csv(somatic_mutations_file, sep="\t")
+    mutability_df = pd.read_csv(mutability_file, sep="\t")
+    panel_df = pd.read_csv(panel_file, sep="\t")
+    trinucleotide_counts_df = pd.read_csv(trinucleotide_counts_file, sep="\t")
 
-    genes = panel_df['GENE'].unique()
+    genes = panel_df["GENE"].unique()
     consequences = list(broadimpact_grouping_dict_with_synonymous.keys())
 
     res = pd.DataFrame(index=genes, columns=consequences)
     eff_len = pd.DataFrame(index=genes, columns=consequences)
 
     for csqn, csqn_set in broadimpact_grouping_dict_with_synonymous.items():
-        
-        for gene in list(panel_df['GENE'].unique()) + ["ALL_GENES"]:
-            
+
+        for gene in list(panel_df["GENE"].unique()) + ["ALL_GENES"]:
+
             # compute vector of sum of depths per trinucleotide context
             # tailored to the specific gene-impact target
-            if gene == 'ALL_GENES':
-                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set))][['CHROM', 'POS', 'REF', 'ALT']].drop_duplicates()
+            if gene == "ALL_GENES":
+                region_df = panel_df[(panel_df["IMPACT"].isin(csqn_set))][
+                    ["CHROM", "POS", "REF", "ALT"]
+                ].drop_duplicates()
             else:
-                region_df = panel_df[(panel_df['IMPACT'].isin(csqn_set)) & (panel_df['GENE'] == gene)][['CHROM', 'POS', 'REF', 'ALT']].drop_duplicates()
+                region_df = panel_df[(panel_df["IMPACT"].isin(csqn_set)) & (panel_df["GENE"] == gene)][
+                    ["CHROM", "POS", "REF", "ALT"]
+                ].drop_duplicates()
 
             # counting every position as many times as the number of possible
             # mutations of the selected consequences at that position (1,2 or 3)
-            dh = pd.merge(region_df[['CHROM', 'POS']],
-                          depths_df[['CHROM', 'POS', 'CONTEXT', sample_name]],
-                          on=['CHROM', 'POS'], how='left')
-            depth_sum_df = dh.groupby(by='CONTEXT').agg({sample_name: 'sum'}).reset_index()
-            depth_region_dict = dict(zip(depth_sum_df['CONTEXT'], depth_sum_df[sample_name]))
+            dh = pd.merge(
+                region_df[["CHROM", "POS"]],
+                depths_df[["CHROM", "POS", "CONTEXT", sample_name]],
+                on=["CHROM", "POS"],
+                how="left",
+            )
+            depth_sum_df = dh.groupby(by="CONTEXT").agg({sample_name: "sum"}).reset_index()
+            depth_region_dict = dict(zip(depth_sum_df["CONTEXT"], depth_sum_df[sample_name]))
             depth_region_vect = np.array([depth_region_dict.get(k[:3], 0) for k in triplet_contexts])
 
-
             # compute correction factor "alpha hat"
-            correction_factor, relative_mutability = get_correction_factor(sample_name, trinucleotide_counts_df, mutability_df, flat=flat)
-
+            correction_factor, relative_mutability = get_correction_factor(
+                sample_name, trinucleotide_counts_df, mutability_df, flat=flat
+            )
 
             # compute effective length
             effective_length = correction_factor * np.dot(relative_mutability, depth_region_vect)
 
             try:
-                assert(effective_length != 0)
+                assert effective_length != 0
             except AssertionError:
                 res.loc[gene, csqn] = None
                 continue
 
-
             # observed somatic mutations
-            if gene == 'ALL_GENES':
-                n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set))].shape[0]
+            if gene == "ALL_GENES":
+                n = somatic_mutations_df[(somatic_mutations_df["IMPACT"].isin(csqn_set))].shape[0]
             else:
-                n = somatic_mutations_df[(somatic_mutations_df['IMPACT'].isin(csqn_set)) & (somatic_mutations_df['GENE'] == gene)].shape[0]
+                n = somatic_mutations_df[
+                    (somatic_mutations_df["IMPACT"].isin(csqn_set)) & (somatic_mutations_df["GENE"] == gene)
+                ].shape[0]
 
             res.loc[gene, csqn] = n / effective_length
             eff_len.loc[gene, csqn] = effective_length
-    
+
     return res, eff_len
 
 
@@ -117,68 +125,96 @@ def logfoldchange_plot(sample_name, df, df_flat):
 
     dh = (df + 0.01) / (df_flat + 0.01)  # Include a pseudocount
     dh = np.log2(dh.astype(float))
-    with PdfPages(f'{sample_name}.logfoldchangeplot.pdf') as pdf:
+    with PdfPages(f"{sample_name}.logfoldchangeplot.pdf") as pdf:
 
-        plt.figure(figsize=(8, 6)) # Set the size of the plot
+        plt.figure(figsize=(8, 6))  # Set the size of the plot
         sns.heatmap(
             dh,
-            annot=False,       
-            cmap='coolwarm',   # Choose a colormap (e.g., 'coolwarm', 'viridis', 'YlGnBu')
-            fmt=".2f",         # Format the annotations to two decimal places
-            linewidths=.5,     # Add lines between cells for better readability
-            cbar=True,         # Show the color bar
-            square=True,       # Make the cells square
-            vmin=-1, vmax=1, 
-            cbar_kws={'label': 'log2 fold-change'}
+            annot=False,
+            cmap="coolwarm",  # Choose a colormap (e.g., 'coolwarm', 'viridis', 'YlGnBu')
+            fmt=".2f",  # Format the annotations to two decimal places
+            linewidths=0.5,  # Add lines between cells for better readability
+            cbar=True,  # Show the color bar
+            square=True,  # Make the cells square
+            vmin=-1,
+            vmax=1,
+            cbar_kws={"label": "log2 fold-change"},
         )
 
         # Set the title and labels
-        plt.title(f'{sample_name}\nlog2 fold-change mutability adjusted vs flat', fontsize=16)
-        plt.xticks(rotation=45, ha='right')
+        plt.title(f"{sample_name}\nlog2 fold-change mutability adjusted vs flat", fontsize=16)
+        plt.xticks(rotation=45, ha="right")
         plt.yticks(rotation=0)
 
         # Display the plot
-        plt.tight_layout() # Adjust plot to ensure everything fits
+        plt.tight_layout()  # Adjust plot to ensure everything fits
         pdf.savefig()
         plt.close()
 
 
 @click.command()
-@click.option('--sample_name', type=str, help='Name of the sample being processed.')
-@click.option('--depths_file', type=str, help='Depth per position in panel')
-@click.option('--somatic_mutations_file', type=click.Path(exists=True), help='Observed somatic mutations')
-@click.option('--mutability_file', type=click.Path(exists=True), help='Relative mutability per trinucleotide context')
-@click.option('--panel_file', type=click.Path(exists=True), help='All possible SNVs with csqn type')
-@click.option('--trinucleotide_counts_file', type=click.Path(exists=True), help='How many trinucleotides of each type are in the entire genome')
+@click.option("--sample_name", type=str, help="Name of the sample being processed.")
+@click.option("--depths_file", type=str, help="Depth per position in panel")
+@click.option("--somatic_mutations_file", type=click.Path(exists=True), help="Observed somatic mutations")
+@click.option("--mutability_file", type=click.Path(exists=True), help="Relative mutability per trinucleotide context")
+@click.option("--panel_file", type=click.Path(exists=True), help="All possible SNVs with csqn type")
+@click.option(
+    "--trinucleotide_counts_file",
+    type=click.Path(exists=True),
+    help="How many trinucleotides of each type are in the entire genome",
+)
 def main(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file):
 
-    click.echo(f"Running the mutability adjusted mutation density estimation...")
-    
+    click.echo("Running the mutability adjusted mutation density estimation...")
+
     # main calculations
-    res, eff_len = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=False)
-    res_flat, eff_len_flat = mutation_density(sample_name, depths_file, somatic_mutations_file, mutability_file, panel_file, trinucleotide_counts_file, flat=True)
-    
+    res, eff_len = mutation_density(
+        sample_name,
+        depths_file,
+        somatic_mutations_file,
+        mutability_file,
+        panel_file,
+        trinucleotide_counts_file,
+        flat=False,
+    )
+    res_flat, eff_len_flat = mutation_density(
+        sample_name,
+        depths_file,
+        somatic_mutations_file,
+        mutability_file,
+        panel_file,
+        trinucleotide_counts_file,
+        flat=True,
+    )
+
     if res.shape[0] <= 300:
         logfoldchange_plot(sample_name, res, res_flat)
 
     # save results
     res["SAMPLE_ID"] = sample_name
-    res.index.name = 'GENE'
-    res[['SAMPLE_ID'] + [col for col in res.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities.tsv', sep='\t')
-    
+    res.index.name = "GENE"
+    res[["SAMPLE_ID"] + [col for col in res.columns if col != "SAMPLE_ID"]].to_csv(
+        f"{sample_name}.mutdensities.tsv", sep="\t"
+    )
+
     res_flat["SAMPLE_ID"] = sample_name
-    res_flat.index.name = 'GENE'
-    res_flat[['SAMPLE_ID'] + [col for col in res_flat.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.mutdensities_flat.tsv', sep='\t')
-    
+    res_flat.index.name = "GENE"
+    res_flat[["SAMPLE_ID"] + [col for col in res_flat.columns if col != "SAMPLE_ID"]].to_csv(
+        f"{sample_name}.mutdensities_flat.tsv", sep="\t"
+    )
+
     eff_len["SAMPLE_ID"] = sample_name
-    eff_len.index.name = 'GENE'
-    eff_len[['SAMPLE_ID'] + [col for col in eff_len.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.effective_length.tsv', sep='\t')
-    
+    eff_len.index.name = "GENE"
+    eff_len[["SAMPLE_ID"] + [col for col in eff_len.columns if col != "SAMPLE_ID"]].to_csv(
+        f"{sample_name}.effective_length.tsv", sep="\t"
+    )
+
     eff_len_flat["SAMPLE_ID"] = sample_name
-    eff_len_flat.index.name = 'GENE'
-    eff_len_flat[['SAMPLE_ID'] + [col for col in eff_len_flat.columns if col != 'SAMPLE_ID']].to_csv(f'{sample_name}.effective_length_flat.tsv', sep='\t')
+    eff_len_flat.index.name = "GENE"
+    eff_len_flat[["SAMPLE_ID"] + [col for col in eff_len_flat.columns if col != "SAMPLE_ID"]].to_csv(
+        f"{sample_name}.effective_length_flat.tsv", sep="\t"
+    )
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

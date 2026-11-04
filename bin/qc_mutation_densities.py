@@ -1,82 +1,87 @@
 #!/usr/bin/env python
 
-import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-from adjustText import adjust_text
-from scipy.stats import zscore
-from matplotlib.backends.backend_pdf import PdfPages
-import click
 import json
 
+import click
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from adjustText import adjust_text
+from matplotlib.backends.backend_pdf import PdfPages
+from scipy.stats import zscore
 
 ### Functions ###
 
 # Function to load sample names
 
+
 def load_samples_names(samples_file, group_name):
 
-    with open(samples_file, 'r') as f:
+    with open(samples_file, "r") as f:
         samples_definition = json.load(f)
     return samples_definition[group_name]
 
+
 # Function to filter mutdensity dataframes
 
-def filter_mutdensities(mutdensity_df, region, sample_name, mode = 'per_gene', samples = None) :
+
+def filter_mutdensities(mutdensity_df, region, sample_name, mode="per_gene", samples=None):
     # Filter mutdensity_df
-    if mode == 'per_gene' :
+    if mode == "per_gene":
         filt_mutden_df = mutdensity_df[
-                         (mutdensity_df['SAMPLE_ID'] == sample_name)
-                       & (mutdensity_df['MUTTYPES'] == 'SNV') 
-                       & (mutdensity_df['REGIONS'].isin(region))
-                       & (mutdensity_df['GENE'] != 'ALL_GENES')
+            (mutdensity_df["SAMPLE_ID"] == sample_name)
+            & (mutdensity_df["MUTTYPES"] == "SNV")
+            & (mutdensity_df["REGIONS"].isin(region))
+            & (mutdensity_df["GENE"] != "ALL_GENES")
         ].reset_index(drop=True)
-    
-    elif mode == 'per_sample' and samples is not None :
+
+    elif mode == "per_sample" and samples is not None:
         filt_mutden_df = mutdensity_df[
-                         (mutdensity_df['GENE'] == 'ALL_GENES')
-                       & (mutdensity_df['MUTTYPES'] == 'SNV')
-                       & (mutdensity_df['REGIONS'].isin(region))
-                       & (mutdensity_df['SAMPLE_ID'].isin(samples))
+            (mutdensity_df["GENE"] == "ALL_GENES")
+            & (mutdensity_df["MUTTYPES"] == "SNV")
+            & (mutdensity_df["REGIONS"].isin(region))
+            & (mutdensity_df["SAMPLE_ID"].isin(samples))
         ].reset_index(drop=True)
-    
-    elif mode == 'per_sample' and samples is None :
+
+    elif mode == "per_sample" and samples is None:
         raise ValueError("For mode 'per_sample', a list of samples must be provided.")
 
-    elif mode == 'per_gene_n_sample':
+    elif mode == "per_gene_n_sample":
         filt_mutden_df = mutdensity_df[
-                               (mutdensity_df['MUTTYPES'] == 'SNV')
-                               & (mutdensity_df['REGIONS'].isin(region))
-                               & (mutdensity_df['SAMPLE_ID'].isin(samples))
-                ].reset_index(drop=True)
-    else : 
-        raise ValueError(
-            f"Invalid mode: {mode} - Expected value: 'per_sample' or 'per_gene'"
-        )
-    return(filt_mutden_df)
+            (mutdensity_df["MUTTYPES"] == "SNV")
+            & (mutdensity_df["REGIONS"].isin(region))
+            & (mutdensity_df["SAMPLE_ID"].isin(samples))
+        ].reset_index(drop=True)
+    else:
+        raise ValueError(f"Invalid mode: {mode} - Expected value: 'per_sample' or 'per_gene'")
+    return filt_mutden_df
 
-# Function to calculate z-score from log10 
 
-def z_score_log10(mutden_df, mode = 'per_sample') :
+# Function to calculate z-score from log10
+
+
+def z_score_log10(mutden_df, mode="per_sample"):
     # exclude samples with mutdensity value of 0 - to avoid inf in log10 calculation
-    if mode == 'per_sample' :
-        zero_cases = mutden_df.loc[mutden_df['MUTDENSITY_MB'] == 0, 'SAMPLE_ID'].tolist()
-    elif mode == 'per_gene' :
-        zero_cases = mutden_df.loc[mutden_df['MUTDENSITY_MB'] == 0, 'GENE'].tolist()
+    if mode == "per_sample":
+        zero_cases = mutden_df.loc[mutden_df["MUTDENSITY_MB"] == 0, "SAMPLE_ID"].tolist()
+    elif mode == "per_gene":
+        zero_cases = mutden_df.loc[mutden_df["MUTDENSITY_MB"] == 0, "GENE"].tolist()
 
-    mut_den_nonzero = mutden_df[mutden_df['MUTDENSITY_MB'] > 0].copy().reset_index(drop=True)
+    mut_den_nonzero = mutden_df[mutden_df["MUTDENSITY_MB"] > 0].copy().reset_index(drop=True)
 
-    # Log10 transformation and z-score 
-    mut_den_nonzero['log10_MUTDENSITY_MB'] = np.log10(mut_den_nonzero['MUTDENSITY_MB'])
-    mut_den_nonzero['zscore'] = zscore(mut_den_nonzero['log10_MUTDENSITY_MB'])
-    
-    return(zero_cases, mut_den_nonzero)
+    # Log10 transformation and z-score
+    mut_den_nonzero["log10_MUTDENSITY_MB"] = np.log10(mut_den_nonzero["MUTDENSITY_MB"])
+    mut_den_nonzero["zscore"] = zscore(mut_den_nonzero["log10_MUTDENSITY_MB"])
+
+    return (zero_cases, mut_den_nonzero)
+
 
 # Function to plot results from z-score distribution
 
-def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag = None, min_points = 3):
-    
+
+def plt_violin_omega_qc(mutdensity_zscore_df, mode="per_gene", zero_cases_flag=None, min_points=3):
+
     # If the dataset is too small to produce meaningful plots (e.g. a single
     # sample/group), skip plotting and return None. The caller in `main` already
     # handles a None return (it will continue to the next loop iteration).
@@ -84,35 +89,34 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
         n = 0 if mutdensity_zscore_df is None else len(mutdensity_zscore_df)
         print(f"Skipping plotting: dataset too small (n={n})")
         return None
-    
+
     # Setup subplots
     fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=False)
 
-    metrics = ['MUTDENSITY_MB', 'zscore']
-    titles = ['MUTDENSITY_MB', 'Z-score of log10(MUTDENSITY_MB)']
+    metrics = ["MUTDENSITY_MB", "zscore"]
+    titles = ["MUTDENSITY_MB", "Z-score of log10(MUTDENSITY_MB)"]
 
     for ax, metric, title in zip(axes, metrics, titles):
         # Violin plot
-        sns.violinplot(data=mutdensity_zscore_df, y=metric,
-                    inner=None, color='skyblue', ax=ax, alpha=0.3, linewidth=0)
+        sns.violinplot(data=mutdensity_zscore_df, y=metric, inner=None, color="skyblue", ax=ax, alpha=0.3, linewidth=0)
 
         # Define masks for outliers
-        is_outlier = (mutdensity_zscore_df['zscore'].abs() > 2).values
+        is_outlier = (mutdensity_zscore_df["zscore"].abs() > 2).values
         is_clean = ~is_outlier
 
         # Jittered x-coordinates
         jitter_strength = 0.1
         xs = np.random.uniform(-jitter_strength, jitter_strength, size=len(mutdensity_zscore_df))
 
-        ax.scatter(xs[is_clean], mutdensity_zscore_df.loc[is_clean, metric], color='skyblue', s=40, zorder=3)
+        ax.scatter(xs[is_clean], mutdensity_zscore_df.loc[is_clean, metric], color="skyblue", s=40, zorder=3)
 
         if is_outlier.any():
-            ax.scatter(xs[is_outlier], mutdensity_zscore_df.loc[is_outlier, metric], color='red', s=40, zorder=3)
+            ax.scatter(xs[is_outlier], mutdensity_zscore_df.loc[is_outlier, metric], color="red", s=40, zorder=3)
 
         # Threshold lines for zscore
-        if metric == 'zscore':
-            ax.axhline(y=2, color='grey', linestyle='--', linewidth=1)
-            ax.axhline(y=-2, color='grey', linestyle='--', linewidth=1)
+        if metric == "zscore":
+            ax.axhline(y=2, color="grey", linestyle="--", linewidth=1)
+            ax.axhline(y=-2, color="grey", linestyle="--", linewidth=1)
 
         # Label outliers
         texts = []
@@ -120,24 +124,20 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
             x = xs[i]
             y = row[metric]
 
-            if mode == 'per_gene':
-                texts.append(ax.text(x + 0.02, y, row['GENE'],
-                                        color='red', fontsize=8, va='center'))
-            elif mode == 'per_sample':
-                texts.append(ax.text(x + 0.02, y, row['SAMPLE_ID'],
-                                        color='red', fontsize=8, va='center'))
+            if mode == "per_gene":
+                texts.append(ax.text(x + 0.02, y, row["GENE"], color="red", fontsize=8, va="center"))
+            elif mode == "per_sample":
+                texts.append(ax.text(x + 0.02, y, row["SAMPLE_ID"], color="red", fontsize=8, va="center"))
 
         if texts:
-            adjust_text(texts, ax=ax,
-                        only_move={'points':'y', 'text':'y'},
-                        arrowprops=None)  # arrows optional
+            adjust_text(texts, ax=ax, only_move={"points": "y", "text": "y"}, arrowprops=None)  # arrows optional
 
         ax.set_xticks([])
 
-        if mode == 'per_gene':
-            ax.set_xlabel(mutdensity_zscore_df['SAMPLE_ID'].iloc[0])
-        if mode == 'per_sample':
-            ax.set_xlabel(mutdensity_zscore_df['GENE'].iloc[0]) 
+        if mode == "per_gene":
+            ax.set_xlabel(mutdensity_zscore_df["SAMPLE_ID"].iloc[0])
+        if mode == "per_sample":
+            ax.set_xlabel(mutdensity_zscore_df["GENE"].iloc[0])
 
         ax.set_ylabel(metric)
         ax.set_title(title)
@@ -145,22 +145,26 @@ def plt_violin_omega_qc(mutdensity_zscore_df, mode = 'per_gene', zero_cases_flag
     # Add zero-value genes as a side annotation
     if zero_cases_flag:
         zero_text = "Samples with MUTDENSITY_MB=0:\n" + ", ".join(zero_cases_flag)
-        fig.text(0.95, 0.5, zero_text, fontsize=9, color='orange', rotation=90,
-                 va='center', ha='left', wrap=True)
+        fig.text(0.95, 0.5, zero_text, fontsize=9, color="orange", rotation=90, va="center", ha="left", wrap=True)
 
     # Main title
     plt.suptitle(f'{mode} - {mutdensity_zscore_df["REGIONS"].iloc[0]}', fontsize=14)
     plt.tight_layout(rect=[0, 0.03, 0.92, 0.95])  # leave space for side text
-    
-    return(fig)
 
-def plot_comparison_npa_syn(mutdensities_orig, min_points = 3, filename = None):
+    return fig
 
-    mutdensities_merged = mutdensities_orig[mutdensities_orig["REGIONS"] == 'non_protein_affecting'].drop(columns = 'REGIONS').merge(
-        mutdensities_orig[mutdensities_orig["REGIONS"] == 'synonymous'].drop(columns = 'REGIONS'),
-        on = ["GENE", "SAMPLE_ID"],
-        how = 'left',
-        suffixes = ("_npa", "_syn")
+
+def plot_comparison_npa_syn(mutdensities_orig, min_points=3, filename=None):
+
+    mutdensities_merged = (
+        mutdensities_orig[mutdensities_orig["REGIONS"] == "non_protein_affecting"]
+        .drop(columns="REGIONS")
+        .merge(
+            mutdensities_orig[mutdensities_orig["REGIONS"] == "synonymous"].drop(columns="REGIONS"),
+            on=["GENE", "SAMPLE_ID"],
+            how="left",
+            suffixes=("_npa", "_syn"),
+        )
     )
 
     # If the dataset is too small to produce meaningful plots (e.g. a single
@@ -172,112 +176,126 @@ def plot_comparison_npa_syn(mutdensities_orig, min_points = 3, filename = None):
         return None
 
     if filename is not None:
-            mutdensities_merged.to_csv(filename, sep = ',', index = False)
+        mutdensities_merged.to_csv(filename, sep=",", index=False)
 
     # Setup subplots
     fig, axes = plt.subplots(1, 2, figsize=(8, 5), sharey=False)
 
-    sns.scatterplot(data = mutdensities_merged,
-                    x = 'MUTDENSITY_MB_syn',
-                    y = 'MUTDENSITY_MB_npa',
-                    hue='SAMPLE_ID',
-                    legend = False,
-                    ax = axes[0]
-                    )
+    sns.scatterplot(
+        data=mutdensities_merged,
+        x="MUTDENSITY_MB_syn",
+        y="MUTDENSITY_MB_npa",
+        hue="SAMPLE_ID",
+        legend=False,
+        ax=axes[0],
+    )
     axes[0].set_xlabel("Synonymous\nmutation density")
     axes[0].set_ylabel("Non-protein affecting\nmutation density")
 
-    sns.scatterplot(data = mutdensities_merged,
-                    x = 'MUTDENSITY_MB_syn',
-                    y = 'MUTDENSITY_MB_npa',
-                    hue='GENE',
-                    legend = False,
-                    ax = axes[1]
-                    )
+    sns.scatterplot(
+        data=mutdensities_merged, x="MUTDENSITY_MB_syn", y="MUTDENSITY_MB_npa", hue="GENE", legend=False, ax=axes[1]
+    )
     axes[1].set_xlabel("Synonymous\nmutation density")
     axes[1].set_ylabel("Non-protein affecting\nmutation density")
-    
-    return(fig)
+
+    return fig
 
 
 # main function
 
+
 @click.command()
-@click.option("--input-file", required=True, type=click.Path(exists=True),
-              help="Directory containing mutdensity/all_mutdensities.tsv")
-@click.option("--output-dir", required=True, type=click.Path(writable=True),
-              help="Directory where output files will be written")
-@click.option("--panel", required=True, type=click.Path(exists=True),
-              help="File with a list of panel genes (one gene per line)")
-@click.option("--group-definition", required=True, type=click.Path(exists=True),
-              help="json file with the list of samples to be included in the analysis")
-@click.option("--group-name", required=True, type=str,
-              help="Name of the group to be analyzed")
+@click.option(
+    "--input-file",
+    required=True,
+    type=click.Path(exists=True),
+    help="Directory containing mutdensity/all_mutdensities.tsv",
+)
+@click.option(
+    "--output-dir", required=True, type=click.Path(writable=True), help="Directory where output files will be written"
+)
+@click.option(
+    "--panel", required=True, type=click.Path(exists=True), help="File with a list of panel genes (one gene per line)"
+)
+@click.option(
+    "--group-definition",
+    required=True,
+    type=click.Path(exists=True),
+    help="json file with the list of samples to be included in the analysis",
+)
+@click.option("--group-name", required=True, type=str, help="Name of the group to be analyzed")
+def main(input_file, output_dir, panel, group_definition, group_name):
 
-def main(input_file, output_dir, panel, group_definition, group_name): 
-
-    mutden_df = pd.read_table(input_file, sep='\t')
+    mutden_df = pd.read_table(input_file, sep="\t")
     panel = pd.read_table(panel)
 
-    panel_genes_init = panel['GENE'].unique().tolist()
+    panel_genes_init = panel["GENE"].unique().tolist()
     del panel
 
     sample_names = load_samples_names(group_definition, group_name)
 
     ## 1. Initial general filtering by panel genes
-    panel_genes = panel_genes_init + ['ALL_GENES'] # is this an issue for the per_gene omega?
-    mutden_df_panel = mutden_df[mutden_df['GENE'].isin(panel_genes)].reset_index(drop=True)
+    panel_genes = panel_genes_init + ["ALL_GENES"]  # is this an issue for the per_gene omega?
+    mutden_df_panel = mutden_df[mutden_df["GENE"].isin(panel_genes)].reset_index(drop=True)
 
     ## 2. Generating csv with z-score and list of flagged samples/genes
-    regions = ['synonymous', 'non_protein_affecting']
-    mode_list = ['per_sample', 'per_gene']
+    regions = ["synonymous", "non_protein_affecting"]
+    mode_list = ["per_sample", "per_gene"]
 
     compile_all_flagged = pd.DataFrame()
 
-    for reg in regions : 
-        for mod in mode_list: 
+    for reg in regions:
+        for mod in mode_list:
             filt_mutden = filter_mutdensities(mutden_df_panel, [reg], group_name, mod, sample_names)
             if filt_mutden.shape[0] < 2:
                 continue
             zero_cases_flag, mutden_zscore = z_score_log10(filt_mutden, mod)
 
             ## Generate csv with zscore result and store as csv
-            cols_of_interest = ['SAMPLE_ID', 'GENE', 'REGIONS', 'MUTTYPES', 'MUTDENSITY_MB', 'log10_MUTDENSITY_MB', 'zscore']
-            mutden_zscore[cols_of_interest].to_csv(f'{output_dir}/{reg}_{mod}_mutdensities_zscore.csv', index=False)
+            cols_of_interest = [
+                "SAMPLE_ID",
+                "GENE",
+                "REGIONS",
+                "MUTTYPES",
+                "MUTDENSITY_MB",
+                "log10_MUTDENSITY_MB",
+                "zscore",
+            ]
+            mutden_zscore[cols_of_interest].to_csv(f"{output_dir}/{reg}_{mod}_mutdensities_zscore.csv", index=False)
 
-            if mod == 'per_sample':
-                flagged_cases = mutden_zscore[(mutden_zscore['zscore'].abs() > 2)][['SAMPLE_ID', 'zscore']]
-            elif mod == 'per_gene':
-                flagged_cases = mutden_zscore[(mutden_zscore['zscore'].abs() > 2)][['GENE', 'zscore']]
+            if mod == "per_sample":
+                flagged_cases = mutden_zscore[(mutden_zscore["zscore"].abs() > 2)][["SAMPLE_ID", "zscore"]]
+            elif mod == "per_gene":
+                flagged_cases = mutden_zscore[(mutden_zscore["zscore"].abs() > 2)][["GENE", "zscore"]]
 
             # Store flagged cases in a csv
-            flagged_cases['reason_exclusion'] = np.where(flagged_cases['zscore'] > 2, 'high_mutdensity - zscore > 2', 'low_mutdensity - zscore < -2')
-            flagged_cases = flagged_cases.drop(columns=['zscore'])
-            flagged_cases.columns = ['ID', 'reason_exclusion']
+            flagged_cases["reason_exclusion"] = np.where(
+                flagged_cases["zscore"] > 2, "high_mutdensity - zscore > 2", "low_mutdensity - zscore < -2"
+            )
+            flagged_cases = flagged_cases.drop(columns=["zscore"])
+            flagged_cases.columns = ["ID", "reason_exclusion"]
 
-            zero_cases = pd.DataFrame(zero_cases_flag, columns=['ID'])
-            zero_cases['reason_exclusion'] = 'mutdensity = 0'  
+            zero_cases = pd.DataFrame(zero_cases_flag, columns=["ID"])
+            zero_cases["reason_exclusion"] = "mutdensity = 0"
 
             flagged_cases_all = pd.concat([flagged_cases, zero_cases], ignore_index=True)
-            flagged_cases_all['cohort']   = group_name
-            flagged_cases_all['regions']  = reg
-            flagged_cases_all['criteria'] = mod
-            
+            flagged_cases_all["cohort"] = group_name
+            flagged_cases_all["regions"] = reg
+            flagged_cases_all["criteria"] = mod
+
             compile_all_flagged = pd.concat([compile_all_flagged, flagged_cases_all], ignore_index=True)
-            
-            flagged_cases_all.to_csv(
-                f"{output_dir}/flagged_cases_{reg}_{mod}.csv", index=False, header = False
-            )
+
+            flagged_cases_all.to_csv(f"{output_dir}/flagged_cases_{reg}_{mod}.csv", index=False, header=False)
 
             # Violin plots z-score
             with PdfPages(f"{output_dir}/{reg}_{mod}_omegaqc_summary_plot.pdf") as pdf:
-                fig = plt_violin_omega_qc(mutden_zscore, mode=mod, zero_cases_flag = zero_cases_flag)
+                fig = plt_violin_omega_qc(mutden_zscore, mode=mod, zero_cases_flag=zero_cases_flag)
 
                 # If your function doesn't return fig, you can get current figure:
                 if fig is None:
-                    print(f'Error: unable to plot {reg} {mod}')
+                    print(f"Error: unable to plot {reg} {mod}")
                     continue
-                            
+
                 # Save to PDF
                 pdf.savefig(fig)
 
@@ -286,19 +304,19 @@ def main(input_file, output_dir, panel, group_definition, group_name):
 
     # Scatter plots synonymous vs non-protein-affecting
     with PdfPages(f"{output_dir}/neutral_mutation_densities_comparison.pdf") as pdf:
-        filt_mutden = filter_mutdensities(mutden_df_panel, regions , group_name, 'per_gene_n_sample', sample_names)
-        fig = plot_comparison_npa_syn(filt_mutden, filename = f"{output_dir}/neutral_mutation_densities_comparison.csv")
+        filt_mutden = filter_mutdensities(mutden_df_panel, regions, group_name, "per_gene_n_sample", sample_names)
+        fig = plot_comparison_npa_syn(filt_mutden, filename=f"{output_dir}/neutral_mutation_densities_comparison.csv")
         if fig is not None:
             pdf.savefig(fig)
         plt.close(fig)
 
-        filt_mutden = filter_mutdensities(mutden_df_panel, regions, group_name, 'per_gene', sample_names)
+        filt_mutden = filter_mutdensities(mutden_df_panel, regions, group_name, "per_gene", sample_names)
         fig = plot_comparison_npa_syn(filt_mutden)
         if fig is not None:
             pdf.savefig(fig)
         plt.close(fig)
 
-        filt_mutden = filter_mutdensities(mutden_df_panel, regions, group_name, 'per_sample', sample_names)
+        filt_mutden = filter_mutdensities(mutden_df_panel, regions, group_name, "per_sample", sample_names)
         fig = plot_comparison_npa_syn(filt_mutden)
         if fig is not None:
             pdf.savefig(fig)
@@ -306,10 +324,11 @@ def main(input_file, output_dir, panel, group_definition, group_name):
 
     if compile_all_flagged.empty:
         print("No flagged cases found across all regions and modes.")
-        compile_all_flagged = pd.DataFrame(columns=['ID', 'reason_exclusion', 'cohort', 'regions', 'criteria'])
+        compile_all_flagged = pd.DataFrame(columns=["ID", "reason_exclusion", "cohort", "regions", "criteria"])
 
     # Compile all flagged cases into a single csv
-    compile_all_flagged.to_csv(f"{output_dir}/compiled_all_flagged_cases.{group_name}.tsv", index = False, sep='\t')
+    compile_all_flagged.to_csv(f"{output_dir}/compiled_all_flagged_cases.{group_name}.tsv", index=False, sep="\t")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

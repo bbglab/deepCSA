@@ -117,9 +117,7 @@ def assign_genotype_bins(germline_mutations):
     bin 4: VAF > 1.
     """
     germline_mutations = germline_mutations.copy()
-    germline_mutations["genotype_bin"] = np.digitize(
-        germline_mutations["VAF"], right=True, bins=GENOTYPE_BINS
-    )
+    germline_mutations["genotype_bin"] = np.digitize(germline_mutations["VAF"], right=True, bins=GENOTYPE_BINS)
     return germline_mutations
 
 
@@ -136,9 +134,7 @@ def build_pca_matrix(germline_mutations):
         Matrix with one row per sample and one column per germline mutation.
     """
     subset = germline_mutations[germline_mutations["genotype_bin"].isin(GENOTYPE_BINS_FOR_PCA)]
-    pca_data = subset.pivot_table(
-        index="SAMPLE_ID", columns="MUT_ID", values="genotype_bin", aggfunc="first"
-    )
+    pca_data = subset.pivot_table(index="SAMPLE_ID", columns="MUT_ID", values="genotype_bin", aggfunc="first")
     return pca_data.fillna(0)
 
 
@@ -252,13 +248,9 @@ def flag_pathogenic_snps(germline_mutations, gnomad_af_threshold):
         The input table with an additional IS_PATHOGENIC boolean column.
     """
     germline_mutations = germline_mutations.copy()
-    is_protein_affecting = (
-        germline_mutations["canonical_Protein_affecting"] == PROTEIN_AFFECTING_VALUE
-    )
+    is_protein_affecting = germline_mutations["canonical_Protein_affecting"] == PROTEIN_AFFECTING_VALUE
 
-    available_af_columns = [
-        col for col in GNOMAD_AF_COLUMNS if col in germline_mutations.columns
-    ]
+    available_af_columns = [col for col in GNOMAD_AF_COLUMNS if col in germline_mutations.columns]
     if available_af_columns:
         af_values = germline_mutations[available_af_columns].apply(pd.to_numeric, errors="coerce")
         is_rare = (af_values.fillna(0) <= gnomad_af_threshold).all(axis="columns")
@@ -288,9 +280,7 @@ def summarize_pathogenic_snps(germline_mutations):
     pathogenic_snps = pathogenic_snps[reported_columns]
 
     pathogenic_snps_summary = (
-        pathogenic_snps.groupby("SAMPLE_ID", as_index=False)
-        .size()
-        .rename(columns={"size": "N_PATHOGENIC_SNPS"})
+        pathogenic_snps.groupby("SAMPLE_ID", as_index=False).size().rename(columns={"size": "N_PATHOGENIC_SNPS"})
     )
     return pathogenic_snps, pathogenic_snps_summary
 
@@ -366,7 +356,9 @@ def plot_ancestry_heatmap(ancestry_profiles, pdf):
     populations = [col for col in ancestry_profiles.columns if col not in ("SAMPLE_ID", "MOST_LIKELY_POPULATION")]
     heatmap_data = ancestry_profiles.set_index("SAMPLE_ID")[populations]
     fig, ax = plt.subplots(figsize=(1.0 + 0.5 * len(populations), 1.0 + 0.4 * len(heatmap_data)))
-    sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="viridis", ax=ax, cbar_kws={"label": "Mean gnomAD population AF"})
+    sns.heatmap(
+        heatmap_data, annot=True, fmt=".4f", cmap="viridis", ax=ax, cbar_kws={"label": "Mean gnomAD population AF"}
+    )
     ax.set_xlabel("gnomAD population")
     ax.set_ylabel("Sample")
     ax.set_title("Ancestry inference from gnomAD population AFs")
@@ -408,9 +400,7 @@ def main(clean_maf, somatic_maf, output_prefix, gnomad_af_threshold):
     print(f"Clean mutations: {clean_mutations.shape}")
     print(f"Somatic mutations: {somatic_mutations.shape}")
 
-    germline_mutations = assign_genotype_bins(
-        subtract_somatic_mutations(clean_mutations, somatic_mutations)
-    )
+    germline_mutations = assign_genotype_bins(subtract_somatic_mutations(clean_mutations, somatic_mutations))
     print(f"Germline mutations after subtracting the somatic calls: {germline_mutations.shape}")
 
     germline_mutations = flag_pathogenic_snps(germline_mutations, gnomad_af_threshold)
@@ -424,7 +414,9 @@ def main(clean_maf, somatic_maf, output_prefix, gnomad_af_threshold):
     ancestry_profiles = infer_sample_ancestry(germline_mutations)
     if not ancestry_profiles.empty:
         ancestry_profiles.to_csv(f"{output_prefix}.ancestry_inference.tsv", sep="\t", index=False)
-        print(f"Most likely population per sample:\n{ancestry_profiles[['SAMPLE_ID', 'MOST_LIKELY_POPULATION']].to_string(index=False)}")
+        print(
+            f"Most likely population per sample:\n{ancestry_profiles[['SAMPLE_ID', 'MOST_LIKELY_POPULATION']].to_string(index=False)}"
+        )
 
     with PdfPages(f"{output_prefix}.germline_snps_summary.pdf") as pdf:
         if germline_mutations.empty:

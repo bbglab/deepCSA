@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 
 
-import click
 import json
-import pandas as pd
-import numpy as np
+
+import click
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
+from read_utils import custom_na_values
 from utils import contexts_formatted
 from utils_filter import filter_maf
-from read_utils import custom_na_values
 from utils_plot import snv_color
 
 
@@ -20,12 +21,12 @@ def subset_mutation_dataframe(mutations_file, json_filters):
     INFO
     """
     # Load your MAF DataFrame (raw_annotated_maf)
-    raw_annotated_maf = pd.read_csv(mutations_file, sep = "\t", header = 0, na_values = custom_na_values)
+    raw_annotated_maf = pd.read_csv(mutations_file, sep="\t", header=0, na_values=custom_na_values)
 
     data_tuples = []
 
     # Load the filter criteria from the JSON file
-    with open(json_filters, 'r') as file:
+    with open(json_filters, "r") as file:
         filter_criteria = json.load(file)
 
         # Convert the dictionary into a list of tuples
@@ -37,7 +38,6 @@ def subset_mutation_dataframe(mutations_file, json_filters):
                 data_tuples.append((key, value))
         print(data_tuples)
 
-
     if len(data_tuples) > 0:
         # Filter the annotated maf using the described filters
         print("MAF subset")
@@ -46,7 +46,7 @@ def subset_mutation_dataframe(mutations_file, json_filters):
     return raw_annotated_maf
 
 
-def plot_mutations_per_sample(sample_name, maf, sample_column_name = "SAMPLE_ID"):
+def plot_mutations_per_sample(sample_name, maf, sample_column_name="SAMPLE_ID"):
     muts_per_sample = maf.groupby(sample_column_name).size().to_frame("NUM_MUTS").reset_index()
 
     # Calculate the length of the longest sample name
@@ -62,23 +62,22 @@ def plot_mutations_per_sample(sample_name, maf, sample_column_name = "SAMPLE_ID"
     # fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 
     fig, ax = plt.subplots(figsize=(18, 4))
-    sns.barplot(data = muts_per_sample, x = sample_column_name, y = "NUM_MUTS",
-                ax = ax, palette = ["salmon"], dodge = False)
-    plt.xticks(rotation = rotation_angle)
+    sns.barplot(data=muts_per_sample, x=sample_column_name, y="NUM_MUTS", ax=ax, palette=["salmon"], dodge=False)
+    plt.xticks(rotation=rotation_angle)
     plt.xlabel("")
-    plt.ylabel("Number of mutations", fontsize = 14)
+    plt.ylabel("Number of mutations", fontsize=14)
     ax.set_title(f"Somatic mutations in {sample_name}")
     plt.tight_layout()
 
     return fig
 
 
-def plot_mutations_per_gene(sample_name, maf, parameters = {}):
-    default_vals = {'gene_column_name' : 'SYMBOL', 'minimum_muts' : 5, 'annotation' : True}
+def plot_mutations_per_gene(sample_name, maf, parameters={}):
+    default_vals = {"gene_column_name": "SYMBOL", "minimum_muts": 5, "annotation": True}
     default_vals.update(parameters)
 
-    muts_per_gene = maf.groupby(default_vals['gene_column_name']).size().to_frame("NUM_MUTS")
-    muts_per_gene = muts_per_gene[muts_per_gene["NUM_MUTS"] >= default_vals['minimum_muts']].reset_index()
+    muts_per_gene = maf.groupby(default_vals["gene_column_name"]).size().to_frame("NUM_MUTS")
+    muts_per_gene = muts_per_gene[muts_per_gene["NUM_MUTS"] >= default_vals["minimum_muts"]].reset_index()
 
     # # Calculate the length of the longest sample name
     # max_label_length = muts_per_gene[default_vals['gene_column_name']].str.len().max()
@@ -93,15 +92,11 @@ def plot_mutations_per_gene(sample_name, maf, parameters = {}):
     # fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     fig, ax = plt.subplots(figsize=(18, 4))
 
-    muts_per_gene = muts_per_gene.sort_values(by = "NUM_MUTS", ascending = False).reset_index(drop = True)
+    muts_per_gene = muts_per_gene.sort_values(by="NUM_MUTS", ascending=False).reset_index(drop=True)
 
     # Plot the barplot
-    sns.barplot(data=muts_per_gene,
-                x = default_vals['gene_column_name'], y="NUM_MUTS",
-                ax=ax,
-                color="salmon"
-                )
-    if default_vals['annotation']:
+    sns.barplot(data=muts_per_gene, x=default_vals["gene_column_name"], y="NUM_MUTS", ax=ax, color="salmon")
+    if default_vals["annotation"]:
         # Calculate the maximum height of the bars
         max_height = max(bar.get_height() for bar in ax.patches)
 
@@ -115,24 +110,31 @@ def plot_mutations_per_gene(sample_name, maf, parameters = {}):
         # Add annotations above each bar
         for bar in ax.patches:
             height = bar.get_height()
-            ax.annotate(format(height, '.0f'),
-                        (bar.get_x() + bar.get_width() / 2, height),
-                        ha='center', va='bottom', fontsize=12, xytext=(0, 3),
-                        textcoords='offset points')
+            ax.annotate(
+                format(height, ".0f"),
+                (bar.get_x() + bar.get_width() / 2, height),
+                ha="center",
+                va="bottom",
+                fontsize=12,
+                xytext=(0, 3),
+                textcoords="offset points",
+            )
 
     ax.set_xlabel("Genes", fontsize=14)
     ax.set_ylabel("Number mutations", fontsize=14)
 
     plt.xticks(fontsize=10, rotation=90)
     plt.yticks(fontsize=12)
-    plt.tick_params(axis='x', which='major', labelsize=14)
+    plt.tick_params(axis="x", which="major", labelsize=14)
     ax.set_title(f"Mutations per gene in {sample_name}")
     plt.tight_layout()
 
     return fig
 
 
-def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig_width=20, fig_height=5, max_groups_per_plot=30):
+def plot_filter_stats(
+    df, x_axis_group, hue_group, logy=False, stacked=True, fig_width=20, fig_height=5, max_groups_per_plot=30
+):
     """
     Only admits two variables to combine, ideally
     the x_axis_group variable should be sample or
@@ -161,22 +163,28 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
 
             # Plot the data for the current chunk
             if stacked:
-                gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index().pivot(
-                    columns=hue_group, index=x_axis_group, values="number_mutations")
+                gp_df = (
+                    subset_df.groupby([x_axis_group, hue_group], dropna=False)
+                    .size()
+                    .to_frame("number_mutations")
+                    .reset_index()
+                    .pivot(columns=hue_group, index=x_axis_group, values="number_mutations")
+                )
 
                 if hue_group == "MUTTYPE":
-                    gp_df = gp_df.drop("-", axis = 'columns',errors='ignore')
+                    gp_df = gp_df.drop("-", axis="columns", errors="ignore")
                     print("Using custom colors for MUTTYPE")
                     # Create a new figure for each plot
                     fig, ax = plt.subplots(1, 1)
                     fig.set_size_inches(fig_width, fig_height)
                     plt.xticks(rotation=90)
                     plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
-                    gp_df.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                    gp_df.plot(
+                        kind="bar", stacked=True, ax=ax, color=[snv_color.get(col, "grey") for col in gp_df.columns]
+                    )
                     plt.tight_layout()
                     fig_list.append(fig)
                     plt.close()
-                    
 
                     # Create a new figure for each plot
                     fig, ax = plt.subplots(1, 1)
@@ -185,7 +193,9 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
                     plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
                     # normalize stacked bars to proportions
                     gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
-                    gp_df_normalized.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                    gp_df_normalized.plot(
+                        kind="bar", stacked=True, ax=ax, color=[snv_color.get(col, "grey") for col in gp_df.columns]
+                    )
                     plt.tight_layout()
                     fig_list.append(fig)
                     plt.close()
@@ -196,11 +206,11 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
                     fig.set_size_inches(fig_width, fig_height)
                     plt.xticks(rotation=90)
                     plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
-                    gp_df.plot(kind='bar', stacked=True, ax=ax)
+                    gp_df.plot(kind="bar", stacked=True, ax=ax)
                     plt.tight_layout()
                     fig_list.append(fig)
                     plt.close()
-                
+
                     # Create a new figure for each plot
                     fig, ax = plt.subplots(1, 1)
                     fig.set_size_inches(fig_width, fig_height)
@@ -208,7 +218,7 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
                     plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
                     # normalize stacked bars to proportions
                     gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
-                    gp_df_normalized.plot(kind='bar', stacked=True, ax=ax)
+                    gp_df_normalized.plot(kind="bar", stacked=True, ax=ax)
                     plt.tight_layout()
                     fig_list.append(fig)
                     plt.close()
@@ -219,11 +229,16 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
                 fig.set_size_inches(fig_width, fig_height)
                 plt.xticks(rotation=90)
                 plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group} (Plot {i+1}/{num_plots})")
-                gp_df = subset_df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index()
+                gp_df = (
+                    subset_df.groupby([x_axis_group, hue_group], dropna=False)
+                    .size()
+                    .to_frame("number_mutations")
+                    .reset_index()
+                )
                 gp_df = gp_df.fillna("FALSE")
                 sns.barplot(data=gp_df, x=x_axis_group, y="number_mutations", hue=hue_group, ax=ax)
                 if logy:
-                    ax.set_yscale('log')
+                    ax.set_yscale("log")
                 plt.tight_layout()
                 fig_list.append(fig)
                 plt.close()
@@ -233,21 +248,25 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
     else:
         fig_list = []
         if stacked:
-            gp_df = df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index().pivot(
-                columns=hue_group, index=x_axis_group, values="number_mutations")
+            gp_df = (
+                df.groupby([x_axis_group, hue_group], dropna=False)
+                .size()
+                .to_frame("number_mutations")
+                .reset_index()
+                .pivot(columns=hue_group, index=x_axis_group, values="number_mutations")
+            )
             if hue_group == "MUTTYPE":
                 # Plot all x values in a single plot
                 fig, ax = plt.subplots(1, 1)
                 fig.set_size_inches(fig_width, fig_height)
                 plt.xticks(rotation=90)
                 plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
-                gp_df = gp_df.drop("-", axis = 'columns',errors='ignore')
+                gp_df = gp_df.drop("-", axis="columns", errors="ignore")
                 print("Using custom colors for MUTTYPE")
-                gp_df.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                gp_df.plot(kind="bar", stacked=True, ax=ax, color=[snv_color.get(col, "grey") for col in gp_df.columns])
                 plt.tight_layout()
                 fig_list.append(fig)
                 plt.close()
-                
 
                 # Plot all x values in a single plot
                 fig, ax = plt.subplots(1, 1)
@@ -256,7 +275,9 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
                 plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
                 # normalize stacked bars to proportions
                 gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
-                gp_df_normalized.plot(kind='bar', stacked=True, ax=ax, color=[snv_color.get(col, 'grey') for col in gp_df.columns])
+                gp_df_normalized.plot(
+                    kind="bar", stacked=True, ax=ax, color=[snv_color.get(col, "grey") for col in gp_df.columns]
+                )
                 plt.tight_layout()
                 fig_list.append(fig)
                 plt.close()
@@ -266,11 +287,10 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
                 fig.set_size_inches(fig_width, fig_height)
                 plt.xticks(rotation=90)
                 plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
-                gp_df.plot(kind='bar', stacked=True, ax=ax)
+                gp_df.plot(kind="bar", stacked=True, ax=ax)
                 plt.tight_layout()
                 fig_list.append(fig)
                 plt.close()
-                
 
                 # Plot all x values in a single plot
                 fig, ax = plt.subplots(1, 1)
@@ -279,7 +299,7 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
                 plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
                 # normalize stacked bars to proportions
                 gp_df_normalized = gp_df.div(gp_df.sum(axis=1), axis=0)
-                gp_df_normalized.plot(kind='bar', stacked=True, ax=ax)
+                gp_df_normalized.plot(kind="bar", stacked=True, ax=ax)
                 plt.tight_layout()
                 fig_list.append(fig)
                 plt.close()
@@ -290,11 +310,13 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
             fig.set_size_inches(fig_width, fig_height)
             plt.xticks(rotation=90)
             plt.title(f"Plotting mutations per {x_axis_group} colored by {hue_group}")
-            gp_df = df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame('number_mutations').reset_index()
+            gp_df = (
+                df.groupby([x_axis_group, hue_group], dropna=False).size().to_frame("number_mutations").reset_index()
+            )
             gp_df = gp_df.fillna("FALSE")
             sns.barplot(data=gp_df, x=x_axis_group, y="number_mutations", hue=hue_group, ax=ax)
             if logy:
-                ax.set_yscale('log')
+                ax.set_yscale("log")
             plt.tight_layout()
             fig_list.append(fig)
             plt.close()
@@ -302,11 +324,9 @@ def plot_filter_stats(df, x_axis_group, hue_group, logy=False, stacked=True, fig
         return fig_list
 
 
-
-
-def filter_wrapper(sample_name, maf, parameters = {}):
-    var_to_plot = parameters.get('variable', "SAMPLE_ID")
-    filters_to_plot = parameters.get('filter_list', ['no_pileup_support', 'n_rich'])
+def filter_wrapper(sample_name, maf, parameters={}):
+    var_to_plot = parameters.get("variable", "SAMPLE_ID")
+    filters_to_plot = parameters.get("filter_list", ["no_pileup_support", "n_rich"])
 
     fig_list = []
 
@@ -323,10 +343,9 @@ def filter_wrapper(sample_name, maf, parameters = {}):
     return fig_list
 
 
-
-def variable_plot_wrapper(sample_name, maf, parameters = {}):
-    var_to_plot = parameters.get('variable', "SAMPLE_ID")
-    vars_to_plot = parameters.get('columns_list', ['canonical_Consequence_broader', 'TYPE'])
+def variable_plot_wrapper(sample_name, maf, parameters={}):
+    var_to_plot = parameters.get("variable", "SAMPLE_ID")
+    vars_to_plot = parameters.get("columns_list", ["canonical_Consequence_broader", "TYPE"])
 
     fig_list = []
 
@@ -347,15 +366,13 @@ def plot_mutation_counts(maf, count_column):
     hue_order = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"]
 
     # Convert 'ALT_DEPTH' values to '10+'
-    maf['ALT_DEPTH_cat'] = maf[count_column].apply(
-        lambda x: '10+' if x >= 10 else str(x)
-    )
+    maf["ALT_DEPTH_cat"] = maf[count_column].apply(lambda x: "10+" if x >= 10 else str(x))
 
     maf["SAMPLE_ID"] = maf["SAMPLE_ID"].astype(str)
-    maf = maf.sort_values(by = "SAMPLE_ID")
+    maf = maf.sort_values(by="SAMPLE_ID")
     sample_order = sorted(maf["SAMPLE_ID"].unique())
 
-    fig, ax = plt.subplots(figsize = (max(5, len(sample_order) * 0.15), 5))
+    fig, ax = plt.subplots(figsize=(max(5, len(sample_order) * 0.15), 5))
 
     # Plot stacked barplot
     sns.histplot(
@@ -367,10 +384,10 @@ def plot_mutation_counts(maf, count_column):
         color=None,
         discrete=True,
         hue_order=hue_order,
-        shrink=0.8, 
+        shrink=0.8,
         legend=True,
-        ax = ax
-        )
+        ax=ax,
+    )
 
     ax.set_xlabel("")
     ax.set_ylabel(f"Proportion of mutations with\nalternate reads count of N\n{count_column}")
@@ -397,12 +414,10 @@ def plot_mutation_counts_by_muttype(maf, count_column, per_sample=False):
     """
     # Work on a copy to avoid modifying the original dataframe
     maf = maf.copy()
-    cat_col = f'{count_column}_cat'
+    cat_col = f"{count_column}_cat"
 
     # Convert count values to '10+'
-    maf[cat_col] = maf[count_column].apply(
-        lambda x: '10+' if x >= 10 else str(x)
-    )
+    maf[cat_col] = maf[count_column].apply(lambda x: "10+" if x >= 10 else str(x))
 
     maf["SAMPLE_ID"] = maf["SAMPLE_ID"].astype(str)
     maf = maf.sort_values(by=["MUTTYPE", "CONTEXT_MUT", "SAMPLE_ID"])
@@ -412,7 +427,7 @@ def plot_mutation_counts_by_muttype(maf, count_column, per_sample=False):
     muttype_order = contexts_formatted
 
     # Count order: 1, 2, ..., 9, 10+
-    count_order = [str(i) for i in range(1, 10)] + ['10+']
+    count_order = [str(i) for i in range(1, 10)] + ["10+"]
     # Use categorical dtype to enforce the correct x-axis order
     maf[cat_col] = pd.Categorical(maf[cat_col], categories=count_order, ordered=True)
 
@@ -429,13 +444,13 @@ def plot_mutation_counts_by_muttype(maf, count_column, per_sample=False):
             discrete=True,
             shrink=0.8,
             legend=True,
-            ax=ax
+            ax=ax,
         )
 
         ax.set_xlabel(f"Number of mutated reads ({count_column})")
         ax.set_ylabel("Proportion of mutations")
-        ax.set_title(f"Proportion of mutations per number of mutated reads per mutation type\n(all samples combined)")
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize = 5)
+        ax.set_title("Proportion of mutations per number of mutated reads per mutation type\n(all samples combined)")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize=5)
 
         sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1), title="Mutation type")
         sns.despine()
@@ -464,13 +479,13 @@ def plot_mutation_counts_by_muttype(maf, count_column, per_sample=False):
                 hue_order=muttype_order,
                 shrink=0.8,
                 legend=True,
-                ax=ax
+                ax=ax,
             )
 
             ax.set_xlabel(f"Number of mutated reads ({count_column})")
             ax.set_ylabel("Proportion of mutations")
             ax.set_title(sample)
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize = 5)
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize=5)
 
             sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1), title="Mutation type")
             sns.despine()
@@ -485,61 +500,67 @@ def plot_mutation_counts_by_muttype(maf, count_column, per_sample=False):
 
 
 dict_plotname2func = {
-    "per_gene" : plot_mutations_per_gene,
-    "per_sample" : plot_mutations_per_sample,
-    "filter_stats" : filter_wrapper,
-    "plot_stats" : variable_plot_wrapper
+    "per_gene": plot_mutations_per_gene,
+    "per_sample": plot_mutations_per_sample,
+    "filter_stats": filter_wrapper,
+    "plot_stats": variable_plot_wrapper,
 }
+
 
 def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
     # Load the filter criteria from the JSON file
-    with open(plotting_criteria_file, 'r') as file:
+    with open(plotting_criteria_file, "r") as file:
         plotting_criteria = json.load(file)
 
     for suffix, criteria_list in plotting_criteria.items():
-        suffix = suffix.strip('.')
+        suffix = suffix.strip(".")
 
-        with PdfPages(f'{out_maf}.{suffix}.pdf') as pdf:
+        with PdfPages(f"{out_maf}.{suffix}.pdf") as pdf:
             for criterion in criteria_list:
                 if criterion.startswith("filter_stats"):
-                    main_criterion = criterion.split(' ')[0]
-                    gene_or_sample = criterion.split(' ')[1]
-                    filters = criterion.split(' ')[2].split(",")
-                    fig_lisst = dict_plotname2func[main_criterion](sample_name, maf, parameters = {'variable' : gene_or_sample, 'filter_list' : filters})
-                    for ff in fig_lisst: pdf.savefig(ff)
+                    main_criterion = criterion.split(" ")[0]
+                    gene_or_sample = criterion.split(" ")[1]
+                    filters = criterion.split(" ")[2].split(",")
+                    fig_lisst = dict_plotname2func[main_criterion](
+                        sample_name, maf, parameters={"variable": gene_or_sample, "filter_list": filters}
+                    )
+                    for ff in fig_lisst:
+                        pdf.savefig(ff)
 
                 elif criterion.startswith("plot_stats"):
-                    main_criterion = criterion.split(' ')[0]
-                    gene_or_sample = criterion.split(' ')[1]
-                    cols = criterion.split(' ')[2].split(",")
+                    main_criterion = criterion.split(" ")[0]
+                    gene_or_sample = criterion.split(" ")[1]
+                    cols = criterion.split(" ")[2].split(",")
                     print(f"Plotting : {main_criterion} {gene_or_sample} {cols}")
-                    fig_lisst = dict_plotname2func[main_criterion](sample_name, maf, parameters = {'variable' : gene_or_sample, 'columns_list' : cols})
-                    for ff in fig_lisst: pdf.savefig(ff)
+                    fig_lisst = dict_plotname2func[main_criterion](
+                        sample_name, maf, parameters={"variable": gene_or_sample, "columns_list": cols}
+                    )
+                    for ff in fig_lisst:
+                        pdf.savefig(ff)
 
-                elif ' ' in criterion:
-                    main_criterion = criterion.split(' ')[0]
-                    additional_params = { x.split(":")[0] : x.split(":")[1] for x in criterion.split(' ')[1:] }
-                    fig1 = dict_plotname2func[main_criterion](sample_name, maf, parameters = additional_params)
+                elif " " in criterion:
+                    main_criterion = criterion.split(" ")[0]
+                    additional_params = {x.split(":")[0]: x.split(":")[1] for x in criterion.split(" ")[1:]}
+                    fig1 = dict_plotname2func[main_criterion](sample_name, maf, parameters=additional_params)
+                    pdf.savefig(fig1)
+                    plt.close()
+
+                else:
+                    dict_plotname2func[criterion](sample_name, maf)
                     pdf.savefig()
                     plt.close()
 
-
-                else :
-                    fig1 = dict_plotname2func[criterion](sample_name, maf)
-                    pdf.savefig()
-                    plt.close()
-            
             # add mutation counts plot
-            fig = plot_mutation_counts(maf, 'ALT_DEPTH')
+            fig = plot_mutation_counts(maf, "ALT_DEPTH")
             pdf.savefig(fig)
             plt.close()
 
-            fig = plot_mutation_counts(maf, 'ALT_DEPTH_AM')
+            fig = plot_mutation_counts(maf, "ALT_DEPTH_AM")
             pdf.savefig(fig)
             plt.close()
 
             # add mutation counts per mutation type plots
-            for count_column in ['ALT_DEPTH', 'ALT_DEPTH_AM']:
+            for count_column in ["ALT_DEPTH", "ALT_DEPTH_AM"]:
                 # all samples combined
                 fig = plot_mutation_counts_by_muttype(maf, count_column, per_sample=False)
                 pdf.savefig(fig)
@@ -571,13 +592,14 @@ def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
 #     plt.show()
 
 
-
 @click.command()
-@click.option('--sample_name', type=str, required=True, help='Name of the sample being processed.')
-@click.option('--mut_file', type=click.Path(exists=True), required=True, help='Input mutation file')
-@click.option('--out_maf', type=click.Path(), required=False, help='Output MAF file')
-@click.option('--json_filters', type=click.Path(exists=True), required=True, help='Input mutation filtering criteria file')
-@click.option('--req_plots', type=click.Path(exists=True), required=True, help='Plotting criteria file')
+@click.option("--sample_name", type=str, required=True, help="Name of the sample being processed.")
+@click.option("--mut_file", type=click.Path(exists=True), required=True, help="Input mutation file")
+@click.option("--out_maf", type=click.Path(), required=False, help="Output MAF file")
+@click.option(
+    "--json_filters", type=click.Path(exists=True), required=True, help="Input mutation filtering criteria file"
+)
+@click.option("--req_plots", type=click.Path(exists=True), required=True, help="Plotting criteria file")
 def main(sample_name, mut_file, out_maf, json_filters, req_plots):
     """
     CLI entry point for processing MAF and generating plots.
@@ -586,5 +608,5 @@ def main(sample_name, mut_file, out_maf, json_filters, req_plots):
     plot_manager(sample_name, maf, out_maf, req_plots)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

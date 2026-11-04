@@ -1,6 +1,5 @@
 # from itertools import product
 import json
-import pandas as pd
 
 MIN_NONZERO_PVALUE = 1.17e-38
 
@@ -23,7 +22,8 @@ def add_filter(old_filt, add_filt, filt_name):
             return filt_name
         old_filt += ";" + filt_name
 
-    return ";".join( sorted(set(old_filt.split(";")) ))
+    return ";".join(sorted(set(old_filt.split(";"))))
+
 
 def to_int_if_possible(string):
     try:
@@ -32,17 +32,15 @@ def to_int_if_possible(string):
     except ValueError:
         return None
 
-def vartype(x,
-            letters = ['A', 'T', 'C', 'G'],
-            len_SV_lim = 50
-            ):
+
+def vartype(x, letters=["A", "T", "C", "G"], len_SV_lim=50):
     """
     Define the TYPE of a variant
     """
     if ">" in (x["REF"] + x["ALT"]) or "<" in (x["REF"] + x["ALT"]):
         return "SV"
 
-    elif len(x["REF"]) > (len_SV_lim+1) or len(x["ALT"]) > (len_SV_lim+1) :
+    elif len(x["REF"]) > (len_SV_lim + 1) or len(x["ALT"]) > (len_SV_lim + 1):
         return "SV"
 
     elif x["REF"] in letters and x["ALT"] in letters:
@@ -51,10 +49,10 @@ def vartype(x,
     elif len(x["REF"]) == len(x["ALT"]):
         return "MNV"
 
-    elif x["REF"] == "-" or ( len(x["REF"]) == 1 and x["ALT"].startswith(x["REF"]) ):
+    elif x["REF"] == "-" or (len(x["REF"]) == 1 and x["ALT"].startswith(x["REF"])):
         return "INSERTION"
 
-    elif x["ALT"] == "-" or ( len(x["ALT"]) == 1 and x["REF"].startswith(x["ALT"]) ):
+    elif x["ALT"] == "-" or (len(x["ALT"]) == 1 and x["REF"].startswith(x["ALT"])):
         return "DELETION"
 
     return "COMPLEX"
@@ -62,37 +60,252 @@ def vartype(x,
 
 def load_samples_info():
 
-    with open(f'all_groups.json', 'r') as f:
+    with open("all_groups.json", "r") as f:
         groups_n_samples_definition = json.load(f)
     all_unit_names = list(groups_n_samples_definition.keys())
 
-    with open(f'samples.json', 'r') as f:
+    with open("samples.json", "r") as f:
         samples_definition = json.load(f)
     all_samples_names = list(samples_definition.keys())
 
-    with open(f'groups.json', 'r') as f:
+    with open("groups.json", "r") as f:
         groups_definition = json.load(f)
     all_group_names = list(groups_definition.keys())
-    
+
     return all_samples_names, all_group_names, all_unit_names, groups_n_samples_definition
 
 
+contexts_formatted = [
+    "ACA>A",
+    "ACC>A",
+    "ACG>A",
+    "ACT>A",
+    "CCA>A",
+    "CCC>A",
+    "CCG>A",
+    "CCT>A",
+    "GCA>A",
+    "GCC>A",
+    "GCG>A",
+    "GCT>A",
+    "TCA>A",
+    "TCC>A",
+    "TCG>A",
+    "TCT>A",
+    "ACA>G",
+    "ACC>G",
+    "ACG>G",
+    "ACT>G",
+    "CCA>G",
+    "CCC>G",
+    "CCG>G",
+    "CCT>G",
+    "GCA>G",
+    "GCC>G",
+    "GCG>G",
+    "GCT>G",
+    "TCA>G",
+    "TCC>G",
+    "TCG>G",
+    "TCT>G",
+    "ACA>T",
+    "ACC>T",
+    "ACG>T",
+    "ACT>T",
+    "CCA>T",
+    "CCC>T",
+    "CCG>T",
+    "CCT>T",
+    "GCA>T",
+    "GCC>T",
+    "GCG>T",
+    "GCT>T",
+    "TCA>T",
+    "TCC>T",
+    "TCG>T",
+    "TCT>T",
+    "ATA>A",
+    "ATC>A",
+    "ATG>A",
+    "ATT>A",
+    "CTA>A",
+    "CTC>A",
+    "CTG>A",
+    "CTT>A",
+    "GTA>A",
+    "GTC>A",
+    "GTG>A",
+    "GTT>A",
+    "TTA>A",
+    "TTC>A",
+    "TTG>A",
+    "TTT>A",
+    "ATA>C",
+    "ATC>C",
+    "ATG>C",
+    "ATT>C",
+    "CTA>C",
+    "CTC>C",
+    "CTG>C",
+    "CTT>C",
+    "GTA>C",
+    "GTC>C",
+    "GTG>C",
+    "GTT>C",
+    "TTA>C",
+    "TTC>C",
+    "TTG>C",
+    "TTT>C",
+    "ATA>G",
+    "ATC>G",
+    "ATG>G",
+    "ATT>G",
+    "CTA>G",
+    "CTC>G",
+    "CTG>G",
+    "CTT>G",
+    "GTA>G",
+    "GTC>G",
+    "GTG>G",
+    "GTT>G",
+    "TTA>G",
+    "TTC>G",
+    "TTG>G",
+    "TTT>G",
+]
+contexts_no_change = [
+    "ACA",
+    "ACC",
+    "ACG",
+    "ACT",
+    "CCA",
+    "CCC",
+    "CCG",
+    "CCT",
+    "GCA",
+    "GCC",
+    "GCG",
+    "GCT",
+    "TCA",
+    "TCC",
+    "TCG",
+    "TCT",
+    "ATA",
+    "ATC",
+    "ATG",
+    "ATT",
+    "CTA",
+    "CTC",
+    "CTG",
+    "CTT",
+    "GTA",
+    "GTC",
+    "GTG",
+    "GTT",
+    "TTA",
+    "TTC",
+    "TTG",
+    "TTT",
+]
 
-contexts_formatted = ['ACA>A', 'ACC>A', 'ACG>A', 'ACT>A', 'CCA>A', 'CCC>A', 'CCG>A', 'CCT>A', 'GCA>A', 'GCC>A', 'GCG>A', 'GCT>A', 'TCA>A', 'TCC>A', 'TCG>A', 'TCT>A',
-                        'ACA>G', 'ACC>G', 'ACG>G', 'ACT>G', 'CCA>G', 'CCC>G', 'CCG>G', 'CCT>G', 'GCA>G', 'GCC>G', 'GCG>G', 'GCT>G', 'TCA>G', 'TCC>G', 'TCG>G', 'TCT>G',
-                        'ACA>T', 'ACC>T', 'ACG>T', 'ACT>T', 'CCA>T', 'CCC>T', 'CCG>T', 'CCT>T', 'GCA>T', 'GCC>T', 'GCG>T', 'GCT>T', 'TCA>T', 'TCC>T', 'TCG>T', 'TCT>T',
-                        'ATA>A', 'ATC>A', 'ATG>A', 'ATT>A', 'CTA>A', 'CTC>A', 'CTG>A', 'CTT>A', 'GTA>A', 'GTC>A', 'GTG>A', 'GTT>A', 'TTA>A', 'TTC>A', 'TTG>A', 'TTT>A',
-                        'ATA>C', 'ATC>C', 'ATG>C', 'ATT>C', 'CTA>C', 'CTC>C', 'CTG>C', 'CTT>C', 'GTA>C', 'GTC>C', 'GTG>C', 'GTT>C', 'TTA>C', 'TTC>C', 'TTG>C', 'TTT>C',
-                        'ATA>G', 'ATC>G', 'ATG>G', 'ATT>G', 'CTA>G', 'CTC>G', 'CTG>G', 'CTT>G', 'GTA>G', 'GTC>G', 'GTG>G', 'GTT>G', 'TTA>G', 'TTC>G', 'TTG>G', 'TTT>G']
-contexts_no_change = ['ACA', 'ACC', 'ACG', 'ACT', 'CCA', 'CCC', 'CCG', 'CCT', 'GCA', 'GCC', 'GCG', 'GCT', 'TCA', 'TCC', 'TCG', 'TCT',
-                        'ATA', 'ATC', 'ATG', 'ATT', 'CTA', 'CTC', 'CTG', 'CTT', 'GTA', 'GTC', 'GTG', 'GTT', 'TTA', 'TTC', 'TTG', 'TTT']
-
-contexts_formatted_sigprofiler = ['A[C>A]A', 'A[C>A]C', 'A[C>A]G', 'A[C>A]T', 'C[C>A]A', 'C[C>A]C', 'C[C>A]G', 'C[C>A]T', 'G[C>A]A', 'G[C>A]C', 'G[C>A]G', 'G[C>A]T', 'T[C>A]A', 'T[C>A]C', 'T[C>A]G', 'T[C>A]T',
-                                    'A[C>G]A', 'A[C>G]C', 'A[C>G]G', 'A[C>G]T', 'C[C>G]A', 'C[C>G]C', 'C[C>G]G', 'C[C>G]T', 'G[C>G]A', 'G[C>G]C', 'G[C>G]G', 'G[C>G]T', 'T[C>G]A', 'T[C>G]C', 'T[C>G]G', 'T[C>G]T',
-                                    'A[C>T]A', 'A[C>T]C', 'A[C>T]G', 'A[C>T]T', 'C[C>T]A', 'C[C>T]C', 'C[C>T]G', 'C[C>T]T', 'G[C>T]A', 'G[C>T]C', 'G[C>T]G', 'G[C>T]T', 'T[C>T]A', 'T[C>T]C', 'T[C>T]G', 'T[C>T]T',
-                                    'A[T>A]A', 'A[T>A]C', 'A[T>A]G', 'A[T>A]T', 'C[T>A]A', 'C[T>A]C', 'C[T>A]G', 'C[T>A]T', 'G[T>A]A', 'G[T>A]C', 'G[T>A]G', 'G[T>A]T', 'T[T>A]A', 'T[T>A]C', 'T[T>A]G', 'T[T>A]T',
-                                    'A[T>C]A', 'A[T>C]C', 'A[T>C]G', 'A[T>C]T', 'C[T>C]A', 'C[T>C]C', 'C[T>C]G', 'C[T>C]T', 'G[T>C]A', 'G[T>C]C', 'G[T>C]G', 'G[T>C]T', 'T[T>C]A', 'T[T>C]C', 'T[T>C]G', 'T[T>C]T',
-                                    'A[T>G]A', 'A[T>G]C', 'A[T>G]G', 'A[T>G]T', 'C[T>G]A', 'C[T>G]C', 'C[T>G]G', 'C[T>G]T', 'G[T>G]A', 'G[T>G]C', 'G[T>G]G', 'G[T>G]T', 'T[T>G]A', 'T[T>G]C', 'T[T>G]G', 'T[T>G]T']
+contexts_formatted_sigprofiler = [
+    "A[C>A]A",
+    "A[C>A]C",
+    "A[C>A]G",
+    "A[C>A]T",
+    "C[C>A]A",
+    "C[C>A]C",
+    "C[C>A]G",
+    "C[C>A]T",
+    "G[C>A]A",
+    "G[C>A]C",
+    "G[C>A]G",
+    "G[C>A]T",
+    "T[C>A]A",
+    "T[C>A]C",
+    "T[C>A]G",
+    "T[C>A]T",
+    "A[C>G]A",
+    "A[C>G]C",
+    "A[C>G]G",
+    "A[C>G]T",
+    "C[C>G]A",
+    "C[C>G]C",
+    "C[C>G]G",
+    "C[C>G]T",
+    "G[C>G]A",
+    "G[C>G]C",
+    "G[C>G]G",
+    "G[C>G]T",
+    "T[C>G]A",
+    "T[C>G]C",
+    "T[C>G]G",
+    "T[C>G]T",
+    "A[C>T]A",
+    "A[C>T]C",
+    "A[C>T]G",
+    "A[C>T]T",
+    "C[C>T]A",
+    "C[C>T]C",
+    "C[C>T]G",
+    "C[C>T]T",
+    "G[C>T]A",
+    "G[C>T]C",
+    "G[C>T]G",
+    "G[C>T]T",
+    "T[C>T]A",
+    "T[C>T]C",
+    "T[C>T]G",
+    "T[C>T]T",
+    "A[T>A]A",
+    "A[T>A]C",
+    "A[T>A]G",
+    "A[T>A]T",
+    "C[T>A]A",
+    "C[T>A]C",
+    "C[T>A]G",
+    "C[T>A]T",
+    "G[T>A]A",
+    "G[T>A]C",
+    "G[T>A]G",
+    "G[T>A]T",
+    "T[T>A]A",
+    "T[T>A]C",
+    "T[T>A]G",
+    "T[T>A]T",
+    "A[T>C]A",
+    "A[T>C]C",
+    "A[T>C]G",
+    "A[T>C]T",
+    "C[T>C]A",
+    "C[T>C]C",
+    "C[T>C]G",
+    "C[T>C]T",
+    "G[T>C]A",
+    "G[T>C]C",
+    "G[T>C]G",
+    "G[T>C]T",
+    "T[T>C]A",
+    "T[T>C]C",
+    "T[T>C]G",
+    "T[T>C]T",
+    "A[T>G]A",
+    "A[T>G]C",
+    "A[T>G]G",
+    "A[T>G]T",
+    "C[T>G]A",
+    "C[T>G]C",
+    "C[T>G]G",
+    "C[T>G]T",
+    "G[T>G]A",
+    "G[T>G]C",
+    "G[T>G]G",
+    "G[T>G]T",
+    "T[T>G]A",
+    "T[T>G]C",
+    "T[T>G]G",
+    "T[T>G]T",
+]
 
 
 # subs = [''.join(z) for z in itertools.product('CT', 'ACGT') if z[0] != z[1]]
@@ -103,13 +316,12 @@ contexts_formatted_sigprofiler = ['A[C>A]A', 'A[C>A]C', 'A[C>A]G', 'A[C>A]T', 'C
 
 
 def inclusion_exclusion(plist):
-
     """A more efficient version of the algorithm"""
 
     n = len(plist)
     if n > 2:
         p1 = inclusion_exclusion(plist[: n // 2])
-        p2 = inclusion_exclusion(plist[n // 2: ])
+        p2 = inclusion_exclusion(plist[n // 2 :])
         return inclusion_exclusion([p1, p2])
     if n == 2:
         return plist[0] + plist[1] - plist[0] * plist[1]

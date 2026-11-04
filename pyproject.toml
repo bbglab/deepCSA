@@ -8,3 +8,38 @@ target_version = ["py37", "py38", "py39", "py310"]
 profile = "black"
 known_first_party = ["nf_core"]
 multi_line_output = 3
+
+# Ruff: fast Python linter used for the pipeline's bin/ scripts.
+# Baseline is intentionally lenient: it catches real bugs (undefined names,
+# unused imports/variables, bare excepts) without failing on legacy style.
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = [
+    "bin/__pycache__",
+    "scratchhhh",
+    ".nextflow",
+    "work",
+]
+
+[tool.ruff.lint]
+select = [
+    "F",   # pyflakes: undefined names, unused imports/vars, f-string issues
+    "E9",  # syntax/runtime errors (E9xx only)
+    "W2",  # trailing whitespace, missing newline at EOF
+    "W6",  # deprecated syntax
+    "I",   # import sorting (isort-compatible)
+]
+ignore = [
+    "F403",  # `from x import *` — used by bin/utils_impacts.py consumers
+    "F405",  # names may be undefined from star imports
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts rely on module-level globals set by their CLI entrypoints.
+"bin/plot_gene_saturation_percentage.py" = ["F821"]
+# Test helpers may intentionally shadow or leave unused fixtures.
+"bin/test/*" = ["F841"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["utils", "read_utils", "utils_plot", "utils_filter", "utils_impacts", "utils_context"]

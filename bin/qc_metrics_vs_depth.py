@@ -51,10 +51,9 @@ def load_mutdensity(mutdensity_file, samples, metric_name):
     if not required.issubset(set(mut.columns)):
         raise ValueError(f"Mutdensity file {mutdensity_file} must contain {sorted(required)}")
 
-    mut = mut[(mut["SAMPLE_ID"].astype(str).isin(samples))
-              & (mut["GENE"] != "ALL_GENES")
-              & (mut["MUTTYPES"] == "SNV")
-              ].copy()
+    mut = mut[
+        (mut["SAMPLE_ID"].astype(str).isin(samples)) & (mut["GENE"] != "ALL_GENES") & (mut["MUTTYPES"] == "SNV")
+    ].copy()
     mut["SAMPLE_ID"] = mut["SAMPLE_ID"].astype(str)
     mut["GENE"] = mut["GENE"].astype(str)
     mut["metric_value"] = pd.to_numeric(mut["MUTDENSITY_MB"], errors="coerce")
@@ -63,9 +62,20 @@ def load_mutdensity(mutdensity_file, samples, metric_name):
         mut["metric_name"] = mut["metric_name"] + "." + mut["REGIONS"].fillna("unknown").astype(str)
     return mut[["SAMPLE_ID", "GENE", "metric_name", "metric_value"]]
 
+
 def load_adjmutdensity(mutdensity_file, samples, metric_name):
     mut = pd.read_csv(mutdensity_file, sep="\t", header=0)
-    required = {"SAMPLE", "GENE", "synonymous", "missense", "nonsense", "essential_splice", "truncating", "nonsynonymous_splice", "all_impacts"}
+    required = {
+        "SAMPLE",
+        "GENE",
+        "synonymous",
+        "missense",
+        "nonsense",
+        "essential_splice",
+        "truncating",
+        "nonsynonymous_splice",
+        "all_impacts",
+    }
     if not required.issubset(set(mut.columns)):
         raise ValueError(f"Mutdensity file {mutdensity_file} must contain {sorted(required)}")
 
@@ -74,7 +84,15 @@ def load_adjmutdensity(mutdensity_file, samples, metric_name):
     mut["GENE"] = mut["GENE"].astype(str)
 
     mut_dfs = []
-    for impact in ["synonymous", "missense", "nonsense", "essential_splice", "truncating", "nonsynonymous_splice", "all_impacts"]:
+    for impact in [
+        "synonymous",
+        "missense",
+        "nonsense",
+        "essential_splice",
+        "truncating",
+        "nonsynonymous_splice",
+        "all_impacts",
+    ]:
         subset_mut = mut[["SAMPLE_ID", "GENE", impact]].copy()
         subset_mut["metric_value"] = subset_mut[impact]
         subset_mut["metric_name"] = f"{impact}_density"
@@ -94,9 +112,7 @@ def load_omegas(omegas_file, samples):
     omegas_dfs = []
     omega = omega.rename(columns={sample_col: "SAMPLE_ID", gene_col: "GENE", dnds_col: "metric_value"})
     for impact in ["missense", "truncating"]:
-        subset_omega = omega[(omega["impact"] == impact)
-                             & ~(omega["GENE"].astype(str).str.contains("--"))
-                             ].copy()
+        subset_omega = omega[(omega["impact"] == impact) & ~(omega["GENE"].astype(str).str.contains("--"))].copy()
         subset_omega["SAMPLE_ID"] = subset_omega["SAMPLE_ID"].astype(str)
         subset_omega = subset_omega[subset_omega["SAMPLE_ID"].isin(samples)].copy()
         subset_omega["metric_value"] = pd.to_numeric(subset_omega["metric_value"], errors="coerce")
@@ -146,7 +162,7 @@ def summarize_missingness(depth_df, merged_df):
     )
     m["is_missing_metric"] = m["metric_value"].isna()
     by_gene = (
-        m.groupby(by = ["GENE", "metric_name"])
+        m.groupby(by=["GENE", "metric_name"])
         .apply(
             lambda g: pd.Series(
                 {
@@ -162,7 +178,9 @@ def summarize_missingness(depth_df, merged_df):
         )
         .reset_index()
     )
-    return by_gene.sort_values(["missing_fraction", "n_missing_metric"], ascending=[False, False]).reset_index(drop=True)
+    return by_gene.sort_values(["missing_fraction", "n_missing_metric"], ascending=[False, False]).reset_index(
+        drop=True
+    )
 
 
 def plot_scatter_per_gene(df, group_name, metric_name, output_pdf):
@@ -210,7 +228,7 @@ def plot_scatter_per_gene(df, group_name, metric_name, output_pdf):
                         line_kws={"color": line_color, "linewidth": 1.2},
                         ax=ax,
                     )
-                
+
                 y_min, y_max = sdf["metric_value"].min(), sdf["metric_value"].max()
                 val_range = y_max - y_min if y_max > y_min else (abs(y_max) * 0.1 if y_max != 0 else 1.0)
                 ax.set_ylim(bottom=-0.05 * val_range if y_min >= 0 else y_min - 0.05 * val_range)
@@ -268,7 +286,7 @@ def main(
     status_rows = []
     for metric_name in metrics_df["metric_name"].unique():
         print(f"Processing metric '{metric_name}'...")
-        
+
         metric_specific_df = metrics_df[metrics_df["metric_name"] == metric_name].copy()
         merged = depth_df.merge(metric_specific_df, on=["SAMPLE_ID", "GENE"], how="left")
         merged["metric_name"] = metric_name

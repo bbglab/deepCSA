@@ -4,21 +4,20 @@
 Script for checking contamination between samples.
 """
 
+import logging
+import operator
 
 import click
 import matplotlib.pyplot as plt
 import pandas as pd
-import logging
 import seaborn as sns
-import operator
+
 from read_utils import custom_na_values
 from utils_filter import germline_mask, somatic_mask
 
 # Logging
 logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s",
-    level=logging.INFO,
-    datefmt="%m/%d/%Y %I:%M:%S %p"
+    format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.INFO, datefmt="%m/%d/%Y %I:%M:%S %p"
 )
 
 LOG = logging.getLogger("check_contamination")
@@ -41,12 +40,8 @@ VARIANT_DETAIL_COLUMNS = [
     "canonical_Consequence_broader",
     "FILTER",
 ]
-OPS = {
-    ">": operator.gt,
-    "<": operator.lt,
-    ">=": operator.ge,
-    "<=": operator.le
-}
+OPS = {">": operator.gt, "<": operator.lt, ">=": operator.ge, "<=": operator.le}
+
 
 # Assuming somatic_variants and germline_variants are loaded as pandas DataFrames
 def compute_shared_variants(somatic_variants, germline_variants):
@@ -88,15 +83,18 @@ def compute_shared_variants(somatic_variants, germline_variants):
 
     return shared_counts
 
-def create_heatmap(variants_matrix: pd.DataFrame,
-                   annot: pd.DataFrame,
-                   col_labels: list | None,
-                   xlabel: str,
-                   ylabel: str,
-                   title: str,
-                   output_file: str,
-                   annot_kws_color: str = "black",
-                   size: tuple[int, int] = (18, 15)):
+
+def create_heatmap(
+    variants_matrix: pd.DataFrame,
+    annot: pd.DataFrame,
+    col_labels: list | None,
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    output_file: str,
+    annot_kws_color: str = "black",
+    size: tuple[int, int] = (18, 15),
+):
     """Create heatmap for specified set of mutations."""
     plt.figure(figsize=size)
     sns.heatmap(
@@ -147,7 +145,7 @@ def prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary):
     ].drop_duplicates()
     LOG.info(f"Total variants: {germline_vars_all_samples.shape}")
     LOG.info(f"Unique germline variants: {len(germline_vars_all_samples['MUT_ID'].unique())}")
-    
+
     somatic_variants = somatic_maf_df[["SAMPLE_ID", "MUT_ID"]]
     LOG.info(f"Somatic variants: {somatic_variants.shape}")
     all_variants = maf_df[["SAMPLE_ID", "MUT_ID"]]
@@ -156,7 +154,9 @@ def prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary):
     return germline_vars_all_samples, somatic_variants, all_variants
 
 
-def two_way_comparison(df_a: pd.DataFrame, df_b: pd.DataFrame, annotation_threshold: float, operator_str: str, normalize: bool) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+def two_way_comparison(
+    df_a: pd.DataFrame, df_b: pd.DataFrame, annotation_threshold: float, operator_str: str, normalize: bool
+) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     """Detect cross-sample contamination, compare one set of mutations with another set of mutations.
 
     Parameters
@@ -177,22 +177,17 @@ def two_way_comparison(df_a: pd.DataFrame, df_b: pd.DataFrame, annotation_thresh
     shared_df = compute_shared_variants(df_a, df_b)
 
     # Compute total number of counts of mutations per sample -> the columns of shared_df are the samples of df_b
-    counts = (
-        df_b["SAMPLE_ID"].value_counts().reindex(shared_df.columns)
-    )
+    counts = df_b["SAMPLE_ID"].value_counts().reindex(shared_df.columns)
 
     if normalize:
-        shared_df = shared_df.divide(
-        counts, axis=1
-    )
+        shared_df = shared_df.divide(counts, axis=1)
 
     # Create custom column labels with mutation counts
     col_labels = [f"(n={counts[col]}) {col}" for col in shared_df.columns]
 
     # Build annotation DataFrame without using deprecated DataFrame.applymap
     if normalize:
-        mask = (shared_df > 0.8) & (
-        shared_df < 1)
+        mask = (shared_df > 0.8) & (shared_df < 1)
     else:
         mask = OPS[operator_str](shared_df, annotation_threshold)
 
@@ -205,7 +200,10 @@ def two_way_comparison(df_a: pd.DataFrame, df_b: pd.DataFrame, annotation_thresh
 
     return shared_df, annot, col_labels
 
-def find_contaminated_pairs(proportion_matrix: pd.DataFrame, counts_matrix: pd.DataFrame, threshold: float) -> pd.DataFrame:
+
+def find_contaminated_pairs(
+    proportion_matrix: pd.DataFrame, counts_matrix: pd.DataFrame, threshold: float
+) -> pd.DataFrame:
     """Identify receiver samples carrying the germline variants of another sample.
 
     A sample is flagged as a receiver when its highest proportion of non-shared germline
@@ -280,10 +278,9 @@ def contaminated_pairs_to_long(contaminated_pairs: pd.DataFrame) -> pd.DataFrame
     return contaminated_pairs_long.drop(columns="SOURCE_SAMPLEID_COUNTS")
 
 
-def export_germline_variants_in_receiver(maf_df: pd.DataFrame,
-                                         germline_vars_all_samples: pd.DataFrame,
-                                         receiver_sample: str,
-                                         source_sample: str):
+def export_germline_variants_in_receiver(
+    maf_df: pd.DataFrame, germline_vars_all_samples: pd.DataFrame, receiver_sample: str, source_sample: str
+):
     """Write the source sample's germline variants alongside their VAF in the receiver sample.
 
     Parameters
@@ -303,7 +300,8 @@ def export_germline_variants_in_receiver(maf_df: pd.DataFrame,
 
     source_germline = germline_vars_all_samples[germline_vars_all_samples["SAMPLE_ID"] == source_sample]
     source_variants = variant_details[
-        (variant_details["SAMPLE_ID"] == source_sample) & (variant_details["MUT_ID"].isin(source_germline["MUT_ID"].values))
+        (variant_details["SAMPLE_ID"] == source_sample)
+        & (variant_details["MUT_ID"].isin(source_germline["MUT_ID"].values))
     ].drop("SAMPLE_ID", axis=1)
 
     merged_samples = receiver_variants.merge(
@@ -334,10 +332,16 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         germline when all of ``VAF``/``vd_VAF``/``VAF_AM`` exceed it).
     """
     # Prepare datasets
-    germline_vars_all_samples, somatic_variants, all_variants = prepare_datasets(maf_df, somatic_maf_df, somatic_vaf_boundary)
+    germline_vars_all_samples, somatic_variants, all_variants = prepare_datasets(
+        maf_df, somatic_maf_df, somatic_vaf_boundary
+    )
 
     ## Somatic vs Germline
-    shared_variants_somatic2germline_matrix, somatic_vs_germline_annot, somatic_vs_germline_col_labels = two_way_comparison(somatic_variants, germline_vars_all_samples, annotation_threshold=30, operator_str=">", normalize=False)
+    shared_variants_somatic2germline_matrix, somatic_vs_germline_annot, somatic_vs_germline_col_labels = (
+        two_way_comparison(
+            somatic_variants, germline_vars_all_samples, annotation_threshold=30, operator_str=">", normalize=False
+        )
+    )
 
     create_heatmap(
         variants_matrix=shared_variants_somatic2germline_matrix,
@@ -346,10 +350,13 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         xlabel=GERMLINE_LABEL,
         ylabel=SOMATIC_LABEL,
         title="Somatic mutations that are germline in other samples",
-        output_file="somatic_vs_germline.pdf")
+        output_file="somatic_vs_germline.pdf",
+    )
 
     ## Germline vs Germline
-    shared_germline_variants_matrix, germline_vs_germline_annot, germline_vs_germline_col_labels = two_way_comparison(germline_vars_all_samples, germline_vars_all_samples, annotation_threshold=0, operator_str="<", normalize=False)
+    shared_germline_variants_matrix, germline_vs_germline_annot, germline_vs_germline_col_labels = two_way_comparison(
+        germline_vars_all_samples, germline_vars_all_samples, annotation_threshold=0, operator_str="<", normalize=False
+    )
 
     create_heatmap(
         variants_matrix=shared_germline_variants_matrix,
@@ -358,10 +365,15 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         xlabel=GERMLINE_LABEL,
         ylabel=GERMLINE_LABEL,
         title="Germline mutations that are germline in other samples",
-        output_file="germline_vs_germline.pdf")
+        output_file="germline_vs_germline.pdf",
+    )
 
     ## All vs Germline
-    normalized_shared_all_vs_germline_variants_matrix, all_vs_germline_annot, all_vs_germline_col_labels = two_way_comparison(all_variants, germline_vars_all_samples, annotation_threshold=0.3, operator_str=">", normalize=True)
+    normalized_shared_all_vs_germline_variants_matrix, all_vs_germline_annot, all_vs_germline_col_labels = (
+        two_way_comparison(
+            all_variants, germline_vars_all_samples, annotation_threshold=0.3, operator_str=">", normalize=True
+        )
+    )
 
     create_heatmap(
         variants_matrix=normalized_shared_all_vs_germline_variants_matrix,
@@ -371,11 +383,17 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         ylabel="All mutations samples",
         title="All mutations that are germline in other samples",
         output_file="allmutations_vs_germline.pdf",
-        annot_kws_color="white")
-    
+        annot_kws_color="white",
+    )
 
     # Germline mutations
-    normalized_germline_vs_germline_variants_matrix, norm_germline_vs_germline_annot, norm_germline_vs_germline_col_labels = two_way_comparison(germline_vars_all_samples, germline_vars_all_samples, annotation_threshold=0, operator_str="<", normalize=True)
+    (
+        normalized_germline_vs_germline_variants_matrix,
+        norm_germline_vs_germline_annot,
+        norm_germline_vs_germline_col_labels,
+    ) = two_way_comparison(
+        germline_vars_all_samples, germline_vars_all_samples, annotation_threshold=0, operator_str="<", normalize=True
+    )
 
     create_heatmap(
         variants_matrix=normalized_germline_vs_germline_variants_matrix,
@@ -385,7 +403,8 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         ylabel=GERMLINE_LABEL,
         title="Normalized germline mutations that are germline in other samples",
         output_file="normalized.germline_vs_germline.pdf",
-        annot_kws_color="white")
+        annot_kws_color="white",
+    )
 
     ## Somatic vs Remaining Germline
     shared_all_vs_germline_variants_matrix = compute_shared_variants(all_variants, germline_vars_all_samples)
@@ -418,9 +437,9 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         title="Somatic mutations that are germline in other samples",
         output_file="contamination.somatic_vs_remaininggermline.pdf",
         annot_kws_color="white",
-        size=(22, 18)
+        size=(22, 18),
     )
-    
+
     cond = shared_somatic_to_non_shared_germline > 0
     annot = shared_somatic_to_non_shared_germline.where(cond)
     # convert to nullable int then string, replace missing with empty string
@@ -434,7 +453,7 @@ def contamination_detection_between_samples(maf_df, somatic_maf_df, somatic_vaf_
         ylabel="Somatic",
         title="Somatic mutations that are germline in other samples (count)",
         output_file="contamination.somatic_vs_remaininggermline.numbers.pdf",
-        size=(22, 18)
+        size=(22, 18),
     )
 
     ## Exploration of contaminated samples
@@ -533,9 +552,9 @@ def prepare_snp_datasets(maf: pd.DataFrame, vaf_threshold: float) -> tuple[pd.Da
     return snp_positions_maf, somatic_snp_positions_maf, germline_snp_positions_maf
 
 
-def compute_snp_somatic_proportion(snp_positions_maf: pd.DataFrame,
-                                   somatic_snp_positions_maf: pd.DataFrame,
-                                   germline_snp_positions_maf: pd.DataFrame) -> pd.DataFrame:
+def compute_snp_somatic_proportion(
+    snp_positions_maf: pd.DataFrame, somatic_snp_positions_maf: pd.DataFrame, germline_snp_positions_maf: pd.DataFrame
+) -> pd.DataFrame:
     """Compute, per sample, the proportion of non-germline SNP positions that look somatic.
 
     Parameters
@@ -566,14 +585,18 @@ def compute_snp_somatic_proportion(snp_positions_maf: pd.DataFrame,
     # sequenced with the same panel, not an absolute contamination rate.
     remaining_germline = number_unique_snp_positions - germline_count
 
-    sample_snp_mutation_freq_df = pd.DataFrame(
-        {
-            "germline_count": germline_count,
-            "remaining_germline": remaining_germline,
-            "somatic_count": somatic_count,
-            "prop_somatic_SNPs": (somatic_count / remaining_germline).where(remaining_germline > 0, 1),
-        }
-    ).rename_axis("SAMPLE_ID").reset_index()
+    sample_snp_mutation_freq_df = (
+        pd.DataFrame(
+            {
+                "germline_count": germline_count,
+                "remaining_germline": remaining_germline,
+                "somatic_count": somatic_count,
+                "prop_somatic_SNPs": (somatic_count / remaining_germline).where(remaining_germline > 0, 1),
+            }
+        )
+        .rename_axis("SAMPLE_ID")
+        .reset_index()
+    )
 
     return sample_snp_mutation_freq_df.sort_values(by="prop_somatic_SNPs", ascending=False)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Panels Compute DNA to Protein - MAF processing to protein positions and 
+Panels Compute DNA to Protein - MAF processing to protein positions and
 coverage computation.
 
 This script processes the MAF file to retrieve the transcript-gene pairs,
@@ -11,7 +11,7 @@ per gene.
 
 Arguments:
 ----------------------
---mutations-file : str 
+--mutations-file : str
     Path to the MAF file containing mutations.
 --consensus-file : str
     Path to the consensus panel file.
@@ -29,23 +29,24 @@ Contributors
 - Marta Huertas - @m-huertasp (marta.huertas@irbbarcelona.org)
 """
 
-import click
+import gzip
+import io
 import logging
-import requests
+import re
+
+import click
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import polars as pl
-import io
-import gzip
-import re
-import matplotlib.pyplot as plt
+import requests
 from matplotlib.backends.backend_pdf import PdfPages
 
 # Logging
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s - %(message)s", level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
 )
-logging.getLogger('matplotlib').setLevel(logging.WARNING) # Avoid too much logging
+logging.getLogger("matplotlib").setLevel(logging.WARNING)  # Avoid too much logging
 
 LOG = logging.getLogger("DNA2protein")
 
@@ -75,8 +76,8 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
     maf_df_f = maf_df[
         (maf_df["TYPE"].isin(["SNV", "INSERTION", "DELETION"]))
         & (maf_df["canonical_SYMBOL"].isin(genes_in_consensus))
-        & (maf_df["canonical_Protein_position"] != '-')
-        ]
+        & (maf_df["canonical_Protein_position"] != "-")
+    ]
 
     gene_transcript_pairs = maf_df_f[["canonical_SYMBOL", "canonical_Feature"]].drop_duplicates().reset_index(drop=True)
     gene_transcript_pairs.columns = ["Gene", "Ens_transcript_ID"]
@@ -84,8 +85,11 @@ def get_transcript_gene_from_maf(path_maf, consensus_file):
     LOG.info(f"Retrieved {len(gene_transcript_pairs)} gene-transcript pairs from MAF file.")
     return gene_transcript_pairs
 
+
 # Generator to filter lines before they reach a dataframe
-def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", genome: str = "GRCh38", gff3_file: str | None = None):
+def get_gff_to_generator(
+    release: int = 111, species: str = "homo_sapiens", genome: str = "GRCh38", gff3_file: str | None = None
+):
     """
     Get GFF file from a local path or Ensembl FTP and filter it on the fly to
     keep only exon and CDS lines.
@@ -112,11 +116,11 @@ def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", geno
             with open_func(gff3_file, mode, encoding="utf-8") as handle:
                 for line_str in handle:
                     # Skip comments
-                    if line_str.startswith('#'):
+                    if line_str.startswith("#"):
                         continue
 
                     # Only "yield" lines that are exon or CDS
-                    parts = line_str.split('\t')
+                    parts = line_str.split("\t")
                     if len(parts) > 2 and parts[2] in ["exon", "CDS"]:
                         yield line_str
         except OSError as e:
@@ -135,11 +139,13 @@ def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", geno
         error = RuntimeError(f"Request timed out while fetching Ensembl GFF3 (release {release}) from: {url}")
         LOG.error(error)
         raise error
-    except requests.exceptions.HTTPError as e:
-        error = RuntimeError(f"HTTP error {response.status_code} while fetching Ensembl GFF3 (release {release}) from: {url}")
+    except requests.exceptions.HTTPError:
+        error = RuntimeError(
+            f"HTTP error {response.status_code} while fetching Ensembl GFF3 (release {release}) from: {url}"
+        )
         LOG.error(error)
         raise error
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         error = RuntimeError(f"Failed to fetch Ensembl GFF3 (release {release}) from: {url}")
         LOG.error(error)
         raise error
@@ -148,18 +154,21 @@ def get_gff_to_generator(release: int = 111, species: str = "homo_sapiens", geno
     with gzip.GzipFile(fileobj=response.raw) as gz:
         for line in gz:
             # Decode bytes to string
-            line_str = line.decode('utf-8')
+            line_str = line.decode("utf-8")
 
             # Skip comments
-            if line_str.startswith('#'):
+            if line_str.startswith("#"):
                 continue
 
             # Only "yield" lines that are exon or CDS
-            parts = line_str.split('\t')
+            parts = line_str.split("\t")
             if len(parts) > 2 and parts[2] in ["exon", "CDS"]:
                 yield line_str
 
-def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int, species: str, genome: str, gff3_file: str | None = None) -> pd.DataFrame:
+
+def gff_to_filtered_df(
+    gene_n_transcript: pd.DataFrame, release: int, species: str, genome: str, gff3_file: str | None = None
+) -> pd.DataFrame:
     """
     Transforms the yields from get_gff_to_generator into a filtered DataFrame. The reading and filtering is done with polars
     to improve efficiency.
@@ -184,7 +193,9 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int, species: s
         A filtered DataFrame of GFF lines for the specified genes and release.
     """
     # Join the generator into a single buffer for Polars to read
-    filtered_buffer = io.StringIO("".join(get_gff_to_generator(release=release, species=species, genome=genome, gff3_file=gff3_file)))
+    filtered_buffer = io.StringIO(
+        "".join(get_gff_to_generator(release=release, species=species, genome=genome, gff3_file=gff3_file))
+    )
 
     # Read generator with polars, generate transcript_id column and filter by the genes in the panel
     df = (
@@ -193,19 +204,22 @@ def gff_to_filtered_df(gene_n_transcript: pd.DataFrame, release: int, species: s
             separator="\t",
             has_header=False,
             new_columns=["chr", "source", "feature", "start", "end", "score", "strand", "phase", "attributes"],
-            schema_overrides={"start": pl.Int64, "end": pl.Int64, "chr": pl.Utf8, "feature": pl.Utf8, "attributes": pl.Utf8}
+            schema_overrides={
+                "start": pl.Int64,
+                "end": pl.Int64,
+                "chr": pl.Utf8,
+                "feature": pl.Utf8,
+                "attributes": pl.Utf8,
+            },
         )
-        .with_columns([
-            pl.col("attributes").str.extract(r"transcript:(ENS[A-Z]*T\d+)", 1).alias("transcript_id")
-        ])
-        .filter(
-            [pl.col("transcript_id").is_in(gene_n_transcript["Ens_transcript_ID"].to_list())]
-        )
+        .with_columns([pl.col("attributes").str.extract(r"transcript:(ENS[A-Z]*T\d+)", 1).alias("transcript_id")])
+        .filter([pl.col("transcript_id").is_in(gene_n_transcript["Ens_transcript_ID"].to_list())])
     )
-    
+
     LOG.info(f"Filtered GFF data to {df.shape[0]} rows for the specified genes and release.")
     # Transform to pandas for easier manipulation later on
     return df.to_pandas()
+
 
 def _parse_strand_coords(exon) -> tuple[str, int, int, int]:
     """Extract chromosome, strand-ordered start/end, and strand integer from a GFF row."""
@@ -215,6 +229,7 @@ def _parse_strand_coords(exon) -> tuple[str, int, int, int]:
     else:
         start, end = exon.end, exon.start
     return exon.chr, start, end, strand
+
 
 def parse_exon_coord(exon: pd.Series) -> tuple[str, list]:
     """
@@ -233,24 +248,25 @@ def parse_exon_coord(exon: pd.Series) -> tuple[str, list]:
         A list containing the chromosome, start, end, and strand information of the exon.
     """
     chrom, start, end, strand = _parse_strand_coords(exon)
-    
+
     # Add "chr" prefix to chromosome
-    chrom = f'chr{exon.chr}'
+    chrom = f"chr{exon.chr}"
 
     # Extract exon_id using regex
     match = re.search(r"exon_id=([^;]+)", exon.attributes)
-    
+
     # Extract exon_id using regex
     if match:
         exon_id = match.group(1)
-        
+
     else:
         exon_id = ""
         LOG.warning(f"Could not extract exon_id from attributes: {exon.transcript_id} - {exon.attributes}")
 
     return exon_id, [chrom, start, end, strand]
 
-def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]: 
+
+def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Wrapper function to retrieve exon and CDS coordinates for the genes and transcripts in the panel.
 
@@ -272,7 +288,7 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
     exons_coord_df_lst = []
 
     for gene, transcript in gene_n_transcript.values:
-        
+
         # Get all features for this transcript once to avoid double filtering
         transcript_data = gff_df[gff_df["transcript_id"] == transcript]
         if transcript_data.empty:
@@ -280,7 +296,7 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
 
         # Determine strand from the first available entry
         strand = transcript_data["strand"].iloc[0]
-        is_positive = (strand == "+")
+        is_positive = strand == "+"
 
         # --- Handle exons (with UTRs) ---
         exons_lookup = transcript_data[transcript_data["feature"] == "exon"]
@@ -315,8 +331,11 @@ def get_exon_coord_wrapper(gene_n_transcript: pd.DataFrame, gff_df: pd.DataFrame
         LOG.error("No CDS coordinates were retrieved for the specified genes and transcripts.")
         exit(1)
     else:
-        LOG.info(f"Retrieved coordinates for {len(final_coord_df['Gene'].unique())} genes and {len(final_exons_df['ID'].unique())} exons.")
+        LOG.info(
+            f"Retrieved coordinates for {len(final_coord_df['Gene'].unique())} genes and {len(final_exons_df['ID'].unique())} exons."
+        )
     return final_coord_df, final_exons_df
+
 
 # Coordinate parsing and DNA-to-protein mapping functions
 # ----------------------------------------------------------
@@ -369,7 +388,7 @@ def get_exon_ix(i: int, exon_range: np.ndarray, strand: int):
 def get_dna_map_to_protein(coord_df: pd.DataFrame) -> pd.DataFrame:
     """
     Get a mapping of DNA positions to protein positions for a given gene-transcript pair.
-    
+
     Parameters
     ------------
     coord_df : pandas.DataFrame
@@ -387,15 +406,20 @@ def get_dna_map_to_protein(coord_df: pd.DataFrame) -> pd.DataFrame:
     exons_ix = np.concatenate([get_exon_ix(i, exon, strand) for i, exon in enumerate(exons_range)])
     prot_pos = np.arange(len(exons)) // 3 + 1
 
-    df = pd.DataFrame({"GENE" : coord_df["Gene"].unique()[0],
-                        "CHROM" : f'chr{coord_df["Chr"].unique()[0]}',
-                        "DNA_POS" : exons,
-                        "PROT_POS" : prot_pos,
-                        "REVERSE_STRAND" : strand,
-                        "EXON_RANK" : exons_ix,
-                        "TRANSCRIPT_ID" : coord_df["Ens_transcript_ID"].unique()[0]})
+    df = pd.DataFrame(
+        {
+            "GENE": coord_df["Gene"].unique()[0],
+            "CHROM": f'chr{coord_df["Chr"].unique()[0]}',
+            "DNA_POS": exons,
+            "PROT_POS": prot_pos,
+            "REVERSE_STRAND": strand,
+            "EXON_RANK": exons_ix,
+            "TRANSCRIPT_ID": coord_df["Ens_transcript_ID"].unique()[0],
+        }
+    )
 
     return df
+
 
 def find_exon(dna_prot_df: pd.DataFrame, exon_coord_df: pd.DataFrame):
     """
@@ -426,9 +450,7 @@ def find_exon(dna_prot_df: pd.DataFrame, exon_coord_df: pd.DataFrame):
     # exons on the same chromosome, then filtered to those whose interval
     # contains the DNA position.
     merged = dna_prot_df[["CHROM", "DNA_POS"]].merge(
-        exon_df[["Chr", "lo", "hi", "ID"]],
-        left_on="CHROM", right_on="Chr",
-        how="left"
+        exon_df[["Chr", "lo", "hi", "ID"]], left_on="CHROM", right_on="Chr", how="left"
     )
     in_exon = (merged["DNA_POS"] >= merged["lo"]) & (merged["DNA_POS"] <= merged["hi"])
     # Keep the first matching exon per position
@@ -443,7 +465,9 @@ def find_exon(dna_prot_df: pd.DataFrame, exon_coord_df: pd.DataFrame):
 
 # Depth computation and coverage functions
 # ----------------------------------------------------------
-def dna2prot_depth(gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFrame, depth_df: pd.DataFrame) -> pd.DataFrame:
+def dna2prot_depth(
+    gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFrame, depth_df: pd.DataFrame
+) -> pd.DataFrame:
     """
     Get a DNA to protein mapping of all positions in the provided list of genes
     Add coverage info & DNA to GENE annotation
@@ -481,8 +505,7 @@ def dna2prot_depth(gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFr
     dna_prot_df["COVERED"] = dna_prot_df["CONTEXT"].notnull().astype(int)
 
     # fill the depth of the regions outside of the consensus panel
-    dna_prot_df = dna_prot_df.merge(depth_df.rename(columns={"POS" : "DNA_POS"}),
-                                    how="left", on=["CHROM", "DNA_POS"])
+    dna_prot_df = dna_prot_df.merge(depth_df.rename(columns={"POS": "DNA_POS"}), how="left", on=["CHROM", "DNA_POS"])
 
     # effectively, when a position is not part of the consensus panel
     # we put the depth of that position to 0
@@ -491,7 +514,15 @@ def dna2prot_depth(gene_list: list, coord_df: pd.DataFrame, dna_sites: pd.DataFr
     return dna_prot_df
 
 
-def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, consensus_file: str, release: int, species: str, genome: str, gff3_file: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+def get_dna2prot_depth(
+    gene_n_transcript_info: pd.DataFrame,
+    depth_file: str,
+    consensus_file: str,
+    release: int,
+    species: str,
+    genome: str,
+    gff3_file: str | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Function to get the DNA to protein mapping for all positions in the provided list of genes,
     along with coverage and depth information for each position, and the definition of all exons of
@@ -508,7 +539,7 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
     gff3_file : str | None
         Optional path to a local GFF3 or GFF3.GZ file. If provided, this file
         is used instead of downloading from Ensembl.
-    
+
     Returns
     ------------
     dna_prot_df : pandas.DataFrame
@@ -521,10 +552,12 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
 
     consensus_df = pd.read_table(consensus_file)
     depth_df = pd.read_table(depth_file)
-    gff_df = gff_to_filtered_df(gene_n_transcript_info, release=release, species=species, genome=genome, gff3_file=gff3_file)
+    gff_df = gff_to_filtered_df(
+        gene_n_transcript_info, release=release, species=species, genome=genome, gff3_file=gff3_file
+    )
 
-    consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on = ["CHROM", "POS"], how = 'left')
-    consensus_df = consensus_df.rename(columns={"POS" : "DNA_POS"})
+    consensus_df = consensus_df.merge(depth_df[["CHROM", "POS", "CONTEXT"]], on=["CHROM", "POS"], how="left")
+    consensus_df = consensus_df.rename(columns={"POS": "DNA_POS"})
 
     if "DEPTH" not in depth_df.columns:
         depth_df["DEPTH"] = depth_df.drop(columns=["CHROM", "POS", "CONTEXT"]).mean(1)
@@ -538,8 +571,12 @@ def get_dna2prot_depth(gene_n_transcript_info: pd.DataFrame, depth_file: str, co
 
     # fix coordinates order in exons_coord_df for BED
     exons_coord_df_final = exons_coord_df.copy()
-    exons_coord_df_final.loc[exons_coord_df_final["Strand"] == -1, "Start"] = exons_coord_df.loc[exons_coord_df["Strand"] == -1, "End"]
-    exons_coord_df_final.loc[exons_coord_df_final["Strand"] == -1, "End"] = exons_coord_df.loc[exons_coord_df["Strand"] == -1, "Start"]
+    exons_coord_df_final.loc[exons_coord_df_final["Strand"] == -1, "Start"] = exons_coord_df.loc[
+        exons_coord_df["Strand"] == -1, "End"
+    ]
+    exons_coord_df_final.loc[exons_coord_df_final["Strand"] == -1, "End"] = exons_coord_df.loc[
+        exons_coord_df["Strand"] == -1, "Start"
+    ]
 
     return dna_prot_df, exons_coord_df_final
 
@@ -566,11 +603,16 @@ def get_exons_protein_intervals(exons_depth: pd.DataFrame) -> pd.DataFrame:
         and the bare exon identifier ('DOMAIN_ID').
     """
     cds_positions = exons_depth[exons_depth["PROT_POS"].notna() & exons_depth["EXON_ID"].notna()]
-    exons_protein = cds_positions.groupby("EXON_ID").agg(Ens_Transcr_ID=("TRANSCRIPT_ID", "first"),
-                                                        GENE=("GENE", "first"),
-                                                        Begin=("PROT_POS", "min"),
-                                                        End=("PROT_POS", "max")
-                                                        ).reset_index()
+    exons_protein = (
+        cds_positions.groupby("EXON_ID")
+        .agg(
+            Ens_Transcr_ID=("TRANSCRIPT_ID", "first"),
+            GENE=("GENE", "first"),
+            Begin=("PROT_POS", "min"),
+            End=("PROT_POS", "max"),
+        )
+        .reset_index()
+    )
     exons_protein[["Begin", "End"]] = exons_protein[["Begin", "End"]].astype(int)
 
     # Mirror the domains file structure: 'NAME' is the gene-prefixed exon id
@@ -578,7 +620,7 @@ def get_exons_protein_intervals(exons_depth: pd.DataFrame) -> pd.DataFrame:
     exons_protein["NAME"] = exons_protein["EXON_ID"]
     exons_protein["DOMAIN_ID"] = exons_protein["EXON_ID"].str.split("--").str[-1]
     exons_protein = exons_protein[["Ens_Transcr_ID", "Begin", "End", "NAME", "GENE", "DOMAIN_ID"]]
-    exons_protein = exons_protein.sort_values(by = ["GENE", "Begin", "NAME"]).reset_index(drop = True)
+    exons_protein = exons_protein.sort_values(by=["GENE", "Begin", "NAME"]).reset_index(drop=True)
 
     return exons_protein
 
@@ -595,15 +637,12 @@ def plot_coverage_per_gene(depths_df: pd.DataFrame) -> None:
         DataFrame containing depth and coverage information for DNA, protein and exon positions.
         In this case, it will be the "exons_depth" created in `get_dna2prot_depth` function.
     """
-    column_to_subset = {'DNA': 'DNA_POS',
-                        'Protein': 'PROT_POS',
-                        'Exon': 'EXON_ID'
-                        }
-    coverage = depths_df.drop_duplicates(subset=['GENE', 'COVERED', 'DNA_POS'])
+    column_to_subset = {"DNA": "DNA_POS", "Protein": "PROT_POS", "Exon": "EXON_ID"}
+    coverage = depths_df.drop_duplicates(subset=["GENE", "COVERED", "DNA_POS"])
     for prefix in ["DNA", "Protein", "Exon"]:
         LOG.info(f"Plotting coverage for {prefix}...")
-        coverage_element = coverage.drop_duplicates(subset=['GENE', 'COVERED', column_to_subset[prefix]])
-        coverage_summary = coverage_element.groupby(['GENE', 'COVERED']).size().reset_index(name='COUNT')
+        coverage_element = coverage.drop_duplicates(subset=["GENE", "COVERED", column_to_subset[prefix]])
+        coverage_summary = coverage_element.groupby(["GENE", "COVERED"]).size().reset_index(name="COUNT")
         plot_single_coverage(coverage_summary, prefix)
 
 
@@ -623,76 +662,110 @@ def plot_single_coverage(coverage_summary: pd.DataFrame, prefix: str, batch_size
     # Generate copy of the coverage summary to avoid modifying the original DataFrame
     coverage_summary_cp = coverage_summary.copy()
 
-    coverage_pivot = coverage_summary_cp.pivot(index='GENE', columns='COVERED', values='COUNT').fillna(0)
+    coverage_pivot = coverage_summary_cp.pivot(index="GENE", columns="COVERED", values="COUNT").fillna(0)
     coverage_pivot = coverage_pivot.sort_values(1, ascending=False).reset_index()
-    coverage_pivot = coverage_pivot.set_index('GENE')
+    coverage_pivot = coverage_pivot.set_index("GENE")
     genes_list = coverage_pivot.index.tolist()
     coverage_perc = coverage_pivot.div(coverage_pivot.sum(axis=1), axis=0) * 100
-    coverage_pivot.to_csv(f"coverage_count_{prefix}.tsv", header=True, index=True, sep='\t')
-    coverage_perc.to_csv(f"coverage_perc_{prefix}.tsv", header=True, index=True, sep='\t')
+    coverage_pivot.to_csv(f"coverage_count_{prefix}.tsv", header=True, index=True, sep="\t")
+    coverage_perc.to_csv(f"coverage_perc_{prefix}.tsv", header=True, index=True, sep="\t")
 
     if len(genes_list) < batch_size:
 
         fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
 
-        covered_col = True if True in coverage_pivot.columns else (1 if 1 in coverage_pivot.columns else coverage_pivot.columns[-1])
+        covered_col = (
+            True
+            if True in coverage_pivot.columns
+            else (1 if 1 in coverage_pivot.columns else coverage_pivot.columns[-1])
+        )
 
-        coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'],
-                            )
+        coverage_pivot.plot(
+            kind="bar",
+            stacked=True,
+            ax=axes[0],
+            color=["#ff9999", "#66b3ff"],
+        )
 
-        axes[0].set_title(f'{prefix} : covered vs. non-covered')
-        axes[0].set_ylabel(f'Number of {prefix}')
-        axes[0].set_xlabel('Gene')
-        axes[0].legend(title='Covered', loc='upper right')
-        axes[0].tick_params(axis='x', rotation=45)
+        axes[0].set_title(f"{prefix} : covered vs. non-covered")
+        axes[0].set_ylabel(f"Number of {prefix}")
+        axes[0].set_xlabel("Gene")
+        axes[0].legend(title="Covered", loc="upper right")
+        axes[0].tick_params(axis="x", rotation=45)
 
-        coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
-        axes[1].set_title(f'{prefix} : percentage of covered')
-        axes[1].set_ylabel('Percentage (%)')
-        axes[1].set_xlabel('Gene')
+        coverage_perc[covered_col].plot(kind="bar", ax=axes[1], color="#66b3ff")
+        axes[1].set_title(f"{prefix} : percentage of covered")
+        axes[1].set_ylabel("Percentage (%)")
+        axes[1].set_xlabel("Gene")
         axes[1].set_ylim(0, 100)
-        axes[1].tick_params(axis='x', rotation=45)
+        axes[1].tick_params(axis="x", rotation=45)
 
         plt.tight_layout()
         plt.savefig(f"coverage_per_{prefix}.pdf", dpi=300)
     else:
         with PdfPages(f"coverage_per_{prefix}_batches.pdf") as pdf:
             # split into batches N genes
-            for i in range(0, len(genes_list), batch_size): 
-                batch_genes = genes_list[i:i+batch_size]
+            for i in range(0, len(genes_list), batch_size):
+                batch_genes = genes_list[i : i + batch_size]
                 batch_coverage_pivot = coverage_pivot.loc[batch_genes]
                 batch_coverage_perc = coverage_perc.loc[batch_genes]
 
                 fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
 
-                covered_col = True if True in batch_coverage_pivot.columns else (1 if 1 in batch_coverage_pivot.columns else batch_coverage_pivot.columns[-1])
+                covered_col = (
+                    True
+                    if True in batch_coverage_pivot.columns
+                    else (1 if 1 in batch_coverage_pivot.columns else batch_coverage_pivot.columns[-1])
+                )
 
-                batch_coverage_pivot.plot(kind='bar', stacked=True, ax=axes[0], color=['#ff9999','#66b3ff'])
-                axes[0].set_title(f'{prefix} : covered vs. non-covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
-                axes[0].set_ylabel(f'Number of {prefix}')
-                axes[0].set_xlabel('Gene')
-                axes[0].legend(title='Covered', loc='upper right')
-                axes[0].tick_params(axis='x', rotation=45)
+                batch_coverage_pivot.plot(kind="bar", stacked=True, ax=axes[0], color=["#ff9999", "#66b3ff"])
+                axes[0].set_title(
+                    f"{prefix} : covered vs. non-covered (genes {i+1}-{min(i+batch_size, len(genes_list))})"
+                )
+                axes[0].set_ylabel(f"Number of {prefix}")
+                axes[0].set_xlabel("Gene")
+                axes[0].legend(title="Covered", loc="upper right")
+                axes[0].tick_params(axis="x", rotation=45)
 
-                batch_coverage_perc[covered_col].plot(kind='bar', ax=axes[1], color='#66b3ff')
-                axes[1].set_title(f'{prefix} : percentage of covered (genes {i+1}-{min(i+batch_size, len(genes_list))})')
-                axes[1].set_ylabel('Percentage (%)')
-                axes[1].set_xlabel('Gene')
+                batch_coverage_perc[covered_col].plot(kind="bar", ax=axes[1], color="#66b3ff")
+                axes[1].set_title(
+                    f"{prefix} : percentage of covered (genes {i+1}-{min(i+batch_size, len(genes_list))})"
+                )
+                axes[1].set_ylabel("Percentage (%)")
+                axes[1].set_xlabel("Gene")
                 axes[1].set_ylim(0, 100)
-                axes[1].tick_params(axis='x', rotation=45)
+                axes[1].tick_params(axis="x", rotation=45)
 
                 plt.tight_layout()
                 pdf.savefig(dpi=300)
                 plt.close()
 
+
 @click.command()
-@click.option('--mutations-file', type=click.Path(exists=True), help='Mutations file')
-@click.option('--consensus-file', type=click.Path(exists=True), help='Input consensus panel file')
-@click.option('--depths-file', type=click.Path(exists=True), help='Input depths of all samples file')
-@click.option('--ensembl-species', type=str, default="homo_sapiens", help='Ensembl species name to use for GFF file retrieval (default)')
-@click.option('--ensembl-genome', type=str, default="GRCh38", help='Ensembl genome name to use for GFF file retrieval (default)')
-@click.option('--ensembl-release', type=int, default=111, help='Ensembl release number to use for GFF file retrieval (default is 111)')
-@click.option('--gff3-file', type=click.Path(exists=True), default=None, help='Optional local GFF3(.gz) file. If provided, skips Ensembl download')
+@click.option("--mutations-file", type=click.Path(exists=True), help="Mutations file")
+@click.option("--consensus-file", type=click.Path(exists=True), help="Input consensus panel file")
+@click.option("--depths-file", type=click.Path(exists=True), help="Input depths of all samples file")
+@click.option(
+    "--ensembl-species",
+    type=str,
+    default="homo_sapiens",
+    help="Ensembl species name to use for GFF file retrieval (default)",
+)
+@click.option(
+    "--ensembl-genome", type=str, default="GRCh38", help="Ensembl genome name to use for GFF file retrieval (default)"
+)
+@click.option(
+    "--ensembl-release",
+    type=int,
+    default=111,
+    help="Ensembl release number to use for GFF file retrieval (default is 111)",
+)
+@click.option(
+    "--gff3-file",
+    type=click.Path(exists=True),
+    default=None,
+    help="Optional local GFF3(.gz) file. If provided, skips Ensembl download",
+)
 def main(mutations_file, consensus_file, depths_file, ensembl_species, ensembl_genome, ensembl_release, gff3_file):
     # Count each mutation only ones if it appears in multiple reads
     gene_n_transcript = get_transcript_gene_from_maf(mutations_file, consensus_file)
@@ -707,18 +780,18 @@ def main(mutations_file, consensus_file, depths_file, ensembl_species, ensembl_g
         gff3_file,
     )
     LOG.info("Exons coordinates and depth computed!")
-    exons_depth.to_csv("depths_per_position_exon_gene.tsv", header = True, index = False, sep = '\t')
+    exons_depth.to_csv("depths_per_position_exon_gene.tsv", header=True, index=False, sep="\t")
 
-    exons_coordinates_bed_like = exons_coord_id[['Chr', 'Start', 'End', 'ID']]
-    exons_coordinates_bed_like.to_csv("panel_exons.bed4.bed", header = False, index = False, sep = '\t')
+    exons_coordinates_bed_like = exons_coord_id[["Chr", "Start", "End", "ID"]]
+    exons_coordinates_bed_like.to_csv("panel_exons.bed4.bed", header=False, index=False, sep="\t")
 
     exons_protein_intervals = get_exons_protein_intervals(exons_depth)
-    exons_protein_intervals.to_csv("panel_exons_protein_intervals.tsv", header = True, index = False, sep = '\t')
+    exons_protein_intervals.to_csv("panel_exons_protein_intervals.tsv", header=True, index=False, sep="\t")
 
     plot_coverage_per_gene(exons_depth)
 
     LOG.info("All done!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

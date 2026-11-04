@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import json
-from typing import Iterable
 
 import click
 import numpy as np
@@ -53,19 +52,17 @@ def main(omegas_file: str, samples_json: str, groups_json: str, output: str) -> 
     sample_names = _load_json_keys(samples_json)
     group_names = _load_json_keys(groups_json) - {"all_samples"}
 
-    sample_categories = df["sample"].astype(str).map(
-        lambda sample: _sample_category(sample, group_names, sample_names)
-    )
-    region_levels = df["gene"].astype(str).str.contains("--", na=False).map(
-        lambda has_subgenic: "subgenic" if has_subgenic else "gene"
+    sample_categories = df["sample"].astype(str).map(lambda sample: _sample_category(sample, group_names, sample_names))
+    region_levels = (
+        df["gene"]
+        .astype(str)
+        .str.contains("--", na=False)
+        .map(lambda has_subgenic: "subgenic" if has_subgenic else "gene")
     )
 
     for sample_group in ("all_samples", "group", "sample"):
         for region_level in ("gene", "subgenic"):
-            click.echo(
-                "Correcting omega values for: "
-                f"{sample_group} samples, {region_level} regions"
-            )
+            click.echo("Correcting omega values for: " f"{sample_group} samples, {region_level} regions")
             mask = (sample_categories == sample_group) & (region_levels == region_level)
             valid_mask = mask & df["pvalue"].notna()
             if not valid_mask.any():

@@ -3,3 +3,21 @@ repos:
     rev: "v2.7.1"
     hooks:
       - id: prettier
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
+    hooks:
+      - id: ruff
+        name: ruff (lint bin/ Python scripts)
+        args: [--fix]
+        files: ^bin/.*\.py$
+      - id: ruff-format
+        name: ruff format (bin/ Python scripts)
+        files: ^bin/.*\.py$
+
+  - repo: https://github.com/psf/black
+    rev: 26.10.1
+    hooks:
+      - id: black
+        name: black (bin/ Python scripts)
+        files: ^bin/.*\.py$
