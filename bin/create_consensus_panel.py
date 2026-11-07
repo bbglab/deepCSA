@@ -6,6 +6,8 @@ import click
 
 def create_consensus_panel(compact_annot_panel_path, depths_path, version, consensus_min_depth, compliance_threshold, genes=None):
     gene_list = [g.strip() for g in genes.split(",")] if genes else None
+    if gene_list and version in ['introns_intergenic', 'non_protein_affecting']:
+        gene_list = gene_list.append('-')
 
     # Load captured panel and depths
     compact_annot_panel_df = pl.read_csv(compact_annot_panel_path, separator="\t")
@@ -39,8 +41,6 @@ def create_consensus_panel(compact_annot_panel_path, depths_path, version, conse
         how="inner"
     )
     if gene_list and version != 'all':
-        if version in ['introns_intergenic', 'non_protein_affecting']:
-            gene_list = gene_list.append('-')
         consensus_panel = consensus_panel.filter(pl.col("GENE").is_in(gene_list))
 
     consensus_panel = consensus_panel.sort(["CHROM", "POS", "REF", "ALT"])
