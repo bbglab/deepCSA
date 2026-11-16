@@ -181,7 +181,7 @@ def extract_flagged_regions_bed(
 ) -> pd.DataFrame | None:
     """
     Returns a BED file with the regions discarded, including the list of filters applied to each mutation.
-    Creates a properly formatted BED file with 0-based coordinates and half-open intervals.
+    Creates a BED-like file with 1-based coordinates where START = END (one position per line).
 
     Parameters
     ----------
@@ -198,7 +198,7 @@ def extract_flagged_regions_bed(
     -------
     pd.DataFrame
         A BED dataframe with discarded mutations and filters applied to each region.
-        Output coordinates are 0-based with half-open intervals [start, end).
+        Output coordinates are 1-based (NOT standard bed format).
     """
     # List of filter columns you want to check for
     filter_columns = [f"FILTER.{f}" for f in filters if f"FILTER.{f}" in maf_df.columns]
