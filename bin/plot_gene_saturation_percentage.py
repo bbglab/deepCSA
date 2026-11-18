@@ -19,8 +19,9 @@ from utils_plot import metrics_colors_dictionary
 pd.set_option('display.max_columns', None)
 
 # Define consistent order and base colors
-consequence_order = ['nonsense', 'missense']
-base_colors = {  'nonsense': metrics_colors_dictionary["nonsense"],
+consequence_order = ['truncating', 'nonsense', 'missense']
+base_colors = {  'truncating': metrics_colors_dictionary["truncating"],
+                 'nonsense': metrics_colors_dictionary["nonsense"],
                  'missense': metrics_colors_dictionary["missense"]}
 
 
@@ -452,8 +453,63 @@ def plot_all_saturation_tables(df, mode=None):
     plot_exons(df, genes=genes_list, mode=mode)
 
 
+# Frequency-stratified gene plot
+def plot_genes_by_freq(df, mode=None):
+    df_genes = df[df["SEGMENT_TYPE"] == "gene"]
+    
+    freq_bin_order = ['3+', '2', '1']
+    suffix = f"_{mode}" if mode else ""
+    genes = sorted(df_genes["GENE_NAME"].unique())
+    impacts = consequence_order
+    x = np.arange(len(genes))
+    
+    fig, axes = plt.subplots(len(impacts), 1, figsize=(max(9, len(genes)*0.5), 4*len(impacts)), sharex=True)
+    if len(impacts) == 1:
+        axes = [axes]
+    
+    legend_patches = []
+    for j, impact in enumerate(impacts):
+        ax = axes[j]
+        bottoms = np.zeros(len(genes))
+        for freq_label in freq_bin_order:
+            df_impact = df_genes[(df_genes["IMPACT"] == impact) & (df_genes["FREQ_BIN"] == freq_label)]
+            heights = []
+            for gene in genes:
+                row = df_impact[df_impact["GENE_NAME"] == gene]
+                heights.append(row["PROPORTION_MUTATED_IN_FREQ"].iloc[0] if not row.empty else 0)
+            bar = ax.bar(x, heights, width=0.8,
+                         color=color_gradients[impact][freq_label],
+                         label=f"{freq_label}x" if j == 0 else None,
+                         bottom=bottoms)
+            if j == 0:
+                legend_patches.append(bar)
+            bottoms += np.array(heights)
+        ax.set_ylabel(f"Proportion mutated\n({impact})")
+        ax.set_ylim(0, 1)
+        # Annotate each stacked bar with the total (sum of frequency bins)
+        for xi, total in zip(x, bottoms):
+            if total > 0:
+                ax.annotate(
+                    f"{total * 100:.1f}%",
+                    xy=(xi, total), xytext=(0, 2), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=5, rotation=90,
+                )
+    axes[0].legend([p[0] for p in legend_patches], [f"{f}" for f in freq_bin_order], title="Frequency", frameon=False)
+    axes[-1].set_xticks(x)
+    axes[-1].set_xticklabels(genes, rotation=45)
+    axes[-1].set_xlabel("Gene")
+    fig.suptitle("Genes (by mutation frequency)")
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    
+    plot_path = f"{plots_dir}/saturation_genes_byfreq{suffix}.pdf"
+    fig.savefig(plot_path, bbox_inches='tight', dpi=300)
+    plt.close(fig)
+
+
 # Call all three frequency-stratified plotting functions from the same table
 def plot_all_saturation_tables_by_freq(df, mode=None):
+    plot_genes_by_freq(df, mode=mode)
+    
     genes_list = df["GENE_NAME"].unique()
     genes_list = genes_list[:200]
     
