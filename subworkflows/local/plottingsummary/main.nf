@@ -104,5 +104,7 @@ workflow PLOTTING_SUMMARY {
     emit:
     selection_plots     = PLOTSELECTION.out.plots
     saturation_plots    = PLOTSATURATION.out.plots
+    saturation_proportion_plots  = PLOTSATURATIONPROPORTIONS.out.plots
+    saturation_proportion_tables = PLOTSATURATIONPROPORTIONS.out.saturation_tables
 
 }

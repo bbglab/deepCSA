@@ -164,6 +164,30 @@ def compute_proportion_per_consequence_type_by_frequency(mutations_info,
 
 
 
+def annotate_bars(ax, values, labels=None, fontsize=6, rotation=90, color="black"):
+    """
+    Annotate each bar in `ax` with its percentage value.
+
+    values: list/array of proportions (0-1) aligned with the bars in the axes.
+    labels: optional list of strings to use instead of the computed percentage.
+    """
+    for i, patch in enumerate(ax.patches):
+        if i >= len(values):
+            break
+        value = values[i]
+        if value is None or (isinstance(value, float) and np.isnan(value)):
+            continue
+        text = labels[i] if labels is not None else f"{value * 100:.1f}%"
+        ax.annotate(
+            text,
+            xy=(patch.get_x() + patch.get_width() / 2, patch.get_height()),
+            xytext=(0, 2),
+            textcoords="offset points",
+            ha="center", va="bottom",
+            fontsize=fontsize, rotation=rotation, color=color,
+        )
+
+
 def plot_genes(df, mode=None):
     df_genes = df[df["SEGMENT_TYPE"] == "gene"]
 
@@ -187,6 +211,16 @@ def plot_genes(df, mode=None):
 
     g._legend.remove()
     g.fig.text(0, 0.5, f"Proportion mutated\n{mode}", va='center', rotation='vertical')
+
+    # Annotate each bar with its percentage
+    for ax, impact in zip(g.axes.flatten(), consequence_order):
+        df_impact = df_genes[df_genes["IMPACT"] == impact]
+        values = [
+            df_impact.loc[df_impact["GENE_NAME"] == gene, "PROPORTION_MUTATED"].iloc[0]
+            if not df_impact.loc[df_impact["GENE_NAME"] == gene].empty else np.nan
+            for gene in sorted(df_genes["GENE_NAME"].unique())
+        ]
+        annotate_bars(ax, values, fontsize=5, rotation=90)
 
     for ax in g.axes.flatten():
         ax.tick_params(axis='x', rotation=45)
@@ -228,6 +262,18 @@ def plot_domains(df, genes = None, mode=None):
             g.set(ylim=(0, 1))
             g._legend.remove()
             g.fig.text(0, 0.5, f"Proportion mutated\n{mode}", va='center', rotation='vertical')
+
+            # Annotate each bar with its percentage
+            segs = sorted(df_gene["SEGMENT_NAME"].unique())
+            for ax, impact in zip(g.axes.flatten(), consequence_order):
+                df_impact = df_gene[df_gene["IMPACT"] == impact]
+                values = [
+                    df_impact.loc[df_impact["SEGMENT_NAME"] == seg, "PROPORTION_MUTATED"].iloc[0]
+                    if not df_impact.loc[df_impact["SEGMENT_NAME"] == seg].empty else np.nan
+                    for seg in segs
+                ]
+                annotate_bars(ax, values, fontsize=5, rotation=90)
+
             for ax in g.axes.flatten():
                 ax.tick_params(axis='x', rotation=45)
             pdf.savefig(g.fig, bbox_inches='tight', dpi=300)
@@ -264,6 +310,18 @@ def plot_exons(df, genes = None, mode=None):
             g.set(ylim=(0, 1))
             g._legend.remove()
             g.fig.text(0.05, 0.5, f"Proportion mutated\n{mode}", va='center', rotation='vertical')
+
+            # Annotate each bar with its percentage
+            segs = sorted(df_gene["SEGMENT_NAME"].unique())
+            for ax, impact in zip(g.axes.flatten(), consequence_order):
+                df_impact = df_gene[df_gene["IMPACT"] == impact]
+                values = [
+                    df_impact.loc[df_impact["SEGMENT_NAME"] == seg, "PROPORTION_MUTATED"].iloc[0]
+                    if not df_impact.loc[df_impact["SEGMENT_NAME"] == seg].empty else np.nan
+                    for seg in segs
+                ]
+                annotate_bars(ax, values, fontsize=5, rotation=90)
+
             for ax in g.axes.flatten():
                 ax.tick_params(axis='x', rotation=0)
             pdf.savefig(g.fig, bbox_inches='tight', dpi=300)
@@ -309,6 +367,14 @@ def plot_domains_by_freq(df, genes = None, mode=None):
                     bottoms += np.array(heights)
                 ax.set_ylabel(f"Proportion mutated\n({impact})")
                 ax.set_ylim(0, 1)
+                # Annotate each stacked bar with the total (sum of frequency bins)
+                for xi, total in zip(x, bottoms):
+                    if total > 0:
+                        ax.annotate(
+                            f"{total * 100:.1f}%",
+                            xy=(xi, total), xytext=(0, 2), textcoords="offset points",
+                            ha="center", va="bottom", fontsize=5, rotation=90,
+                        )
             # Only add legend to the top axis, with one entry per freq bin
             axes[0].legend([p[0] for p in legend_patches], [f"{f}" for f in freq_bin_order], title="Frequency", frameon=False)
             axes[-1].set_xticks(x)
@@ -357,6 +423,14 @@ def plot_exons_by_freq(df, genes = None, mode=None):
                     bottoms += np.array(heights)
                 ax.set_ylabel(f"Proportion mutated\n({impact})")
                 ax.set_ylim(0, 1)
+                # Annotate each stacked bar with the total (sum of frequency bins)
+                for xi, total in zip(x, bottoms):
+                    if total > 0:
+                        ax.annotate(
+                            f"{total * 100:.1f}%",
+                            xy=(xi, total), xytext=(0, 2), textcoords="offset points",
+                            ha="center", va="bottom", fontsize=5, rotation=90,
+                        )
             axes[0].legend([p[0] for p in legend_patches], [f"{f}" for f in freq_bin_order], title="Frequency", frameon=False)
             axes[-1].set_xticks(x)
             axes[-1].set_xticklabels(segs, rotation=0)
