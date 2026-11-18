@@ -19,9 +19,8 @@ from utils_plot import metrics_colors_dictionary
 pd.set_option('display.max_columns', None)
 
 # Define consistent order and base colors
-consequence_order = ['truncating', 'nonsense', 'missense']
-base_colors = {  'truncating': metrics_colors_dictionary["truncating"],
-                 'nonsense': metrics_colors_dictionary["nonsense"],
+consequence_order = ['nonsense', 'missense']
+base_colors = {  'nonsense': metrics_colors_dictionary["nonsense"],
                  'missense': metrics_colors_dictionary["missense"]}
 
 
