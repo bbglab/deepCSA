@@ -20,6 +20,8 @@ process POSTPROCESS_VEP_ANNOTATION {
     prefix = "${meta.id}${prefix}"
     def assembly = task.ext.assembly ?: "hg38"
     def canonical_only = task.ext.canonical_only ? "--only_canonical" : ""
+    def genes = task.ext.genes ? "--genes ${task.ext.genes}" : ""
+
     // TODO
     // change panel postprocessing annotation into the same post processing annotation as before
     // keep it as the one for omega that is the one minimizing the computational processing
@@ -38,7 +40,8 @@ process POSTPROCESS_VEP_ANNOTATION {
                 --vep_output_file ${prefix}.tmp.gz \\
                 --assembly ${assembly} \\
                 --output_file ${vep_annotated_file.getBaseName()}.compact \\
-                ${canonical_only} ;
+                ${canonical_only} \\
+                ${genes} ;
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

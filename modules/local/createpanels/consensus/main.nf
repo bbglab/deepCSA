@@ -22,7 +22,6 @@ process CREATECONSENSUSPANELS {
     def genes_subset = task.ext.genes_subset ?: ""
     target_genes = genes_subset != "" ? "--genes ${genes_subset}": ""
     """
-    ## ${target_genes}
     create_consensus_panel.py \\
                     --compact_annot_panel_path ${compact_captured_panel_annotation} \\
                     --depths_path ${depths} \\
