@@ -21,11 +21,13 @@ process COMPUTE_MATRIX {
     def args = task.ext.args ?: ""
     def prefix = task.ext.prefix ?: ""
     prefix = "${meta.id}${prefix}"
+    def method = task.ext.method ?: "unique"
     """
     mut_profile.py matrix \\
                     --sample_name ${prefix} \\
                     --mut_file ${mut_files} \\
                     --out_matrix ${prefix}.matrix.tsv \\
+                    --method ${method} \\
                     ${args}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

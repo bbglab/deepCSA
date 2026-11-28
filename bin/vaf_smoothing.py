@@ -56,10 +56,18 @@ def apply_correction_per_sample(mutations_table, priors_per_sample,
     mutation_tables_versions = []
 
     for sample_id in samples:
-        prior_vaf = priors_per_sample.loc[priors_per_sample['SAMPLE_ID'] == sample_id, 'prior'].values[0]
+        try:
+            prior_vaf = priors_per_sample.loc[priors_per_sample['SAMPLE_ID'] == sample_id, 'prior'].values[0]
+        except IndexError: # documentation: if no prior is found for the sample, use the mean prior across all samples as a fallback
+            click.echo(f"Warning: No prior found for sample {sample_id}. Using default prior.")
+            prior_vaf = priors_per_sample['prior'].median()
+
         sample_mutations = mutations_table[mutations_table['SAMPLE_ID'] == sample_id][
             ['SAMPLE_ID', 'MUT_ID', 'ALT_DEPTH', 'DEPTH', 'VAF', 'ALT_DEPTH_AM', 'DEPTH_AM', 'VAF_AM']
         ].copy()
+        if sample_mutations.empty:
+            click.echo(f"Warning: No mutations found for sample {sample_id}. Skipping.")
+            continue
         sample_mutations["avg_depth_mutations"] = sample_mutations["DEPTH"].mean()
         sample_mutations["avg_depth_am_mutations"] = sample_mutations["DEPTH_AM"].mean()
         for weight_prop in weights_list:
@@ -121,7 +129,7 @@ def plot_vaf_pseudocount_curve(maf_df, samples, output_pdf, suffix='',
 
 
 
-def plot_vaf_pseudocount_curve_pair(maf_df, samples, selected_weights, suffix=''):
+def plot_vaf_pseudocount_curve_pair(maf_df, samples, selected_weight, suffix=''):
     """
     Plot VAF distribution compared to VAF_AM in a histogram.
     
@@ -129,6 +137,12 @@ def plot_vaf_pseudocount_curve_pair(maf_df, samples, selected_weights, suffix=''
     -----------
     maf_df : DataFrame
         MAF dataframe containing VAF and VAF_AM columns
+    samples : list
+        List of sample IDs to plot
+    selected_weight : float
+        The selected weight for pseudocount correction
+    suffix : str
+        Suffix to append to column names
     """
     with PdfPages("vaf_pre_post_comparison.pdf") as output_pdf:
 
@@ -141,11 +155,10 @@ def plot_vaf_pseudocount_curve_pair(maf_df, samples, selected_weights, suffix=''
             fig.suptitle(f'{sample} : VAF{suffix} with pseudocounts', fontsize = 7)
 
             samples_maf_df = maf_df[maf_df['SAMPLE_ID'] == sample]
-            sample_selected_weight = selected_weights.loc[selected_weights['SAMPLE_ID'] == sample, 'selected_weight'].values[0]
 
             mean_vaf = samples_maf_df[f'VAF{suffix}'].mean()
 
-            for i, weight_prop in enumerate([0, sample_selected_weight.item()]):
+            for i, weight_prop in enumerate([0, selected_weight]):
                 axes[i].scatter(samples_maf_df[f'DEPTH{suffix}'], samples_maf_df[f'VAF{suffix}_PSEUDO_{weight_prop}'], s=3, alpha=0.1)
                 rho = np.corrcoef(np.log(samples_maf_df[f'DEPTH{suffix}']), np.log(samples_maf_df[f'VAF{suffix}_PSEUDO_{weight_prop}']))[0, 1]
                 axes[i].axhline(y=mean_vaf, color='red', linestyle='--', alpha=0.5, linewidth=0.5)
@@ -214,8 +227,8 @@ def calc_vaf_distance_summary(
     target_col="VAF_AM",
     pseudo_prefix="VAF_PSEUDO",
     depth_col="DEPTH",
-    depth_quantile=0.1,
-    large_clone_quantile=0.95,
+    depth_quantile=0.2,
+    large_clone_quantile=0.9,
     output_pdf=None
     ):
     """
@@ -321,18 +334,25 @@ def plot_vaf_distance_summary(
 
 
 
-def select_vafpseudo_per_sample(selected_weights_df, mutations_table):
+
+def select_vafpseudo_per_sample(selected_weight, samples_list, mutations_table):
     """
     Select the best VAF_PSEUDO column for each sample based on the selected weights.
+    Parameters:
+    -----------
+    selected_weight : float
+        The selected weight for pseudocount correction
+    samples_list : list
+        List of sample IDs to process
+    mutations_table : DataFrame
+        DataFrame containing the mutations and their VAF_PSEUDO columns
     """
 
     selected_vafpseudo_columns = []
     columns_to_keep = ['SAMPLE_ID', 'MUT_ID', 'ALT_DEPTH', 'DEPTH', 'VAF', 'ALT_DEPTH_AM', 'DEPTH_AM', 'VAF_AM', 'prior', 'avg_depth_sample']
-    for _, row in selected_weights_df.iterrows():
-        sample_id = row['SAMPLE_ID']
-        selected_weight = row['selected_weight']
-        selected_column = f'VAF_PSEUDO_{selected_weight}'
-        selected_vafpseudo_columns.append((sample_id, selected_column, selected_weight))
+    selected_column = f'VAF_AM_PSEUDO_{selected_weight}'
+   
+    selected_vafpseudo_columns = [ (x, selected_column, selected_weight) for x in samples_list ]
 
     # Create a new DataFrame with the selected VAF_PSEUDO columns
     selected_vafpseudo_df = pd.DataFrame(selected_vafpseudo_columns, columns=['SAMPLE_ID', 'selected_column', 'selected_weight'])
@@ -416,6 +436,7 @@ def main(mutdensities, mutations, depth_sample):
             selected_weights_dict = {}
             try :
                 for sample in samples_list:
+                    print()
                     sample_mutations = all_mutations_table[all_mutations_table['SAMPLE_ID'] == sample]
 
                     dist_df = calc_vaf_distance_summary(
@@ -447,7 +468,7 @@ def main(mutdensities, mutations, depth_sample):
                     pdf.savefig()
                     plt.close()
 
-
+                print()
                 dist_df = calc_vaf_distance_summary(
                     all_mutations_table,
                     weights=weights,
@@ -473,7 +494,10 @@ def main(mutdensities, mutations, depth_sample):
                     click.echo(f"Warning: No weight found for sample {sample} where mean_reldist_large_clones < 0.2. Using the smallest non-0 weight.")
                     max_weight_below_threshold = weights[1]  # or some default value
 
+                print(f"Sample all_samples: Maximum weight below threshold for low depth clones: {max_weight_below_threshold}")
+                print("This weight will be used for all individual samples in the final selection of VAF_PSEUDO columns.")
                 selected_weights_dict['all_samples'] = max_weight_below_threshold
+                all_samples_weight = max_weight_below_threshold
 
                 # store selected weights in a tsv file
                 selected_weights_df = pd.DataFrame(list(selected_weights_dict.items()), columns=['SAMPLE_ID', 'selected_weight'])
@@ -481,10 +505,10 @@ def main(mutdensities, mutations, depth_sample):
             except Exception as e:
                 click.echo(f"Error in plotting VAF distance summary: {e}")
 
-    plot_vaf_pseudocount_curve_pair(all_mutations_table, samples_list, selected_weights_df, suffix='_AM')
+    plot_vaf_pseudocount_curve_pair(all_mutations_table, samples_list, all_samples_weight, suffix='_AM')
 
     click.echo("Storing summary of priors and weights used.")
-    select_vafpseudo_per_sample(selected_weights_df, mutations_plus_info)
+    select_vafpseudo_per_sample(all_samples_weight, samples_list,  mutations_plus_info)
 
     click.echo("VAF smoothing pipeline completed successfully.")
 

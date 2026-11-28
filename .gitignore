@@ -16,3 +16,4 @@ scratchhhh/
 tests/test_data/all_samples.somatic.mutations.maf
 tests/test_data/all_samples_indv.depths.tsv.gz
 assets/useful_scripts/*.ipynb
+tests/2*results*

@@ -15,7 +15,32 @@ assembly_name2function = {
 }
 
 
-def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
+def force_single_row_per_variant(compressed_variants, list_of_genes = None):
+    """
+    This function receives a dataframe that can have multiple rows per variant (MUT_ID) and returns a dataframe with a single row per variant.
+    
+    Requirements: 
+    The input dataframe must be sorted by MUT_ID and the most deleterious consequence per variant (using the most_deleterious_within_variant function).
+
+    The selection of the row to keep is based on the following criteria:
+    - If a list of genes is provided, we prioritize those genes and keep the row corresponding to the gene in the list (if present). If multiple genes from the list are present, we keep the first one (based on the order of the list).
+    - If no list of genes is provided, we prioritize by the most deleterious consequence per variant
+    """
+    # we need to force the script to generate a single row per variant
+    #   if the user has provided a list of genes to analyse (now only used for consensus panels, we prioritize those genes)
+    #   otherwise, we prioritize by the most deleterious consequence per variant
+    if list_of_genes is not None:
+        list_of_genes = list_of_genes.split(",")
+        compressed_variants['selected'] = compressed_variants['SYMBOL'].isin(list_of_genes)
+        compressed_variants.sort_values(by = ['MUT_ID', 'selected'], ascending = (True, False), inplace = True)
+        compressed_variants.drop(columns = ['selected'], inplace = True)
+        print(f"Using only the following genes for the panel: {list_of_genes}")
+
+    return compressed_variants.drop_duplicates(subset=['MUT_ID'], keep='first')
+
+
+
+def VEP_annotation_to_single_row(df_annotation, keep_genes = False, gene_list = None):
     """
     Process Ensembl VEP output to get a single consequence per gene
     Select always the most deleterious
@@ -64,8 +89,9 @@ def VEP_annotation_to_single_row(df_annotation, keep_genes = False):
         df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID']
                                                                                             , keep='first'
                                                                                             )
+    single_row_df_annotation = force_single_row_per_variant(df_annotation_small_highest_impact, list_of_genes = gene_list)
 
-    returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
+    returned_df = df_annotation.iloc[single_row_df_annotation.index.values,:].copy()
 
     # TODO see if we can reduce this code by outputting the variable directly
     returned_df = returned_df.reset_index(drop = True)
@@ -82,7 +108,7 @@ def safe_transform_context(row, chosen_assembly):
     return transform_context(row["CHROM"], row["POS"], f'{row["REF"]}/{row["ALT"]}', chosen_assembly)
 
 
-def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = False):
+def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = False, gene_list = None):
     """
     Process Ensembl VEP output to get a single consequence per gene
     Use only the information in the canonical transcript!!
@@ -122,8 +148,9 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
         df_annotation_small_highest_impact = df_annotation_small_sorted.drop_duplicates(subset=['MUT_ID']
                                                                                             , keep='first'
                                                                                             )
+    single_row_df_annotation = force_single_row_per_variant(df_annotation_small_highest_impact, list_of_genes = gene_list)
 
-    returned_df = df_annotation.iloc[df_annotation_small_highest_impact.index.values,:].copy()
+    returned_df = df_annotation.iloc[single_row_df_annotation.index.values,:].copy()
     returned_df = returned_df.reset_index(drop = True)
 
     returned_df.columns = [f"canonical_{x}" for x in returned_df.columns]
@@ -132,7 +159,8 @@ def VEP_annotation_to_single_row_only_canonical(df_annotation, keep_genes = Fals
 
 def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated_file,
                                     assembly = 'hg38',
-                                    using_canonical = True
+                                    using_canonical = True,
+                                    list_of_genes = None
                                     ):
     """
     Process VEP output and summarize annotations for a panel.
@@ -144,16 +172,16 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
     all_possible_sites.columns = ['CHROM', 'POS', 'REF', 'ALT', 'MUT_ID', 'Feature', 'Consequence', 'Protein_position',
                                    'Amino_acids', 'STRAND', 'SYMBOL', 'CANONICAL', 'ENSP']
     if using_canonical:
-        annotated_variants = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True)
+        annotated_variants = VEP_annotation_to_single_row_only_canonical(all_possible_sites, keep_genes= True, gene_list = list_of_genes)
         if annotated_variants is not None:
             annotated_variants.columns = [ x.replace("canonical_", "") for x in annotated_variants.columns]
             print("Using only canonical transcript annotations for the panel")
         else:
-            annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
+            annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True, gene_list = list_of_genes)
             print("CANONICAL was not available in the panel annotation.")
             print("Using most deleterious consequence for the panel")
     else:
-        annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True)
+        annotated_variants = VEP_annotation_to_single_row(all_possible_sites, keep_genes= True, gene_list = list_of_genes)
         print("Using most deleterious consequence for the panel")
 
     del all_possible_sites
@@ -197,7 +225,8 @@ def vep2summarizedannotation_panel(VEP_output_file, all_possible_sites_annotated
 @click.option('--assembly', type=click.Choice(['hg38', 'mm39']), default='hg38', help='Genome assembly.')
 @click.option('--output_file', type=click.Path(), required=True, help='Path to the output annotated file.')
 @click.option('--only_canonical', is_flag=True, default=False, help='Use only canonical transcripts.')
-def main(vep_output_file, assembly, output_file, only_canonical):
+@click.option('--genes', default=None, help='Comma-separated list of genes to include.')
+def main(vep_output_file, assembly, output_file, only_canonical, genes):
     """
     CLI entry point for processing VEP annotations and summarizing them for a panel.
     """
@@ -205,7 +234,8 @@ def main(vep_output_file, assembly, output_file, only_canonical):
     click.echo(f"Using assembly: {assembly}")
     click.echo(f"Output file: {output_file}")
     click.echo(f"Using only canonical transcripts: {only_canonical}")
-    vep2summarizedannotation_panel(vep_output_file, output_file, assembly, only_canonical)
+    click.echo(f"List of genes to include: {genes}")
+    vep2summarizedannotation_panel(vep_output_file, output_file, assembly, only_canonical, genes)
     click.echo("Annotation processing completed.")
 
 

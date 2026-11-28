@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
+from utils import contexts_formatted
 from utils_filter import filter_maf
 from read_utils import custom_na_values
 from utils_plot import snv_color
@@ -382,6 +383,107 @@ def plot_mutation_counts(maf, count_column):
 
     return fig
 
+
+def plot_mutation_counts_by_muttype(maf, count_column, per_sample=False):
+    """
+    Additional version of plot_mutation_counts: shows the proportion of
+    mutations per number of mutated reads (count_column), broken down by
+    mutation type (CONTEXT_MUT).
+
+    per_sample=False : all samples combined into a single plot
+                       (x = number of mutated reads, hue = CONTEXT_MUT)
+    per_sample=True  : one subplot per sample, each showing
+                       (x = number of mutated reads, hue = CONTEXT_MUT)
+    """
+    # Work on a copy to avoid modifying the original dataframe
+    maf = maf.copy()
+    cat_col = f'{count_column}_cat'
+
+    # Convert count values to '10+'
+    maf[cat_col] = maf[count_column].apply(
+        lambda x: '10+' if x >= 10 else str(x)
+    )
+
+    maf["SAMPLE_ID"] = maf["SAMPLE_ID"].astype(str)
+    maf = maf.sort_values(by=["MUTTYPE", "CONTEXT_MUT", "SAMPLE_ID"])
+    sample_order = sorted(maf["SAMPLE_ID"].unique())
+
+    # Mutation type order and colors (consistent with snv_color)
+    muttype_order = contexts_formatted
+
+    # Count order: 1, 2, ..., 9, 10+
+    count_order = [str(i) for i in range(1, 10)] + ['10+']
+    # Use categorical dtype to enforce the correct x-axis order
+    maf[cat_col] = pd.Categorical(maf[cat_col], categories=count_order, ordered=True)
+
+    if not per_sample:
+        # Combined samples: x = number of mutated reads, hue = MUTTYPE
+        fig, ax = plt.subplots(figsize=(13, 5))
+
+        sns.histplot(
+            data=maf,
+            x="CONTEXT_MUT",
+            hue=cat_col,
+            multiple="fill",
+            stat="proportion",
+            discrete=True,
+            shrink=0.8,
+            legend=True,
+            ax=ax
+        )
+
+        ax.set_xlabel(f"Number of mutated reads ({count_column})")
+        ax.set_ylabel("Proportion of mutations")
+        ax.set_title(f"Proportion of mutations per number of mutated reads per mutation type\n(all samples combined)")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize = 5)
+
+        sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1), title="Mutation type")
+        sns.despine()
+
+        plt.tight_layout()
+
+        return fig
+    else:
+        # Per-sample: grid of subplots, one per sample
+        n_samples = len(sample_order)
+        n_cols = min(3, n_samples)
+        n_rows = int(np.ceil(n_samples / n_cols))
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows), squeeze=False)
+
+        for i, sample in enumerate(sample_order):
+            ax = axes[i // n_cols][i % n_cols]
+            sample_maf = maf[maf["SAMPLE_ID"] == sample]
+
+            sns.histplot(
+                data=sample_maf,
+                x=cat_col,
+                hue="CONTEXT_MUT",
+                multiple="fill",
+                stat="proportion",
+                discrete=True,
+                hue_order=muttype_order,
+                shrink=0.8,
+                legend=True,
+                ax=ax
+            )
+
+            ax.set_xlabel(f"Number of mutated reads ({count_column})")
+            ax.set_ylabel("Proportion of mutations")
+            ax.set_title(sample)
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize = 5)
+
+            sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1), title="Mutation type")
+            sns.despine()
+
+        # Hide unused subplots
+        for j in range(n_samples, n_rows * n_cols):
+            axes[j // n_cols][j % n_cols].set_visible(False)
+
+        plt.tight_layout()
+
+        return fig
+
+
 dict_plotname2func = {
     "per_gene" : plot_mutations_per_gene,
     "per_sample" : plot_mutations_per_sample,
@@ -435,6 +537,18 @@ def plot_manager(sample_name, maf, out_maf, plotting_criteria_file):
             fig = plot_mutation_counts(maf, 'ALT_DEPTH_AM')
             pdf.savefig(fig)
             plt.close()
+
+            # add mutation counts per mutation type plots
+            for count_column in ['ALT_DEPTH', 'ALT_DEPTH_AM']:
+                # all samples combined
+                fig = plot_mutation_counts_by_muttype(maf, count_column, per_sample=False)
+                pdf.savefig(fig)
+                plt.close()
+
+                # # per sample
+                # fig = plot_mutation_counts_by_muttype(maf, count_column, per_sample=True)
+                # pdf.savefig(fig)
+                # plt.close()
 
 
 # TODO add VAF distribution plot

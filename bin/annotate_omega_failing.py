@@ -18,7 +18,7 @@ import seaborn as sns
 
 
 
-def load_flagged_tables(paths: List[Path]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_flagged_tables(paths: List[Path]) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Read flagged files and return a normalized DataFrame with possible columns:
     SAMPLE, GENE, reason_exclusion
     """
@@ -30,7 +30,7 @@ def load_flagged_tables(paths: List[Path]) -> Tuple[pd.DataFrame, pd.DataFrame]:
         df = pd.read_csv(p, sep="\t", header=0, dtype=str)
         pieces.append(df)
     if not pieces:
-        return pd.DataFrame(columns=["sample", "gene", "reason_exclusion"]), pd.DataFrame(columns=["sample", "gene", "reason_exclusion"])
+        return pd.DataFrame(columns=["sample", "gene", "reason_exclusion"]), pd.DataFrame(columns=["sample", "gene", "reason_exclusion"]), pd.DataFrame(columns=["sample", "gene", "reason_exclusion"]), pd.DataFrame(columns=["sample", "gene", "reason_exclusion"])
 
     all_df = pd.concat(pieces, ignore_index=True, sort=False)
 

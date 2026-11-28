@@ -14,6 +14,16 @@ snv_color = {
     '-' : 'orange'
 }
 
+mutation_type_colors = {
+    "C>A": "#5abdeb",
+    "C>G": "#050708",
+    "C>T": "#d43c32",
+    "T>A": "#cbcacb",
+    "T>C": "#aacb72",
+    "T>G": "#e7c9c6"
+}
+
+
 def plot_profile(frequencies, title='Mutational profile',
                         yticks=[0, 0.1],
                         ymax=0.3,
